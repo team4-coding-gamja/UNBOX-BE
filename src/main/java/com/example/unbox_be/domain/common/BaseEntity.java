@@ -33,18 +33,18 @@ public abstract class BaseEntity {
     @Column(name = "updated_by")
     private String updatedBy;
 
-    // 삭제는 JPA Auditing 기본 기능에 없으므로, 로직에서 직접 처리
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    @Column(name = "deleted_by")
-    private String deletedBy;
-
-    /**
-     * 소프트 삭제 처리를 위한 편의 메서드
-     */
-    public void delete(String deletedBy) {
-        this.deletedAt = LocalDateTime.now();
-        this.deletedBy = deletedBy;
-    }
+//    // 삭제는 JPA Auditing 기본 기능에 없으므로, 로직에서 직접 처리
+//    @Column(name = "deleted_at")
+//    private LocalDateTime deletedAt;
+//
+//    @Column(name = "deleted_by")
+//    private String deletedBy;
+//
+//    /**
+//     * 소프트 삭제 처리를 위한 편의 메서드
+//     */
+//    public void delete(String deletedBy) {
+//        this.deletedAt = LocalDateTime.now();
+//        this.deletedBy = deletedBy;
+//    }
 }

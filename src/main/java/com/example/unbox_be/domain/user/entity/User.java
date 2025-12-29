@@ -26,11 +26,9 @@ public class User extends BaseEntity {
     private String password;
 
     @Column(nullable = false, unique = true, length = 10)
-    @Size(min = 4, max = 10)
-    @Pattern(regexp = "^[a-z0-9]*$", message = "소문자와 숫자만 입력 가능합니다.")
     private String nickname;
 
-    @Pattern(regexp = "^01[0-9]{8,9}$")
+    @Column(nullable = false)
     private String phone;
 
 

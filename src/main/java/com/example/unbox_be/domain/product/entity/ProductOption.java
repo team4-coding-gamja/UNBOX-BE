@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "p_products")
+@Table(name = "p_product_options")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProductOption {
@@ -17,7 +17,7 @@ public class ProductOption {
     @Column(name = "option_id")
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 

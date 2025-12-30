@@ -26,7 +26,7 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "product_number")
+    @Column(name = "model_number")
     private String modelNumber;
 
     @Enumerated(EnumType.STRING)

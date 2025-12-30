@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -33,8 +34,9 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "option_id", nullable = false)
     private ProductOption productOption;
 
+    // int -> BigDecimal 변경
     @Column(nullable = false)
-    private int price;
+    private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
@@ -58,7 +60,8 @@ public class Order extends BaseEntity {
     @Column(name = "final_tracking_number", length = 100)
     private String finalTrackingNumber;
 
-    public Order(User buyer, User seller, ProductOption productOption, int price,
+    // 생성자 파라미터 타입 변경 (int -> BigDecimal)
+    public Order(User buyer, User seller, ProductOption productOption, BigDecimal price,
                  String receiverName, String receiverPhone, String receiverAddress, String receiverZipCode) {
         this.buyer = buyer;
         this.seller = seller;
@@ -71,8 +74,13 @@ public class Order extends BaseEntity {
         this.status = OrderStatus.PENDING_SHIPMENT;
     }
 
-    public void updateStatus(OrderStatus status) {
-        this.status = status;
+    // 상태 변경 검증 로직 추가
+    public void updateStatus(OrderStatus newStatus) {
+        // 이미 완료되거나 취소된 건은 변경 불가
+        if (this.status == OrderStatus.COMPLETED || this.status == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("이미 종료된 주문의 상태는 변경할 수 없습니다.");
+        }
+        this.status = newStatus;
     }
 
     public void registerTrackingNumber(String trackingNumber) {

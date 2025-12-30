@@ -21,18 +21,16 @@ public class Inspection extends BaseEntity {
     @Column(name = "inspection_id", columnDefinition = "uuid")
     private UUID id;
 
-    // 주문과 1:1 관계
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    // 검수자 (Admin 대신 일단 User 사용)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inspector_id", nullable = false)
     private User inspector;
 
     @Column(columnDefinition = "TEXT")
-    private String reason; // 검수 사유
+    private String reason;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "inspect_status", length = 20)
@@ -47,13 +45,21 @@ public class Inspection extends BaseEntity {
         this.inspectStatus = InspectionStatus.PENDING;
     }
 
+    // 상태 검증 로직 추가
     public void pass(String reason) {
+        if (this.inspectStatus != InspectionStatus.PENDING) {
+            throw new IllegalStateException("PENDING 상태의 검수만 처리할 수 있습니다.");
+        }
         this.inspectStatus = InspectionStatus.PASSED;
         this.reason = reason;
         this.completedAt = LocalDateTime.now();
     }
 
+    // 상태 검증 로직 추가
     public void fail(String reason) {
+        if (this.inspectStatus != InspectionStatus.PENDING) {
+            throw new IllegalStateException("PENDING 상태의 검수만 처리할 수 있습니다.");
+        }
         this.inspectStatus = InspectionStatus.FAILED;
         this.reason = reason;
         this.completedAt = LocalDateTime.now();

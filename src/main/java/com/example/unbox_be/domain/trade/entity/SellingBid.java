@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "p_selling_bids")
@@ -18,14 +19,14 @@ public class SellingBid extends BaseEntity {
 
     @Id
     @Column(name = "selling_id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long sellingId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID sellingId;
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @Column(name = "option_id")
-    private Long optionId;
+    private UUID optionId;
 
     @Column(name = "price", nullable = false)
     private Integer price;

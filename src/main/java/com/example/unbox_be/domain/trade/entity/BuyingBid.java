@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "p_buying_bids")
@@ -17,15 +18,14 @@ public class BuyingBid extends BaseEntity {
 
     @Id
     @Column(name = "buying_id")
-    // DB에서 Auto Increment를 설정했다면 아래 줄 추가, 직접 입력한다면 생략
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long buyingId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID buyingId;
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @Column(name = "option_id")
-    private Long optionId;
+    private UUID optionId;
 
     @Column(name = "price", nullable = false)
     private Integer price;

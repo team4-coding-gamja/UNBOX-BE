@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.user.controller;
 
+import com.example.unbox_be.domain.user.controller.api.UserApi;
 import com.example.unbox_be.domain.user.dto.request.UserSignupRequestDto;
 import com.example.unbox_be.domain.user.dto.response.UserSignupResponseDto;
 import com.example.unbox_be.domain.user.service.UserService;
@@ -15,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-public class UserController {
+public class UserController implements UserApi {
 
     private final UserService userService;
 

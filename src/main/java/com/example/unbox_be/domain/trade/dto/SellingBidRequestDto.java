@@ -1,13 +1,20 @@
 package com.example.unbox_be.domain.trade.dto;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
 public class SellingBidRequestDto {
+    @NotNull(message = "유저 ID는 필수입니다.")
     private Long userId;
+
+    @NotNull(message = "option ID 없음.")
     private Long optionId;
+
+    @NotNull(message = "Price 값 없음.")
+    @Positive(message = "가격은 0보다 커야함")
     private Integer price;
-    private Integer deadlineDays; // 며칠 동안 게시할지  -> 일단 30일로 고정시킴 1월 1일-> 1월 31일 00시
 }

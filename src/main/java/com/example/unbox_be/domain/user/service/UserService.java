@@ -1,21 +1,51 @@
 package com.example.unbox_be.domain.user.service;
 
+import com.example.unbox_be.domain.user.dto.request.UserSignupRequestDto;
+import com.example.unbox_be.domain.user.dto.response.UserSignupResponseDto;
+import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
+import com.example.unbox_be.global.error.exception.CustomException;
+import com.example.unbox_be.global.error.exception.ErrorCode;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
+    // security 적용 시 사용
+//    private final PasswordEncoder passwordEncoder;
 
-    // save
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+//        this.passwordEncoder = passwordEncoder;
+    }
 
-    // read
+    // 회원가입 API
+    @Transactional
+    public UserSignupResponseDto signup(UserSignupRequestDto userSignupRequestDto) {
+        String email = userSignupRequestDto.getEmail();
+        String password = userSignupRequestDto.getPassword();
 
-    // update - 업데이트는 transactional 명시 안해도됨
+        // 이메일 중복 확인
+        if (userRepository.existsByEmail(email)) {
+            throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
+        }
 
-    // delete
+        // 회원 객체 생성
+        User user = User.createUser(
+                userSignupRequestDto.getEmail(),
+                userSignupRequestDto.getPassword(), //  시큐리티 적용 시 변경
+                userSignupRequestDto.getNickname(),
+                userSignupRequestDto.getPhone()
+        );
+
+        // 저장
+        User savedUser = userRepository.save(user);
+
+        // Entity -> Dto 변환 후 반환
+        return UserSignupResponseDto.from(savedUser);
+
+    }
 
 }

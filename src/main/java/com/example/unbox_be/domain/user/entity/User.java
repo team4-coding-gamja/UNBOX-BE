@@ -3,11 +3,8 @@ package com.example.unbox_be.domain.user.entity;
 import com.example.unbox_be.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.ArrayList;
 
 @Entity
 @Table(name = "p_users")

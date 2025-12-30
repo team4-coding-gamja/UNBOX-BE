@@ -24,4 +24,13 @@ public class SellingBidController {
         UUID savedId = sellingBidService.createSellingBid(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedId);
     }
+
+    @DeleteMapping("/{sellingId}")
+    public ResponseEntity<Void> cancelSellingBid(
+            @PathVariable UUID sellingId,
+            @RequestParam Long userId
+    ) {
+        sellingBidService.cancelSellingBid(sellingId, userId);
+        return ResponseEntity.noContent().build();
+    }
 }

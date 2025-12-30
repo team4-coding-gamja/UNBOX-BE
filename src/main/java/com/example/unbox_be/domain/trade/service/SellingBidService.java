@@ -49,4 +49,19 @@ public class SellingBidService {
         SellingBid savedBid = sellingBidRepository.save(sellingBid);
         return savedBid.getSellingId();
     }
+
+    @Transactional
+    public void cancelSellingBid(UUID sellingId, Long userId) {
+        // 1. 해당 입찰 조회
+        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 입찰을 찾을 수 없습니다. ID: " + sellingId));
+
+        // 2. 본인 확인
+        if (!sellingBid.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("본인의 입찰만 취소할 수 있습니다.");
+        }
+
+        // 3. 상태 변경 (Dirty Checking에 의해 자동 업데이트)
+        sellingBid.cancel();
+    }
 }

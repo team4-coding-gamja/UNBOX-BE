@@ -37,4 +37,7 @@ public class SellingBid extends BaseEntity {
 
     private LocalDateTime deadline;
 
+    public void cancel() {
+        this.status = SellingStatus.CANCELLED;
+    }
 }

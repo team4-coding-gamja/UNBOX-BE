@@ -3,10 +3,12 @@ package com.example.unbox_be.domain.trade.controller;
 import com.example.unbox_be.domain.trade.dto.SellingBidRequestDto;
 import com.example.unbox_be.domain.trade.service.SellingBidService;
 import com.example.unbox_be.domain.user.repository.UserRepository;
+import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -28,9 +30,9 @@ public class SellingBidController {
     @DeleteMapping("/{sellingId}")
     public ResponseEntity<Void> cancelSellingBid(
             @PathVariable UUID sellingId,
-            @RequestParam Long userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        sellingBidService.cancelSellingBid(sellingId, userId);
+        sellingBidService.cancelSellingBid(sellingId, userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }
 }

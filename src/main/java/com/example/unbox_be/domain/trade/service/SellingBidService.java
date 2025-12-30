@@ -6,6 +6,7 @@ import com.example.unbox_be.domain.trade.dto.SellingBidRequestDto;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
+import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -51,20 +52,33 @@ public class SellingBidService {
     }
 
     @Transactional
-    public void cancelSellingBid(UUID sellingId, Long userId) {
+    public void cancelSellingBid(UUID sellingId, String email) {
         // 1. 해당 입찰 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
         SellingBid sellingBid = sellingBidRepository.findById(sellingId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 입찰을 찾을 수 없습니다. ID: " + sellingId));
 
         // 2. 본인 확인
-        if (!sellingBid.getUserId().equals(userId)) {
+        if (!sellingBid.getUserId().equals(user.getId())) {
             throw new IllegalArgumentException("본인의 입찰만 취소할 수 있습니다.");
         }
         if (!(sellingBid.getStatus() == SellingStatus.LIVE)) {
             throw new IllegalArgumentException("아직 판매, 취소되지 않거나 구매중이 아닌 상품만 취소할 수 있습니다.");
         }
+        sellingBid.softDelete(user.getEmail());
 
         // 3. 상태 변경 (Dirty Checking에 의해 자동 업데이트)
         sellingBid.cancel();
+    }
+
+    @Transactional
+    public void updateSellingBidPrice(UUID sellingId, Integer newPrice, Long userId) {
+        // 1. 조회
+        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 판매 입찰을 찾을 수 없습니다. ID: " + sellingId));
+
+        // 2. 엔티티의 비즈니스 로직 호출 (검증 및 변경)
+        sellingBid.updatePrice(newPrice, userId);
     }
 }

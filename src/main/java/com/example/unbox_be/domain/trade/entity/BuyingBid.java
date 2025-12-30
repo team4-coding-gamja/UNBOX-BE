@@ -27,7 +27,7 @@ public class BuyingBid extends BaseEntity {
     @Column(name = "option_id")
     private Long optionId;
 
-    @Column(nullable = false)
+    @Column(name = "price", nullable = false)
     private Integer price;
 
     @Enumerated(EnumType.STRING)

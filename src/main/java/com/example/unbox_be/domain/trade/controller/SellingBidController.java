@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 public class SellingBidController {
 
     private final SellingBidService sellingBidService;
-
+    //판매 주문 /api/bids/selling
     @PostMapping
     public ResponseEntity<Long> createSellingBid(@RequestBody SellingBidRequestDto requestDto) {
         Long savedId = sellingBidService.createSellingBid(requestDto);

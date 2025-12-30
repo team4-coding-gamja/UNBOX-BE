@@ -9,5 +9,5 @@ public class SellingBidRequestDto {
     private Long userId;
     private Long optionId;
     private Integer price;
-    private Integer deadlineDays; // 몇 일 동안 게시할지  -> 일단 30일로 고정시킴 1월 1일-> 1월 31일 00시
+    private Integer deadlineDays; // 며칠 동안 게시할지  -> 일단 30일로 고정시킴 1월 1일-> 1월 31일 00시
 }

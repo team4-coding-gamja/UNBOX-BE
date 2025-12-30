@@ -20,7 +20,7 @@ public class SellingBidService {
     @Transactional
     public Long createSellingBid(SellingBidRequestDto requestDto) {
         // 현재 날짜 기준 30일 뒤의 00시 00분 00초 계산
-        // 오늘로부터 30일 뒤 날짜의 시작 시간(00:00:00)
+        // 오늘로부터 30일 뒤 날짜의 시작 시간(00:00:00) - 1월 1일->1월 31일 00시
         LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();
 
         // DTO -> Entity 변환

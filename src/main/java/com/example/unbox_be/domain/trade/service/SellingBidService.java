@@ -60,6 +60,9 @@ public class SellingBidService {
         if (!sellingBid.getUserId().equals(userId)) {
             throw new IllegalArgumentException("본인의 입찰만 취소할 수 있습니다.");
         }
+        if (!(sellingBid.getStatus() == SellingStatus.LIVE)) {
+            throw new IllegalArgumentException("아직 판매, 취소되지 않거나 구매중이 아닌 상품만 취소할 수 있습니다.");
+        }
 
         // 3. 상태 변경 (Dirty Checking에 의해 자동 업데이트)
         sellingBid.cancel();

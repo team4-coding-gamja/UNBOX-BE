@@ -22,7 +22,7 @@ public class Inspection extends BaseEntity {
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "order_id", nullable = false, unique = true)
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)

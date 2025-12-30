@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "products")
+@Table(name = "p_products")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Product {

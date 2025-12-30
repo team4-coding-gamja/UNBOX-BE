@@ -2,6 +2,7 @@ package com.example.unbox_be.domain.user.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,8 +12,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "p_address")
 @Getter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Address extends BaseEntity {
 
     @Id

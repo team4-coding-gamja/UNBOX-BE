@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Getter
 @NoArgsConstructor
 public class SellingBidRequestDto {
@@ -12,7 +14,7 @@ public class SellingBidRequestDto {
     private Long userId;
 
     @NotNull(message = "option ID 없음.")
-    private Long optionId;
+    private UUID optionId;
 
     @NotNull(message = "Price 값 없음.")
     @Positive(message = "가격은 0보다 커야함")

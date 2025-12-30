@@ -18,17 +18,27 @@ import java.util.stream.Collectors;
 @Builder
 public class ProductResponseDto {
     private UUID id;
-    private String brandName;
+    private BrandDto brand;
     private String name;
     private String modelNumber;
     private Category category;
     private String imageUrl;
     private List<String> options;
 
+    @Getter
+    @Builder
+    public static class BrandDto {
+        private UUID id;
+        private String name;
+    }
+
     public static ProductResponseDto from(Product product, List<ProductOption> options) {
         return ProductResponseDto.builder()
                 .id(product.getId())
-                .brandName(product.getBrand().getName())
+                .brand(BrandDto.builder()
+                        .id(product.getBrand().getId())
+                        .name(product.getBrand().getName())
+                        .build())
                 .name(product.getName())
                 .modelNumber(product.getModelNumber())
                 .category(product.getCategory())

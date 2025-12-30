@@ -25,21 +25,40 @@ repositories {
 }
 
 dependencies {
+
+    // JPA
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
+    // Web
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-    compileOnly 'org.projectlombok:lombok'
+    // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
 
+    // Validation
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // PostgreSQL
     runtimeOnly 'org.postgresql:postgresql'
 
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    // Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 tasks.named('test') {

@@ -6,6 +6,7 @@ import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -13,12 +14,11 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
-    // security 적용 시 사용
-//    private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-//        this.passwordEncoder = passwordEncoder;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // 회원가입 API
@@ -35,7 +35,7 @@ public class UserService {
         // 회원 객체 생성
         User user = User.createUser(
                 userSignupRequestDto.getEmail(),
-                userSignupRequestDto.getPassword(), //  시큐리티 적용 시 변경
+                passwordEncoder.encode(password),
                 userSignupRequestDto.getNickname(),
                 userSignupRequestDto.getPhone()
         );

@@ -2,21 +2,24 @@ spring:
   config:
     import: "optional:file:.env[.properties]"
 
+  jwt:
+    secret: ${SPRING_JWT_SECRET}
+
   datasource:
     driver-class-name: org.postgresql.Driver
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
-
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
-
+      ddl-auto: create  # 👈 hibernate는 jpa보다 2칸 더 들여쓰기
+    show-sql: true      # 👈 show-sql은 hibernate와 같은 라인(jpa 하위)
+    properties: # 👈 추가하면 좋은 설정
+      hibernate:
+        format_sql: true
 
   data:
     redis:
-      # 로컬 실행(localhost)과 도커 실행(redis) 모두 대응하기 위해 환경변수 사용
       host: ${SPRING_DATA_REDIS_HOST:localhost}
-      port: 6379
+      port: ${SPRING_DATA_REDIS_PORT:6379}

@@ -2,9 +2,7 @@ package com.example.unbox_be.domain.trade.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
@@ -13,8 +11,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "p_buying_bids")
 @Getter
+@Builder
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("deleted_at IS NULL")
 public class BuyingBid extends BaseEntity {
 
@@ -32,6 +31,7 @@ public class BuyingBid extends BaseEntity {
     @Column(name = "price", nullable = false)
     private Integer price;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private BuyingStatus status = BuyingStatus.LIVE;

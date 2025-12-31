@@ -1,13 +1,10 @@
 package com.example.unbox_be.domain.trade.entity;
 
-
 import com.example.unbox_be.domain.common.BaseEntity;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
@@ -16,8 +13,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "p_selling_bids")
 @Getter
+@Builder
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("deleted_at IS NULL")
 public class SellingBid extends BaseEntity {
 
@@ -35,6 +33,7 @@ public class SellingBid extends BaseEntity {
     @Column(name = "price", nullable = false)
     private Integer price;
 
+    @Builder.Default // 중요: 빌더 사용 시에도 LIVE가 기본값으로 들어가도록 설정
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private SellingStatus status = SellingStatus.LIVE;

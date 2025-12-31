@@ -1,7 +1,7 @@
 package com.example.unbox_be.global.security.auth;
 
-import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
+import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +18,10 @@ public class CustomUserDetailsService implements UserDetailsService {
 //    private final AdminRepository adminRepository;
 
     // 생성자를 통해 MemberRepository 의존성 주입 (Dependency Injection)
-    public CustomUserDetailsService(UserRepository memberRepository) {
-        this.userRepository = memberRepository;
-//        private final AdminRepository adminRepository;
+    public CustomUserDetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
         log.info("[CustomUserDetailsService] CustomUserDetailsService 생성자 주입");
+
     }
 
     @Override

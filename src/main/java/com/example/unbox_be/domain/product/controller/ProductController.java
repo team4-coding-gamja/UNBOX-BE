@@ -2,6 +2,7 @@ package com.example.unbox_be.domain.product.controller;
 
 import com.example.unbox_be.domain.product.dto.ProductResponseDto;
 import com.example.unbox_be.domain.product.service.ProductService;
+import com.example.unbox_be.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,12 +21,12 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    public Page<ProductResponseDto> getProducts(@PageableDefault(size = 10, sort = "id")Pageable pageable){
-        return productService.getAllProducts(pageable);
+    public ApiResponse<Page<ProductResponseDto>> getProducts(@PageableDefault(size = 10, sort = "id")Pageable pageable){
+        return ApiResponse.success(productService.getAllProducts(pageable));
     }
 
     @GetMapping("/{productId}")
-    public ProductResponseDto getProductById(@PathVariable("productId") UUID id) {
-        return productService.getProductById(id);
+    public ApiResponse<ProductResponseDto> getProductById(@PathVariable("productId") UUID id) {
+        return ApiResponse.success(productService.getProductById(id));
     }
 }

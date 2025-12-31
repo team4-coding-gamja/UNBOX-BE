@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.product.entity;
 
+import com.example.unbox_be.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -10,7 +11,7 @@ import java.util.UUID;
 @Table(name = "p_brands")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Brand {
+public class Brand extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "brand_id")

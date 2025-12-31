@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -16,7 +17,7 @@ import java.util.UUID;
 public class OrderResponseDto {
     // 1. 주문 기본 정보
     private UUID orderId;
-    private Long price;
+    private BigDecimal price;
     private OrderStatus status;
     private LocalDateTime createdAt;
 

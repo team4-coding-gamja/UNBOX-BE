@@ -41,6 +41,10 @@ dependencies {
     // PostgreSQL
     runtimeOnly 'org.postgresql:postgresql'
 
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
     // mapstruct
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 
@@ -48,10 +52,6 @@ dependencies {
 
     // 롬복과 MapStruct를 같이 쓸 때 필드를 연결해주는 필수 라이브러리
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
-
-    // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
 
     // QueryDSL
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'

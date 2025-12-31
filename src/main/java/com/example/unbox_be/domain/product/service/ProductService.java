@@ -1,6 +1,7 @@
 package com.example.unbox_be.domain.product.service;
 
 import com.example.unbox_be.domain.product.dto.ProductResponseDto;
+import com.example.unbox_be.domain.product.dto.ProductSearchCondition;
 import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
@@ -24,9 +25,9 @@ public class ProductService {
     private final ProductOptionRepository productOptionRepository;
 
     // 상품 전체 조회 (페이징 처리)
-    public Page<ProductResponseDto> getAllProducts(Pageable pageable){
+    public Page<ProductResponseDto> getProducts(ProductSearchCondition condition, Pageable pageable){
         // 1. 상품 조회 (쿼리 1번)
-        Page<Product> productPage = productRepository.findAll(pageable);
+        Page<Product> productPage = productRepository.search(condition, pageable);
         List<Product> productList = productPage.getContent();
         // [방어 코드] 조회된 상품이 없으면 빈 페이지 반환 (옵션 조회 쿼리 방지)
         if (productList.isEmpty()) {

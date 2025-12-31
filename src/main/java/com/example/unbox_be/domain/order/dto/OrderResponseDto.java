@@ -1,6 +1,5 @@
 package com.example.unbox_be.domain.order.dto;
 
-import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import lombok.Builder;
 import lombok.Getter;

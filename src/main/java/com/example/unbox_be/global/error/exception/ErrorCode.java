@@ -33,7 +33,11 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품 정보를 찾을 수 없습니다."),
     BID_NOT_FOUND(HttpStatus.NOT_FOUND, "입찰 정보를 찾을 수 없습니다."),
     INVALID_BID_PRICE(HttpStatus.BAD_REQUEST, "입찰 가격이 유효하지 않습니다."),
-    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문 내역을 찾을 수 없습니다.");
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문 내역을 찾을 수 없습니다."),
+
+    // 주문 관련 에러
+    PRICE_MISMATCH(HttpStatus.BAD_REQUEST, "주문 가격이 실제 판매 가격과 일치하지 않습니다."),
+    SELLING_BID_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 판매자가 판매 중인 상품이 아닙니다.");
 
     private final HttpStatus status;
     private final String message;

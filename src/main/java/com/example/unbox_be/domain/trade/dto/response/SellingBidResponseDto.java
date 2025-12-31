@@ -25,6 +25,8 @@ public class SellingBidResponseDto {
 
     @Getter
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class ProductInfo {
         private UUID id;
         private String name;

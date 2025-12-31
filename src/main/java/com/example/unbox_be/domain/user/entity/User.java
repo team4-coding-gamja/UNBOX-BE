@@ -100,12 +100,14 @@ public class User extends BaseEntity {
         }
     }
 
+    private static final String NICKNAME_REGEX = "^[a-z0-9]{4,10}$";
+
     private static void validateNickname(String nickname) {
         if (nickname == null || nickname.isBlank()) {
             throw new IllegalArgumentException("닉네임은 필수입니다.");
         }
-        if (nickname.length() > 10) {
-            throw new IllegalArgumentException("닉네임은 10자 이하여야 합니다.");
+        if (!nickname.matches(NICKNAME_REGEX)) {
+            throw new IllegalArgumentException("닉네임은 영문 소문자와 숫자로 이루어진 4~10자여야 합니다.");
         }
     }
 

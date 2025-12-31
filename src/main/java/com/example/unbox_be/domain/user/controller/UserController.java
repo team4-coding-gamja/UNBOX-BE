@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserController implements UserApi {
 
-    public final UserService userService;
+    private final UserService userService;
 
     // 회원 정보 조회
     @GetMapping("/me")

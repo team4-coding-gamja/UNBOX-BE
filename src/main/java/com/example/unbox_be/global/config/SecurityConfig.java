@@ -5,6 +5,7 @@ import com.example.unbox_be.global.security.jwt.JwtUtil;
 import com.example.unbox_be.global.security.login.CustomLogoutFilter;
 import com.example.unbox_be.global.security.login.LoginFilter;
 import com.example.unbox_be.global.security.token.RefreshTokenRedisRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +33,7 @@ public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtUtil jwtUtil;
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -108,7 +110,8 @@ public class SecurityConfig {
         LoginFilter loginFilter = new LoginFilter(
                 authenticationManager(authenticationConfiguration),
                 jwtUtil,
-                refreshTokenRedisRepository
+                refreshTokenRedisRepository,
+                objectMapper
         );
 
         loginFilter.setFilterProcessesUrl("/api/auth/login"); // ✅ 실무: 명시적으로 지정

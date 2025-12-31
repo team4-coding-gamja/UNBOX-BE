@@ -3,6 +3,7 @@ package com.example.unbox_be.domain.auth.service;
 import com.example.unbox_be.domain.auth.dto.request.UserSignupRequestDto;
 import com.example.unbox_be.domain.auth.dto.response.UserSignupResponseDto;
 import com.example.unbox_be.domain.auth.mapper.AuthMapper;
+import com.example.unbox_be.domain.user.dto.response.UserResponseDto;
 import com.example.unbox_be.domain.user.repository.UserRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.global.error.exception.CustomException;

@@ -6,6 +6,7 @@ import com.example.unbox_be.domain.auth.dto.response.UserTokenResponseDto;
 import com.example.unbox_be.domain.auth.dto.request.UserSignupRequestDto;
 import com.example.unbox_be.domain.auth.dto.response.UserSignupResponseDto;
 import com.example.unbox_be.domain.auth.service.AuthService;
+import com.example.unbox_be.global.response.ApiResponse;
 import com.example.unbox_be.global.security.jwt.JwtUtil;
 import com.example.unbox_be.global.security.token.RefreshTokenRedisRepository;
 import jakarta.servlet.http.Cookie;
@@ -32,9 +33,9 @@ public class AuthController implements AuthApi {
 
     // 회원가입
     @PostMapping("/signup")
-    public ResponseEntity<UserSignupResponseDto> register(@Valid @RequestBody UserSignupRequestDto userSignupRequestDto) {
-        UserSignupResponseDto responseDto = authService.signup(userSignupRequestDto);
-        return ResponseEntity.ok(responseDto);
+    public ApiResponse<UserSignupResponseDto> signup(@Valid @RequestBody UserSignupRequestDto userSignupRequestDto) {
+        UserSignupResponseDto userResponseDto = authService.signup(userSignupRequestDto);
+        return ApiResponse.success(userResponseDto);
     }
 
     // 로그인 (실제 로그인 로직은 LoginFilter에서 처리)

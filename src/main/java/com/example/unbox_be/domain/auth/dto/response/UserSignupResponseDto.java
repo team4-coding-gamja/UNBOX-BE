@@ -1,6 +1,5 @@
 package com.example.unbox_be.domain.auth.dto.response;
 
-import com.example.unbox_be.domain.user.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

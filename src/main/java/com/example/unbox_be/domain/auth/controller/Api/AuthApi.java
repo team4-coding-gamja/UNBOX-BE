@@ -47,7 +47,7 @@ public interface AuthApi {
             )
     })
     @PostMapping("/api/auth/signup")
-    ResponseEntity<UserSignupResponseDto> register(
+    com.example.unbox_be.global.response.ApiResponse<UserSignupResponseDto> signup(
             @Parameter(description = "회원가입 요청 DTO", required = true)
             @RequestBody UserSignupRequestDto userSignupRequestDto
     );

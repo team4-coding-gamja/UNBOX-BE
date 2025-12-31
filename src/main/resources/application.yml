@@ -11,6 +11,14 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
+  jpa:
+    hibernate:
+      ddl-auto: create  # 👈 hibernate는 jpa보다 2칸 더 들여쓰기
+    show-sql: true      # 👈 show-sql은 hibernate와 같은 라인(jpa 하위)
+    properties: # 👈 추가하면 좋은 설정
+      hibernate:
+        format_sql: true
+
   data:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}

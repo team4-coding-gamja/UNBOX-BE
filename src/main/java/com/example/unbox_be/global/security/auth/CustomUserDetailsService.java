@@ -17,7 +17,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository; // 사용자 정보를 조회하기 위한 MemberRepository
 //    private final AdminRepository adminRepository;
 
-    // 생성자를 통해 MemberRepository 의존성 주입 (Dependency Injection)
+    // 생성자를 통해 MemberRepository 의존성 주입
     public CustomUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
         log.info("[CustomUserDetailsService] CustomUserDetailsService 생성자 주입");
@@ -38,7 +38,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        log.info("[CustomUserDetailsService/loadUserByUsername] 1. User 정보를 CustomUserDetails 객체로 변환하여 반환, email: {}", email);
+        log.info("[CustomUserDetailsService/loadUserByUsername] CustomUserDetails 객체로 변환하기 전 User 정보 조회, email: {}", email);
 
         // 조회된 Member 정보를 CustomUserDetails 객체로 변환하여 반환
         return CustomUserDetails.ofUser(user);

@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Getter
 @NoArgsConstructor
@@ -45,7 +44,7 @@ public class ProductResponseDto {
                 .imageUrl(product.getImageUrl())
                 .options(options.stream()
                         .map(ProductOption::getOption)
-                        .collect(Collectors.toList()))
+                        .toList())
                 .build();
     }
 }

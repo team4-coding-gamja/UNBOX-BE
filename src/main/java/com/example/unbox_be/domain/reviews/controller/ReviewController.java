@@ -30,11 +30,12 @@ public class ReviewController {
 
     // GET
     @GetMapping
-    public ResponseEntity<Page<Review>> getList(@RequestParam UUID productId,
-                                                @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<Page<Review>> getList(
+            @RequestParam UUID productId,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
         return ResponseEntity.ok(reviewService.getReviewsByProduct(productId, pageable));
     }
-
     // PATCH
     @PatchMapping("/{reviewId}")
     public ResponseEntity<Void> update(@PathVariable UUID reviewId, @RequestBody ReviewUpdateDto dto, @RequestHeader("X-User-Id") Long userId) {

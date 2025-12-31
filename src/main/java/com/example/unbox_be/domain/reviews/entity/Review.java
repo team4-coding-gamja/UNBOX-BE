@@ -3,7 +3,6 @@ package com.example.unbox_be.domain.reviews.entity;
 import com.example.unbox_be.domain.common.BaseEntity; //
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 

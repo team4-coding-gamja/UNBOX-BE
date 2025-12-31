@@ -39,6 +39,7 @@ public class UserServiceImpl implements UserService {
     }
     
     // 회원 탈퇴 API
+    // 추후에 JWT 토큰 무효화 처리하기
     @Transactional
     public void deleteUser(String email) {
         User user = userRepository.findByEmail(email)

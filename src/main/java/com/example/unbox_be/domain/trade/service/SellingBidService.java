@@ -9,6 +9,7 @@ import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
+import com.example.unbox_be.domain.trade.mapper.SellingBidMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class SellingBidService {
     private final UserRepository userRepository;
     private final ProductOptionRepository productOptionRepository;
     private final SellingBidRepository sellingBidRepository;
+    private final SellingBidMapper sellingBidMapper;
 
     @Transactional
     public UUID createSellingBid(SellingBidRequestDto requestDto) {
@@ -39,14 +41,7 @@ public class SellingBidService {
         LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();
 
         // DTO -> Entity 변환
-        SellingBid sellingBid = new SellingBid(
-                null,
-                requestDto.getUserId(),
-                requestDto.getOptionId(),
-                requestDto.getPrice(),
-                SellingStatus.LIVE,
-                deadline
-        );
+        SellingBid sellingBid = sellingBidMapper.toEntity(requestDto, deadline);
 
         SellingBid savedBid = sellingBidRepository.save(sellingBid);
         return savedBid.getSellingId();

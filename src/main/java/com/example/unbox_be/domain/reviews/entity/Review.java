@@ -1,6 +1,8 @@
 package com.example.unbox_be.domain.reviews.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity; //
+import com.example.unbox_be.domain.order.entity.Order;
+import com.example.unbox_be.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
@@ -20,8 +22,14 @@ public class Review extends BaseEntity {
     @Column(name = "review_id", updatable = false, nullable = false)
     private UUID reviewId; // 상품리뷰ID (PK)
 
-    @Column(name = "order_id", nullable = false)
-    private UUID orderId; // 주문ID (FK 역할, ID값만 저장), 배송완료 체크용
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "product_id", nullable = false)
     private UUID productId; // 상품 PK, 쿼리스트링 조회용
@@ -40,10 +48,10 @@ public class Review extends BaseEntity {
 
 
     // 리뷰 정적 메서드
-    public static Review createReview(UUID productId, UUID orderId, Long buyerId, String content, Integer rating, String imageUrl) {
+    public static Review createReview(UUID productId, Order order, Long buyerId, String content, Integer rating, String imageUrl) {
         Review review = new Review();
         review.productId = productId;
-        review.orderId = orderId;
+        review.order = order;
         review.buyerId = buyerId;
         review.content = content;
         review.rating = rating;

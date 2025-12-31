@@ -48,4 +48,8 @@ public abstract class BaseEntity {
         this.deletedAt = null;
         this.deletedBy = null;
     }
+
+    public void updateModifiedBy(String email) {
+        this.updatedBy = email;
+    }
 }

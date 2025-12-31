@@ -28,7 +28,6 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String phone;
 
-
 //    // 1. 배송지 목록
 //    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 //    private List<Address> addresses = new ArrayList<>();
@@ -61,31 +60,60 @@ public class User extends BaseEntity {
 //    @OneToMany(mappedBy = "buyer")
 //    private List<Review> reviews = new ArrayList<>();
 
-    public static User createUser(String email, String encodedPassword, String nickname, String phone) {
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("이메일 필수");
-        }
-        if (encodedPassword == null || encodedPassword.isBlank()) {
-            throw new IllegalArgumentException("비밀번호 필수");
-        }
-        if (nickname == null || nickname.isBlank()) {
-            throw new IllegalArgumentException("닉네임 필수");
-        }
-        if (phone == null || phone.isBlank()) {
-            throw new IllegalArgumentException("전화번호 필수");
-        }
-
-        User user = new User();
-        user.email = email;
-        user.password = encodedPassword;
-        user.nickname = nickname;
-        user.phone = phone;
-        return user;
-    }
-
-
-    public void update(String nickname, String phone) {
+    // 생성자
+    private User(String email, String encodedPassword, String nickname, String phone) {
+        this.email = email;
+        this.password = encodedPassword;
         this.nickname = nickname;
         this.phone = phone;
+    }
+
+    // 생성 메서드
+    public static User createUser(String email, String encodedPassword, String nickname, String phone) {
+        validateEmail(email);
+        validatePassword(encodedPassword);
+        validateNickname(nickname);
+        validatePhone(phone);
+
+        return new User(email, encodedPassword, nickname, phone);
+    }
+
+    // 수정 메서드
+    public void updateUser(String nickname, String phone) {
+        validateNickname(nickname);
+        validatePhone(phone);
+
+        this.nickname = nickname;
+        this.phone = phone;
+    }
+
+    // 유효성 검사 메서드
+    private static void validateEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("이메일은 필수입니다.");
+        }
+    }
+
+    private static void validatePassword(String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("비밀번호는 필수입니다.");
+        }
+    }
+
+    private static final String NICKNAME_REGEX = "^[a-z0-9]{4,10}$";
+
+    private static void validateNickname(String nickname) {
+        if (nickname == null || nickname.isBlank()) {
+            throw new IllegalArgumentException("닉네임은 필수입니다.");
+        }
+        if (!nickname.matches(NICKNAME_REGEX)) {
+            throw new IllegalArgumentException("닉네임은 영문 소문자와 숫자로 이루어진 4~10자여야 합니다.");
+        }
+    }
+
+    private static void validatePhone(String phone) {
+        if (phone == null || phone.isBlank()) {
+            throw new IllegalArgumentException("전화번호는 필수입니다.");
+        }
     }
 }

@@ -2,6 +2,8 @@ package com.example.unbox_be.domain.auth.controller.Api;
 
 import com.example.unbox_be.domain.auth.dto.request.UserLoginRequestDto;
 import com.example.unbox_be.domain.auth.dto.response.UserTokenResponseDto;
+import com.example.unbox_be.domain.auth.dto.request.UserSignupRequestDto;
+import com.example.unbox_be.domain.auth.dto.response.UserSignupResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -14,9 +16,41 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "인증 관리", description = "로그인 / 로그아웃 / 토큰 재발급 API")
 public interface AuthApi {
+
+    @Operation(
+            summary = "회원가입",
+            description =
+                    "이메일/비밀번호/닉네임/전화번호로 회원가입을 진행합니다.\n" +
+                            "```json\n" +
+                            "{\n" +
+                            "  \"email\": \"test@example.com\",\n" +
+                            "  \"password\": \"Password!\",\n" +
+                            "  \"nickname\": \"tester\",\n" +
+                            "  \"phone\": \"01012345678\"\n" +
+                            "}\n" +
+                            "```"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "회원가입 성공",
+                    content = @Content(schema = @Schema(implementation = UserSignupResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "회원가입 실패(중복 등)",
+                    content = @Content(schema = @Schema(type = "string", example = "이미 존재하는 사용자입니다."))
+            )
+    })
+    @PostMapping("/api/auth/signup")
+    com.example.unbox_be.global.response.ApiResponse<UserSignupResponseDto> signup(
+            @Parameter(description = "회원가입 요청 DTO", required = true)
+            @RequestBody UserSignupRequestDto userSignupRequestDto
+    );
 
     @Operation(
             summary = "일반 로그인 (ID/PW)",

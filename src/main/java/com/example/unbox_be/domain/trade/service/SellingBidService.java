@@ -1,7 +1,9 @@
 package com.example.unbox_be.domain.trade.service;
 
+import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.trade.dto.request.SellingBidRequestDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidResponseDto;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
@@ -84,5 +86,37 @@ public class SellingBidService {
         }
         // 2. 엔티티의 비즈니스 로직 호출 (검증 및 변경)
         sellingBid.updatePrice(newPrice, user.getId(), email);
+    }
+
+    @Transactional(readOnly = true)
+    public SellingBidResponseDto getSellingBidDetail(UUID sellingId,String email){
+        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+        SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (!sellingBid.getUserId().equals(user.getId())) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+        // 3. optionId로 실제 상품 옵션과 상품 정보 조회
+        ProductOption option = productOptionRepository.findById(sellingBid.getOptionId())
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        // 4. 부족한 정보(product, size)를 채워넣기
+        // (SellingBidResponseDto에 @Builder나 Setter가 필요합니다)
+        return SellingBidResponseDto.builder()
+                .sellingId(response.getSellingId())
+                .status(response.getStatus())
+                .price(response.getPrice())
+                .deadline(response.getDeadline())
+                .size(option.getOption()) // option에서 가져옴
+                .product(SellingBidResponseDto.ProductInfo.builder()
+                        .id(option.getProduct().getId())
+                        .name(option.getProduct().getName())
+                        .imageUrl(option.getProduct().getImageUrl())
+                        .build())
+                .build();
     }
 }

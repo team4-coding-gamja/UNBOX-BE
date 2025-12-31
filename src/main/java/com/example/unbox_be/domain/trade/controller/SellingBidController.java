@@ -2,7 +2,6 @@ package com.example.unbox_be.domain.trade.controller;
 
 import com.example.unbox_be.domain.trade.dto.SellingBidRequestDto;
 import com.example.unbox_be.domain.trade.service.SellingBidService;
-import com.example.unbox_be.domain.user.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

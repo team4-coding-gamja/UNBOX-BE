@@ -3,18 +3,20 @@ package com.example.unbox_be.domain.auth.controller;
 import com.example.unbox_be.domain.auth.controller.Api.AuthApi;
 import com.example.unbox_be.domain.auth.dto.request.UserLoginRequestDto;
 import com.example.unbox_be.domain.auth.dto.response.UserTokenResponseDto;
+import com.example.unbox_be.domain.auth.dto.request.UserSignupRequestDto;
+import com.example.unbox_be.domain.auth.dto.response.UserSignupResponseDto;
+import com.example.unbox_be.domain.auth.service.AuthService;
 import com.example.unbox_be.global.security.jwt.JwtUtil;
 import com.example.unbox_be.global.security.token.RefreshTokenRedisRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -25,6 +27,15 @@ public class AuthController implements AuthApi {
     private final JwtUtil jwtUtil;
 
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
+
+    private final AuthService authService;
+
+    // 회원가입
+    @PostMapping("/signup")
+    public ResponseEntity<UserSignupResponseDto> register(@Valid @RequestBody UserSignupRequestDto userSignupRequestDto) {
+        UserSignupResponseDto responseDto = authService.signup(userSignupRequestDto);
+        return ResponseEntity.ok(responseDto);
+    }
 
     // 로그인 (실제 로그인 로직은 LoginFilter에서 처리)
     @PostMapping("/login")
@@ -41,7 +52,7 @@ public class AuthController implements AuthApi {
         return ResponseEntity.ok("로그아웃 되었습니다.");
     }
 
-    // 엑세스 토큰 만료 시 리프레시 토큰을 통해 새로 생성하기
+    // 토큰 재발급(엑세스 토큰 만료 시 리프레시 토큰을 통해 새로 생성하기)
     @PostMapping("/reissue")
     public ResponseEntity<UserTokenResponseDto> reissue(HttpServletRequest request, HttpServletResponse response) {
         // 리프레시 토큰 가져오기 (쿠키 또는 헤더에서)

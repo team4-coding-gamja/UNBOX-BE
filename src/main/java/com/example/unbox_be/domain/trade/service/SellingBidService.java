@@ -1,6 +1,5 @@
 package com.example.unbox_be.domain.trade.service;
 
-import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.trade.dto.SellingBidRequestDto;
 import com.example.unbox_be.domain.trade.entity.SellingBid;

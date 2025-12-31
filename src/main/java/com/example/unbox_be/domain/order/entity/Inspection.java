@@ -39,29 +39,36 @@ public class Inspection extends BaseEntity {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
-    public Inspection(Order order, User inspector) {
+    // 생성자를 private으로 닫음 (정적 팩토리 메서드 사용 유도)
+    private Inspection(Order order, User inspector) {
         this.order = order;
         this.inspector = inspector;
-        this.inspectStatus = InspectionStatus.PENDING;
+        this.inspectStatus = InspectionStatus.PENDING; // 초기 상태
     }
 
-    // 상태 검증 로직 추가
+    // 정적 팩토리 메서드
+    // - 필드가 적을 때 메서드명으로 생성 의도 명확화
+    public static Inspection create(Order order, User inspector) {
+        return new Inspection(order, inspector);
+    }
+
     public void pass(String reason) {
-        if (this.inspectStatus != InspectionStatus.PENDING) {
-            throw new IllegalStateException("PENDING 상태의 검수만 처리할 수 있습니다.");
-        }
+        validatePendingStatus();
         this.inspectStatus = InspectionStatus.PASSED;
         this.reason = reason;
         this.completedAt = LocalDateTime.now();
     }
 
-    // 상태 검증 로직 추가
     public void fail(String reason) {
-        if (this.inspectStatus != InspectionStatus.PENDING) {
-            throw new IllegalStateException("PENDING 상태의 검수만 처리할 수 있습니다.");
-        }
+        validatePendingStatus();
         this.inspectStatus = InspectionStatus.FAILED;
         this.reason = reason;
         this.completedAt = LocalDateTime.now();
+    }
+
+    private void validatePendingStatus() {
+        if (this.inspectStatus != InspectionStatus.PENDING) {
+            throw new IllegalStateException("PENDING 상태의 검수만 처리할 수 있습니다.");
+        }
     }
 }

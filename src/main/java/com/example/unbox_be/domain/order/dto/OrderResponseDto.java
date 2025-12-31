@@ -1,8 +1,10 @@
 package com.example.unbox_be.domain.order.dto;
 
 import com.example.unbox_be.domain.order.entity.OrderStatus;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -10,13 +12,18 @@ import java.util.UUID;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class OrderResponseDto {
+    // 1. 주문 기본 정보
     private UUID orderId;
-    private String productName;   // 상품명 (Product 엔티티의 name)
-    private String productOption; // 옵션명 (ProductOption 엔티티의 option)
     private BigDecimal price;
     private OrderStatus status;
     private LocalDateTime createdAt;
 
-    // static method 'from' 제거 -> Mapper가 담당
+    // 2. 상품 정보
+    private String brandName;    // 예: Nike
+    private String productName;  // 예: Jordan 1 Retro High
+    private String size;         // DB의 option 필드 값 (예: "270")
+    private String imageUrl;     // 상품 이미지
 }

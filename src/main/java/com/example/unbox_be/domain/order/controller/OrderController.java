@@ -8,13 +8,15 @@ import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -43,5 +45,23 @@ public class OrderController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success(responseDto));
+    }
+
+    // 내 구매 내역 조회
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<OrderResponseDto>>> getMyOrders(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        // 페이지 사이즈 제한 정책 (10, 30, 50 이외에는 10으로 고정)
+        int requestedSize = pageable.getPageSize();
+        if (requestedSize != 10 && requestedSize != 30 && requestedSize != 50) {
+            pageable = PageRequest.of(pageable.getPageNumber(), 10, pageable.getSort());
+        }
+
+        String email = userDetails.getUsername();
+        Page<OrderResponseDto> responseDtoPage = orderService.getMyOrders(email, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success(responseDtoPage));
     }
 }

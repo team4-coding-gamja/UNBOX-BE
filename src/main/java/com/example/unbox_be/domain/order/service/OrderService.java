@@ -12,6 +12,8 @@ import com.example.unbox_be.domain.user.repository.UserRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,5 +60,17 @@ public class OrderService {
         // 5. 저장 및 반환
         Order savedOrder = orderRepository.save(order);
         return orderMapper.toResponseDto(savedOrder);
+    }
+
+    /**
+     * 내 구매 내역 조회 (페이징)
+     */
+    public Page<OrderResponseDto> getMyOrders(String email, Pageable pageable) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        Page<Order> orderPage = orderRepository.findAllByBuyerId(user.getId(), pageable);
+
+        return orderPage.map(orderMapper::toResponseDto);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.reviews.service;
 
+import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.reviews.dto.ReviewRequestDto;
 import com.example.unbox_be.domain.reviews.dto.ReviewUpdateDto;
 import com.example.unbox_be.domain.reviews.entity.Review;
@@ -18,19 +19,24 @@ import java.util.UUID;
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
+    // private final OrderRepository orderRepository; // 실제 연동 시 주석 해제
 
     // 리뷰 생성
     @Transactional
     public UUID createReview(ReviewRequestDto requestDto, Long userId) {
 
-        // 1. [요구사항] 주문 및 배송 완료 여부 확인
-        // TODO: OrderService 또는 OrderRepository를 통해 주문 상태가 'DELIVERED'인지 확인하는 로직 필요
-        boolean isDelivered = true; // 우선 검증 통과로 가정
-        if (!isDelivered) {
-            throw new IllegalArgumentException("배송이 완료된 주문만 리뷰를 작성할 수 있습니다.");
+        // 1. [요구사항] 주문 및 거래 완료 여부 확인
+        // 실제 구현 시: Order order = orderRepository.findById(requestDto.getOrderId()).orElseThrow(...);
+        // OrderStatus currentStatus = order.getStatus();
+
+        OrderStatus currentStatus = OrderStatus.COMPLETED; // 테스트를 위해 완료 상태로 가정
+
+        // OrderStatus가 COMPLETED 상태일 때만 리뷰 작성 가능
+        if (currentStatus != OrderStatus.COMPLETED) {
+            throw new IllegalArgumentException("거래가 완료 된 주문만 리뷰를 작성할 수 있습니다.");
         }
 
-        // 2. 주문당 리뷰 중복 작성 방지
+        // 2. 주문당 리뷰 중복 작성 방지 (중요: 데이터 무결성)
         if (reviewRepository.existsByOrderId(requestDto.getOrderId())) {
             throw new IllegalStateException("이미 해당 주문에 대한 리뷰를 작성했습니다.");
         }
@@ -40,15 +46,15 @@ public class ReviewService {
             throw new IllegalArgumentException("평점은 1점에서 5점 사이여야 합니다.");
         }
 
-        // 4. 엔티티 빌드 및 저장
-        Review review = Review.builder()
-                .productId(requestDto.getProductId())
-                .orderId(requestDto.getOrderId())
-                .buyerId(userId)
-                .content(requestDto.getContent())
-                .rating(requestDto.getRating())
-                .imageUrl(requestDto.getImageUrl())
-                .build();
+        // Builder 대신 엔티티 내 정의한 정적 메서드 사용
+        Review review = Review.createReview(
+                requestDto.getProductId(),
+                requestDto.getOrderId(),
+                userId,
+                requestDto.getContent(),
+                requestDto.getRating(),
+                requestDto.getImageUrl()
+        );
 
         return reviewRepository.save(review).getReviewId();
     }

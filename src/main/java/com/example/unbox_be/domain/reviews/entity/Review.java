@@ -9,11 +9,11 @@ import java.util.UUID;
 @Entity
 @Table(name = "p_review")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED) //
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // 직접 생성 방지
 @AllArgsConstructor
 @Builder
 public class Review extends BaseEntity {
-    // BaseEntity를 상속받아 생성/수정일 자동 관리
+    // BaseEntity를 상속받아 생성/수정/삭제 자동 관리
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID) // PK를 UUID로 자동 생성
@@ -38,6 +38,18 @@ public class Review extends BaseEntity {
     @Column(name = "image_url")
     private String imageUrl; // 이미지 주소
 
+
+    // 리뷰 정적 메서드
+    public static Review createReview(UUID productId, UUID orderId, Long buyerId, String content, Integer rating, String imageUrl) {
+        Review review = new Review();
+        review.productId = productId;
+        review.orderId = orderId;
+        review.buyerId = buyerId;
+        review.content = content;
+        review.rating = rating;
+        review.imageUrl = imageUrl;
+        return review;
+    }
 
     // 리뷰수정 비즈니스 로직
     public void update(String content, Integer rating, String imageUrl) {

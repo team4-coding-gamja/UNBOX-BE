@@ -44,7 +44,10 @@ public class ReviewController {
 
     // Delete
     @DeleteMapping("/{reviewId}")
-    public ResponseEntity<Void> delete(@PathVariable UUID reviewId, @RequestHeader("X-User-Id") String userId) {
+    public ResponseEntity<Void> delete(
+            @PathVariable UUID reviewId,
+            @RequestHeader("X-User-Id") Long userId) {
+
         reviewService.deleteReview(reviewId, userId);
         return ResponseEntity.noContent().build();
     }

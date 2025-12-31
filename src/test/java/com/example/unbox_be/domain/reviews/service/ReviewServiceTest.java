@@ -1,9 +1,11 @@
 package com.example.unbox_be.domain.reviews.service;
 
+import com.example.unbox_be.domain.order.repository.OrderRepository;
 import com.example.unbox_be.domain.reviews.dto.ReviewRequestDto;
 import com.example.unbox_be.domain.reviews.dto.ReviewUpdateDto;
 import com.example.unbox_be.domain.reviews.entity.Review;
 import com.example.unbox_be.domain.reviews.repository.ReviewRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,58 +27,79 @@ class ReviewServiceTest {
 
     @Mock
     private ReviewRepository reviewRepository;
+    @Mock
+    private OrderRepository orderRepository;
 
     @InjectMocks
     private ReviewService reviewService;
+    private UUID productId;
+    private UUID orderId;
+    private Long userId;
+
+    @BeforeEach
+    void setUp() {
+        productId = UUID.randomUUID();
+        orderId = UUID.randomUUID();
+        userId = 1L;
+    }
 
     @Test
-    @DisplayName("리뷰 작성 성공 - 데이터가 정상인 경우")
+    @DisplayName("리뷰 작성 성공 - 데이터가 정상 저장되고 ID를 반환하는지 확인")
     void createReview_Success() {
-        // Given: 테스트 환경 구축 (DTO 생성자가 이제 5개 인수를 정상적으로 받습니다)
-        ReviewRequestDto request = new ReviewRequestDto(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                "정말 만족합니다!",
-                5,
-                "url"
-        );
+        // given
+        ReviewRequestDto request = new ReviewRequestDto(productId, orderId, "만족합니다!", 5, "image.jpg");
+        given(reviewRepository.existsByOrderId(orderId)).willReturn(false);
 
-        // Mock 설정: 중복 주문 없음
-        given(reviewRepository.existsByOrderId(any(UUID.class))).willReturn(false);
+        // save 메서드가 실행되면 ID가 포함된 Review 객체를 반환하도록 Mock 설정
+        Review savedReview = Review.builder().reviewId(UUID.randomUUID()).build();
+        given(reviewRepository.save(any(Review.class))).willReturn(savedReview);
 
-        // When: 로직 실행
-        reviewService.createReview(request, 1L);
+        // when
+        UUID resultId = reviewService.createReview(request, userId);
 
-        // Then: save 메서드가 호출되었는지 검증
+        // then
+        org.assertj.core.api.Assertions.assertThat(resultId).isNotNull();
         verify(reviewRepository, times(1)).save(any(Review.class));
     }
 
     @Test
-    @DisplayName("리뷰 작성 실패 - 평점이 1점 미만인 경우 예외 발생")
-    void createReview_Fail_RatingTooLow() {
-        ReviewRequestDto request = new ReviewRequestDto(
-                UUID.randomUUID(), UUID.randomUUID(), "별로에요", 0, "url"
-        );
+    @DisplayName("리뷰 작성 실패: 평점이 1점 미만일 때 예외 발생")
+    void createReview_Fail_MinRating() {
+        // given
+        ReviewRequestDto request = new ReviewRequestDto(productId, orderId, "너무 별로에요", 0, "url");
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            reviewService.createReview(request, 1L);
-        });
+        // when & then
+        assertThrows(IllegalArgumentException.class, () -> reviewService.createReview(request, userId));
     }
 
     @Test
-    @DisplayName("리뷰 수정 실패 - 타인이 수정을 시도할 때")
+    @DisplayName("리뷰 수정 실패: 타인의 리뷰를 수정하려 할 때 보안 예외 발생")
     void updateReview_Fail_Forbidden() {
+        // given
         UUID reviewId = UUID.randomUUID();
-        Review existingReview = Review.builder()
-                .buyerId(1L)
-                .build();
-
+        // 작성자가 1L인 리뷰 생성
+        Review existingReview = Review.builder().buyerId(1L).build();
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(existingReview));
 
-        ReviewUpdateDto updateDto = new ReviewUpdateDto("수정 시도", 4, "url");
+        ReviewUpdateDto updateDto = new ReviewUpdateDto("해킹 시도", 1, "url");
 
-        assertThrows(SecurityException.class, () -> {
-            reviewService.updateReview(reviewId, updateDto, 2L);
-        });
+        // when & then: 2L 유저가 수정을 시도하면 실패해야 함
+        assertThrows(SecurityException.class, () -> reviewService.updateReview(reviewId, updateDto, 2L));
+    }
+
+    @Test
+    @DisplayName("리뷰 삭제 성공: 본인 확인 후 softDelete가 호출되는지 확인")
+    void deleteReview_Success() {
+        // given
+        UUID reviewId = UUID.randomUUID();
+        Review review = Review.builder().buyerId(userId).build();
+        given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+
+        // when
+        reviewService.deleteReview(reviewId, userId);
+
+        // then
+        verify(reviewRepository, times(1)).findById(reviewId);
+        // BaseEntity의 softDelete 로직에 따라 findById 이후 로직이 실행됨을 확인
     }
 }

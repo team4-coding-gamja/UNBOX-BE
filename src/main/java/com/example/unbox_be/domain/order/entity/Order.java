@@ -5,6 +5,7 @@ import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -34,7 +35,6 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "option_id", nullable = false)
     private ProductOption productOption;
 
-    // int -> BigDecimal 변경
     @Column(nullable = false)
     private BigDecimal price;
 
@@ -60,7 +60,11 @@ public class Order extends BaseEntity {
     @Column(name = "final_tracking_number", length = 100)
     private String finalTrackingNumber;
 
-    // 생성자 파라미터 타입 변경 (int -> BigDecimal)
+    // 생성자 레벨 @Builder
+    // - ID, Audit 필드는 제외
+    // - 필수 값만 파라미터로 받음
+    // - status 같은 초기값은 내부에서 설정
+    @Builder
     public Order(User buyer, User seller, ProductOption productOption, BigDecimal price,
                  String receiverName, String receiverPhone, String receiverAddress, String receiverZipCode) {
         this.buyer = buyer;
@@ -71,12 +75,11 @@ public class Order extends BaseEntity {
         this.receiverPhone = receiverPhone;
         this.receiverAddress = receiverAddress;
         this.receiverZipCode = receiverZipCode;
-        this.status = OrderStatus.PENDING_SHIPMENT;
+        this.status = OrderStatus.PENDING_SHIPMENT; // 초기 상태 강제
     }
 
-    // 상태 변경 검증 로직 추가
+    // 상태 변경 메서드 (비즈니스 로직)
     public void updateStatus(OrderStatus newStatus) {
-        // 이미 완료되거나 취소된 건은 변경 불가
         if (this.status == OrderStatus.COMPLETED || this.status == OrderStatus.CANCELLED) {
             throw new IllegalStateException("이미 종료된 주문의 상태는 변경할 수 없습니다.");
         }

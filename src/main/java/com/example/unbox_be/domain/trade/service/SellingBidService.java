@@ -89,11 +89,17 @@ public class SellingBidService {
     }
 
     @Transactional(readOnly = true)
-    public SellingBidResponseDto getSellingBidDetail(UUID sellingId){
+    public SellingBidResponseDto getSellingBidDetail(UUID sellingId,String email){
         SellingBid sellingBid = sellingBidRepository.findById(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
         SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
 
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (!sellingBid.getUserId().equals(user.getId())) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
         // 3. optionId로 실제 상품 옵션과 상품 정보 조회
         ProductOption option = productOptionRepository.findById(sellingBid.getOptionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));

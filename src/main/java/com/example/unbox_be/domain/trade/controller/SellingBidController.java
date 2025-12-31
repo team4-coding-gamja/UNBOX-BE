@@ -57,7 +57,10 @@ public class SellingBidController {
     }
 
     @GetMapping("/{sellingId}")
-    public ResponseEntity<SellingBidResponseDto> getSellingBidDetail(@PathVariable UUID sellingId) {
-        return ResponseEntity.ok(sellingBidService.getSellingBidDetail(sellingId));
+    public ResponseEntity<SellingBidResponseDto> getSellingBidDetail(
+            @PathVariable UUID sellingId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(sellingBidService.getSellingBidDetail(sellingId,userDetails.getUsername()));
     }
 }

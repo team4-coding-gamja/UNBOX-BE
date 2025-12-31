@@ -39,11 +39,6 @@ public class Review extends BaseEntity {
     @Column(name = "image_url")
     private String imageUrl; // 이미지 주소
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;  // 삭제 한 날짜
-
-    @Column(name = "deleted_by")
-    private String deletedBy;  // 누가 삭제했는지
 
     // 리뷰수정 비즈니스 로직
     public void update(String content, Integer rating, String imageUrl) {
@@ -52,9 +47,5 @@ public class Review extends BaseEntity {
         this.imageUrl = imageUrl;
     }
 
-    // 소프트 삭제 처리를 위한 비즈니스 메서드
-    public void delete(String adminOrUserId) {
-        this.deletedAt = LocalDateTime.now();
-        this.deletedBy = adminOrUserId;
-    }
+
 }

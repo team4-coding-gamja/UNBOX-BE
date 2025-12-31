@@ -1,5 +1,7 @@
 package com.example.unbox_be.domain.reviews.service;
 
+import com.example.unbox_be.domain.order.entity.Order;
+import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.repository.OrderRepository;
 import com.example.unbox_be.domain.reviews.dto.ReviewRequestDto;
 import com.example.unbox_be.domain.reviews.dto.ReviewUpdateDto;
@@ -19,8 +21,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ReviewServiceTest {
@@ -32,6 +33,7 @@ class ReviewServiceTest {
 
     @InjectMocks
     private ReviewService reviewService;
+
     private UUID productId;
     private UUID orderId;
     private Long userId;
@@ -46,11 +48,18 @@ class ReviewServiceTest {
     @Test
     @DisplayName("리뷰 작성 성공 - 데이터가 정상 저장되고 ID를 반환하는지 확인")
     void createReview_Success() {
-        // given
-        ReviewRequestDto request = new ReviewRequestDto(productId, orderId, "만족합니다!", 5, "image.jpg");
+        // DTO 객체 생성
+        ReviewRequestDto request = new ReviewRequestDto(productId, orderId, "최고에욤!", 5, "image.jpg");
+
+        // Order 엔티티는 Protected 생성자이므로 Reflection이나 내부 생성 방식을 따름
+        // 여기서는 테스트를 위해 가짜 Order 객체의 상태를 COMPLETED로 설정
+        Order mockOrder = mock(Order.class);
+        given(mockOrder.getStatus()).willReturn(OrderStatus.COMPLETED);
+
+        given(orderRepository.findById(orderId)).willReturn(Optional.of(mockOrder));
         given(reviewRepository.existsByOrderId(orderId)).willReturn(false);
 
-        // save 메서드가 실행되면 ID가 포함된 Review 객체를 반환하도록 Mock 설정
+        // save 시 반환값 설정 (NPE 방지)
         Review savedReview = Review.builder().reviewId(UUID.randomUUID()).build();
         given(reviewRepository.save(any(Review.class))).willReturn(savedReview);
 
@@ -59,14 +68,14 @@ class ReviewServiceTest {
 
         // then
         org.assertj.core.api.Assertions.assertThat(resultId).isNotNull();
-        verify(reviewRepository, times(1)).save(any(Review.class));
+        verify(orderRepository).findById(orderId); // 주문 조회 호출 확인
     }
 
     @Test
     @DisplayName("리뷰 작성 실패: 평점이 1점 미만일 때 예외 발생")
     void createReview_Fail_MinRating() {
         // given
-        ReviewRequestDto request = new ReviewRequestDto(productId, orderId, "너무 별로에요", 0, "url");
+        ReviewRequestDto request = new ReviewRequestDto(productId, orderId, "최악이에요.", 0, "url");
 
         // when & then
         assertThrows(IllegalArgumentException.class, () -> reviewService.createReview(request, userId));

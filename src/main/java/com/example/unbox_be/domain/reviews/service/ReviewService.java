@@ -1,6 +1,8 @@
 package com.example.unbox_be.domain.reviews.service;
 
+import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
+import com.example.unbox_be.domain.order.repository.OrderRepository;
 import com.example.unbox_be.domain.reviews.dto.ReviewRequestDto;
 import com.example.unbox_be.domain.reviews.dto.ReviewUpdateDto;
 import com.example.unbox_be.domain.reviews.entity.Review;
@@ -19,21 +21,19 @@ import java.util.UUID;
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
-    // private final OrderRepository orderRepository; // 실제 연동 시 주석 해제
+    private final OrderRepository orderRepository; // 실제구현 : order랑 연동
 
     // 리뷰 생성
     @Transactional
     public UUID createReview(ReviewRequestDto requestDto, Long userId) {
 
-        // 1. [요구사항] 주문 및 거래 완료 여부 확인
-        // 실제 구현 시: Order order = orderRepository.findById(requestDto.getOrderId()).orElseThrow(...);
-        // OrderStatus currentStatus = order.getStatus();
+        // 1. 실제 주문 정보를 DB에서 조회 (Order의 PK 타입인 UUID 사용)
+        Order order = orderRepository.findById(requestDto.getOrderId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
 
-        OrderStatus currentStatus = OrderStatus.COMPLETED; // 테스트를 위해 완료 상태로 가정
-
-        // OrderStatus가 COMPLETED 상태일 때만 리뷰 작성 가능
-        if (currentStatus != OrderStatus.COMPLETED) {
-            throw new IllegalArgumentException("거래가 완료 된 주문만 리뷰를 작성할 수 있습니다.");
+        // 2. 주문 상태 검증: COMPLETED 상태여야만 리뷰 작성 가능
+        if (order.getStatus() != OrderStatus.COMPLETED) {
+            throw new IllegalArgumentException("거래가 완료(COMPLETED)된 주문만 리뷰를 작성할 수 있습니다.");
         }
 
         // 2. 주문당 리뷰 중복 작성 방지 (중요: 데이터 무결성)

@@ -53,10 +53,6 @@ public class ReviewService {
         return reviewRepository.save(review).getReviewId();
     }
 
-    public Page<Review> getReviewsByProduct(UUID productId, Pageable pageable) {
-        return reviewRepository.findAllByProductIdAndDeletedAtIsNull(productId, pageable);
-    }
-
     @Transactional
     public void updateReview(UUID reviewId, ReviewUpdateDto dto, Long userId) {
         Review review = reviewRepository.findById(reviewId)
@@ -71,15 +67,21 @@ public class ReviewService {
     }
 
     @Transactional
-    public void deleteReview(UUID reviewId, String userId) {
+    public void deleteReview(UUID reviewId, Long userId) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다."));
-        review.delete(userId);
+
+        if (!review.getBuyerId().equals(userId)) {
+            throw new SecurityException("본인이 작성한 리뷰만 삭제할 수 있습니다.");
+        }
+
+        // BaseEntity의 softDelete 메서드 호출
+        review.softDelete(String.valueOf(userId));
     }
 
-
-    // 상품 PK로 삭제되지 않은 리뷰 리스트를 페이징 조회
-    public Page<Review> getReviewsByProductId(UUID productId, Pageable pageable) {
+    // 상품별 리뷰 목록 조회
+    // 삭제되지 않은 리뷰만 페이징 처리하여 반환합니다.
+    public Page<Review> getReviewsByProduct(UUID productId, Pageable pageable) {
         return reviewRepository.findAllByProductIdAndDeletedAtIsNull(productId, pageable);
     }
 }

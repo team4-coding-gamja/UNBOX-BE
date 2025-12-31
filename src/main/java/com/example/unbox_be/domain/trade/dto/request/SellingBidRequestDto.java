@@ -1,4 +1,4 @@
-package com.example.unbox_be.domain.trade.dto;
+package com.example.unbox_be.domain.trade.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;

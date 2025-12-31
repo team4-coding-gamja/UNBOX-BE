@@ -2,6 +2,8 @@ package com.example.unbox_be.domain.trade.entity;
 
 
 import com.example.unbox_be.domain.common.BaseEntity;
+import com.example.unbox_be.global.error.exception.CustomException;
+import com.example.unbox_be.global.error.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -43,18 +45,18 @@ public class SellingBid extends BaseEntity {
         this.status = SellingStatus.CANCELLED;
     }
 
-    public void updatePrice(Integer newPrice, Long userId) {
-        // 1. 본인 확인
+    public void updatePrice(Integer newPrice, Long userId, String email) {
+        // 본인 확인: 요청한 유저 ID와 입찰 생성자 ID 비교
         if (!this.userId.equals(userId)) {
-            throw new IllegalArgumentException("본인의 판매 입찰만 수정할 수 있습니다.");
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 2. 상태 확인 (LIVE일 때만 수정 가능)
+        // 상태 확인: 이미 판매 완료되었거나 취소된 경우 수정 불가
         if (this.status != SellingStatus.LIVE) {
-            throw new IllegalStateException("판매 중(LIVE) 상태일 때만 가격을 수정할 수 있습니다.");
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
-        // 3. 가격 변경
         this.price = newPrice;
+        this.updateModifiedBy(email);
     }
 }

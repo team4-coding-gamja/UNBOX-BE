@@ -2,6 +2,7 @@ package com.example.unbox_be.domain.trade.controller;
 
 import com.example.unbox_be.domain.trade.dto.request.SellingBidRequestDto;
 import com.example.unbox_be.domain.trade.dto.request.SellingBidsPriceUpdateRequestDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidResponseDto;
 import com.example.unbox_be.domain.trade.service.SellingBidService;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;
@@ -53,5 +54,13 @@ public class SellingBidController {
         sellingBidService.updateSellingBidPrice(sellingId, newPrice, email);
 
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{sellingId}")
+    public ResponseEntity<SellingBidResponseDto> getSellingBidDetail(
+            @PathVariable UUID sellingId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(sellingBidService.getSellingBidDetail(sellingId,userDetails.getUsername()));
     }
 }

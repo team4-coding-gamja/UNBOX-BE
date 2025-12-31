@@ -9,7 +9,6 @@ import com.example.unbox_be.global.security.jwt.JwtConstants;
 import com.example.unbox_be.global.security.jwt.JwtUtil;
 import com.example.unbox_be.global.security.token.RefreshTokenRedisRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +25,6 @@ import java.io.IOException;
 
 @Slf4j
 public class LoginFilter extends UsernamePasswordAuthenticationFilter {
-
-    private static final int REFRESH_COOKIE_MAX_AGE_SEC = (int) (60L * 60 * 60); // 60시간(초)
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
@@ -146,7 +143,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         String cookieValue = String.format(
                 "refresh=%s; Max-Age=%d; Path=/; HttpOnly%s; SameSite=%s",
                 refreshToken,
-                REFRESH_COOKIE_MAX_AGE_SEC,
+                JwtConstants.REFRESH_COOKIE_MAX_AGE_SEC,
                 secure ? "; Secure" : "",
                 sameSite
         );

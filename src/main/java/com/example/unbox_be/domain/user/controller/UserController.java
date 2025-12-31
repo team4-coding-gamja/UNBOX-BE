@@ -6,6 +6,7 @@ import com.example.unbox_be.domain.user.dto.response.UserResponseDto;
 import com.example.unbox_be.domain.user.service.UserService;
 import com.example.unbox_be.global.response.ApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ public class UserController implements UserApi {
     // 회원 정보 수정
     @PatchMapping("/me")
     public ApiResponse<UserResponseDto> updateUser(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                   @RequestBody UserUpdateRequestDto userUpdateRequestDto) {
+                                                   @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
         userService.updateUser(userDetails.getUsername(), userUpdateRequestDto);
         UserResponseDto userResponseDto = userService.getUserByEmail(userDetails.getUsername());
         return ApiResponse.success(userResponseDto);

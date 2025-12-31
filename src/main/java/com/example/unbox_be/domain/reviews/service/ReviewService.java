@@ -30,10 +30,14 @@ public class ReviewService {
         // 1. 실제 주문 정보를 DB에서 조회 (Order의 PK 타입인 UUID 사용)
         Order order = orderRepository.findById(requestDto.getOrderId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
+        // 2. [보안] 로그인한 유저가 주문의 구매자와 일치하는지 확인
+        if (!order.getBuyer().getId().equals(userId)) {
+            throw new SecurityException("본인의 주문에 대해서만 리뷰를 작성할 수 있습니다.");
+        }
 
-        // 2. 주문 상태 검증: COMPLETED 상태여야만 리뷰 작성 가능
+        // 3. 상태 검증: COMPLETED인 경우에만 가능
         if (order.getStatus() != OrderStatus.COMPLETED) {
-            throw new IllegalArgumentException("거래가 완료(COMPLETED)된 주문만 리뷰를 작성할 수 있습니다.");
+            throw new IllegalArgumentException("거래가 완료된 주문만 리뷰를 작성할 수 있습니다.");
         }
 
         // 2. 주문당 리뷰 중복 작성 방지 (중요: 데이터 무결성)
@@ -49,8 +53,8 @@ public class ReviewService {
         // Builder 대신 엔티티 내 정의한 정적 메서드 사용
         Review review = Review.createReview(
                 requestDto.getProductId(),
-                requestDto.getOrderId(),
-                userId,
+                order,
+                order.getBuyer(), // User 객체 전달,
                 requestDto.getContent(),
                 requestDto.getRating(),
                 requestDto.getImageUrl()
@@ -65,7 +69,7 @@ public class ReviewService {
                 .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다."));
 
         // [추가] 작성자 본인 확인 로직
-        if (!review.getBuyerId().equals(userId)) {
+        if (!review.getBuyer().getId().equals(userId)) {
             throw new SecurityException("본인이 작성한 리뷰만 수정할 수 있습니다.");
         }
 
@@ -77,7 +81,7 @@ public class ReviewService {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다."));
 
-        if (!review.getBuyerId().equals(userId)) {
+        if (!review.getBuyer().getId().equals(userId)) {
             throw new SecurityException("본인이 작성한 리뷰만 삭제할 수 있습니다.");
         }
 

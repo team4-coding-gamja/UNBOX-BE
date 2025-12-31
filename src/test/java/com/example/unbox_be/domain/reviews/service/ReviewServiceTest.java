@@ -7,6 +7,7 @@ import com.example.unbox_be.domain.reviews.dto.ReviewRequestDto;
 import com.example.unbox_be.domain.reviews.dto.ReviewUpdateDto;
 import com.example.unbox_be.domain.reviews.entity.Review;
 import com.example.unbox_be.domain.reviews.repository.ReviewRepository;
+import com.example.unbox_be.domain.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -87,7 +88,10 @@ class ReviewServiceTest {
         // given
         UUID reviewId = UUID.randomUUID();
         // 작성자가 1L인 리뷰 생성
-        Review existingReview = Review.builder().buyerId(1L).build();
+        User mockBuyer = mock(User.class);
+        given(mockBuyer.getId()).willReturn(1L);
+
+        Review existingReview = Review.builder().buyer(mockBuyer).build();
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(existingReview));
 
         ReviewUpdateDto updateDto = new ReviewUpdateDto("해킹 시도", 1, "url");
@@ -101,7 +105,10 @@ class ReviewServiceTest {
     void deleteReview_Success() {
         // given
         UUID reviewId = UUID.randomUUID();
-        Review review = Review.builder().buyerId(userId).build();
+        User mockBuyer = mock(User.class); // Mock 유저 생성
+        given(mockBuyer.getId()).willReturn(userId); // ID 반환 설정
+
+        Review review = Review.builder().buyer(mockBuyer).build();
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
 
         // when

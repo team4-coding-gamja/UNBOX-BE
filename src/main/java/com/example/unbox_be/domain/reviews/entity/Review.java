@@ -22,20 +22,16 @@ public class Review extends BaseEntity {
     @Column(name = "review_id", updatable = false, nullable = false)
     private UUID reviewId; // 상품리뷰ID (PK)
 
-
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)   // 주문ID (FK 역할)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "buyer_id", nullable = false)
+    private User buyer;  // 구매자ID (FK 역할, buyer ID값만 저장)
 
     @Column(name = "product_id", nullable = false)
     private UUID productId; // 상품 PK, 쿼리스트링 조회용
-
-    @Column(name = "buyer_id", nullable = false)
-    private Long buyerId; // 구매자ID (FK 역할, ID값만 저장)
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content; // 리뷰 내용
@@ -48,11 +44,11 @@ public class Review extends BaseEntity {
 
 
     // 리뷰 정적 메서드
-    public static Review createReview(UUID productId, Order order, Long buyerId, String content, Integer rating, String imageUrl) {
+    public static Review createReview(UUID productId, Order order, User buyer, String content, Integer rating, String imageUrl) {
         Review review = new Review();
         review.productId = productId;
         review.order = order;
-        review.buyerId = buyerId;
+        review.buyer = buyer;
         review.content = content;
         review.rating = rating;
         review.imageUrl = imageUrl;

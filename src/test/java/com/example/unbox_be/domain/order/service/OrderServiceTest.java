@@ -3,17 +3,24 @@ package com.example.unbox_be.domain.order.service;
 import com.example.unbox_be.domain.order.dto.OrderCreateRequestDto;
 import com.example.unbox_be.domain.order.dto.OrderResponseDto;
 import com.example.unbox_be.domain.order.entity.Order;
+import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.mapper.OrderMapper;
 import com.example.unbox_be.domain.order.repository.OrderRepository;
+import com.example.unbox_be.domain.product.entity.Brand;
+import com.example.unbox_be.domain.product.entity.Category;
+import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
+import com.example.unbox_be.global.error.exception.CustomException;
+import com.example.unbox_be.global.error.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -26,8 +33,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +52,7 @@ class OrderServiceTest {
     private UserRepository userRepository;
     @Mock
     private ProductOptionRepository productOptionRepository;
-    @Mock
+    @Spy
     private OrderMapper orderMapper;
 
     @Test
@@ -63,23 +73,24 @@ class OrderServiceTest {
         User buyer = User.createUser(buyerEmail, "pw", "buyer", "010-1111-1111");
         User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
 
-        // ProductOption 내부 구조(Product, Brand)까지 Mocking 필요할 수 있음 (Mapper에서 쓰니까)
-        ProductOption option = new ProductOption(null, "270");
+        // 실제 매퍼가 돌 때 NullPointerException이 안 나도록 Brand, Product까지 꽉 채워서 생성
+        Brand brand = new Brand("Nike");
+        Product product = new Product(brand, "Air Force 1", "CW2288-111", Category.SHOES, "http://img.url");
+        ProductOption option = new ProductOption(product, "270");
 
         // 가짜 행동 정의
         given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(buyer));
         given(userRepository.findById(sellerId)).willReturn(Optional.of(seller));
         given(productOptionRepository.findById(optionId)).willReturn(Optional.of(option));
 
-        Order savedOrder = Order.builder().price(price).build();
-        given(orderRepository.save(any(Order.class))).willReturn(savedOrder);
-
-        // Mapper 결과 Mocking
-        OrderResponseDto responseDto = OrderResponseDto.builder()
+        Order savedOrder = Order.builder()
+                .buyer(buyer)
+                .seller(seller)
+                .productOption(option) // 옵션(안에 상품, 브랜드 포함) 주입
                 .price(price)
-                .status(savedOrder.getStatus())
+                .receiverName("홍길동")
                 .build();
-        given(orderMapper.toResponseDto(any(Order.class))).willReturn(responseDto);
+        given(orderRepository.save(any(Order.class))).willReturn(savedOrder);
 
         // When
         OrderResponseDto result = orderService.createOrder(requestDto, buyerEmail);
@@ -87,6 +98,7 @@ class OrderServiceTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.getPrice()).isEqualTo(price);
+        assertThat(result.getBrandName()).isEqualTo("Nike"); // 실제 매핑이 잘 됐는지 확인 가능
         verify(orderRepository).save(any(Order.class)); // save 호출 여부 검증
     }
 
@@ -108,10 +120,10 @@ class OrderServiceTest {
 
         // When & Then: 예외가 터지는지 확인
         // CustomException이 발생해야 하고, 에러 코드는 USER_NOT_FOUND여야 한다
-        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+        assertThatThrownBy(() ->
                         orderService.createOrder(requestDto, unknownEmail)
-                ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.example.unbox_be.global.error.exception.ErrorCode.USER_NOT_FOUND);
+                ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
     }
 
     @Test
@@ -126,6 +138,10 @@ class OrderServiceTest {
                 .sellerId(unknownSellerId)
                 .productOptionId(optionId)
                 .price(BigDecimal.valueOf(300000))
+                .receiverName("수령인")
+                .receiverPhone("010-0000-0000")
+                .receiverAddress("주소")
+                .receiverZipCode("12345")
                 .build();
 
         // 구매자는 찾았는데...
@@ -134,7 +150,7 @@ class OrderServiceTest {
         given(userRepository.findById(unknownSellerId)).willReturn(Optional.empty());
 
         // When & Then
-        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+        assertThatThrownBy(() ->
                         orderService.createOrder(requestDto, buyerEmail)
                 ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", com.example.unbox_be.global.error.exception.ErrorCode.USER_NOT_FOUND);
@@ -161,7 +177,7 @@ class OrderServiceTest {
         given(productOptionRepository.findById(unknownOptionId)).willReturn(Optional.empty());
 
         // When & Then
-        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+        assertThatThrownBy(() ->
                         orderService.createOrder(requestDto, buyerEmail)
                 ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", com.example.unbox_be.global.error.exception.ErrorCode.PRODUCT_NOT_FOUND);
@@ -184,8 +200,15 @@ class OrderServiceTest {
         );
         Page<Order> orderPage = new PageImpl<>(orders);
 
-        given(orderRepository.findAllByBuyerId(any(), any())).willReturn(orderPage);
-        given(orderMapper.toResponseDto(any(Order.class))).willReturn(OrderResponseDto.builder().build());
+        given(orderRepository.findAllByBuyerId(eq(buyer.getId()), eq(pageable))).willReturn(orderPage);
+        // 여기서는 Order 객체에 Brand/Product 정보가 없으므로
+        // Spy지만 예외적으로 가짜 결과(Stub)를 반환하도록 설정해야 함 (안 그러면 NPE 터짐)
+        doReturn(
+                OrderResponseDto.builder()
+                        .price(BigDecimal.valueOf(10000))
+                        .status(OrderStatus.PENDING_SHIPMENT)
+                        .build()
+        ).when(orderMapper).toResponseDto(any(Order.class));
 
         // When
         Page<OrderResponseDto> result = orderService.getMyOrders(email, pageable);
@@ -207,7 +230,7 @@ class OrderServiceTest {
         given(userRepository.findByEmail(unknownEmail)).willReturn(Optional.empty());
 
         // When & Then
-        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+        assertThatThrownBy(() ->
                         orderService.getMyOrders(unknownEmail, pageable)
                 ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", com.example.unbox_be.global.error.exception.ErrorCode.USER_NOT_FOUND);

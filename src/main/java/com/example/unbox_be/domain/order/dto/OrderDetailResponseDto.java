@@ -21,6 +21,7 @@ public class OrderDetailResponseDto {
     private BigDecimal price;
     private OrderStatus status;
     private LocalDateTime createdAt;
+    private LocalDateTime cancelledAt;
 
     // 2. 배송 정보 (개인정보 보호 대상)
     private String receiverName;

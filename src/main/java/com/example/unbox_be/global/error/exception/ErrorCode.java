@@ -37,7 +37,8 @@ public enum ErrorCode {
     INVALID_BID_PRICE(HttpStatus.BAD_REQUEST, "입찰 가격이 유효하지 않습니다."),
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문 내역을 찾을 수 없습니다."),
     PRICE_MISMATCH(HttpStatus.BAD_REQUEST, "주문 가격이 실제 판매 가격과 일치하지 않습니다."),
-    SELLING_BID_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 판매자가 판매 중인 상품이 아닙니다.");
+    SELLING_BID_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 판매자가 판매 중인 상품이 아닙니다."),
+    ORDER_CANNOT_BE_CANCELLED(HttpStatus.BAD_REQUEST, "이미 배송 중이거나 완료된 주문은 취소할 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;

@@ -103,10 +103,14 @@ public class OrderService {
      * - 요청한 사용자가 주문의 구매자(Buyer)이거나 판매자(Seller)여야 함
      */
     private void validateOrderAccess(Order order, User user) {
+        // 방어적 코딩 (Buyer나 Seller가 없는 이상한 주문 데이터일 경우)
+        if (order.getBuyer() == null || order.getSeller() == null) {
+            throw new CustomException(ErrorCode.DATA_INTEGRITY_ERROR);
+        }
+
         boolean isBuyer = order.getBuyer().getId().equals(user.getId());
         boolean isSeller = order.getSeller().getId().equals(user.getId());
 
-        // 구매자도 아니고, 판매자도 아니면 예외 발생
         if (!isBuyer && !isSeller) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }

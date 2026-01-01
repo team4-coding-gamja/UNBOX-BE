@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.order.service;
 
+import com.example.unbox_be.domain.order.dto.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.OrderCreateRequestDto;
 import com.example.unbox_be.domain.order.dto.OrderResponseDto;
 import com.example.unbox_be.domain.order.entity.Order;
@@ -16,6 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -72,5 +75,40 @@ public class OrderService {
         Page<Order> orderPage = orderRepository.findAllByBuyerId(user.getId(), pageable);
 
         return orderPage.map(orderMapper::toResponseDto);
+    }
+
+    /**
+     * 주문 상세 조회
+     * - N+1 방지를 위해 fetch join된 메서드 사용
+     * - 본인의 주문(구매자 or 판매자)인지 권한 검증 포함
+     */
+    public OrderDetailResponseDto getOrderDetail(UUID orderId, String email) {
+        // 1. 요청 사용자 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. 주문 조회 (Repository에서 @EntityGraph로 연관 데이터 한 번에 로딩)
+        Order order = orderRepository.findWithDetailsById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 3. 권한 검증 (내 주문이 맞는지 확인)
+        validateOrderAccess(order, user);
+
+        // 4. 상세 조회용 DTO로 변환
+        return orderMapper.toDetailResponseDto(order);
+    }
+
+    /**
+     * 접근 권한 검증 메서드
+     * - 요청한 사용자가 주문의 구매자(Buyer)이거나 판매자(Seller)여야 함
+     */
+    private void validateOrderAccess(Order order, User user) {
+        boolean isBuyer = order.getBuyer().getId().equals(user.getId());
+        boolean isSeller = order.getSeller().getId().equals(user.getId());
+
+        // 구매자도 아니고, 판매자도 아니면 예외 발생
+        if (!isBuyer && !isSeller) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
     }
 }

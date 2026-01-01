@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.order.controller;
 
+import com.example.unbox_be.domain.order.dto.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.OrderCreateRequestDto;
 import com.example.unbox_be.domain.order.dto.OrderResponseDto;
 import com.example.unbox_be.domain.order.service.OrderService;
@@ -18,6 +19,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/orders")
@@ -33,10 +36,7 @@ public class OrderController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         // 1. 로그인한 유저의 이메일 추출
-        // (로그인이 안 되어있으면 userDetails가 null일 수 있으나, SecurityConfig 설정상 /api/**는 인증 필요하므로 안전)
         String buyerEmail = userDetails.getUsername();
-
-        log.info("[OrderController] 주문 요청자: {}", buyerEmail);
 
         // 2. 서비스 호출 (이메일 넘김)
         OrderResponseDto responseDto = orderService.createOrder(requestDto, buyerEmail);
@@ -63,5 +63,22 @@ public class OrderController {
         Page<OrderResponseDto> responseDtoPage = orderService.getMyOrders(email, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(responseDtoPage));
+    }
+
+    /**
+     * 주문 상세 조회
+     * - PathVariable로 orderId를 받음
+     */
+    @GetMapping("/{orderId}")
+    public ResponseEntity<ApiResponse<OrderDetailResponseDto>> getOrderDetail(
+            @PathVariable UUID orderId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        String email = userDetails.getUsername();
+
+        // 상세 조회 서비스 호출
+        OrderDetailResponseDto detailDto = orderService.getOrderDetail(orderId, email);
+
+        return ResponseEntity.ok(ApiResponse.success(detailDto));
     }
 }

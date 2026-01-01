@@ -3,6 +3,7 @@ package com.example.unbox_be.domain.trade.service;
 import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.trade.dto.request.SellingBidRequestDto;
+import com.example.unbox_be.domain.trade.dto.request.UpdateSellingStatusRequestDto;
 import com.example.unbox_be.domain.trade.dto.response.SellingBidResponseDto;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
@@ -68,9 +69,8 @@ public class SellingBidService {
         }
         //sellingBid.softDelete(user.getEmail());
 
-        // 3. 상태 변경 (Dirty Checking에 의해 자동 업데이트)
-        sellingBid.cancel();
-        sellingBid.updateModifiedBy(email);
+        // 3. 상태 변경 (Dirty Checking에 의해 자동 업데이트)s
+        updateSellingBidStatus(sellingId, SellingStatus.CANCELLED, email);
     }
 
     @Transactional
@@ -148,5 +148,36 @@ public class SellingBidService {
                             .build())
                     .build();
         });
+    }
+
+    //판매 상태 변환 service이고, 이거 나중에 MSA로 변환하면 API로 따로 관리ㄱㄱ
+    @Transactional
+    public void updateSellingBidStatus(UUID sellingId, SellingStatus newStatus, String email) {
+        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+
+        // 1. 권한 검증: 사용자가 직접 바꿀 때만 체크 (시스템 자동 변경 시에는 생략 가능하도록 설계)
+        if (email != null) {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+            if (!sellingBid.getUserId().equals(user.getId())) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+
+        // 2. 상태 변환 괜찮은지 확인
+        validateTransition(sellingBid.getStatus(), newStatus);
+
+        // 3. 상태 변경 및 기록
+        sellingBid.updateStatus(newStatus);
+        if (email != null) sellingBid.updateModifiedBy(email);
+    }
+
+    //CANCELLED나 MATCHED를 LIVE로 바꾸지 않게 -> 나중에 더 추가
+    private void validateTransition(SellingStatus current, SellingStatus next) {
+        if ((current == SellingStatus.CANCELLED || current == SellingStatus.MATCHED)
+                && next == SellingStatus.LIVE) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 }

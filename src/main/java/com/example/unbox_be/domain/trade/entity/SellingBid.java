@@ -40,10 +40,6 @@ public class SellingBid extends BaseEntity {
 
     private LocalDateTime deadline;
 
-    public void cancel() {
-        this.status = SellingStatus.CANCELLED;
-    }
-
     public void updatePrice(Integer newPrice, Long userId, String email) {
         // 본인 확인: 요청한 유저 ID와 입찰 생성자 ID 비교
         if (!this.userId.equals(userId)) {
@@ -57,5 +53,12 @@ public class SellingBid extends BaseEntity {
 
         this.price = newPrice;
         this.updateModifiedBy(email);
+    }
+
+    public void updateStatus(SellingStatus status) {
+        if(status == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        this.status = status;
     }
 }

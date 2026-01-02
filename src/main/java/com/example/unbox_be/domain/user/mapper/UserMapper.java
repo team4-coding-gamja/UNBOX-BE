@@ -17,7 +17,7 @@ public class UserMapper {
     }
 
     // Entity -> Dto
-    public static UserMeUpdateResponseDto toUserUpdateResponseDto (User user) {
+    public static UserMeUpdateResponseDto toUserMeUpdateResponseDto (User user) {
         return UserMeUpdateResponseDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())

@@ -37,7 +37,7 @@ public class UserServiceImpl implements UserService {
                 userMeUpdateRequestDto.getNickname(),
                 userMeUpdateRequestDto.getPhone()
         );
-        return null;
+        return UserMapper.toUserMeUpdateResponseDto(user);
     }
     
     // 회원 탈퇴 API

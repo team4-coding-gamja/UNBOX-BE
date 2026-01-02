@@ -108,8 +108,10 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // ✅ 관리자 생성(회원가입)은 MASTER만 가능
-                        .requestMatchers(HttpMethod.POST, "/api/admin/auth/signup")
-                        .hasRole("MASTER")   // ROLE_MASTER 필요
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/admin/auth/signup",
+                                "/api/admin/staff/**"
+                        ).hasRole("MASTER")   // ROLE_MASTER 필요
 
                         // 로그아웃은 인증 필요(선택)
                         .requestMatchers(HttpMethod.POST,

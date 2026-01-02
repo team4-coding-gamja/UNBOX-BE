@@ -23,8 +23,8 @@ public class AdminBrandServiceImpl implements AdminBrandService {
     private final AdminRepository adminRepository;
     private final BrandRepository brandRepository;
 
-
     // 브랜드 등록
+    @Override
     public AdminBrandCreateResponseDto createBrand(String email, AdminBrandCreateRequestDto adminBrandCreateRequestDto) {
         Admin admin = adminRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
@@ -40,6 +40,7 @@ public class AdminBrandServiceImpl implements AdminBrandService {
     }
 
     // 브랜드 삭제
+    @Override
     public void deleteBrand(String email, UUID brandId) {
         Admin admin = adminRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));

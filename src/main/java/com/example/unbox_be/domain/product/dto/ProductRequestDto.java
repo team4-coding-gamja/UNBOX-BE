@@ -11,4 +11,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ProductRequestDto {
     private String name;
+    private String brandName;
 }

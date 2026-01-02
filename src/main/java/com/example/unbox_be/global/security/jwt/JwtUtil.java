@@ -25,6 +25,27 @@ public class JwtUtil {
         log.info("[JWTUtil] JWT secretKey 생성: {}", secretKey);
     }
 
+    // ✅ [추가] 토큰에서 userId(PK) 추출 메서드
+    public Long getUserId(String token) {
+        log.info("[JWTUtil/getUserId] 토큰에서 userId 추출 시도");
+
+        Long userId = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("userId", Long.class); // "userId" 키로 저장된 값을 Long으로 꺼냄
+
+        // 🚨 유효성 검사: userId가 없으면 예외 발생 (NPE 방지)
+        if (userId == null) {
+            log.error("[JWTUtil/getUserId] 토큰에 'userId' Claim이 존재하지 않습니다.");
+            // 명확한 예외를 던져서 호출부에서 NPE가 아닌 원인을 알 수 있게 함
+            throw new IllegalArgumentException("토큰에 userId 정보가 없습니다.");
+        }
+
+        return userId;
+    }
+
     // 토큰에서 username 추출
     public String getUsername(String token) {
         log.info("[JWTUtil/getUsername] 토큰에서 email 추출, 토큰: {}", token);  // 토큰 정보도 로그에 남김
@@ -95,9 +116,10 @@ public class JwtUtil {
     }
 
     // 새로운 JWT 생성 (email, role, 만료 시간 지정)
-    public String createAccessToken(String email, String role, Long expiredMs) {
+    public String createAccessToken(Long userId, String email, String role, Long expiredMs) {
         log.info("[JWTUtil/createJwt] 새로운 JWT 생성, username: {}, role: {}, 만료 시간(ms): {}", email, role, expiredMs);
         return Jwts.builder()
+                .claim("userId", userId)
                 .claim("email", email) // email 클레임 추가
                 .claim("role", role) // role 클레임 추가
                 .issuedAt(new Date(System.currentTimeMillis())) // 발급 시간 설정
@@ -107,9 +129,10 @@ public class JwtUtil {
     }
 
     // Refresh Token
-    public String createRefreshToken(String email, String role, Long expiredMs) {
+    public String createRefreshToken(Long userId, String email, String role, Long expiredMs) {
         log.info("[JWTUtil/createRefreshToken] 새로운 리프레시 토큰 생성, email: {}, 만료 시간(ms): {}", email, expiredMs);
         return Jwts.builder()
+                .claim("userId", userId)
                 .claim("email", email)
                 .claim("role", role)
                 .issuedAt(new Date(System.currentTimeMillis()))

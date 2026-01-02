@@ -26,16 +26,12 @@ public class ProductRequestService {
     private final UserRepository userRepository;
 
     // 파라미터가 UUID userId -> String email로 변경됨
-    public UUID createProductRequest(String email, ProductRequestDto dto) {
+    public UUID createProductRequest(Long userId, ProductRequestDto dto) {
 
-        // 1. 이메일로 User 조회 (User 도메인 로직을 여기서 수행)
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        //UserId
+        ProductRequest request = productRequestMapper.toEntity(dto, userId);
 
-        // 2. 조회된 User의 ID를 사용하여 Entity 변환
-        ProductRequest request = productRequestMapper.toEntity(dto, user.getId());
-
-        // 3. 저장
+        //저장
         ProductRequest savedRequest = productRequestRepository.save(request);
 
         return savedRequest.getId();

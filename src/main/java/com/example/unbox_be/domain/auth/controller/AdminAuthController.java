@@ -78,6 +78,13 @@ public class AdminAuthController implements AdminAuthApi {
         // 사용자 정보 가져오기
         String username = jwtUtil.getUsername(refreshToken);
 
+        // 사용자 id 가져오기
+        Long userId = jwtUtil.getUserId(refreshToken);
+        if(userId == null){
+            log.info("[AuthController/reissue] userId 없음 - username={}", username);
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
         // 새 토큰 만들기 전에 서버 저장값과 비교
         String saved = refreshTokenRedisRepository.getRefreshToken(username); // 없으면 메서드 추가 필요
         if (saved == null || !saved.equals(refreshToken)) {
@@ -92,8 +99,8 @@ public class AdminAuthController implements AdminAuthApi {
         }
 
         // 새로운 액세스 토큰 생성
-        String newAccessToken = jwtUtil.createAccessToken(username, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
-        String newRefreshToken = jwtUtil.createRefreshToken(username, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
+        String newAccessToken = jwtUtil.createAccessToken(userId, username, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
+        String newRefreshToken = jwtUtil.createRefreshToken(userId, username, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
 
         // RefreshToken 저장 (Redis)
         refreshTokenRedisRepository.saveRefreshToken(username, newRefreshToken);

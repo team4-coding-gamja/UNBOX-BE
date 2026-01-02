@@ -2,6 +2,7 @@ package com.example.unbox_be.global.security.auth;
 
 import com.example.unbox_be.domain.admin.common.entity.Admin;
 import com.example.unbox_be.domain.user.entity.User;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -10,9 +11,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
+@Getter
 @Slf4j
 public class CustomUserDetails implements UserDetails {  // Spring Security의 UserDetails 인터페이스 구현
 
+
+    private final Long userId;
     private final String email;
     private final String password;
     private final String role;
@@ -20,6 +24,7 @@ public class CustomUserDetails implements UserDetails {  // Spring Security의 U
     // User용 생성자
     public static CustomUserDetails ofUser(User user) {
         return new CustomUserDetails(
+                user.getId(),
                 user.getEmail(),
                 user.getPassword(),
                 "ROLE_USER"
@@ -29,6 +34,7 @@ public class CustomUserDetails implements UserDetails {  // Spring Security의 U
     // Admin용 생성자 (Admin 엔티티에 맞게 수정)
     public static CustomUserDetails ofAdmin(Admin admin) {
         return new CustomUserDetails(
+                admin.getId(),
                 admin.getEmail(),
                 admin.getPassword(),
                 admin.getAdminRole().name()
@@ -36,7 +42,8 @@ public class CustomUserDetails implements UserDetails {  // Spring Security의 U
     }
 
     // 생성자로 Member 객체를 받아 저장
-    public CustomUserDetails(String email, String password, String role) {
+    public CustomUserDetails(Long userId,String email, String password, String role) {
+        this.userId = userId;
         this.email = email;
         this.password = password;
         this.role = role;

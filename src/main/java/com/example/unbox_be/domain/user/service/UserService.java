@@ -6,12 +6,10 @@ import com.example.unbox_be.domain.user.dto.response.UserMeUpdateResponseDto;
 
 public interface UserService {
 
-    // 회원 정보 조회
-    UserMeResponseDto getUserMe(String email);
-
-    // 회원 정보 수정
-    UserMeUpdateResponseDto updateUserMe(String email, UserMeUpdateRequestDto userMeUpdateRequestDto);
-
-    // 회원 탈퇴
-    void deleteUserMe(String email);
+    // ✅ 회원 정보 조회
+    UserMeResponseDto getUserMe(Long userId);
+    // ✅ 회원 정보 수정
+    UserMeUpdateResponseDto updateUserMe(Long userId, UserMeUpdateRequestDto userMeUpdateRequestDto);
+    // ✅ 회원 탈퇴
+    void deleteUserMe(Long userId);
 }

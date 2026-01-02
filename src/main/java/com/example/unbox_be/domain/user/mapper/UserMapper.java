@@ -6,7 +6,6 @@ import com.example.unbox_be.domain.user.entity.User;
 
 public class UserMapper {
 
-    // Entity -> Dto
     public static UserMeResponseDto toUserMeResponseDto (User user) {
         return UserMeResponseDto.builder()
                 .id(user.getId())
@@ -16,7 +15,6 @@ public class UserMapper {
                 .build();
     }
 
-    // Entity -> Dto
     public static UserMeUpdateResponseDto toUserMeUpdateResponseDto (User user) {
         return UserMeUpdateResponseDto.builder()
                 .id(user.getId())

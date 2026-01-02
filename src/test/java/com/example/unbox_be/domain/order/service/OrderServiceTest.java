@@ -462,6 +462,7 @@ class OrderServiceTest {
 
         // Then
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.getCancelledAt()).isNotNull();
     }
 
     @Test

@@ -17,5 +17,4 @@ public class UserSignupResponseDto {
     private String nickname;
     private String phone;
     private AdminRole adminRole;
-
 }

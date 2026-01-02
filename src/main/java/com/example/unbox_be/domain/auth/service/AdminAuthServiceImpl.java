@@ -8,63 +8,49 @@ import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
 import com.example.unbox_be.domain.auth.mapper.AuthMapper;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
+import lombok.AllArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@AllArgsConstructor
 public class AdminAuthServiceImpl implements AdminAuthService{
 
-    public AdminRepository adminRepository;
+    public final AdminRepository adminRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public AdminAuthServiceImpl(AdminRepository adminRepository, PasswordEncoder passwordEncoder) {
-        this.adminRepository = adminRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    // 회원가입 API
+    // ✅ 회원가입
+    @Override
     @Transactional
-    public AdminSignupResponseDto signup(AdminSignupRequestDto adminSignupRequestDto) {
-        String email = adminSignupRequestDto.getEmail();
-        String password = adminSignupRequestDto.getPassword();
+    @PreAuthorize("hasRole('MASTER')")
+    public AdminSignupResponseDto signup(AdminSignupRequestDto requestDto) {
+        String email = requestDto.getEmail();
+        String password = requestDto.getPassword();
 
-        // 이메일 중복 확인
+        if (requestDto.getAdminRole() == AdminRole.ROLE_MASTER) {
+            throw new CustomException(ErrorCode.MASTER_CANNOT_CREATE_MASTER);
+        }
         if (adminRepository.existsByEmail(email)) {
             throw new CustomException(ErrorCode.ADMIN_ALREADY_EXISTS);
         }
 
-        // MASTER는 MASTER를 추가 생성할 수 없음
-        if (adminSignupRequestDto.getAdminRole() == AdminRole.ROLE_MASTER) {
-            throw new CustomException(ErrorCode.MASTER_CANNOT_CREATE_MASTER);
-        }
-
-        // MASTER만 회원가입 가능
-        String signupRole = SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getAuthorities()
-                .iterator()
-                .next()
-                .getAuthority();
-
-        if (!"ROLE_MASTER".equals(signupRole)) {
-            throw new CustomException(ErrorCode.ONLY_MASTER_CAN_CREATE_ADMIN);
-        }
-
-        // 관리자 객체 생성
         Admin admin = Admin.createAdmin(
-                adminSignupRequestDto.getEmail(),
+                requestDto.getEmail(),
                 passwordEncoder.encode(password),
-                adminSignupRequestDto.getNickname(),
-                adminSignupRequestDto.getPhone(),
-                adminSignupRequestDto.getAdminRole()
+                requestDto.getNickname(),
+                requestDto.getPhone(),
+                requestDto.getAdminRole()
         );
 
-        // 저장
-        Admin savedAdmin = adminRepository.save(admin);
-
-        // Entity -> Dto 변환 후 반환
-        return AuthMapper.toAdminSignupResponseDto(savedAdmin);
+        try {
+            Admin savedAdmin = adminRepository.save(admin);
+            return AuthMapper.toAdminSignupResponseDto(savedAdmin);
+        } catch (DataIntegrityViolationException e) {
+            throw new CustomException(ErrorCode.ADMIN_ALREADY_EXISTS);
+        }
     }
 }

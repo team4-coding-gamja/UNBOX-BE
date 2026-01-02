@@ -7,7 +7,6 @@ import com.example.unbox_be.domain.user.entity.User;
 
 public class AuthMapper {
 
-    // Entity -> Dto
     public static UserSignupResponseDto toUserSignupResponseDto(User user) {
         return  UserSignupResponseDto.builder()
                 .id(user.getId())
@@ -17,7 +16,6 @@ public class AuthMapper {
                 .build();
     }
 
-    // Entity -> Dto
     public static AdminSignupResponseDto toAdminSignupResponseDto(Admin admin) {
         return  AdminSignupResponseDto.builder()
                 .id(admin.getId())

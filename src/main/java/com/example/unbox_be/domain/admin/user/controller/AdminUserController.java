@@ -1,11 +1,5 @@
 package com.example.unbox_be.domain.admin.user.controller;
 
-import com.example.unbox_be.domain.admin.common.entity.Admin;
-import com.example.unbox_be.domain.admin.common.entity.AdminRole;
-import com.example.unbox_be.domain.admin.staff.dto.request.AdminStaffUpdateRequestDto;
-import com.example.unbox_be.domain.admin.staff.dto.response.AdminMeResponseDto;
-import com.example.unbox_be.domain.admin.staff.dto.response.AdminStaffUpdateResponseDto;
-import com.example.unbox_be.domain.admin.staff.mapper.AdminStaffMapper;
 import com.example.unbox_be.domain.admin.user.controller.api.AdminUserApi;
 import com.example.unbox_be.domain.admin.user.dto.request.AdminUserUpdateRequestDto;
 import com.example.unbox_be.domain.admin.user.dto.response.AdminUserDetailResponseDto;
@@ -17,8 +11,6 @@ import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,7 +38,7 @@ public class AdminUserController implements AdminUserApi {
     public ApiResponse<AdminUserDetailResponseDto> getAdminUserDetail(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userId) {
-        AdminUserDetailResponseDto result = adminUserService.getAdminMe(userDetails.getUsername(), userId);
+        AdminUserDetailResponseDto result = adminUserService.getAdminUserDetail(userDetails.getUsername(), userId);
         return ApiResponse.success(result);
     }
 

@@ -26,6 +26,8 @@ public class QOrder extends EntityPathBase<Order> {
 
     public final com.example.unbox_be.domain.user.entity.QUser buyer;
 
+    public final DateTimePath<java.time.LocalDateTime> cancelledAt = createDateTime("cancelledAt", java.time.LocalDateTime.class);
+
     //inherited
     public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
 

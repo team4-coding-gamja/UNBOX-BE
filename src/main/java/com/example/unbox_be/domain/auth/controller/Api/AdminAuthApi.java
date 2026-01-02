@@ -1,15 +1,15 @@
 package com.example.unbox_be.domain.auth.controller.Api;
 
+import com.example.unbox_be.domain.auth.dto.request.AdminSignupRequestDto;
 import com.example.unbox_be.domain.auth.dto.request.UserLoginRequestDto;
-import com.example.unbox_be.domain.auth.dto.response.UserTokenResponseDto;
-import com.example.unbox_be.domain.auth.dto.request.UserSignupRequestDto;
-import com.example.unbox_be.domain.auth.dto.response.UserSignupResponseDto;
+import com.example.unbox_be.domain.auth.dto.response.AdminSignupResponseDto;
+import com.example.unbox_be.domain.auth.dto.response.AdminTokenResponseDto;
+import com.example.unbox_be.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,78 +18,88 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@Tag(name = "인증 관리", description = "로그인 / 로그아웃 / 토큰 재발급 API")
-public interface AuthApi {
+@Tag(name = "관리자 인증", description = "관리자 회원가입 / 로그인 / 로그아웃 / 토큰 재발급 API")
+public interface AdminAuthApi {
 
     @Operation(
-            summary = "회원가입",
+            summary = "관리자 회원가입",
             description =
-                    "이메일/비밀번호/닉네임/전화번호로 회원가입을 진행합니다.\n" +
-                            "```json\n" +
-                            "{\n" +
-                            "  \"email\": \"test@example.com\",\n" +
-                            "  \"password\": \"Password!\",\n" +
-                            "  \"nickname\": \"tester\",\n" +
-                            "  \"phone\": \"01012345678\"\n" +
-                            "}\n" +
-                            "```"
+                    """
+                    관리자 계정을 회원가입합니다.
+                    
+                    ✅ 요청 예시
+                    ```json
+                    {
+                      "email": "manager@test.com",
+                      "password": "Test1234!",
+                      "nickname": "manager",
+                      "phone": "010-1234-5678",
+                      "adminRole": "ROLE_MANAGER"
+                    }
+                    ```
+                    """
     )
     @ApiResponses({
-            @ApiResponse(
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
-                    description = "회원가입 성공",
-                    content = @Content(schema = @Schema(implementation = UserSignupResponseDto.class))
+                    description = "관리자 회원가입 성공",
+                    content = @Content(schema = @Schema(implementation = AdminSignupResponseDto.class))
             ),
-            @ApiResponse(
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "409",
                     description = "회원가입 실패(중복 등)",
-                    content = @Content(schema = @Schema(type = "string", example = "이미 존재하는 사용자입니다."))
-            )
-    })
-    @PostMapping("/api/auth/signup")
-    com.example.unbox_be.global.response.ApiResponse<UserSignupResponseDto> signup(
-            @Parameter(description = "회원가입 요청 DTO", required = true)
-            @RequestBody UserSignupRequestDto userSignupRequestDto
-    );
-
-    @Operation(
-            summary = "일반 로그인 (ID/PW)",
-            description =
-                    """
-                    ID/PW 로그인 요청입니다. 실제 인증 및 토큰 발급은 Spring Security LoginFilter + SuccessHandler에서 처리됩니다.
-                    
-                    ✅ 성공 시
-                    - 응답 헤더: Authorization: Bearer {accessToken}
-                    - 응답 쿠키: refresh={refreshToken} (HttpOnly)
-                    - 응답 바디: accessToken/refreshToken JSON
-                    
-                    ✅ Swagger 테스트 방법
-                    1) 이 API를 실행
-                    2) 응답 헤더의 Authorization 값을 복사
-                    3) Swagger 우측 상단 Authorize 버튼에 붙여넣고 보호 API 호출
-                    """
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "로그인 성공",
-                    headers = {
-                            @Header(name = "Authorization", description = "Bearer access token", schema = @Schema(type = "string"))
-                    },
-                    content = @Content(schema = @Schema(implementation = UserTokenResponseDto.class))
+                    content = @Content(schema = @Schema(type = "string", example = "이미 존재하는 관리자입니다."))
             ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "로그인 실패(아이디/비밀번호 불일치)",
-                    content = @Content(schema = @Schema(type = "string", example = "아이디 또는 비밀번호가 일치하지 않습니다."))
-            ),
-            @ApiResponse(
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "400",
                     description = "요청 값 누락/형식 오류",
                     content = @Content(schema = @Schema(type = "string", example = "잘못된 요청입니다."))
             )
     })
-    @PostMapping("/login")
+    @PostMapping("/api/admin/auth/signup")
+    ApiResponse<AdminSignupResponseDto> signup(
+            @Parameter(description = "관리자 회원가입 요청 DTO", required = true)
+            @RequestBody AdminSignupRequestDto adminSignupRequestDto
+    );
+
+    @Operation(
+            summary = "관리자 로그인 (ID/PW)",
+            description =
+                    """
+                    관리자 로그인 요청입니다. 실제 인증 및 토큰 발급은 Spring Security LoginFilter + SuccessHandler에서 처리됩니다.
+                    
+                    ✅ 성공 시
+                    - 응답 헤더: Authorization: Bearer {accessToken}
+                    - 응답 쿠키: refresh={refreshToken} (HttpOnly)
+                    - 응답 바디: accessToken/refreshToken JSON (프로젝트 구현 방식에 따라 다를 수 있음)
+                    
+                    ✅ Swagger 테스트 방법
+                    1) 이 API 실행
+                    2) 응답 헤더 Authorization 값을 복사
+                    3) Swagger 우측 상단 Authorize 버튼에 붙여넣고 보호 API 호출
+                    """
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "로그인 성공",
+                    headers = {
+                            @Header(name = "Authorization", description = "Bearer access token", schema = @Schema(type = "string"))
+                    },
+                    content = @Content(schema = @Schema(type = "string", example = "로그인 요청이 처리되었습니다."))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "로그인 실패(아이디/비밀번호 불일치)",
+                    content = @Content(schema = @Schema(type = "string", example = "아이디 또는 비밀번호가 일치하지 않습니다."))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "요청 값 누락/형식 오류",
+                    content = @Content(schema = @Schema(type = "string", example = "잘못된 요청입니다."))
+            )
+    })
+    @PostMapping("/api/admin/auth/login")
     ResponseEntity<String> login(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
@@ -97,11 +107,11 @@ public interface AuthApi {
                             schema = @Schema(implementation = UserLoginRequestDto.class),
                             examples = {
                                     @io.swagger.v3.oas.annotations.media.ExampleObject(
-                                            name = "로그인 요청 예시",
+                                            name = "마스터 로그인 요청 예시",
                                             value = """
                                                     {
-                                                      "email": "test@example.com",
-                                                      "password": "Password!"
+                                                    "email": "master@test.com",
+                                                    "password": "Test1234!"
                                                     }
                                                     """
                                     )
@@ -112,43 +122,43 @@ public interface AuthApi {
     );
 
     @Operation(
-            summary = "로그아웃",
+            summary = "관리자 로그아웃",
             description =
                     """
-                    로그아웃 요청입니다.
+                    관리자 로그아웃 요청입니다.
                     일반적으로 다음 처리를 수행합니다.
                     - access token 블랙리스트 처리(선택)
                     - Redis에서 refresh token 삭제
                     - refresh 쿠키 만료
                     
-                    ⚠️ 실제 로그아웃 처리는 프로젝트 구조에 따라 CustomLogoutFilter에서 처리될 수 있습니다.
+                    ⚠️ 실제 로그아웃 처리는 프로젝트 구조에 따라 JWTFilter / LogoutFilter에서 처리될 수 있습니다.
                     """
     )
     @ApiResponses({
-            @ApiResponse(
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
                     description = "로그아웃 성공",
                     content = @Content(schema = @Schema(type = "string", example = "로그아웃 되었습니다."))
             ),
-            @ApiResponse(
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "400",
                     description = "토큰이 없거나 유효하지 않음",
                     content = @Content(schema = @Schema(type = "string", example = "토큰이 없습니다. 로그아웃을 진행할 수 없습니다."))
             )
     })
-    @PostMapping("/logout")
+    @PostMapping("/api/admin/auth/logout")
     ResponseEntity<String> logout(
             @Parameter(hidden = true) HttpServletRequest request
     );
 
     @Operation(
-            summary = "토큰 재발급",
+            summary = "관리자 토큰 재발급",
             description =
                     """
                     AccessToken 만료 시 RefreshToken으로 새로운 토큰을 발급합니다.
                     
                     ✅ 요청
-                    - refresh 쿠키(HttpOnly)가 자동 전송되는 방식 권장
+                    - refresh 쿠키(HttpOnly) 자동 전송 방식 권장
                     
                     ✅ 응답
                     - Authorization 헤더에 새 access token
@@ -162,27 +172,27 @@ public interface AuthApi {
                     """
     )
     @ApiResponses({
-            @ApiResponse(
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
                     description = "재발급 성공",
                     headers = {
                             @Header(name = "Authorization", description = "Bearer access token", schema = @Schema(type = "string"))
                     },
-                    content = @Content(schema = @Schema(implementation = UserTokenResponseDto.class))
+                    content = @Content(schema = @Schema(implementation = AdminTokenResponseDto.class))
             ),
-            @ApiResponse(
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "400",
                     description = "refresh token 없음",
                     content = @Content(schema = @Schema(type = "string", example = "리프레시 토큰을 찾을 수 없음"))
             ),
-            @ApiResponse(
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "401",
                     description = "refresh token 만료/유효하지 않음",
                     content = @Content(schema = @Schema(type = "string", example = "리프레시 토큰이 만료됨"))
             )
     })
-    @PostMapping("/reissue")
-    ResponseEntity<UserTokenResponseDto> reissue(
+    @PostMapping("/api/admin/auth/reissue")
+    ResponseEntity<AdminTokenResponseDto> reissue(
             @Parameter(hidden = true) HttpServletRequest request,
             @Parameter(hidden = true) HttpServletResponse response
     );

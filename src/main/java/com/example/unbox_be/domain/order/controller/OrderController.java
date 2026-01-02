@@ -3,6 +3,7 @@ package com.example.unbox_be.domain.order.controller;
 import com.example.unbox_be.domain.order.dto.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.OrderCreateRequestDto;
 import com.example.unbox_be.domain.order.dto.OrderResponseDto;
+import com.example.unbox_be.domain.order.dto.OrderTrackingRequestDto;
 import com.example.unbox_be.domain.order.service.OrderService;
 import com.example.unbox_be.global.response.ApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
@@ -83,7 +84,7 @@ public class OrderController {
     }
 
     /**
-     * 주문 취소 (판매자)
+     * 주문 취소
      */
     @PatchMapping("/{orderId}/cancel")
     public ResponseEntity<ApiResponse<OrderDetailResponseDto>> cancelOrder(
@@ -91,6 +92,24 @@ public class OrderController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         OrderDetailResponseDto responseDto = orderService.cancelOrder(orderId, userDetails.getUsername());
+
+        return ResponseEntity.ok(ApiResponse.success(responseDto));
+    }
+
+    /**
+     * 운송장 번호 등록 (판매자용)
+     */
+    @PatchMapping("/{orderId}/tracking")
+    public ResponseEntity<ApiResponse<OrderDetailResponseDto>> registerTrackingNumber(
+            @PathVariable UUID orderId,
+            @Valid @RequestBody OrderTrackingRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        OrderDetailResponseDto responseDto = orderService.registerTrackingNumber(
+                orderId,
+                requestDto.getTrackingNumber(),
+                userDetails.getUsername()
+        );
 
         return ResponseEntity.ok(ApiResponse.success(responseDto));
     }

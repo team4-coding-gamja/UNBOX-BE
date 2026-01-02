@@ -12,4 +12,6 @@ public interface ProductOptionRepository extends JpaRepository<ProductOption, UU
 
     // 상세조회용 (1개 상품 옵션 조회)
     List<ProductOption> findAllByProductId(UUID productId);
+
+    boolean existsByProductAndOption(Product product, String option);
 }

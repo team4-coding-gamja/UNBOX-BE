@@ -14,18 +14,18 @@ public class User extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Long 타입 사용 권장
+    private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(nullable = false, unique = true, length = 10)
+    @Column(name = "nickname", nullable = false, unique = true, length = 10)
     private String nickname;
 
-    @Column(nullable = false)
+    @Column(name = "phone", nullable = false)
     private String phone;
 
 //    // 1. 배송지 목록

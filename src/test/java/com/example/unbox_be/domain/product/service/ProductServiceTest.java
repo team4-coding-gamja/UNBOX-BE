@@ -47,7 +47,7 @@ class ProductServiceTest {
         // given
         // 1. 가짜 데이터 생성 (Reflection이나 Mock을 써도 되지만, 이해를 위해 Spy나 Mock 이용)
         Product product1 = mock(Product.class);
-        Brand brand1 = new Brand("Nike");
+        Brand brand1 = new Brand("Nike","https://nike.com");
 
         given(product1.getId()).willReturn(UUID.randomUUID());
         given(product1.getName()).willReturn("Air Force 1");
@@ -109,7 +109,7 @@ class ProductServiceTest {
         // given
         UUID productId = UUID.randomUUID();
         Product product = mock(Product.class);
-        Brand brand = new Brand("Adidas");
+        Brand brand = new Brand("Adidas", "https://adidas.com");
 
         given(product.getId()).willReturn(productId);
         given(product.getName()).willReturn("Superstar");

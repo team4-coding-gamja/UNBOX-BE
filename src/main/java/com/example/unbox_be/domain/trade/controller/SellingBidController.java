@@ -7,6 +7,11 @@ import com.example.unbox_be.domain.trade.service.SellingBidService;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -61,6 +66,19 @@ public class SellingBidController {
             @PathVariable UUID sellingId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        return ResponseEntity.ok(sellingBidService.getSellingBidDetail(sellingId,userDetails.getUsername()));
+        return ResponseEntity.ok(sellingBidService.getSellingBidDetail(sellingId, userDetails.getUsername()));
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<Slice<SellingBidResponseDto>> getMySellingBids(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            // @ParameterObject를 쓰면 스웨거에서 page, size, sort가 예쁘게 분리되어 나옵니다.
+            @ParameterObject @PageableDefault(
+                    size = 3,
+                    sort = "createdAt",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable
+    ) {
+        return ResponseEntity.ok(sellingBidService.getMySellingBids(userDetails.getUsername(), pageable));
     }
 }

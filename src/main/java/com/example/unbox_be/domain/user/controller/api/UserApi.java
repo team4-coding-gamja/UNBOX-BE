@@ -1,7 +1,8 @@
 package com.example.unbox_be.domain.user.controller.api;
 
-import com.example.unbox_be.domain.user.dto.request.UserUpdateRequestDto;
-import com.example.unbox_be.domain.user.dto.response.UserResponseDto;
+import com.example.unbox_be.domain.user.dto.request.UserMeUpdateRequestDto;
+import com.example.unbox_be.domain.user.dto.response.UserMeResponseDto;
+import com.example.unbox_be.domain.user.dto.response.UserMeUpdateResponseDto;
 import com.example.unbox_be.global.response.ApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,7 +24,7 @@ public interface UserApi {
     @ApiResponses({
     })
     @GetMapping("/me")
-    ApiResponse<UserResponseDto> getUser(
+    ApiResponse<UserMeResponseDto> getUserMe(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails userDetails
     );
@@ -36,12 +37,12 @@ public interface UserApi {
     @ApiResponses({
     })
     @PatchMapping("/me")
-    ApiResponse<UserResponseDto> updateUser(
+    ApiResponse<UserMeUpdateResponseDto> updateUserMe(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails userDetails,
 
             @Parameter(description = "수정할 회원 정보", required = true)
-            @RequestBody UserUpdateRequestDto userUpdateRequestDto
+            @RequestBody UserMeUpdateRequestDto userMeUpdateRequestDto
     );
 
     // ================= 회원 탈퇴 =================
@@ -52,7 +53,7 @@ public interface UserApi {
     @ApiResponses({
     })
     @DeleteMapping("/me")
-    ApiResponse<String> deleteUser(
+    ApiResponse<String> deleteUserMe(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails userDetails
     );

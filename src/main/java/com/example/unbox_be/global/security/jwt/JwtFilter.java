@@ -38,9 +38,12 @@ public class JwtFilter extends OncePerRequestFilter {
         if (path.startsWith("/api/auth/signup")
                 || path.startsWith("/api/auth/login")
                 || path.startsWith("/api/auth/reissue")
+                || path.startsWith("/api/admin/auth/login")
+                || path.startsWith("/api/admin/auth/reissue")   //
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")
-                || path.equals("/swagger-ui.html")) {
+                || path.equals("/swagger-ui.html")
+                || path.startsWith("/api/test")) {
 
             log.info("[JwtFilter] 인증 제외 경로 → 필터 통과");
             filterChain.doFilter(request, response);

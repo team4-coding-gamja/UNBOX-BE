@@ -2,6 +2,7 @@ package com.example.unbox_be.domain.order.service;
 
 import com.example.unbox_be.domain.order.dto.OrderCreateRequestDto;
 import com.example.unbox_be.domain.order.dto.OrderResponseDto;
+import com.example.unbox_be.domain.order.dto.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.mapper.OrderMapper;
@@ -26,6 +27,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -234,5 +236,324 @@ class OrderServiceTest {
                         orderService.getMyOrders(unknownEmail, pageable)
                 ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", com.example.unbox_be.global.error.exception.ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("주문 상세 조회 성공 - 구매자가 조회 시")
+    void getOrderDetail_Success_Buyer() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String buyerEmail = "buyer@test.com";
+
+        // 유저 생성 및 ID 주입 (Reflection 사용)
+        User buyer = User.createUser(buyerEmail, "pw", "buyer", "010-1111-1111");
+        ReflectionTestUtils.setField(buyer, "id", 1L);
+
+        User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
+        ReflectionTestUtils.setField(seller, "id", 2L);
+
+        // 연관 객체 생성
+        Brand brand = new Brand("Nike");
+        Product product = new Product(brand, "Air Force 1", "CW", Category.SHOES, "url");
+        ProductOption option = new ProductOption(product, "270");
+
+        // 주문 생성 및 주입
+        Order order = Order.builder()
+                .buyer(buyer)
+                .seller(seller)
+                .productOption(option)
+                .price(BigDecimal.valueOf(300000))
+                .receiverName("홍길동")
+                .build();
+        ReflectionTestUtils.setField(order, "id", orderId);
+
+        // Mocking
+        given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(buyer));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        // When
+        OrderDetailResponseDto result = orderService.getOrderDetail(orderId, buyerEmail);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getOrderId()).isEqualTo(orderId);
+        // 매퍼가 정상적으로 호출되었는지 확인 (Spy 사용했으므로 실제 DTO 변환됨)
+        assertThat(result.getPrice()).isEqualTo(BigDecimal.valueOf(300000));
+    }
+
+    @Test
+    @DisplayName("주문 상세 조회 실패 - 권한 없는 사용자(제3자)")
+    void getOrderDetail_Fail_AccessDenied() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String hackerEmail = "hacker@test.com";
+
+        User hacker = User.createUser(hackerEmail, "pw", "hacker", "010-9999-9999");
+        ReflectionTestUtils.setField(hacker, "id", 3L); // 제3자
+
+        User buyer = User.createUser("buyer@test.com", "pw", "buyer", "010-1111-1111");
+        ReflectionTestUtils.setField(buyer, "id", 1L);
+        User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
+        ReflectionTestUtils.setField(seller, "id", 2L);
+
+        // Order는 Buyer(1)와 Seller(2)의 거래
+        Order order = Order.builder().buyer(buyer).seller(seller).price(BigDecimal.ZERO).build();
+
+        given(userRepository.findByEmail(hackerEmail)).willReturn(Optional.of(hacker));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        // When & Then
+        assertThatThrownBy(() -> orderService.getOrderDetail(orderId, hackerEmail))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("주문 상세 조회 실패 - 주문이 존재하지 않음")
+    void getOrderDetail_Fail_OrderNotFound() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String email = "user@test.com";
+        User user = User.createUser(email, "pw", "user", "010-1111-1111");
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> orderService.getOrderDetail(orderId, email))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ORDER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("주문 상세 조회 실패 - 데이터 무결성 오류 (Buyer/Seller 누락)")
+    void getOrderDetail_Fail_DataIntegrity() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String email = "user@test.com";
+        User user = User.createUser(email, "pw", "user", "010-1111-1111");
+
+        // Buyer나 Seller가 null인 비정상 주문 객체 생성 (Builder 패턴 사용 시 필드 누락 가능)
+        // 여기서는 @Builder가 있지만 null이 들어갔다고 가정하거나 Mock 객체 사용
+        Order brokenOrder = Order.builder()
+                .buyer(null) // 문제 발생 지점
+                .seller(null)
+                .price(BigDecimal.ZERO)
+                .build();
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(brokenOrder));
+
+        // When & Then
+        assertThatThrownBy(() -> orderService.getOrderDetail(orderId, email))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.DATA_INTEGRITY_ERROR);
+    }
+
+    @Test
+    @DisplayName("주문 상세 조회 실패 - 데이터 무결성 오류 (Seller만 누락된 경우)")
+    void getOrderDetail_Fail_DataIntegrity_SellerMissing() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String email = "user@test.com";
+        User user = User.createUser(email, "pw", "user", "010-1111-1111");
+
+        // Buyer는 있지만 Seller가 null인 객체 생성
+        Order brokenOrder = Order.builder()
+                .buyer(user)  // Buyer는 있음 (앞 조건 통과)
+                .seller(null) // Seller가 없음 (뒷 조건에서 걸림)
+                .price(BigDecimal.ZERO)
+                .build();
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(brokenOrder));
+
+        // When & Then
+        assertThatThrownBy(() -> orderService.getOrderDetail(orderId, email))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.DATA_INTEGRITY_ERROR);
+    }
+
+    @Test
+    @DisplayName("주문 상세 조회 실패 - 존재하지 않는 사용자")
+    void getOrderDetail_Fail_UserNotFound() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String unknownEmail = "unknown@test.com";
+
+        // 유저를 찾지 못함 -> 예외 발생 (람다식 실행)
+        given(userRepository.findByEmail(unknownEmail)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> orderService.getOrderDetail(orderId, unknownEmail))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("주문 취소 성공 - 구매자가 배송 대기 상태에서 취소")
+    void cancelOrder_Success_Buyer() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String buyerEmail = "buyer@test.com";
+
+        User buyer = User.createUser(buyerEmail, "pw", "buyer", "010-1111-1111");
+        ReflectionTestUtils.setField(buyer, "id", 1L);
+
+        User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
+        ReflectionTestUtils.setField(seller, "id", 2L);
+
+        // 연관 객체 (Mapper 오류 방지용)
+        Brand brand = new Brand("Nike");
+        Product product = new Product(brand, "Air Force 1", "CW", Category.SHOES, "url");
+        ProductOption option = new ProductOption(product, "270");
+
+        Order order = Order.builder()
+                .buyer(buyer)
+                .seller(seller)
+                .productOption(option)
+                .price(BigDecimal.valueOf(300000))
+                .build();
+        // 초기 상태는 PENDING_SHIPMENT
+        // 명시적으로 확인
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING_SHIPMENT);
+
+        given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(buyer));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        // When
+        orderService.cancelOrder(orderId, buyerEmail);
+
+        // Then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.getCancelledAt()).isNotNull(); // 취소 시간 기록 확인
+    }
+
+    @Test
+    @DisplayName("주문 취소 성공 - 판매자가 취소 요청")
+    void cancelOrder_Success_Seller() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String sellerEmail = "seller@test.com";
+
+        User seller = User.createUser(sellerEmail, "pw", "seller", "010-2222-2222");
+        ReflectionTestUtils.setField(seller, "id", 2L);
+
+        User buyer = User.createUser("buyer@test.com", "pw", "buyer", "010-1111-1111");
+        ReflectionTestUtils.setField(buyer, "id", 1L);
+
+        // 연관 객체
+        Brand brand = new Brand("Nike");
+        Product product = new Product(brand, "Air Force 1", "CW", Category.SHOES, "url");
+        ProductOption option = new ProductOption(product, "270");
+
+        Order order = Order.builder()
+                .buyer(buyer)
+                .seller(seller)
+                .productOption(option)
+                .price(BigDecimal.valueOf(300000))
+                .build();
+
+        given(userRepository.findByEmail(sellerEmail)).willReturn(Optional.of(seller));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        // When
+        orderService.cancelOrder(orderId, sellerEmail);
+
+        // Then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+    }
+
+    @Test
+    @DisplayName("주문 취소 실패 - 존재하지 않는 사용자")
+    void cancelOrder_Fail_UserNotFound() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String unknownEmail = "unknown@test.com";
+
+        given(userRepository.findByEmail(unknownEmail)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> orderService.cancelOrder(orderId, unknownEmail))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("주문 취소 실패 - 존재하지 않는 주문")
+    void cancelOrder_Fail_OrderNotFound() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String email = "seller@test.com";
+        User user = User.createUser(email, "pw", "seller", "010-2222-2222");
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        // 주문을 찾지 못함
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> orderService.cancelOrder(orderId, email))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ORDER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("주문 취소 실패 - 권한 없는 사용자(제3자)")
+    void cancelOrder_Fail_AccessDenied() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String hackerEmail = "hacker@test.com";
+
+        User hacker = User.createUser(hackerEmail, "pw", "hacker", "010-3333-3333");
+        ReflectionTestUtils.setField(hacker, "id", 3L);
+
+        User buyer = User.createUser("buyer@test.com", "pw", "buyer", "010-1111-1111");
+        ReflectionTestUtils.setField(buyer, "id", 1L);
+        User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
+        ReflectionTestUtils.setField(seller, "id", 2L);
+
+        // 구매자 1, 판매자 2의 주문
+        Order order = Order.builder().buyer(buyer).seller(seller).price(BigDecimal.TEN).build();
+
+        given(userRepository.findByEmail(hackerEmail)).willReturn(Optional.of(hacker));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        // When & Then
+        // 제3자(3L)가 취소 시도 -> Access Denied
+        assertThatThrownBy(() -> orderService.cancelOrder(orderId, hackerEmail))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("주문 취소 실패 - 구매자가 배송 시작(SHIPPED) 이후 취소 시도")
+    void cancelOrder_Fail_Buyer_AlreadyShipped() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String buyerEmail = "buyer@test.com";
+
+        User buyer = User.createUser(buyerEmail, "pw", "buyer", "010-1111-1111");
+        ReflectionTestUtils.setField(buyer, "id", 1L);
+        User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
+        ReflectionTestUtils.setField(seller, "id", 2L);
+
+        Order order = Order.builder()
+                .buyer(buyer)
+                .seller(seller)
+                .price(BigDecimal.valueOf(300000))
+                .build();
+
+        // 강제로 배송 상태 변경 (SHIPPED_TO_CENTER 등) - Setter가 없다면 메서드 활용
+        // Order 엔티티에 updateStatus 메서드나 필드 접근 필요
+        // 여기선 TestUtils로 상태 강제 주입
+        ReflectionTestUtils.setField(order, "status", OrderStatus.SHIPPED_TO_CENTER);
+
+        given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(buyer));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        // When & Then
+        assertThatThrownBy(() -> orderService.cancelOrder(orderId, buyerEmail))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ORDER_CANNOT_BE_CANCELLED);
     }
 }

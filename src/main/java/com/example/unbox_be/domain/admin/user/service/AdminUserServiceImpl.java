@@ -11,12 +11,12 @@ import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
-import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @AllArgsConstructor
@@ -27,7 +27,7 @@ public class AdminUserServiceImpl implements  AdminUserService {
 
     // ✅ 사용자 목록 조회
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public Page<AdminUserListResponseDto> getAdminUserPage(String email, int page, int size) {
         Admin admin = adminRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));

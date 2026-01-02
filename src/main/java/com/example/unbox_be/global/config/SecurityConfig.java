@@ -119,6 +119,11 @@ public class SecurityConfig {
 
                         // ✅ 관리자 staff 관련(목록/상세/수정/삭제 전부) MASTER만
                         .requestMatchers(
+                                "/api/admin/staff"
+                        ).hasRole("MASTER")
+
+                        // ✅ 관리자 staff 관련(목록/상세/수정/삭제 전부) MASTER만
+                        .requestMatchers(
                                 "/api/admin/staff",
                                 "/api/admin/staff/**"
                         ).hasRole("MASTER")

@@ -7,11 +7,10 @@ import java.util.UUID;
 
 
 @Getter
-@NoArgsConstructor  // 기본생성자
-@AllArgsConstructor // 테스트코드를 위함
+@AllArgsConstructor // 테스트 코드에서 new 생성자를 쓰기 위해 반드시 필요
+@NoArgsConstructor
 public class ReviewRequestDto {
-    private UUID productId;
-    private UUID orderId;
+    private UUID orderId; // 서버가 이 ID를 통해 상품 정보를 찾으므로 productId는 불필요
     private String content;
     private Integer rating;
     private String imageUrl;

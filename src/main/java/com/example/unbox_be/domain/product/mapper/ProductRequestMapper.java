@@ -16,6 +16,6 @@ public interface ProductRequestMapper {
     @Mapping(target = "id", ignore = true)      // DB 자동 생성
     @Mapping(target = "status", ignore = true)  // 엔티티 생성자에서 PENDING 설정됨
     @Mapping(target = "userId", source = "userId") // 파라미터로 받은 userId 매핑
-    // 나머지 필드(name, modelNumber 등)는 이름이 같아서 자동 매핑됨
+    // 나머지 필드(name)는 이름이 같아서 자동 매핑됨
     ProductRequest toEntity(ProductRequestDto dto, Long userId);
 }

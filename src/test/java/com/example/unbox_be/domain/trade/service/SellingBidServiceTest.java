@@ -110,7 +110,7 @@ class SellingBidServiceTest {
         given(userRepository.findByEmail(anyString())).willReturn(Optional.of(user));
 
         // 어떤 UUID가 들어와도 sellingBid를 반환하도록 설정 (findById와 커스텀 메서드 둘 다 대응)
-        given(sellingBidRepository.findWithDetailsBySellingId(any(UUID.class))) // 서비스와 이름 맞춤
+        given(sellingBidRepository.findBySellingId(any(UUID.class))) // 서비스와 이름 맞춤
                 .willReturn(Optional.of(sellingBid));
 
         given(sellingBidMapper.toResponseDto(any(SellingBid.class))).willReturn(mockDto);

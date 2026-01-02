@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class AdminAuthServiceImpl implements AdminAuthService{
 
-    public final AdminRepository adminRepository;
+    private final AdminRepository adminRepository;
     private final PasswordEncoder passwordEncoder;
 
     // ✅ 회원가입

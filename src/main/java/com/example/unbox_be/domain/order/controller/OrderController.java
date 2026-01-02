@@ -4,6 +4,7 @@ import com.example.unbox_be.domain.order.dto.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.OrderCreateRequestDto;
 import com.example.unbox_be.domain.order.dto.OrderResponseDto;
 import com.example.unbox_be.domain.order.dto.OrderTrackingRequestDto;
+import com.example.unbox_be.domain.order.dto.OrderStatusUpdateRequestDto;
 import com.example.unbox_be.domain.order.service.OrderService;
 import com.example.unbox_be.global.response.ApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
@@ -107,6 +108,26 @@ public class OrderController {
     ) {
         OrderDetailResponseDto responseDto = orderService.registerTrackingNumber(
                 orderId,
+                requestDto.getTrackingNumber(),
+                userDetails.getUsername()
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(responseDto));
+    }
+
+    /**
+     * 주문 상태 변경 (관리자/검수자용)
+     * - 검수 합격, 배송 시작 등의 절차 진행
+     */
+    @PatchMapping("/{orderId}/status")
+    public ResponseEntity<ApiResponse<OrderDetailResponseDto>> updateOrderStatus(
+            @PathVariable UUID orderId,
+            @Valid @RequestBody OrderStatusUpdateRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        OrderDetailResponseDto responseDto = orderService.updateOrderStatus(
+                orderId,
+                requestDto.getStatus(),
                 requestDto.getTrackingNumber(),
                 userDetails.getUsername()
         );

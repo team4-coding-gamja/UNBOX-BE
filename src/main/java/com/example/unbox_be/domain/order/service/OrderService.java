@@ -185,4 +185,31 @@ public class OrderService {
         // 5. 결과 반환
         return orderMapper.toDetailResponseDto(order);
     }
+
+    /**
+     * 관리자/검수자 주문 상태 변경
+     * - PATCH /api/orders/{orderId}/status
+     */
+    @Transactional
+    public OrderDetailResponseDto updateOrderStatus(UUID orderId, OrderStatus newStatus, String trackingNumber, String email) {
+        // 1. 요청 사용자(관리자) 조회
+//        User adminUser = userRepository.findByEmail(email)
+//                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. 권한 검증 (ADMIN 또는 INSPECTOR만 가능)
+        // ADMIN 도메인이 들어오면 추가
+//        if (adminUser.getRole() != Role.ADMIN && adminUser.getRole() != Role.INSPECTOR) {
+//            throw new CustomException(ErrorCode.ACCESS_DENIED);
+//        }
+
+        // 3. 주문 조회
+        Order order = orderRepository.findWithDetailsById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 4. 상태 변경 (Entity 비즈니스 로직 호출)
+        order.updateAdminStatus(newStatus, trackingNumber);
+
+        // 5. 결과 반환
+        return orderMapper.toDetailResponseDto(order);
+    }
 }

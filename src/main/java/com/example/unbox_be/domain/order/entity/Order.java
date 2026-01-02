@@ -120,6 +120,23 @@ public class Order extends BaseEntity {
         updateStatus(OrderStatus.SHIPPED_TO_CENTER);
     }
 
+    // 관리자/검수자용 상태 변경
+    public void updateAdminStatus(OrderStatus newStatus, String finalTrackingNumber) {
+        // 1. 구매자에게 발송(SHIPPED_TO_BUYER) 상태로 변경하려는데 운송장 번호가 없으면 에러
+        if (newStatus == OrderStatus.SHIPPED_TO_BUYER) {
+            if (finalTrackingNumber == null || finalTrackingNumber.isBlank()) {
+                // "배송 시작 시 운송장 번호는 필수입니다" 라는 의미의 에러
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+            }
+            this.finalTrackingNumber = finalTrackingNumber;
+        }
+
+        // 2. 검수 불합격(INSPECTION_FAILED) 시 추가 로직이 필요하다면 여기에 작성 (예: 환불 처리 로직 트리거 등)
+
+        // 3. 공통 상태 변경 로직 재사용
+        updateStatus(newStatus);
+    }
+
     public void registerFinalTrackingNumber(String finalTrackingNumber) {
         this.finalTrackingNumber = finalTrackingNumber;
     }

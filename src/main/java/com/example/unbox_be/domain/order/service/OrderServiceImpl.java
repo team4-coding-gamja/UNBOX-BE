@@ -77,7 +77,7 @@ public class OrderServiceImpl implements OrderService {
 
         // 7. 판매 입찰 상태 변경 (판매 완료 처리)
         // SellingBid 엔티티에 updateStatus 메서드가 있으므로 활용
-        sellingBid.updateStatus(SellingStatus.HOLD);
+        sellingBid.updateStatus(SellingStatus.MATCHED);
 
         return orderRepository.save(order).getId();
     }

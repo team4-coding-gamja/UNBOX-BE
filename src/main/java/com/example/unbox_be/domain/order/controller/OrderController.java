@@ -49,8 +49,14 @@ public class OrderController implements OrderApi {
             UUID orderId,
             CustomUserDetails userDetails
     ) {
-        // 여기서는 ID가 더 명확하므로 ID를 사용하되, 서비스 로직에 따라 유동적입니다.
-        OrderDetailResponseDto response = orderService.getOrderDetail(orderId, userDetails.getUserId());
+        // 상세 조회는 구매자/판매자(User) 또는 관리자(Admin) 모두 가능
+        // 우선 User ID를 넘기되, 관리자인 경우 서비스에서 별도 처리가 필요할 수 있음 (현재는 User 로직 위주)
+        // 만약 관리자도 조회해야 한다면 서비스의 getOrderDetail 인자를 확장하거나 분기 처리가 필요함.
+        // 일단 기존 로직 유지를 위해 getUserId() 사용 (User 기준)
+        Long userId = userDetails.getUserId();
+        // Tip: 관리자 조회 기능이 필요하면 여기서 userDetails.getAdminId() 체크 로직 추가 권장
+
+        OrderDetailResponseDto response = orderService.getOrderDetail(orderId, userId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -83,11 +89,13 @@ public class OrderController implements OrderApi {
             OrderStatusUpdateRequestDto requestDto,
             CustomUserDetails userDetails
     ) {
+        Long adminId = userDetails.getAdminId();
+
         OrderDetailResponseDto response = orderService.updateAdminStatus(
                 orderId,
                 requestDto.getStatus(),
                 requestDto.getTrackingNumber(),
-                userDetails.getUserId()
+                adminId
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }

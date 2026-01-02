@@ -4,7 +4,6 @@ import com.example.unbox_be.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-
 @Entity
 @Table(name = "p_admin")
 @Getter

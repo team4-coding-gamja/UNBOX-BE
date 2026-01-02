@@ -25,38 +25,34 @@ public class AdminProductController implements AdminProductApi {
     // ✅ 상품 등록
     @PostMapping
     public ApiResponse<AdminProductCreateResponseDto> createProduct(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid AdminProductCreateRequestDto requestDto) {
-        AdminProductCreateResponseDto result = adminProductService.createProduct(userDetails.getUsername(), requestDto);
+        AdminProductCreateResponseDto result = adminProductService.createProduct(requestDto);
         return ApiResponse.success(result);
     }
 
     // ✅ 상품 삭제
     @DeleteMapping("/{productId}")
     public ApiResponse<Void> deleteProduct(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID productId) {
-        adminProductService.deleteProduct(userDetails.getUsername(), productId);
+        adminProductService.deleteProduct(productId);
         return ApiResponse.success(null);
     }
 
     // ✅ 상품 옵션 등록
     @PostMapping("/{productId}/options")
     public ApiResponse<AdminProductOptionCreateResponseDto> createProductOption(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID productId,
-            @RequestBody @Valid AdminProductOptionCreateRequestDto adminProductOptionCreateRequestDto) {
-        AdminProductOptionCreateResponseDto result = adminProductService.createProductOption(userDetails.getUsername(), productId, adminProductOptionCreateRequestDto);
+            @RequestBody @Valid AdminProductOptionCreateRequestDto requestDto) {
+        AdminProductOptionCreateResponseDto result = adminProductService.createProductOption(productId, requestDto);
         return ApiResponse.success(result);
     }
 
     // ✅ 상품 옵션 삭제
     @DeleteMapping("/{productId}/options/{optionId}")
     public ApiResponse<Void> deleteProductOption(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID productId,
             @PathVariable UUID optionId) {
-        adminProductService.deleteProductOption(userDetails.getUsername(), productId, optionId);
+        adminProductService.deleteProductOption(productId, optionId);
         return ApiResponse.success(null);
     }
 }

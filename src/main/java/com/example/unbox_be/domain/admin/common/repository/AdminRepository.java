@@ -11,7 +11,6 @@ import java.util.Optional;
 
 public interface AdminRepository extends JpaRepository<Admin, Long> {
 
-    //email을 받아 DB 테이블에서 회원을 조회하는 메소드 작성
     boolean existsByEmail(String email);
 
     boolean existsByNickname(String nickname);
@@ -19,6 +18,6 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
     boolean existsByAdminRole(AdminRole adminRole);
 
     Optional<Admin> findByEmail(String email);
-    // 관리자(매니저, 검수자) 목록 조회
+
     Page<Admin> findByAdminRoleIn(List<AdminRole> roles, Pageable pageable);
 }

@@ -16,7 +16,9 @@ import com.example.unbox_be.domain.product.repository.ProductRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -24,16 +26,15 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AdminProductServiceImpl implements AdminProductService {
 
-    private final AdminRepository adminRepository;
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
     private final BrandRepository brandRepository;
 
     // ✅ 상품 등록
     @Override
-    public AdminProductCreateResponseDto createProduct(String email, AdminProductCreateRequestDto requestDto) {
-        Admin admin = adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+    @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public AdminProductCreateResponseDto createProduct(AdminProductCreateRequestDto requestDto) {
         Brand brand = brandRepository.findById(requestDto.getBrandId())
                 .orElseThrow(() -> new CustomException(ErrorCode.BRAND_NOT_FOUND));
 
@@ -50,21 +51,20 @@ public class AdminProductServiceImpl implements AdminProductService {
 
     // ✅ 상품 삭제
     @Override
-    public void deleteProduct(String email, UUID productId) {
-        adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+    @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public void deleteProduct(UUID productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        // 실무에서는 소프트 삭제 추천 (현재는 하드 삭제)
-        productRepository.delete(product);
+        productRepository.delete(product); // 실무에서는 소프트 삭제 추천 (현재는 하드 삭제)
     }
 
     // ✅ 상품 옵션 등록
     @Override
-    public AdminProductOptionCreateResponseDto createProductOption(String email, UUID productId, AdminProductOptionCreateRequestDto requestDto) {
-        adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+    @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public AdminProductOptionCreateResponseDto createProductOption(UUID productId, AdminProductOptionCreateRequestDto requestDto) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
         if (productOptionRepository.existsByProductAndOption(product, requestDto.getOption())) {
@@ -78,15 +78,13 @@ public class AdminProductServiceImpl implements AdminProductService {
 
     // ✅ 상품 옵션 삭제
     @Override
-    public void deleteProductOption(String email, UUID productId, UUID optionId) {
-        adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+    @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public void deleteProductOption(UUID productId, UUID optionId) {
         productRepository.findById(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
         ProductOption option = productOptionRepository.findById(optionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND));
-
-        // 옵션이 해당 상품 소속인지 검증
         if (!option.getProduct().getId().equals(productId)) {
             throw new CustomException(ErrorCode.INVALID_PRODUCT_OPTION);
         }

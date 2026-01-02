@@ -10,6 +10,7 @@ import com.example.unbox_be.domain.product.repository.BrandRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,20 +21,20 @@ import java.util.UUID;
 @Transactional
 public class AdminBrandServiceImpl implements AdminBrandService {
 
-    private final AdminRepository adminRepository;
     private final BrandRepository brandRepository;
 
     // ✅ 브랜드 등록
     @Override
-    public AdminBrandCreateResponseDto createBrand(String email, AdminBrandCreateRequestDto adminBrandCreateRequestDto) {
-        Admin admin = adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
-        if (brandRepository.existsByName(adminBrandCreateRequestDto.getName())) {
+    @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public AdminBrandCreateResponseDto createBrand(AdminBrandCreateRequestDto requestDto) {
+        if (brandRepository.existsByName(requestDto.getName())) {
             throw new CustomException(ErrorCode.BRAND_ALREADY_EXISTS);
         }
+
         Brand brand = Brand.createBrand(
-                adminBrandCreateRequestDto.getName(),
-                adminBrandCreateRequestDto.getLogoUrl()
+                requestDto.getName(),
+                requestDto.getLogoUrl()
         );
         Brand savedBrand = brandRepository.save(brand);
         return AdminBrandMapper.toAdminBrandCreateResponseDto(savedBrand);
@@ -41,9 +42,9 @@ public class AdminBrandServiceImpl implements AdminBrandService {
 
     // ✅ 브랜드 삭제
     @Override
-    public void deleteBrand(String email, UUID brandId) {
-        Admin admin = adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+    @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public void deleteBrand(UUID brandId) {
         Brand brand = brandRepository.findById(brandId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BRAND_NOT_FOUND));
 

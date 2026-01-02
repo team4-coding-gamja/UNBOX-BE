@@ -36,9 +36,6 @@ public interface AdminStaffApi {
     })
     @GetMapping
     ApiResponse<Page<AdminStaffListResponseDto>> getAdminStaffPage(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @Parameter(description = "페이지 번호(0부터 시작)", example = "0", required = true)
             @RequestParam int page,
 
@@ -62,9 +59,6 @@ public interface AdminStaffApi {
     })
     @GetMapping("/managers")
     ApiResponse<Page<AdminStaffListResponseDto>> getAdminManagerPage(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @Parameter(description = "페이지 번호(0부터 시작)", example = "0", required = true)
             @RequestParam int page,
 
@@ -88,9 +82,6 @@ public interface AdminStaffApi {
     })
     @GetMapping("/inspectors")
     ApiResponse<Page<AdminStaffListResponseDto>> getAdminInspectorPage(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @Parameter(description = "페이지 번호(0부터 시작)", example = "0", required = true)
             @RequestParam int page,
 
@@ -114,16 +105,13 @@ public interface AdminStaffApi {
     })
     @GetMapping("/{adminId}")
     ApiResponse<AdminStaffDetailResponseDto> getAdminStaffDetail(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @Parameter(description = "관리자 ID", required = true, example = "1")
             @PathVariable Long adminId
     );
 
     @Operation(
             summary = "관리자 정보 수정",
-            description = "특정 해당하는 관리자 정보를 수정합니다."
+            description = "특정 관리자 정보를 수정합니다."
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -138,9 +126,6 @@ public interface AdminStaffApi {
     })
     @PatchMapping("/{adminId}")
     ApiResponse<AdminStaffUpdateResponseDto> updateAdminStaff(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @Parameter(description = "관리자 ID", required = true, example = "1")
             @PathVariable Long adminId,
 

@@ -26,38 +26,34 @@ public class AdminUserController implements AdminUserApi {
     // ✅ 사용자 목록 조회
     @GetMapping
     public ApiResponse<Page<AdminUserListResponseDto>> getAdminUserPage(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam int page,
             @RequestParam int size) {
-        Page<AdminUserListResponseDto> result = adminUserService.getAdminUserPage(userDetails.getUsername(), page, size);
+        Page<AdminUserListResponseDto> result = adminUserService.getAdminUserPage(page, size);
         return ApiResponse.success(result);
     }
 
     // ✅ 사용자 상세 정보 조회
     @GetMapping("/{userId}")
     public ApiResponse<AdminUserDetailResponseDto> getAdminUserDetail(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userId) {
-        AdminUserDetailResponseDto result = adminUserService.getAdminUserDetail(userDetails.getUsername(), userId);
+        AdminUserDetailResponseDto result = adminUserService.getAdminUserDetail(userId);
         return ApiResponse.success(result);
     }
 
     // ✅ 사용자 상세 정보 수정
     @PatchMapping("/{userId}")
     public ApiResponse<AdminUserUpdateResponseDto> updateAdminUser(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userId,
             @RequestBody @Valid AdminUserUpdateRequestDto requestDto) {
-        AdminUserUpdateResponseDto result = adminUserService.updateAdminUser(userDetails.getUsername(), userId, requestDto);
+        AdminUserUpdateResponseDto result = adminUserService.updateAdminUser(userId, requestDto);
         return ApiResponse.success(result);
     }
 
     // ✅ 사용자 상세 정보 삭제
     @DeleteMapping("/{userId}")
     public ApiResponse<Void> deleteAdminUser(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userId) {
-        adminUserService.deleteAdminUser(userDetails.getUsername(), userId);
+        adminUserService.deleteAdminUser(userId);
         return ApiResponse.success(null);
     }
 }

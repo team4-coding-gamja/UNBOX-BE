@@ -33,7 +33,6 @@ public class AdminAuthController implements AdminAuthApi {
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
     private final AdminAuthService adminAuthService;
 
-
     // ✅ 회원가입
     @PostMapping("/signup")
     public ApiResponse<AdminSignupResponseDto> signup(
@@ -86,7 +85,7 @@ public class AdminAuthController implements AdminAuthApi {
         }
 
         // 새 토큰 만들기 전에 서버 저장값과 비교
-        String saved = refreshTokenRedisRepository.getRefreshToken(username); // 없으면 메서드 추가 필요
+        String saved = refreshTokenRedisRepository.getRefreshToken(username);
         if (saved == null || !saved.equals(refreshToken)) {
             log.info("[AuthController/reissue] Redis refreshToken 불일치 또는 없음 - username={}", username);
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);

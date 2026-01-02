@@ -23,49 +23,44 @@ public class AdminStaffController implements AdminStaffApi {
     // ✅ 관리자 정보 목록 조회(매니저 + 검수자)
     @GetMapping
     public ApiResponse<Page<AdminStaffListResponseDto>> getAdminStaffPage(
-        @AuthenticationPrincipal CustomUserDetails userDetails,
         @RequestParam int page,
         @RequestParam int size) {
-        Page<AdminStaffListResponseDto> result = adminStaffService.getAdminStaffPage(userDetails.getUsername(), page, size);
+        Page<AdminStaffListResponseDto> result = adminStaffService.getAdminStaffPage(page, size);
         return ApiResponse.success(result);
     }
 
     // ✅ 관리자 정보 목록 조회(매니저)
     @GetMapping("/managers")
     public ApiResponse<Page<AdminStaffListResponseDto>> getAdminManagerPage(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam int page,
             @RequestParam int size) {
-        Page<AdminStaffListResponseDto> result = adminStaffService.getAdminManagerPage(userDetails.getUsername(), page, size);
+        Page<AdminStaffListResponseDto> result = adminStaffService.getAdminManagerPage(page, size);
         return ApiResponse.success(result);
     }
 
     // ✅ 관리자 정보 목록 조회(검수자)
     @GetMapping("/inspectors")
     public ApiResponse<Page<AdminStaffListResponseDto>> getAdminInspectorPage(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam int page,
             @RequestParam int size) {
-        Page<AdminStaffListResponseDto> result = adminStaffService.getAdminInspectorPage(userDetails.getUsername(), page, size);
+        Page<AdminStaffListResponseDto> result = adminStaffService.getAdminInspectorPage(page, size);
         return ApiResponse.success(result);
     }
 
     // ✅ 특정 관리자(스태프) 상세 조회
     @GetMapping("/{adminId}")
     public ApiResponse<AdminStaffDetailResponseDto> getAdminStaffDetail(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long adminId) {
-        AdminStaffDetailResponseDto result = adminStaffService.getAdminStaffDetail(userDetails.getUsername(), adminId);
+        AdminStaffDetailResponseDto result = adminStaffService.getAdminStaffDetail(adminId);
         return ApiResponse.success(result);
     }
 
     // ✅ 특정 관리자(스태프) 상세 수정
     @PatchMapping("/{adminId}")
     public ApiResponse<AdminStaffUpdateResponseDto> updateAdminStaff(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long adminId,
             @RequestBody @Valid AdminStaffUpdateRequestDto requestDto) {
-        AdminStaffUpdateResponseDto result = adminStaffService.updateAdminStaff(userDetails.getUsername(), adminId, requestDto);
+        AdminStaffUpdateResponseDto result = adminStaffService.updateAdminStaff(adminId, requestDto);
         return ApiResponse.success(result);
     }
 
@@ -73,7 +68,7 @@ public class AdminStaffController implements AdminStaffApi {
     @GetMapping("/me")
     public ApiResponse<AdminMeResponseDto> getAdminMe(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        AdminMeResponseDto result = adminStaffService.getAdminMe(userDetails.getUsername());
+        AdminMeResponseDto result = adminStaffService.getAdminMe(userDetails.getAdminId());
         return ApiResponse.success(result);
     }
 
@@ -82,7 +77,7 @@ public class AdminStaffController implements AdminStaffApi {
     public ApiResponse<AdminMeUpdateResponseDto> updateAdminMe(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid AdminMeUpdateRequestDto requestDto) {
-        AdminMeUpdateResponseDto result = adminStaffService.updateAdminMe(userDetails.getUsername(), requestDto);
+        AdminMeUpdateResponseDto result = adminStaffService.updateAdminMe(userDetails.getAdminId(), requestDto);
         return ApiResponse.success(result);
     }
 }

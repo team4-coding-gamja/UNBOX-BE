@@ -39,7 +39,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 || path.startsWith("/api/auth/login")
                 || path.startsWith("/api/auth/reissue")
                 || path.startsWith("/api/admin/auth/login")
-                || path.startsWith("/api/admin/auth/reissue")   //
+                || path.startsWith("/api/admin/auth/reissue")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")
                 || path.equals("/swagger-ui.html")
@@ -50,7 +50,6 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Authorization 헤더 조회
         String authorization = request.getHeader("Authorization");
 
         if (authorization == null || !authorization.startsWith("Bearer ")) {
@@ -59,17 +58,14 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 토큰 추출
         String token = authorization.split(" ")[1];
         log.info("[JwtFilter] JWT 추출 완료 - token prefix: {}", token.substring(0, 10));
 
-        // 토큰 만료 검사
         if (jwtUtil.isExpired(token)) {
             log.warn("[JwtFilter] JWT 만료됨");
             throw new CustomAuthenticationException(ErrorCode.TOKEN_EXPIRED);
         }
 
-        // 로그아웃(블랙리스트) 검사
         if (jwtUtil.isBlacklisted(token)) {
             log.warn("[JwtFilter] JWT 블랙리스트 토큰(로그아웃 처리됨)");
             throw new CustomAuthenticationException(ErrorCode.TOKEN_LOGOUT);
@@ -78,16 +74,21 @@ public class JwtFilter extends OncePerRequestFilter {
         // 토큰 정보 추출
         String email = jwtUtil.getUsername(token);
         String role = jwtUtil.getRole(token);
-        Long userId = jwtUtil.getUserId(token);
 
-        log.info("[JwtFilter] JWT 검증 성공 - email: {}, role: {}", email, role);
+        // ✅ 핵심: 이제 CustomUserDetails를 new로 만들지 말고,
+        // role에 따라 userId/adminId를 적절히 넣어서 생성한다.
+        Long id = jwtUtil.getUserId(token); // (현재 토큰에 들어있는 id claim)
 
-        // CustomUserDetails 생성 (JWT 기반)
-        CustomUserDetails customUserDetails = new CustomUserDetails(userId, email, "", role);
+        CustomUserDetails customUserDetails;
 
-        log.info("[JwtFilter] CustomUserDetails 생성 완료");
+        if ("ROLE_USER".equals(role)) {
+            // userId만 세팅
+            customUserDetails = CustomUserDetails.ofUserIdOnly(id, email, role);
+        } else {
+            // adminId만 세팅 (MASTER/MANAGER/INSPECTOR 등)
+            customUserDetails = CustomUserDetails.ofAdminIdOnly(id, email, role);
+        }
 
-        // Authentication 객체 생성
         Authentication authentication =
                 new UsernamePasswordAuthenticationToken(
                         customUserDetails,
@@ -95,11 +96,9 @@ public class JwtFilter extends OncePerRequestFilter {
                         customUserDetails.getAuthorities()
                 );
 
-        // SecurityContext 저장
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        log.info("[JwtFilter] SecurityContext 인증 정보 저장 완료");
+        log.info("[JwtFilter] SecurityContext 인증 정보 저장 완료 - email={}, role={}", email, role);
 
-        // 다음 필터로 전달
         filterChain.doFilter(request, response);
     }
 }

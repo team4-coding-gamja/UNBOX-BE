@@ -112,23 +112,19 @@ public class SecurityConfig {
                                 "/api/admin/auth/signup"
                         ).hasRole("MASTER")   // ROLE_MASTER 필요
 
-                        // ✅ 관리자 staff 관련(목록/상세/수정/삭제 전부) MASTER만
+                        // ✅ staff - 내 정보(/me)는 관리자 전체 허용
                         .requestMatchers(
-                                "/api/admin/staff"
-                        ).hasRole("MASTER")
+                                "/api/admin/staff/me",
+                                "/api/admin/staff/me/**"
+                        ).hasAnyRole("MASTER", "MANAGER", "INSPECTOR")
 
-                        // ✅ 관리자 staff 관련(목록/상세/수정/삭제 전부) MASTER만
-                        .requestMatchers(
-                                "/api/admin/staff"
-                        ).hasRole("MASTER")
-
-                        // ✅ 관리자 staff 관련(목록/상세/수정/삭제 전부) MASTER만
+                        // ✅ staff - 나머지(목록/상세/수정/삭제)는 MASTER만
                         .requestMatchers(
                                 "/api/admin/staff",
                                 "/api/admin/staff/**"
                         ).hasRole("MASTER")
 
-                        // 로그아웃은 인증 필요(선택)
+                                // 로그아웃은 인증 필요(선택)
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/logout",
                                 "/api/admin/auth/logout"

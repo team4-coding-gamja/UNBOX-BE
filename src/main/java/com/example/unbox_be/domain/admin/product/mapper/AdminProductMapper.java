@@ -1,11 +1,8 @@
 package com.example.unbox_be.domain.admin.product.mapper;
 
-import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandCreateResponseDto;
-import com.example.unbox_be.domain.admin.common.entity.Admin;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductCreateResponseDto;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductOptionCreateResponseDto;
 import com.example.unbox_be.domain.admin.staff.dto.response.*;
-import com.example.unbox_be.domain.product.entity.Brand;
 import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.entity.ProductOption;
 

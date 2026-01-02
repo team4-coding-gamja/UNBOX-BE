@@ -13,6 +13,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,14 +28,8 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     // ✅ 관리자(스태프, 검수자) 목록 조회
     @Override
     @Transactional(readOnly = true)
-    public Page<AdminStaffListResponseDto> getAdminStaffPage(String email, int page, int size) {
-        Admin caller = adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
-
-        if (caller.getAdminRole() != AdminRole.ROLE_MASTER) {
-            throw new CustomException(ErrorCode.ONLY_MASTER_ALLOWED);
-        }
-
+    @PreAuthorize("hasRole('MASTER')")
+    public Page<AdminStaffListResponseDto> getAdminStaffPage(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Admin> admins = adminRepository.findByAdminRoleIn(
                 List.of(AdminRole.ROLE_MANAGER, AdminRole.ROLE_INSPECTOR),
@@ -46,14 +41,8 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     // ✅ 관리자(매니저) 목록 조회
     @Override
     @Transactional(readOnly = true)
-    public Page<AdminStaffListResponseDto> getAdminManagerPage(String email, int page, int size) {
-        Admin caller = adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
-
-        if (caller.getAdminRole() != AdminRole.ROLE_MASTER) {
-            throw new CustomException(ErrorCode.ONLY_MASTER_ALLOWED);
-        }
-
+    @PreAuthorize("hasRole('MASTER')")
+    public Page<AdminStaffListResponseDto> getAdminManagerPage(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Admin> admins = adminRepository.findByAdminRoleIn(
                 List.of(AdminRole.ROLE_MANAGER),
@@ -65,14 +54,8 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     // ✅ 관리자(검수자) 목록 조회
     @Override
     @Transactional(readOnly = true)
-    public Page<AdminStaffListResponseDto> getAdminInspectorPage(String email, int page, int size) {
-        Admin caller = adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
-
-        if (caller.getAdminRole() != AdminRole.ROLE_MASTER) {
-            throw new CustomException(ErrorCode.ONLY_MASTER_ALLOWED);
-        }
-
+    @PreAuthorize("hasRole('MASTER')")
+    public Page<AdminStaffListResponseDto> getAdminInspectorPage(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Admin> admins = adminRepository.findByAdminRoleIn(
                 List.of(AdminRole.ROLE_INSPECTOR),
@@ -83,15 +66,11 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
 
     // ✅ 특정 관리자(스태프) 상세 조회
     @Override
-    public AdminStaffDetailResponseDto getAdminStaffDetail(String email, Long adminId) {
-        Admin caller = adminRepository.findByEmail(email)
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('MASTER')")
+    public AdminStaffDetailResponseDto getAdminStaffDetail(Long targetAdminId) {
+        Admin admin = adminRepository.findById(targetAdminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
-        Admin admin = adminRepository.findById(adminId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
-
-        if (caller.getAdminRole() != AdminRole.ROLE_MASTER) {
-            throw new CustomException(ErrorCode.ONLY_MASTER_ALLOWED);
-        }
 
         return AdminStaffMapper.toAdminStaffDetailResponseDto(admin);
     }
@@ -99,33 +78,32 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     // ✅ 특정 관리자(스태프) 정보 수정
     @Override
     @Transactional
-    public AdminStaffUpdateResponseDto updateAdminStaff(String email, Long adminId, AdminStaffUpdateRequestDto requestDto) {
-        Admin caller = adminRepository.findByEmail(email)
+    @PreAuthorize("hasRole('MASTER')")
+    public AdminStaffUpdateResponseDto updateAdminStaff(Long targetAdminId, AdminStaffUpdateRequestDto requestDto) {
+        Admin admin = adminRepository.findById(targetAdminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
-        Admin admin = adminRepository.findById(adminId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
-
-        if (caller.getAdminRole() != AdminRole.ROLE_MASTER) {
-            throw new CustomException(ErrorCode.ONLY_MASTER_ALLOWED);
-        }
 
         admin.updateAdmin(requestDto.getNickname(), requestDto.getPhone());
         return AdminStaffMapper.toAdminStaffUpdateResponseDto(admin);
     }
 
     // 관리자 내 정보 조회 API
+    @Override
     @Transactional(readOnly = true)
-    public AdminMeResponseDto getAdminMe(String email) {
-        Admin admin = adminRepository.findByEmail(email)
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER','INSPECTOR')")
+    public AdminMeResponseDto getAdminMe(Long adminId) {
+        Admin admin = adminRepository.findById(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
         return AdminStaffMapper.toAdminMeResponseDto(admin);
     }
 
     // 관리자 내 정보 수정 API
+    @Override
     @Transactional
-    public AdminMeUpdateResponseDto updateAdminMe(String email, AdminMeUpdateRequestDto adminUpdateRequestDto) {
-        Admin admin = adminRepository.findByEmail(email)
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER','INSPECTOR')")
+    public AdminMeUpdateResponseDto updateAdminMe(Long adminId, AdminMeUpdateRequestDto adminUpdateRequestDto) {
+        Admin admin = adminRepository.findById(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
         admin.updateAdmin(

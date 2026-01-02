@@ -107,8 +107,17 @@ public class Order extends BaseEntity {
         this.cancelledAt = LocalDateTime.now();
     }
 
-    public void registerTrackingNumber(String trackingNumber) {
+    public void registerTracking(String trackingNumber) {
+        // 1. 사전 검증 (registerTracking만의 고유 로직)
+        if (this.status != OrderStatus.PENDING_SHIPMENT) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        // 2. 운송장 번호 저장
         this.trackingNumber = trackingNumber;
+
+        // 3. 상태 변경은 updateStatus에게 위임! (재사용)
+        updateStatus(OrderStatus.SHIPPED_TO_CENTER);
     }
 
     public void registerFinalTrackingNumber(String finalTrackingNumber) {

@@ -9,7 +9,7 @@ public interface UserService {
     // ✅ 회원 정보 조회
     UserMeResponseDto getUserMe(Long userId);
     // ✅ 회원 정보 수정
-    UserMeUpdateResponseDto updateUserMe(Long userId, UserMeUpdateRequestDto userMeUpdateRequestDto);
+    UserMeUpdateResponseDto updateUserMe(Long userId, UserMeUpdateRequestDto requestDto);
     // ✅ 회원 탈퇴
     void deleteUserMe(Long userId);
 }

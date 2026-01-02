@@ -27,22 +27,21 @@ import org.springframework.web.bind.annotation.*;
 public class UserAuthController implements UserAuthApi {
 
     private final JwtUtil jwtUtil;
-
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
-
     private final UserAuthService userAuthService;
 
     // ✅ 회원가입
     @PostMapping("/signup")
-    public ApiResponse<UserSignupResponseDto> signup(@Valid @RequestBody UserSignupRequestDto userSignupRequestDto) {
-        UserSignupResponseDto userResponseDto = userAuthService.signup(userSignupRequestDto);
+    public ApiResponse<UserSignupResponseDto> signup(
+            @Valid @RequestBody UserSignupRequestDto requestDto) {
+        UserSignupResponseDto userResponseDto = userAuthService.signup(requestDto);
         return ApiResponse.success(userResponseDto);
     }
 
     // ✅ 로그인 (실제 로그인 로직은 LoginFilter에서 처리)
     @PostMapping("/login")
-    public ResponseEntity<String> login(UserLoginRequestDto userLoginRequestDto) {
-        log.info("[AuthController] 로그인 요청: {}", userLoginRequestDto.getEmail());
+    public ResponseEntity<String> login(UserLoginRequestDto requestDto) {
+        log.info("[AuthController] 로그인 요청: {}", requestDto.getEmail());
         return ResponseEntity.ok("로그인 요청이 처리되었습니다.");
     }
 
@@ -54,7 +53,7 @@ public class UserAuthController implements UserAuthApi {
         return ResponseEntity.ok("로그아웃 되었습니다.");
     }
 
-    // ✅ 토큰 재발급(엑세스 토큰 만료 시 리프레시 토큰을 통해 새로 생성하기)
+    // ✅ 토큰 재발급 (엑세스 토큰 만료 시 리프레시 토큰을 통해 새로 생성하기)
     @PostMapping("/reissue")
     public ResponseEntity<UserTokenResponseDto> reissue(HttpServletRequest request, HttpServletResponse response) {
         // 리프레시 토큰 가져오기 (쿠키 또는 헤더에서)

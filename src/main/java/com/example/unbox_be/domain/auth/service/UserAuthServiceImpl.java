@@ -7,45 +7,43 @@ import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
+import lombok.AllArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@AllArgsConstructor
 public class UserAuthServiceImpl implements UserAuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserAuthServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    // 회원가입 API
+    // ✅ 회원가입
+    @Override
     @Transactional
-    public UserSignupResponseDto signup(UserSignupRequestDto userSignupRequestDto) {
-        String email = userSignupRequestDto.getEmail();
-        String password = userSignupRequestDto.getPassword();
+    public UserSignupResponseDto signup(UserSignupRequestDto requestDto) {
+        String email = requestDto.getEmail();
+        String password = requestDto.getPassword();
 
-        // 이메일 중복 확인
         if (userRepository.existsByEmail(email)) {
             throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
-        // 회원 객체 생성
         User user = User.createUser(
-                userSignupRequestDto.getEmail(),
+                requestDto.getEmail(),
                 passwordEncoder.encode(password),
-                userSignupRequestDto.getNickname(),
-                userSignupRequestDto.getPhone()
+                requestDto.getNickname(),
+                requestDto.getPhone()
         );
 
-        // 저장
+        try {
         User savedUser = userRepository.save(user);
-
-        // Entity -> Dto 변환 후 반환
         return AuthMapper.toUserSignupResponseDto(savedUser);
+        } catch (
+        DataIntegrityViolationException e) {
+            throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
+        }
     }
-
 }

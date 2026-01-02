@@ -4,6 +4,7 @@ import com.example.unbox_be.domain.auth.dto.request.AdminSignupRequestDto;
 import com.example.unbox_be.domain.auth.dto.response.AdminSignupResponseDto;
 
 public interface AdminAuthService{
-    // 회원가입
-    AdminSignupResponseDto signup(AdminSignupRequestDto adminSignupRequestDto);
+
+    // ✅ 회원가입
+    AdminSignupResponseDto signup(AdminSignupRequestDto requestDto);
 }

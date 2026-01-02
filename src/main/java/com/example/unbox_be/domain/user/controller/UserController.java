@@ -31,8 +31,8 @@ public class UserController implements UserApi {
     @PatchMapping("/me")
     public ApiResponse<UserMeUpdateResponseDto> updateUserMe(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody @Valid UserMeUpdateRequestDto userMeUpdateRequestDto) {
-        UserMeUpdateResponseDto userMeUpdateResponseDto = userService.updateUserMe(userDetails.getUserId(), userMeUpdateRequestDto);
+            @RequestBody @Valid UserMeUpdateRequestDto requestDto) {
+        UserMeUpdateResponseDto userMeUpdateResponseDto = userService.updateUserMe(userDetails.getUserId(), requestDto);
         return ApiResponse.success(userMeUpdateResponseDto);
     }
 

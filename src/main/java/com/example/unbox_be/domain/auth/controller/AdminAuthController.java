@@ -36,15 +36,15 @@ public class AdminAuthController implements AdminAuthApi {
     // ✅ 회원가입
     @PostMapping("/signup")
     public ApiResponse<AdminSignupResponseDto> signup(
-            @Valid @RequestBody AdminSignupRequestDto adminSignupRequestDto) {
-        AdminSignupResponseDto adminSignupResponseDto = adminAuthService.signup(adminSignupRequestDto);
+            @Valid @RequestBody AdminSignupRequestDto requestDto) {
+        AdminSignupResponseDto adminSignupResponseDto = adminAuthService.signup(requestDto);
         return ApiResponse.success(adminSignupResponseDto);
     }
 
     // ✅ 로그인 (실제 로그인 로직은 LoginFilter에서 처리)
     @PostMapping("/login")
-    public ResponseEntity<String> login(UserLoginRequestDto userLoginRequestDto) {
-        log.info("[AuthController] 로그인 요청: {}", userLoginRequestDto.getEmail());
+    public ResponseEntity<String> login(UserLoginRequestDto requestDto) {
+        log.info("[AuthController] 로그인 요청: {}", requestDto.getEmail());
         return ResponseEntity.ok("로그인 요청이 처리되었습니다.");
     }
 
@@ -56,7 +56,7 @@ public class AdminAuthController implements AdminAuthApi {
         return ResponseEntity.ok("로그아웃 되었습니다.");
     }
 
-    // ✅ 토큰 재발급(엑세스 토큰 만료 시 리프레시 토큰을 통해 새로 생성하기)
+    // ✅ 토큰 재발급 (엑세스 토큰 만료 시 리프레시 토큰을 통해 새로 생성하기)
     @PostMapping("/reissue")
     public ResponseEntity<AdminTokenResponseDto> reissue(HttpServletRequest request, HttpServletResponse response) {
         // 리프레시 토큰 가져오기 (쿠키 또는 헤더에서)

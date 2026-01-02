@@ -31,13 +31,13 @@ public class UserServiceImpl implements UserService {
 
     // ✅ 회원 정보 수정
     @Transactional
-    public UserMeUpdateResponseDto updateUserMe(Long userId, UserMeUpdateRequestDto userMeUpdateRequestDto) {
+    public UserMeUpdateResponseDto updateUserMe(Long userId, UserMeUpdateRequestDto requestDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         user.updateUser(
-                userMeUpdateRequestDto.getNickname(),
-                userMeUpdateRequestDto.getPhone()
+                requestDto.getNickname(),
+                requestDto.getPhone()
         );
         return UserMapper.toUserMeUpdateResponseDto(user);
     }

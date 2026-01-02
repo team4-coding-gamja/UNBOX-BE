@@ -76,8 +76,8 @@ class OrderServiceTest {
         User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
 
         // 실제 매퍼가 돌 때 NullPointerException이 안 나도록 Brand, Product까지 꽉 채워서 생성
-        Brand brand = new Brand("Nike");
-        Product product = new Product(brand, "Air Force 1", "CW2288-111", Category.SHOES, "http://img.url");
+        Brand brand = Brand.createBrand("Nike", "http://img.url");
+        Product product = Product.createProduct("Air Force 1", "CW2288-111", Category.SHOES, "http://img.url", brand);
         ProductOption option = new ProductOption(product, "270");
 
         // 가짜 행동 정의
@@ -123,8 +123,8 @@ class OrderServiceTest {
         // When & Then: 예외가 터지는지 확인
         // CustomException이 발생해야 하고, 에러 코드는 USER_NOT_FOUND여야 한다
         assertThatThrownBy(() ->
-                        orderService.createOrder(requestDto, unknownEmail)
-                ).isInstanceOf(CustomException.class)
+                orderService.createOrder(requestDto, unknownEmail)
+        ).isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
     }
 
@@ -153,8 +153,8 @@ class OrderServiceTest {
 
         // When & Then
         assertThatThrownBy(() ->
-                        orderService.createOrder(requestDto, buyerEmail)
-                ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
+                orderService.createOrder(requestDto, buyerEmail)
+        ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", com.example.unbox_be.global.error.exception.ErrorCode.USER_NOT_FOUND);
     }
 
@@ -180,8 +180,8 @@ class OrderServiceTest {
 
         // When & Then
         assertThatThrownBy(() ->
-                        orderService.createOrder(requestDto, buyerEmail)
-                ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
+                orderService.createOrder(requestDto, buyerEmail)
+        ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", com.example.unbox_be.global.error.exception.ErrorCode.PRODUCT_NOT_FOUND);
     }
 
@@ -233,8 +233,8 @@ class OrderServiceTest {
 
         // When & Then
         assertThatThrownBy(() ->
-                        orderService.getMyOrders(unknownEmail, pageable)
-                ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
+                orderService.getMyOrders(unknownEmail, pageable)
+        ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", com.example.unbox_be.global.error.exception.ErrorCode.USER_NOT_FOUND);
     }
 
@@ -253,8 +253,8 @@ class OrderServiceTest {
         ReflectionTestUtils.setField(seller, "id", 2L);
 
         // 연관 객체 생성
-        Brand brand = new Brand("Nike");
-        Product product = new Product(brand, "Air Force 1", "CW", Category.SHOES, "url");
+        Brand brand = Brand.createBrand("Nike", "http://img.url");
+        Product product = Product.createProduct("Air Force 1", "CW", Category.SHOES, "url", brand);
         ProductOption option = new ProductOption(product, "270");
 
         // 주문 생성 및 주입
@@ -404,8 +404,8 @@ class OrderServiceTest {
         ReflectionTestUtils.setField(seller, "id", 2L);
 
         // 연관 객체 (Mapper 오류 방지용)
-        Brand brand = new Brand("Nike");
-        Product product = new Product(brand, "Air Force 1", "CW", Category.SHOES, "url");
+        Brand brand = Brand.createBrand("Nike", "http://img.url");
+        Product product = Product.createProduct("Air Force 1", "CW", Category.SHOES, "url", brand);
         ProductOption option = new ProductOption(product, "270");
 
         Order order = Order.builder()
@@ -443,8 +443,8 @@ class OrderServiceTest {
         ReflectionTestUtils.setField(buyer, "id", 1L);
 
         // 연관 객체
-        Brand brand = new Brand("Nike");
-        Product product = new Product(brand, "Air Force 1", "CW", Category.SHOES, "url");
+        Brand brand = Brand.createBrand("Nike", "http://img.url");
+        Product product = Product.createProduct("Air Force 1", "CW", Category.SHOES, "url", brand);
         ProductOption option = new ProductOption(product, "270");
 
         Order order = Order.builder()

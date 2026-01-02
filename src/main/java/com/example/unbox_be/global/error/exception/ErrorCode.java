@@ -47,7 +47,7 @@ public enum ErrorCode {
     INVALID_PRODUCT_OPTION(HttpStatus.BAD_REQUEST, "해당 상품에 속하지 않은 옵션입니다."),
 
     // 비즈니스
-    // 주문 관련 에러
+    // 판매 관련 에러
     BID_NOT_FOUND(HttpStatus.NOT_FOUND, "입찰 정보를 찾을 수 없습니다."),
     INVALID_BID_PRICE(HttpStatus.BAD_REQUEST, "입찰 가격이 유효하지 않습니다."),
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문 내역을 찾을 수 없습니다."),
@@ -58,8 +58,11 @@ public enum ErrorCode {
     BRAND_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 브랜드입니다."),
     BRAND_NOT_FOUND(HttpStatus.NOT_FOUND, "브랜드 정보를 찾을 수 없습니다."),
     
-    // 배송  
-    ORDER_CANNOT_BE_CANCELLED(HttpStatus.BAD_REQUEST, "이미 배송 중이거나 완료된 주문은 취소할 수 없습니다.");
+    // 주문
+    ORDER_CANNOT_BE_CANCELLED(HttpStatus.BAD_REQUEST, "이미 배송 중이거나 완료된 주문은 취소할 수 없습니다."),
+    TRACKING_NUMBER_REQUIRED(HttpStatus.BAD_REQUEST, "배송 시작 시 운송장 번호는 필수입니다."),
+    INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태입니다."),
+    INVALID_ORDER_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태 변경입니다.");
 
     private final HttpStatus status;
     private final String message;

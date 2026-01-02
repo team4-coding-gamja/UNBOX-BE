@@ -116,22 +116,44 @@ public class Order extends BaseEntity {
         // 2. 운송장 번호 저장
         this.trackingNumber = trackingNumber;
 
-        // 3. 상태 변경은 updateStatus에게 위임! (재사용)
+        // 3. 상태 변경은 updateStatus에게 위임!
         updateStatus(OrderStatus.SHIPPED_TO_CENTER);
+    }
+
+    private void validateAdminStatusTransition(OrderStatus currentStatus, OrderStatus newStatus) {
+        // 허용되는 상태 전환 목록 정의
+        boolean isValid = switch (currentStatus) {
+            // 센터로 발송됨 -> 센터 도착
+            case SHIPPED_TO_CENTER -> newStatus == OrderStatus.ARRIVED_AT_CENTER;
+
+            // 센터 도착 -> 검수 합격 OR 검수 불합격
+            case ARRIVED_AT_CENTER -> newStatus == OrderStatus.INSPECTION_PASSED || newStatus == OrderStatus.INSPECTION_FAILED;
+
+            // 검수 합격 -> 구매자 배송
+            case INSPECTION_PASSED -> newStatus == OrderStatus.SHIPPED_TO_BUYER;
+
+            // 그 외의 경우 (이미 완료되었거나, 순서를 건너뛰는 경우 등) -> false
+            default -> false;
+        };
+
+        if (!isValid) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
     }
 
     // 관리자/검수자용 상태 변경
     public void updateAdminStatus(OrderStatus newStatus, String finalTrackingNumber) {
-        // 1. 구매자에게 발송(SHIPPED_TO_BUYER) 상태로 변경하려는데 운송장 번호가 없으면 에러
+        // 1. 상태 전환 유효성 검증 (순서가 맞는지 확인)
+        validateAdminStatusTransition(this.status, newStatus);
+
+        // 2. 구매자에게 발송(SHIPPED_TO_BUYER) 시 운송장 번호 필수 체크
         if (newStatus == OrderStatus.SHIPPED_TO_BUYER) {
             if (finalTrackingNumber == null || finalTrackingNumber.isBlank()) {
-                // "배송 시작 시 운송장 번호는 필수입니다" 라는 의미의 에러
-                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+                // 피드백 반영: 구체적인 에러 코드로 변경
+                throw new CustomException(ErrorCode.TRACKING_NUMBER_REQUIRED);
             }
             this.finalTrackingNumber = finalTrackingNumber;
         }
-
-        // 2. 검수 불합격(INSPECTION_FAILED) 시 추가 로직이 필요하다면 여기에 작성 (예: 환불 처리 로직 트리거 등)
 
         // 3. 공통 상태 변경 로직 재사용
         updateStatus(newStatus);

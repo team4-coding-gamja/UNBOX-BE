@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserUpdateRequestDto {
+public class UserMeUpdateRequestDto {
 
     @NotBlank(message = "사용자 이름은 필수입니다.")
     @Pattern(regexp = "^[a-z0-9]{4,10}$", message = "아이디는 4~10자 영문 소문자, 숫자로 입력해야 합니다.")

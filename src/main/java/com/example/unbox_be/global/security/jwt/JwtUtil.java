@@ -107,10 +107,11 @@ public class JwtUtil {
     }
 
     // Refresh Token
-    public String createRefreshToken(String email, Long expiredMs) {
+    public String createRefreshToken(String email, String role, Long expiredMs) {
         log.info("[JWTUtil/createRefreshToken] 새로운 리프레시 토큰 생성, email: {}, 만료 시간(ms): {}", email, expiredMs);
         return Jwts.builder()
-                .claim("email", email) // 리프레시 토큰은 일반적으로 email만 저장
+                .claim("email", email)
+                .claim("role", role)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiredMs)) // 리프레시 토큰 만료 시간
                 .signWith(secretKey)

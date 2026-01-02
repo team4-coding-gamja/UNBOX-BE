@@ -13,7 +13,7 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다."),
 
-    // 로그인 / 회원가입 (User/Auth)
+    // 사용자
     USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 사용중인 아이디(이메일)입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
     USERNAME_OR_PASSWORD_MISSING(HttpStatus.BAD_REQUEST, "아이디 또는 비밀번호를 입력하세요."),
@@ -29,15 +29,35 @@ public enum ErrorCode {
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "토큰이 만료되었습니다. 다시 로그인해주세요."),
     TOKEN_LOGOUT(HttpStatus.UNAUTHORIZED, "이미 로그아웃된 토큰입니다."),
 
-    // 비즈니스 로직
+    // 관리자
+    ADMIN_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 관리자 계정입니다."),
+    ADMIN_NOT_FOUND(HttpStatus.NOT_FOUND, "관리자 계정을 찾을 수 없습니다."),
+    ADMIN_ACCESS_DENIED(HttpStatus.FORBIDDEN, "관리자 접근 권한이 없습니다."),
+    ADMIN_ROLE_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 관리자 권한입니다."),
+    ONLY_MASTER_ALLOWED(HttpStatus.FORBIDDEN, "마스터 관리자만 수행할 수 있는 작업입니다."),
+    NOT_SELF_ADMIN(HttpStatus.FORBIDDEN, "본인 계정에만 접근할 수 있습니다."),
+    MASTER_CANNOT_CREATE_MASTER(HttpStatus.FORBIDDEN, "마스터 관리자는 생성할 수 없습니다."),
+    ONLY_MASTER_CAN_CREATE_ADMIN(HttpStatus.FORBIDDEN, "마스터 관리자만 계정 생성이 가능합니다."),
+
+    // 상품
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품 정보를 찾을 수 없습니다."),
+    PRODUCT_OPTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 상품 옵션입니다."),
+    PRODUCT_OPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "상품 옵션을 찾을 수 없습니다."),
+    INVALID_PRODUCT_OPTION(HttpStatus.BAD_REQUEST, "해당 상품에 속하지 않은 옵션입니다."),
+
+    // 비즈니스
     BID_NOT_FOUND(HttpStatus.NOT_FOUND, "입찰 정보를 찾을 수 없습니다."),
     INVALID_BID_PRICE(HttpStatus.BAD_REQUEST, "입찰 가격이 유효하지 않습니다."),
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문 내역을 찾을 수 없습니다."),
 
     // 주문 관련 에러
     PRICE_MISMATCH(HttpStatus.BAD_REQUEST, "주문 가격이 실제 판매 가격과 일치하지 않습니다."),
-    SELLING_BID_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 판매자가 판매 중인 상품이 아닙니다.");
+    SELLING_BID_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 판매자가 판매 중인 상품이 아닙니다."),
+
+    // 브랜드
+    BRAND_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 브랜드입니다."),
+    BRAND_NOT_FOUND(HttpStatus.NOT_FOUND, "브랜드 정보를 찾을 수 없습니다.");
+
 
     private final HttpStatus status;
     private final String message;

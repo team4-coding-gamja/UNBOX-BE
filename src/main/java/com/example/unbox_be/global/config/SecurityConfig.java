@@ -22,6 +22,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
+import com.example.unbox_be.global.security.exception.CustomAuthenticationEntryPoint;
 
 import java.util.List;
 
@@ -34,19 +35,20 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
     private final ObjectMapper objectMapper;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
-    // ✅ 실무: PasswordEncoder는 인터페이스 타입으로 Bean 등록
+    // ✅ PasswordEncoder는 인터페이스 타입으로 Bean 등록
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // ✅ 실무: CORS는 명시적으로 허용 Origin을 지정 (쿠키 사용 시 필수)
+    // ✅ CORS는 명시적으로 허용 Origin을 지정 (쿠키 사용 시 필수)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         return (HttpServletRequest request) -> {
@@ -78,24 +80,47 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // ✅ 권한 설정 (실무: 경로는 최대한 “패턴으로” 관리)
+                // ✅ 로그인 안 됐을 때 JSON 메시지 내려줌 (인증 필요한 요청에서만 동작)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                )
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/api/auth/login",
-                                "/swagger-ui/**", "/swagger-ui.html",
+                                "/", "/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**", "/api-docs/**", "/swagger-resources/**"
                         ).permitAll()
 
-                        // 회원가입/로그인/재발급은 인증 없이
+                        // ✅ 테스트용 부트스트랩(운영 시 삭제)
+                        .requestMatchers(HttpMethod.POST, "/api/test/bootstrap/master").permitAll()
+
+                        // 유저 인증 관련
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/signup",
                                 "/api/auth/login",
                                 "/api/auth/reissue"
                         ).permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
+                        // ✅ 관리자 로그인/재발급은 열어둠
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/admin/auth/login",
+                                "/api/admin/auth/reissue"
+                        ).permitAll()
 
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // ✅ 관리자 생성(회원가입)은 MASTER만 가능
+                        .requestMatchers(HttpMethod.POST, "/api/admin/auth/signup")
+                        .hasRole("MASTER")   // ROLE_MASTER 필요
+
+                        // 로그아웃은 인증 필요(선택)
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/logout",
+                                "/api/admin/auth/logout"
+                        ).authenticated()
+
+                        // ✅ 관리자 API 전체 보호 (3개 롤 허용)
+                        .requestMatchers("/api/admin/**")
+                        .hasAnyRole("MASTER", "MANAGER", "INSPECTOR")
+
                         .anyRequest().authenticated()
                 );
 
@@ -105,17 +130,25 @@ public class SecurityConfig {
                 new CustomLogoutFilter(jwtUtil, refreshTokenRedisRepository),
                 UsernamePasswordAuthenticationFilter.class
         );
-
-        // 2) LoginFilter - UsernamePasswordAuthenticationFilter 자리 “대체”
-        LoginFilter loginFilter = new LoginFilter(
+        // 1) 유저 로그인 필터
+        LoginFilter userLoginFilter = new LoginFilter(
                 authenticationManager(authenticationConfiguration),
                 jwtUtil,
                 refreshTokenRedisRepository,
                 objectMapper
         );
+        userLoginFilter.setFilterProcessesUrl("/api/auth/login");
+        http.addFilterAt(userLoginFilter, UsernamePasswordAuthenticationFilter.class);
 
-        loginFilter.setFilterProcessesUrl("/api/auth/login"); // ✅ 실무: 명시적으로 지정
-        http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
+        // 2) 관리자 로그인 필터
+        LoginFilter adminLoginFilter = new LoginFilter(
+                authenticationManager(authenticationConfiguration),
+                jwtUtil,
+                refreshTokenRedisRepository,
+                objectMapper
+        );
+        adminLoginFilter.setFilterProcessesUrl("/api/admin/auth/login");
+        http.addFilterAt(adminLoginFilter, UsernamePasswordAuthenticationFilter.class);
 
         // 3) JwtFilter - 나머지 요청 Authorization 검증
         http.addFilterAfter(new JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);

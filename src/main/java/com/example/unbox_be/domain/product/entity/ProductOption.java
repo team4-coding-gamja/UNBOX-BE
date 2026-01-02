@@ -17,12 +17,12 @@ public class ProductOption {
     @Column(name = "option_id")
     private UUID id;
 
+    @Column(nullable = false)
+    private String option;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
-
-    @Column(nullable = false)
-    private String option;
 
     public ProductOption(Product product, String option) {
         this.product = product;

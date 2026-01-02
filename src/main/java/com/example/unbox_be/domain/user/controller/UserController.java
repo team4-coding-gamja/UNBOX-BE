@@ -1,8 +1,9 @@
 package com.example.unbox_be.domain.user.controller;
 
 import com.example.unbox_be.domain.user.controller.api.UserApi;
-import com.example.unbox_be.domain.user.dto.request.UserUpdateRequestDto;
-import com.example.unbox_be.domain.user.dto.response.UserResponseDto;
+import com.example.unbox_be.domain.user.dto.request.UserMeUpdateRequestDto;
+import com.example.unbox_be.domain.user.dto.response.UserMeResponseDto;
+import com.example.unbox_be.domain.user.dto.response.UserMeUpdateResponseDto;
 import com.example.unbox_be.domain.user.service.UserService;
 import com.example.unbox_be.global.response.ApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
@@ -20,24 +21,26 @@ public class UserController implements UserApi {
 
     // 회원 정보 조회
     @GetMapping("/me")
-    public ApiResponse<UserResponseDto> getUser(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        UserResponseDto userResponseDto = userService.getUserByEmail(userDetails.getUsername());
-        return ApiResponse.success(userResponseDto);
+    public ApiResponse<UserMeResponseDto> getUserMe(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        UserMeResponseDto userMeResponseDto = userService.getUserMe(userDetails.getUsername());
+        return ApiResponse.success(userMeResponseDto);
     }
 
     // 회원 정보 수정
     @PatchMapping("/me")
-    public ApiResponse<UserResponseDto> updateUser(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                   @RequestBody @Valid UserUpdateRequestDto userUpdateRequestDto) {
-        userService.updateUser(userDetails.getUsername(), userUpdateRequestDto);
-        UserResponseDto userResponseDto = userService.getUserByEmail(userDetails.getUsername());
-        return ApiResponse.success(userResponseDto);
+    public ApiResponse<UserMeUpdateResponseDto> updateUserMe(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid UserMeUpdateRequestDto userMeUpdateRequestDto) {
+        UserMeUpdateResponseDto userMeUpdateResponseDto = userService.updateUserMe(userDetails.getUsername(), userMeUpdateRequestDto);
+        return ApiResponse.success(userMeUpdateResponseDto);
     }
 
     // 회원 탈퇴
     @DeleteMapping("/me")
-    public ApiResponse<String> deleteUser(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        userService.deleteUser(userDetails.getUsername());
+    public ApiResponse<String> deleteUserMe(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        userService.deleteUserMe(userDetails.getUsername());
         return ApiResponse.successWithNoData();
     }
 }

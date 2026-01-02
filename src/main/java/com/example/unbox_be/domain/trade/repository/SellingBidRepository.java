@@ -24,5 +24,5 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
     Slice<SellingBid> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"productOption", "productOption.product"})
-    Optional<SellingBid> findWithDetailsBySellingId(UUID sellingId);
+    Optional<SellingBid> findBySellingId(UUID sellingId);
 }

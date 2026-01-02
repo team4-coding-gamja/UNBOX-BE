@@ -66,6 +66,10 @@ public class Order extends BaseEntity {
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
 
+    // 거래 완료 일시 필드
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
     // 생성자 레벨 @Builder
     // - ID, Audit 필드는 제외
     // - 필수 값만 파라미터로 받음
@@ -116,11 +120,63 @@ public class Order extends BaseEntity {
         // 2. 운송장 번호 저장
         this.trackingNumber = trackingNumber;
 
-        // 3. 상태 변경은 updateStatus에게 위임! (재사용)
+        // 3. 상태 변경은 updateStatus에게 위임!
         updateStatus(OrderStatus.SHIPPED_TO_CENTER);
+    }
+
+    private void validateAdminStatusTransition(OrderStatus currentStatus, OrderStatus newStatus) {
+        // 허용되는 상태 전환 목록 정의
+        boolean isValid = switch (currentStatus) {
+            case SHIPPED_TO_CENTER -> newStatus == OrderStatus.ARRIVED_AT_CENTER;
+            case ARRIVED_AT_CENTER -> newStatus == OrderStatus.INSPECTION_PASSED || newStatus == OrderStatus.INSPECTION_FAILED;
+            case INSPECTION_PASSED -> newStatus == OrderStatus.SHIPPED_TO_BUYER;
+            case SHIPPED_TO_BUYER -> newStatus == OrderStatus.DELIVERED;
+
+            default -> false;
+        };
+
+        if (!isValid) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+    }
+
+    // 관리자/검수자용 상태 변경
+    public void updateAdminStatus(OrderStatus newStatus, String finalTrackingNumber) {
+        // 1. 상태 전환 유효성 검증 (순서가 맞는지 확인)
+        validateAdminStatusTransition(this.status, newStatus);
+
+        // 2. 구매자에게 발송(SHIPPED_TO_BUYER) 시 운송장 번호 필수 체크
+        if (newStatus == OrderStatus.SHIPPED_TO_BUYER) {
+            if (finalTrackingNumber == null || finalTrackingNumber.isBlank()) {
+                // 피드백 반영: 구체적인 에러 코드로 변경
+                throw new CustomException(ErrorCode.TRACKING_NUMBER_REQUIRED);
+            }
+            registerFinalTrackingNumber(finalTrackingNumber);
+        }
+
+        // 3. 공통 상태 변경 로직 재사용
+        updateStatus(newStatus);
     }
 
     public void registerFinalTrackingNumber(String finalTrackingNumber) {
         this.finalTrackingNumber = finalTrackingNumber;
+    }
+
+    public void confirm(User requestUser) {
+        // 1. 요청자가 구매자인지 검증
+        if (!this.buyer.getId().equals(requestUser.getId())) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // 2. 상태 검증: "배송 완료(DELIVERED)" 상태여야 확정 가능
+        // (정책에 따라 '배송 중'이어도 확정 가능하게 할 수는 있지만, 여기선 엄격하게 적용)
+        if (this.status != OrderStatus.DELIVERED) {
+            // "배송이 완료된 상품만 구매 확정할 수 있습니다."
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        // 3. 상태 변경 및 시간 기록
+        this.status = OrderStatus.COMPLETED;
+        this.completedAt = LocalDateTime.now();
     }
 }

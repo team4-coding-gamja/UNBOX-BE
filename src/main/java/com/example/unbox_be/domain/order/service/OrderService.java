@@ -11,6 +11,9 @@ import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
+import com.example.unbox_be.domain.admin.entity.Admin;
+import com.example.unbox_be.domain.admin.entity.AdminRole;
+import com.example.unbox_be.domain.admin.repository.AdminRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final AdminRepository adminRepository;
     private final ProductOptionRepository productOptionRepository;
     private final OrderMapper orderMapper;
 
@@ -183,6 +187,56 @@ public class OrderService {
         order.registerTracking(trackingNumber);
 
         // 5. 결과 반환
+        return orderMapper.toDetailResponseDto(order);
+    }
+
+    /**
+     * 관리자/검수자 주문 상태 변경
+     * - PATCH /api/orders/{orderId}/status
+     */
+    @Transactional
+    public OrderDetailResponseDto updateOrderStatus(UUID orderId, OrderStatus newStatus, String trackingNumber, String email) {
+        // 1. 관리자 조회 (Admin 테이블에서 조회)
+        Admin admin = adminRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+
+        // 2. 권한 검증
+        // 마스터(MASTER), 검수자(INSPECTOR) 권한이 있는지 확인
+        if (admin.getAdminRole() != AdminRole.ROLE_MASTER &&
+                admin.getAdminRole() != AdminRole.ROLE_INSPECTOR) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // 3. 주문 조회
+        Order order = orderRepository.findWithDetailsById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 4. 상태 변경 (검증 로직이 포함된 Entity 메서드 호출)
+        order.updateAdminStatus(newStatus, trackingNumber);
+
+        // 5. 결과 반환
+        return orderMapper.toDetailResponseDto(order);
+    }
+
+    /**
+     * 구매 확정 (구매자 전용)
+     * - PATCH /api/orders/{orderId}/confirm
+     * - 배송 완료(DELIVERED) 상태일 때만 가능
+     */
+    @Transactional
+    public OrderDetailResponseDto confirmOrder(UUID orderId, String email) {
+        // 1. 요청 사용자(구매자) 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. 주문 조회
+        Order order = orderRepository.findWithDetailsById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 3. 구매 확정 (Entity 내부 confirm 메서드 호출)
+        order.confirm(user);
+
+        // 4. 결과 반환
         return orderMapper.toDetailResponseDto(order);
     }
 }

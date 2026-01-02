@@ -8,6 +8,7 @@ public enum OrderStatus {
     INSPECTION_PASSED,      // 검수 합격
     INSPECTION_FAILED,      // 검수 불합격
     SHIPPED_TO_BUYER,       // 구매자에게 배송 중
+    DELIVERED,              // 배송 완료 (구매자 수령)
     COMPLETED,              // 거래 완료
     CANCELLED               // 취소됨
 }

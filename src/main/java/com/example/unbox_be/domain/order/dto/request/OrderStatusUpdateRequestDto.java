@@ -1,4 +1,4 @@
-package com.example.unbox_be.domain.order.dto;
+package com.example.unbox_be.domain.order.dto.request;
 
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import jakarta.validation.constraints.NotNull;

@@ -1,4 +1,4 @@
-package com.example.unbox_be.domain.order.dto;
+package com.example.unbox_be.domain.order.dto.response;
 
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import lombok.AllArgsConstructor;

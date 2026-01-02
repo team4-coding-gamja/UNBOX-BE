@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
 public class SellingBidResponseDto {
@@ -18,6 +18,7 @@ public class SellingBidResponseDto {
     private SellingStatus status;
     private Integer price;
     private LocalDateTime deadline;
+    private LocalDateTime createdAt;
 
     // 연관된 상품 정보
     private ProductInfo product;

@@ -3,7 +3,6 @@ package com.example.unbox_be.domain.trade.service;
 import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.trade.dto.request.SellingBidRequestDto;
-import com.example.unbox_be.domain.trade.dto.request.UpdateSellingStatusRequestDto;
 import com.example.unbox_be.domain.trade.dto.response.SellingBidResponseDto;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
@@ -96,7 +95,7 @@ public class SellingBidService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        SellingBid sellingBid = sellingBidRepository.findWithDetailsBySellingId(sellingId) // 이걸로 변경!
+        SellingBid sellingBid = sellingBidRepository.findBySellingId(sellingId) // 이걸로 변경!
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
         SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
 
@@ -137,7 +136,9 @@ public class SellingBidService {
             SellingBidResponseDto dto = sellingBidMapper.toResponseDto(bid);
 
             ProductOption option= bid.getProductOption();
-
+            if (option == null) {
+                return dto;
+            }
             return dto.toBuilder()
                     .size(option.getOption())
                     .product(SellingBidResponseDto.ProductInfo.builder()

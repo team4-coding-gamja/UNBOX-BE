@@ -25,13 +25,17 @@ public class ProductRequest extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(nullable = false)
+    private String brandName;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RequestStatus status;
 
-    public ProductRequest(Long userId, String name) {
+    public ProductRequest(Long userId, String name, String brandName) {
         this.userId = userId;
         this.name = name;
+        this.brandName = brandName;
         this.status = RequestStatus.PENDING; // 생성 시 무조건 대기 상태
     }
 }

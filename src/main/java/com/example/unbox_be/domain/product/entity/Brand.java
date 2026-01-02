@@ -20,7 +20,10 @@ public class Brand extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
+    // private String image_url;
+
     public Brand(String name) {
         this.name = name;
+        // this.image_url = image_url;
     }
 }

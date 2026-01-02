@@ -49,6 +49,11 @@ public class OrderServiceImpl implements OrderService {
         SellingBid sellingBid = sellingBidRepository.findById(requestDto.getSellingBidId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
+        if (sellingBid.getStatus() == SellingStatus.MATCHED || sellingBid.getStatus() == SellingStatus.HOLD) {
+            // ErrorCode.ALREADY_SOLD_PRODUCT 가 없다면 PRODUCT_NOT_FOUND 혹은 별도 에러코드 사용
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
         // 3. 본인 판매글 구매 방지
         // sellingBid.getUserId()는 Long 타입이므로 바로 비교 가능
         if (sellingBid.getUserId().equals(buyerId)) {
@@ -103,13 +108,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDetailResponseDto getOrderDetail(UUID orderId, Long userId) {
         Order order = getOrderWithDetailsOrThrow(orderId);
-
-        // 읽기 권한 검증: 구매자, 판매자, 관리자 중 하나여야 함.
-        // 여기서는 유저(구매자/판매자) 로직만 처리하고, 관리자는 별도 로직을 타거나
-        // SecurityContextHolder의 권한을 확인하여 분기 처리가 필요할 수 있음.
-        // 일단 기본적으로 본인 확인 수행
+        // MVP: 관리자 로직 제외하고 본인(구매자/판매자)만 조회 가능하도록 유지
         validateOrderReadAccess(order, userId);
-
         return orderMapper.toDetailResponseDto(order);
     }
 
@@ -124,12 +124,14 @@ public class OrderServiceImpl implements OrderService {
     public OrderDetailResponseDto cancelOrder(UUID orderId, Long userId) {
         Order order = getOrderWithDetailsOrThrow(orderId);
 
-        // 1. 권한 확인 (본인 주문인지)
-        if (!order.getBuyer().getId().equals(userId)) {
+        boolean isBuyer = order.getBuyer().getId().equals(userId);
+        boolean isSeller = order.getSeller().getId().equals(userId);
+
+        if (!isBuyer && !isSeller) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 2. 도메인 로직 호출 (Entity가 상태 검증 및 변경 수행)
+        // 도메인 로직 호출 (Entity 내부에서 상태별 취소 가능 여부 검증)
         order.cancel();
 
         return orderMapper.toDetailResponseDto(order);

@@ -159,4 +159,30 @@ public class OrderService {
         }
         // 판매자는 Order.cancel() 메서드에서 배송 상태 검증
     }
+
+    /**
+     * 운송장 번호 등록 (판매자용)
+     * - PATCH /api/orders/{orderId}/tracking
+     */
+    @Transactional
+    public OrderDetailResponseDto registerTrackingNumber(UUID orderId, String trackingNumber, String email) {
+        // 1. 유저 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. 주문 조회 (권한 검증을 위해 Fetch Join된 메서드 사용)
+        Order order = orderRepository.findWithDetailsById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 3. 판매자 권한 검증 (판매자만 운송장 등록 가능)
+        if (!order.getSeller().getId().equals(user.getId())) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // 4. 운송장 등록 및 상태 변경
+        order.registerTracking(trackingNumber);
+
+        // 5. 결과 반환
+        return orderMapper.toDetailResponseDto(order);
+    }
 }

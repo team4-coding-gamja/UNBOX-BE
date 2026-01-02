@@ -68,7 +68,7 @@ public class AdminStaffController implements AdminStaffApi {
     @GetMapping("/me")
     public ApiResponse<AdminMeResponseDto> getAdminMe(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        AdminMeResponseDto result = adminStaffService.getAdminMe(userDetails.getUserId());
+        AdminMeResponseDto result = adminStaffService.getAdminMe(userDetails.getAdminId());
         return ApiResponse.success(result);
     }
 
@@ -77,7 +77,7 @@ public class AdminStaffController implements AdminStaffApi {
     public ApiResponse<AdminMeUpdateResponseDto> updateAdminMe(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid AdminMeUpdateRequestDto requestDto) {
-        AdminMeUpdateResponseDto result = adminStaffService.updateAdminMe(userDetails.getUserId(), requestDto);
+        AdminMeUpdateResponseDto result = adminStaffService.updateAdminMe(userDetails.getAdminId(), requestDto);
         return ApiResponse.success(result);
     }
 }

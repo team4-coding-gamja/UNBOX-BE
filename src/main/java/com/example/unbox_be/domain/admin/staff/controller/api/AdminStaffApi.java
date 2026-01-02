@@ -100,7 +100,7 @@ public interface AdminStaffApi {
 
     @Operation(
             summary = "관리자 상세 조회",
-            description = "adminId에 해당하는 관리자 정보를 상세 조회합니다."
+            description = "특정 관리자 정보를 상세 조회합니다."
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -123,7 +123,7 @@ public interface AdminStaffApi {
 
     @Operation(
             summary = "관리자 정보 수정",
-            description = "adminId에 해당하는 관리자 정보를 수정합니다."
+            description = "특정 해당하는 관리자 정보를 수정합니다."
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(

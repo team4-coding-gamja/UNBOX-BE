@@ -1,7 +1,6 @@
 package com.example.unbox_be.domain.auth.dto.request;
 
-import com.example.unbox_be.domain.admin.entity.AdminRole;
-import com.example.unbox_be.domain.admin.entity.AdminStatus;
+import com.example.unbox_be.domain.admin.common.entity.AdminRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

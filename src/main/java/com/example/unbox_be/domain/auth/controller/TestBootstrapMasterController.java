@@ -1,10 +1,9 @@
 package com.example.unbox_be.domain.auth.controller;
 
-import com.example.unbox_be.domain.admin.entity.Admin;
-import com.example.unbox_be.domain.admin.entity.AdminRole;
-import com.example.unbox_be.domain.admin.entity.AdminStatus;
-import com.example.unbox_be.domain.admin.repository.AdminRepository;
-import com.example.unbox_be.domain.auth.controller.Api.TestBootstrapMasterControllerApi;
+import com.example.unbox_be.domain.admin.common.entity.Admin;
+import com.example.unbox_be.domain.admin.common.entity.AdminRole;
+import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
+import com.example.unbox_be.domain.auth.controller.api.TestBootstrapMasterControllerApi;
 import com.example.unbox_be.domain.auth.dto.response.AdminSignupResponseDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;

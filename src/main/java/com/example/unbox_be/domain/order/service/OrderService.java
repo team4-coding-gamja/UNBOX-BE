@@ -11,9 +11,9 @@ import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
-import com.example.unbox_be.domain.admin.entity.Admin;
-import com.example.unbox_be.domain.admin.entity.AdminRole;
-import com.example.unbox_be.domain.admin.repository.AdminRepository;
+import com.example.unbox_be.domain.admin.common.entity.Admin;
+import com.example.unbox_be.domain.admin.common.entity.AdminRole;
+import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -215,6 +215,28 @@ public class OrderService {
         order.updateAdminStatus(newStatus, trackingNumber);
 
         // 5. 결과 반환
+        return orderMapper.toDetailResponseDto(order);
+    }
+
+    /**
+     * 구매 확정 (구매자 전용)
+     * - PATCH /api/orders/{orderId}/confirm
+     * - 배송 완료(DELIVERED) 상태일 때만 가능
+     */
+    @Transactional
+    public OrderDetailResponseDto confirmOrder(UUID orderId, String email) {
+        // 1. 요청 사용자(구매자) 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. 주문 조회
+        Order order = orderRepository.findWithDetailsById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 3. 구매 확정 (Entity 내부 confirm 메서드 호출)
+        order.confirm(user);
+
+        // 4. 결과 반환
         return orderMapper.toDetailResponseDto(order);
     }
 }

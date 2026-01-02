@@ -43,4 +43,5 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
             @Param("status") SellingStatus status
     );
 
+    Optional<SellingBid> findBySellingId(UUID sellingId);
 }

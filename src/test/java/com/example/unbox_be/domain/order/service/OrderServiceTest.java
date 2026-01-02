@@ -1,8 +1,11 @@
 package com.example.unbox_be.domain.order.service;
 
+import com.example.unbox_be.domain.admin.entity.Admin;
+import com.example.unbox_be.domain.admin.entity.AdminRole;
+import com.example.unbox_be.domain.admin.repository.AdminRepository;
 import com.example.unbox_be.domain.order.dto.OrderCreateRequestDto;
-import com.example.unbox_be.domain.order.dto.OrderResponseDto;
 import com.example.unbox_be.domain.order.dto.OrderDetailResponseDto;
+import com.example.unbox_be.domain.order.dto.OrderResponseDto;
 import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.mapper.OrderMapper;
@@ -12,6 +15,7 @@ import com.example.unbox_be.domain.product.entity.Category;
 import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
+import com.example.unbox_be.domain.trade.service.SellingBidService;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
@@ -54,8 +58,30 @@ class OrderServiceTest {
     private UserRepository userRepository;
     @Mock
     private ProductOptionRepository productOptionRepository;
+
+    // OrderService에 추가된 의존성 Mocking (주입 에러 방지)
+    @Mock
+    private SellingBidService sellingBidService;
+    @Mock
+    private AdminRepository adminRepository;
+
     @Spy
     private OrderMapper orderMapper;
+
+    // --- Helper 메서드 (Entity 정적 팩토리 메서드 대응) ---
+    private Brand createBrand() {
+        return Brand.createBrand("Nike", "https://logo.com/nike.png");
+    }
+
+    private Product createProduct(Brand brand) {
+        return Product.createProduct(
+                "Air Force 1",
+                "CW2288-111",
+                Category.SHOES,
+                "https://image.com/af1.png",
+                brand
+        );
+    }
 
     @Test
     @DisplayName("주문 생성 성공 테스트")
@@ -66,18 +92,24 @@ class OrderServiceTest {
         UUID optionId = UUID.randomUUID();
         BigDecimal price = BigDecimal.valueOf(300000);
 
-        OrderCreateRequestDto requestDto = new OrderCreateRequestDto(
-                sellerId, optionId, price,
-                "홍길동", "010-1234-5678", "서울", "12345"
-        );
+        // Builder 패턴 사용
+        OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder()
+                .sellerId(sellerId)
+                .productOptionId(optionId)
+                .price(price)
+                .receiverName("홍길동")
+                .receiverPhone("010-1234-5678")
+                .receiverAddress("서울")
+                .receiverZipCode("12345")
+                .build();
 
         // Mock 데이터 생성
         User buyer = User.createUser(buyerEmail, "pw", "buyer", "010-1111-1111");
         User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
 
-        // 실제 매퍼가 돌 때 NullPointerException이 안 나도록 Brand, Product까지 꽉 채워서 생성
-        Brand brand = Brand.createBrand("Nike", "http://img.url");
-        Product product = Product.createProduct("Air Force 1", "CW2288-111", Category.SHOES, "http://img.url", brand);
+        // Helper 메서드로 객체 생성
+        Brand brand = createBrand();
+        Product product = createProduct(brand);
         ProductOption option = new ProductOption(product, "270");
 
         // 가짜 행동 정의
@@ -88,7 +120,7 @@ class OrderServiceTest {
         Order savedOrder = Order.builder()
                 .buyer(buyer)
                 .seller(seller)
-                .productOption(option) // 옵션(안에 상품, 브랜드 포함) 주입
+                .productOption(option)
                 .price(price)
                 .receiverName("홍길동")
                 .build();
@@ -100,8 +132,8 @@ class OrderServiceTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.getPrice()).isEqualTo(price);
-        assertThat(result.getBrandName()).isEqualTo("Nike"); // 실제 매핑이 잘 됐는지 확인 가능
-        verify(orderRepository).save(any(Order.class)); // save 호출 여부 검증
+        assertThat(result.getBrandName()).isEqualTo("Nike");
+        verify(orderRepository).save(any(Order.class));
     }
 
     @Test
@@ -109,19 +141,23 @@ class OrderServiceTest {
     void createOrder_Fail_UserNotFound() {
         // Given
         Long sellerId = 2L;
-        String unknownEmail = "unknown@test.com"; // DB에 없는 이메일
+        String unknownEmail = "unknown@test.com";
         UUID optionId = UUID.randomUUID();
 
-        OrderCreateRequestDto requestDto = new OrderCreateRequestDto(
-                sellerId, optionId, BigDecimal.valueOf(300000),
-                "수령인", "010-0000-0000", "주소", "12345"
-        );
+        // Builder 사용
+        OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder()
+                .sellerId(sellerId)
+                .productOptionId(optionId)
+                .price(BigDecimal.valueOf(300000))
+                .receiverName("수령인")
+                .receiverPhone("010-0000-0000")
+                .receiverAddress("주소")
+                .receiverZipCode("12345")
+                .build();
 
-        // 찾으면 비어있다(Empty)고 응답 설정
         given(userRepository.findByEmail(unknownEmail)).willReturn(Optional.empty());
 
-        // When & Then: 예외가 터지는지 확인
-        // CustomException이 발생해야 하고, 에러 코드는 USER_NOT_FOUND여야 한다
+        // When & Then
         assertThatThrownBy(() ->
                 orderService.createOrder(requestDto, unknownEmail)
         ).isInstanceOf(CustomException.class)
@@ -136,6 +172,7 @@ class OrderServiceTest {
         String buyerEmail = "buyer@test.com";
         UUID optionId = UUID.randomUUID();
 
+        // Builder 사용
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder()
                 .sellerId(unknownSellerId)
                 .productOptionId(optionId)
@@ -146,16 +183,14 @@ class OrderServiceTest {
                 .receiverZipCode("12345")
                 .build();
 
-        // 구매자는 찾았는데...
         given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(User.createUser(buyerEmail, "pw", "buyer", "010-1111-1111")));
-        // 판매자가 없다고 설정 !
         given(userRepository.findById(unknownSellerId)).willReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() ->
                 orderService.createOrder(requestDto, buyerEmail)
-        ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.example.unbox_be.global.error.exception.ErrorCode.USER_NOT_FOUND);
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
     }
 
     @Test
@@ -166,23 +201,22 @@ class OrderServiceTest {
         String buyerEmail = "buyer@test.com";
         UUID unknownOptionId = UUID.randomUUID();
 
+        // Builder 사용
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder()
                 .sellerId(sellerId)
                 .productOptionId(unknownOptionId)
                 .price(BigDecimal.valueOf(300000))
                 .build();
 
-        // 구매자, 판매자 다 있는데...
         given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(User.createUser(buyerEmail, "pw", "buyer", "010-1111-1111")));
         given(userRepository.findById(sellerId)).willReturn(Optional.of(User.createUser("seller", "pw", "seller", "010-2222-2222")));
-        // 상품 옵션이 없다고 설정 !
         given(productOptionRepository.findById(unknownOptionId)).willReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() ->
                 orderService.createOrder(requestDto, buyerEmail)
-        ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.example.unbox_be.global.error.exception.ErrorCode.PRODUCT_NOT_FOUND);
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PRODUCT_NOT_FOUND);
     }
 
     @Test
@@ -195,7 +229,6 @@ class OrderServiceTest {
 
         given(userRepository.findByEmail(email)).willReturn(Optional.of(buyer));
 
-        // 페이징 결과 Mocking
         List<Order> orders = List.of(
                 Order.builder().price(BigDecimal.valueOf(10000)).build(),
                 Order.builder().price(BigDecimal.valueOf(20000)).build()
@@ -203,8 +236,7 @@ class OrderServiceTest {
         Page<Order> orderPage = new PageImpl<>(orders);
 
         given(orderRepository.findAllByBuyerId(eq(buyer.getId()), eq(pageable))).willReturn(orderPage);
-        // 여기서는 Order 객체에 Brand/Product 정보가 없으므로
-        // Spy지만 예외적으로 가짜 결과(Stub)를 반환하도록 설정해야 함 (안 그러면 NPE 터짐)
+
         doReturn(
                 OrderResponseDto.builder()
                         .price(BigDecimal.valueOf(10000))
@@ -228,14 +260,13 @@ class OrderServiceTest {
         String unknownEmail = "unknown@test.com";
         Pageable pageable = PageRequest.of(0, 10);
 
-        // 유저 조회 시 Empty 반환 (유저 없음)
         given(userRepository.findByEmail(unknownEmail)).willReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() ->
                 orderService.getMyOrders(unknownEmail, pageable)
-        ).isInstanceOf(com.example.unbox_be.global.error.exception.CustomException.class)
-                .hasFieldOrPropertyWithValue("errorCode", com.example.unbox_be.global.error.exception.ErrorCode.USER_NOT_FOUND);
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
     }
 
     @Test
@@ -245,19 +276,17 @@ class OrderServiceTest {
         UUID orderId = UUID.randomUUID();
         String buyerEmail = "buyer@test.com";
 
-        // 유저 생성 및 ID 주입 (Reflection 사용)
         User buyer = User.createUser(buyerEmail, "pw", "buyer", "010-1111-1111");
         ReflectionTestUtils.setField(buyer, "id", 1L);
 
         User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
         ReflectionTestUtils.setField(seller, "id", 2L);
 
-        // 연관 객체 생성
-        Brand brand = Brand.createBrand("Nike", "http://img.url");
-        Product product = Product.createProduct("Air Force 1", "CW", Category.SHOES, "url", brand);
+        // Helper 메서드 사용
+        Brand brand = createBrand();
+        Product product = createProduct(brand);
         ProductOption option = new ProductOption(product, "270");
 
-        // 주문 생성 및 주입
         Order order = Order.builder()
                 .buyer(buyer)
                 .seller(seller)
@@ -267,7 +296,6 @@ class OrderServiceTest {
                 .build();
         ReflectionTestUtils.setField(order, "id", orderId);
 
-        // Mocking
         given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(buyer));
         given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
 
@@ -277,7 +305,6 @@ class OrderServiceTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result.getOrderId()).isEqualTo(orderId);
-        // 매퍼가 정상적으로 호출되었는지 확인 (Spy 사용했으므로 실제 DTO 변환됨)
         assertThat(result.getPrice()).isEqualTo(BigDecimal.valueOf(300000));
     }
 
@@ -289,14 +316,13 @@ class OrderServiceTest {
         String hackerEmail = "hacker@test.com";
 
         User hacker = User.createUser(hackerEmail, "pw", "hacker", "010-9999-9999");
-        ReflectionTestUtils.setField(hacker, "id", 3L); // 제3자
+        ReflectionTestUtils.setField(hacker, "id", 3L);
 
         User buyer = User.createUser("buyer@test.com", "pw", "buyer", "010-1111-1111");
         ReflectionTestUtils.setField(buyer, "id", 1L);
         User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
         ReflectionTestUtils.setField(seller, "id", 2L);
 
-        // Order는 Buyer(1)와 Seller(2)의 거래
         Order order = Order.builder().buyer(buyer).seller(seller).price(BigDecimal.ZERO).build();
 
         given(userRepository.findByEmail(hackerEmail)).willReturn(Optional.of(hacker));
@@ -333,10 +359,8 @@ class OrderServiceTest {
         String email = "user@test.com";
         User user = User.createUser(email, "pw", "user", "010-1111-1111");
 
-        // Buyer나 Seller가 null인 비정상 주문 객체 생성 (Builder 패턴 사용 시 필드 누락 가능)
-        // 여기서는 @Builder가 있지만 null이 들어갔다고 가정하거나 Mock 객체 사용
         Order brokenOrder = Order.builder()
-                .buyer(null) // 문제 발생 지점
+                .buyer(null)
                 .seller(null)
                 .price(BigDecimal.ZERO)
                 .build();
@@ -358,10 +382,9 @@ class OrderServiceTest {
         String email = "user@test.com";
         User user = User.createUser(email, "pw", "user", "010-1111-1111");
 
-        // Buyer는 있지만 Seller가 null인 객체 생성
         Order brokenOrder = Order.builder()
-                .buyer(user)  // Buyer는 있음 (앞 조건 통과)
-                .seller(null) // Seller가 없음 (뒷 조건에서 걸림)
+                .buyer(user)
+                .seller(null)
                 .price(BigDecimal.ZERO)
                 .build();
 
@@ -381,7 +404,6 @@ class OrderServiceTest {
         UUID orderId = UUID.randomUUID();
         String unknownEmail = "unknown@test.com";
 
-        // 유저를 찾지 못함 -> 예외 발생 (람다식 실행)
         given(userRepository.findByEmail(unknownEmail)).willReturn(Optional.empty());
 
         // When & Then
@@ -403,9 +425,9 @@ class OrderServiceTest {
         User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
         ReflectionTestUtils.setField(seller, "id", 2L);
 
-        // 연관 객체 (Mapper 오류 방지용)
-        Brand brand = Brand.createBrand("Nike", "http://img.url");
-        Product product = Product.createProduct("Air Force 1", "CW", Category.SHOES, "url", brand);
+        // Helper 메서드 사용
+        Brand brand = createBrand();
+        Product product = createProduct(brand);
         ProductOption option = new ProductOption(product, "270");
 
         Order order = Order.builder()
@@ -414,8 +436,7 @@ class OrderServiceTest {
                 .productOption(option)
                 .price(BigDecimal.valueOf(300000))
                 .build();
-        // 초기 상태는 PENDING_SHIPMENT
-        // 명시적으로 확인
+
         assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING_SHIPMENT);
 
         given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(buyer));
@@ -426,7 +447,7 @@ class OrderServiceTest {
 
         // Then
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
-        assertThat(order.getCancelledAt()).isNotNull(); // 취소 시간 기록 확인
+        assertThat(order.getCancelledAt()).isNotNull();
     }
 
     @Test
@@ -442,9 +463,9 @@ class OrderServiceTest {
         User buyer = User.createUser("buyer@test.com", "pw", "buyer", "010-1111-1111");
         ReflectionTestUtils.setField(buyer, "id", 1L);
 
-        // 연관 객체
-        Brand brand = Brand.createBrand("Nike", "http://img.url");
-        Product product = Product.createProduct("Air Force 1", "CW", Category.SHOES, "url", brand);
+        // Helper 메서드 사용
+        Brand brand = createBrand();
+        Product product = createProduct(brand);
         ProductOption option = new ProductOption(product, "270");
 
         Order order = Order.builder()
@@ -520,7 +541,6 @@ class OrderServiceTest {
         given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
 
         // When & Then
-        // 제3자(3L)가 취소 시도 -> Access Denied
         assertThatThrownBy(() -> orderService.cancelOrder(orderId, hackerEmail))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
@@ -544,9 +564,6 @@ class OrderServiceTest {
                 .price(BigDecimal.valueOf(300000))
                 .build();
 
-        // 강제로 배송 상태 변경 (SHIPPED_TO_CENTER 등) - Setter가 없다면 메서드 활용
-        // Order 엔티티에 updateStatus 메서드나 필드 접근 필요
-        // 여기선 TestUtils로 상태 강제 주입
         ReflectionTestUtils.setField(order, "status", OrderStatus.SHIPPED_TO_CENTER);
 
         given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(buyer));
@@ -556,5 +573,383 @@ class OrderServiceTest {
         assertThatThrownBy(() -> orderService.cancelOrder(orderId, buyerEmail))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+    }
+
+    @Test
+    @DisplayName("운송장 등록 성공 - 판매자가 등록 요청 시 상태가 변경된다")
+    void registerTrackingNumber_Success() {
+        UUID orderId = UUID.randomUUID();
+        String sellerEmail = "seller@test.com";
+        String trackingNumber = "1234567890";
+
+        User seller = User.createUser(sellerEmail, "pw", "seller", "010-2222-2222");
+        ReflectionTestUtils.setField(seller, "id", 2L);
+        User buyer = User.createUser("buyer@test.com", "pw", "buyer", "010-1111-1111");
+        ReflectionTestUtils.setField(buyer, "id", 1L);
+
+        Brand brand = createBrand();
+        Product product = createProduct(brand);
+        ProductOption option = new ProductOption(product, "270");
+
+        Order order = Order.builder()
+                .buyer(buyer)
+                .seller(seller)
+                .productOption(option)
+                .price(BigDecimal.valueOf(300000))
+                .build();
+
+        given(userRepository.findByEmail(sellerEmail)).willReturn(Optional.of(seller));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        OrderDetailResponseDto result = orderService.registerTrackingNumber(orderId, trackingNumber, sellerEmail);
+
+        assertThat(order.getTrackingNumber()).isEqualTo(trackingNumber);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.SHIPPED_TO_CENTER);
+    }
+
+    @Test
+    @DisplayName("운송장 등록 실패 - 권한 없는 사용자(구매자)")
+    void registerTrackingNumber_Fail_AccessDenied() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String buyerEmail = "buyer@test.com"; // 구매자가 시도
+        String trackingNumber = "1234567890";
+
+        User buyer = User.createUser(buyerEmail, "pw", "buyer", "010-1111-1111");
+        ReflectionTestUtils.setField(buyer, "id", 1L);
+        User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
+        ReflectionTestUtils.setField(seller, "id", 2L);
+
+        Order order = Order.builder()
+                .buyer(buyer)
+                .seller(seller)
+                .price(BigDecimal.valueOf(300000))
+                .build();
+
+        given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(buyer));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        // When & Then
+        assertThatThrownBy(() ->
+                orderService.registerTrackingNumber(orderId, trackingNumber, buyerEmail)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("검수자 주문 상태 변경 성공 - 센터 도착 처리")
+    void updateOrderStatus_Success_ArrivedAtCenter() {
+        UUID orderId = UUID.randomUUID();
+        String adminEmail = "admin@test.com";
+        OrderStatus newStatus = OrderStatus.ARRIVED_AT_CENTER;
+
+        Admin admin = org.mockito.Mockito.mock(Admin.class);
+        given(admin.getAdminRole()).willReturn(AdminRole.ROLE_INSPECTOR);
+
+        User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
+        User buyer = User.createUser("buyer@test.com", "pw", "buyer", "010-1111-1111");
+
+        Brand brand = createBrand();
+        Product product = createProduct(brand);
+        ProductOption option = new ProductOption(product, "270");
+
+        Order order = Order.builder()
+                .buyer(buyer)
+                .seller(seller)
+                .productOption(option)
+                .price(BigDecimal.valueOf(300000))
+                .build();
+
+        ReflectionTestUtils.setField(order, "status", OrderStatus.SHIPPED_TO_CENTER);
+
+        given(adminRepository.findByEmail(adminEmail)).willReturn(Optional.of(admin));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        orderService.updateOrderStatus(orderId, newStatus, null, adminEmail);
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.ARRIVED_AT_CENTER);
+    }
+
+    @Test
+    @DisplayName("관리자 주문 상태 변경 성공 - 구매자 발송 (운송장 포함)")
+    void updateOrderStatus_Success_ShippedToBuyer() {
+        UUID orderId = UUID.randomUUID();
+        String adminEmail = "admin@test.com";
+        String finalTrackingNumber = "FINAL-12345";
+        OrderStatus newStatus = OrderStatus.SHIPPED_TO_BUYER;
+
+        Admin admin = org.mockito.Mockito.mock(Admin.class);
+        given(admin.getAdminRole()).willReturn(AdminRole.ROLE_MASTER);
+
+        User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
+        User buyer = User.createUser("buyer@test.com", "pw", "buyer", "010-1111-1111");
+
+        Brand brand = createBrand();
+        Product product = createProduct(brand);
+        ProductOption option = new ProductOption(product, "270");
+
+        Order order = Order.builder()
+                .buyer(buyer)
+                .seller(seller)
+                .productOption(option)
+                .price(BigDecimal.valueOf(300000))
+                .build();
+
+        ReflectionTestUtils.setField(order, "status", OrderStatus.INSPECTION_PASSED);
+
+        given(adminRepository.findByEmail(adminEmail)).willReturn(Optional.of(admin));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        orderService.updateOrderStatus(orderId, newStatus, finalTrackingNumber, adminEmail);
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.SHIPPED_TO_BUYER);
+        assertThat(order.getFinalTrackingNumber()).isEqualTo(finalTrackingNumber);
+    }
+
+    @Test
+    @DisplayName("관리자 주문 상태 변경 실패 - 상태 흐름이 올바르지 않음")
+    void updateOrderStatus_Fail_InvalidTransition() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String adminEmail = "admin@test.com";
+
+        // PENDING_SHIPMENT 상태에서 갑자기 DELIVERED로 변경 시도
+        OrderStatus currentStatus = OrderStatus.PENDING_SHIPMENT;
+        OrderStatus invalidTargetStatus = OrderStatus.DELIVERED;
+
+        Admin admin = org.mockito.Mockito.mock(Admin.class);
+        given(admin.getAdminRole()).willReturn(AdminRole.ROLE_MASTER);
+
+        Order order = Order.builder().price(BigDecimal.valueOf(300000)).build();
+        ReflectionTestUtils.setField(order, "status", currentStatus);
+
+        given(adminRepository.findByEmail(adminEmail)).willReturn(Optional.of(admin));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        // When & Then
+        assertThatThrownBy(() ->
+                orderService.updateOrderStatus(orderId, invalidTargetStatus, null, adminEmail)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+    }
+
+    @Test
+    @DisplayName("관리자 주문 상태 변경 실패 - 구매자 발송 시 운송장 누락")
+    void updateOrderStatus_Fail_MissingTrackingNumber() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String adminEmail = "admin@test.com";
+
+        Admin admin = org.mockito.Mockito.mock(Admin.class);
+        given(admin.getAdminRole()).willReturn(AdminRole.ROLE_MASTER);
+
+        Order order = Order.builder().price(BigDecimal.valueOf(300000)).build();
+        // 검수 통과 상태 설정
+        ReflectionTestUtils.setField(order, "status", OrderStatus.INSPECTION_PASSED);
+
+        given(adminRepository.findByEmail(adminEmail)).willReturn(Optional.of(admin));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        // When & Then
+        // 운송장 번호를 null로 전달
+        assertThatThrownBy(() ->
+                orderService.updateOrderStatus(orderId, OrderStatus.SHIPPED_TO_BUYER, null, adminEmail)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.TRACKING_NUMBER_REQUIRED);
+    }
+
+    @Test
+    @DisplayName("관리자 주문 상태 변경 실패 - 권한 부족(매니저)")
+    void updateOrderStatus_Fail_ManagerAccessDenied() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String adminEmail = "manager@test.com";
+
+        Admin admin = org.mockito.Mockito.mock(Admin.class);
+        // ROLE_MANAGER는 상태 변경 권한이 없다고 가정 (Service 로직 기준)
+        given(admin.getAdminRole()).willReturn(AdminRole.ROLE_MANAGER);
+
+        given(adminRepository.findByEmail(adminEmail)).willReturn(Optional.of(admin));
+
+        // When & Then
+        assertThatThrownBy(() ->
+                orderService.updateOrderStatus(orderId, OrderStatus.INSPECTION_PASSED, null, adminEmail)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("구매 확정 성공 - 배송 완료 상태에서만 가능하다")
+    void confirmOrder_Success() {
+        UUID orderId = UUID.randomUUID();
+        String buyerEmail = "buyer@test.com";
+
+        User buyer = User.createUser(buyerEmail, "pw", "buyer", "010-1111-1111");
+        ReflectionTestUtils.setField(buyer, "id", 1L);
+        User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
+        ReflectionTestUtils.setField(seller, "id", 2L);
+
+        Brand brand = createBrand();
+        Product product = createProduct(brand);
+        ProductOption option = new ProductOption(product, "270");
+
+        Order order = Order.builder()
+                .buyer(buyer)
+                .seller(seller)
+                .productOption(option)
+                .price(BigDecimal.valueOf(300000))
+                .build();
+
+        ReflectionTestUtils.setField(order, "status", OrderStatus.DELIVERED);
+
+        given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(buyer));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        orderService.confirmOrder(orderId, buyerEmail);
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(order.getCompletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("구매 확정 실패 - 배송 완료 전에는 확정 불가")
+    void confirmOrder_Fail_InvalidStatus() {
+        // Given
+        UUID orderId = UUID.randomUUID();
+        String buyerEmail = "buyer@test.com";
+
+        User buyer = User.createUser(buyerEmail, "pw", "buyer", "010-1111-1111");
+        ReflectionTestUtils.setField(buyer, "id", 1L);
+        User seller = User.createUser("seller@test.com", "pw", "seller", "010-2222-2222");
+        ReflectionTestUtils.setField(seller, "id", 2L);
+
+        Order order = Order.builder()
+                .buyer(buyer)
+                .seller(seller)
+                .price(BigDecimal.valueOf(300000))
+                .build();
+
+        // 배송 중 상태 (SHIPPED_TO_BUYER) 설정
+        ReflectionTestUtils.setField(order, "status", OrderStatus.SHIPPED_TO_BUYER);
+
+        given(userRepository.findByEmail(buyerEmail)).willReturn(Optional.of(buyer));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        // When & Then
+        assertThatThrownBy(() ->
+                orderService.confirmOrder(orderId, buyerEmail)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ORDER_STATUS);
+    }
+
+    @Test
+    @DisplayName("운송장 등록 실패 - 존재하지 않는 사용자")
+    void registerTrackingNumber_Fail_UserNotFound() {
+        UUID orderId = UUID.randomUUID();
+        String unknownEmail = "unknown@test.com";
+
+        given(userRepository.findByEmail(unknownEmail)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                orderService.registerTrackingNumber(orderId, "12345", unknownEmail)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("운송장 등록 실패 - 존재하지 않는 주문")
+    void registerTrackingNumber_Fail_OrderNotFound() {
+        UUID orderId = UUID.randomUUID();
+        String email = "seller@test.com";
+        User user = User.createUser(email, "pw", "seller", "010-2222-2222");
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                orderService.registerTrackingNumber(orderId, "12345", email)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ORDER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("관리자 주문 상태 변경 실패 - 존재하지 않는 관리자")
+    void updateOrderStatus_Fail_AdminNotFound() {
+        UUID orderId = UUID.randomUUID();
+        String unknownEmail = "unknown@test.com";
+
+        given(adminRepository.findByEmail(unknownEmail)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                orderService.updateOrderStatus(orderId, OrderStatus.INSPECTION_PASSED, null, unknownEmail)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ADMIN_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("관리자 주문 상태 변경 실패 - 존재하지 않는 주문")
+    void updateOrderStatus_Fail_OrderNotFound() {
+        UUID orderId = UUID.randomUUID();
+        String email = "admin@test.com";
+        Admin admin = org.mockito.Mockito.mock(Admin.class);
+        given(admin.getAdminRole()).willReturn(AdminRole.ROLE_MASTER);
+
+        given(adminRepository.findByEmail(email)).willReturn(Optional.of(admin));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                orderService.updateOrderStatus(orderId, OrderStatus.INSPECTION_PASSED, null, email)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ORDER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("관리자 주문 상태 변경 실패 - 운송장 번호가 빈 문자열(Blank)")
+    void updateOrderStatus_Fail_EmptyTrackingNumber() {
+        UUID orderId = UUID.randomUUID();
+        String email = "admin@test.com";
+        Admin admin = org.mockito.Mockito.mock(Admin.class);
+        given(admin.getAdminRole()).willReturn(AdminRole.ROLE_MASTER);
+
+        Order order = Order.builder().price(BigDecimal.valueOf(300000)).build();
+        ReflectionTestUtils.setField(order, "status", OrderStatus.INSPECTION_PASSED);
+
+        given(adminRepository.findByEmail(email)).willReturn(Optional.of(admin));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        assertThatThrownBy(() ->
+                orderService.updateOrderStatus(orderId, OrderStatus.SHIPPED_TO_BUYER, "", email)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.TRACKING_NUMBER_REQUIRED);
+    }
+
+    @Test
+    @DisplayName("구매 확정 실패 - 존재하지 않는 사용자")
+    void confirmOrder_Fail_UserNotFound() {
+        UUID orderId = UUID.randomUUID();
+        String unknownEmail = "unknown@test.com";
+
+        given(userRepository.findByEmail(unknownEmail)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                orderService.confirmOrder(orderId, unknownEmail)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("구매 확정 실패 - 존재하지 않는 주문")
+    void confirmOrder_Fail_OrderNotFound() {
+        UUID orderId = UUID.randomUUID();
+        String email = "buyer@test.com";
+        User user = User.createUser(email, "pw", "buyer", "010-1111-1111");
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                orderService.confirmOrder(orderId, email)
+        ).isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ORDER_NOT_FOUND);
     }
 }

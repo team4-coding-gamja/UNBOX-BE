@@ -90,7 +90,7 @@ public class SellingBidService {
     public SellingBidResponseDto getSellingBidDetail(UUID sellingId, Long userId) {
         // User 조회 삭제
 
-        SellingBid sellingBid = sellingBidRepository.findWithDetailsBySellingId(sellingId)
+        SellingBid sellingBid = sellingBidRepository.findBySellingId(sellingId) // 이걸로 변경!
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
         // [변경] ID 비교
@@ -125,7 +125,11 @@ public class SellingBidService {
         // 3. 변환 (동일)
         return bidSlice.map(bid -> {
             SellingBidResponseDto dto = sellingBidMapper.toResponseDto(bid);
-            ProductOption option = bid.getProductOption();
+
+            ProductOption option= bid.getProductOption();
+            if (option == null) {
+                return dto;
+            }
             return dto.toBuilder()
                     .size(option.getOption())
                     .product(SellingBidResponseDto.ProductInfo.builder()

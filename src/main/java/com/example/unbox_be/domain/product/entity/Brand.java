@@ -23,7 +23,7 @@ public class Brand extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(nullable = false)
+    @Column
     private String logoUrl;
 
     @OneToMany(mappedBy = "brand", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -55,9 +55,9 @@ public class Brand extends BaseEntity {
 
     private static void validateLogoUrl(String logoUrl) {
         if (logoUrl == null || logoUrl.isBlank()) {
-            return; // 로고 URL 선택 사항이면 통과
+        throw new IllegalArgumentException("로고 URL은 필수입니다.");
         }
-        if (!logoUrl.startsWith("http")) {
+        if (!logoUrl.startsWith("http://") && !logoUrl.startsWith("https://")) {
             throw new IllegalArgumentException("로고 URL은 http 또는 https 형식이어야 합니다.");
         }
     }

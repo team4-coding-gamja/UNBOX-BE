@@ -28,8 +28,12 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @Override
     @Transactional(readOnly = true)
     public Page<AdminStaffListResponseDto> getAdminStaffPage(String email, int page, int size) {
-        adminRepository.findByEmail(email)
+        Admin caller = adminRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+
+        if (caller.getAdminRole() != AdminRole.ROLE_MASTER) {
+            throw new CustomException(ErrorCode.ONLY_MASTER_ALLOWED);
+        }
 
         Pageable pageable = PageRequest.of(page, size);
 
@@ -45,8 +49,12 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @Override
     @Transactional(readOnly = true)
     public Page<AdminStaffListResponseDto> getAdminManagerPage(String email, int page, int size) {
-        adminRepository.findByEmail(email)
+        Admin caller = adminRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+
+        if (caller.getAdminRole() != AdminRole.ROLE_MASTER) {
+            throw new CustomException(ErrorCode.ONLY_MASTER_ALLOWED);
+        }
 
         Pageable pageable = PageRequest.of(page, size);
 
@@ -62,8 +70,12 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @Override
     @Transactional(readOnly = true)
     public Page<AdminStaffListResponseDto> getAdminInspectorPage(String email, int page, int size) {
-        adminRepository.findByEmail(email)
+        Admin caller = adminRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+
+        if (caller.getAdminRole() != AdminRole.ROLE_MASTER) {
+            throw new CustomException(ErrorCode.ONLY_MASTER_ALLOWED);
+        }
 
         Pageable pageable = PageRequest.of(page, size);
 
@@ -78,10 +90,14 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     // ✅ 특정 관리자(스태프) 상세 조회
     @Override
     public AdminStaffDetailResponseDto getAdminStaffDetail(String email, Long adminId) {
-        adminRepository.findByEmail(email)
+        Admin caller = adminRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
         Admin admin = adminRepository.findById(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+
+        if (caller.getAdminRole() != AdminRole.ROLE_MASTER) {
+            throw new CustomException(ErrorCode.ONLY_MASTER_ALLOWED);
+        }
 
         return AdminMapper.toAdminStaffDetailResponseDto(admin);
     }
@@ -90,10 +106,14 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @Override
     @Transactional
     public AdminStaffUpdateResponseDto updateAdminStaff(String email, Long adminId, AdminStaffUpdateRequestDto requestDto) {
-        adminRepository.findByEmail(email)
+        Admin caller = adminRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
         Admin admin = adminRepository.findById(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+
+        if (caller.getAdminRole() != AdminRole.ROLE_MASTER) {
+            throw new CustomException(ErrorCode.ONLY_MASTER_ALLOWED);
+        }
 
         admin.updateAdmin(requestDto.getNickname(), requestDto.getPhone());
 

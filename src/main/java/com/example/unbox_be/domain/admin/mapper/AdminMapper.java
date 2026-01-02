@@ -66,6 +66,7 @@ public class AdminMapper {
                 .nickname(admin.getNickname())
                 .phone(admin.getPhone())
                 .adminRole(admin.getAdminRole())
+                .adminStatus(admin.getAdminStatus())
                 .build();
     }
 
@@ -79,6 +80,7 @@ public class AdminMapper {
                 .nickname(admin.getNickname())
                 .phone(admin.getPhone())
                 .adminRole(admin.getAdminRole())
+                .adminStatus(admin.getAdminStatus())
                 .build();
     }
 
@@ -92,6 +94,7 @@ public class AdminMapper {
                 .nickname(admin.getNickname())
                 .phone(admin.getPhone())
                 .adminRole(admin.getAdminRole())
+                .adminStatus(admin.getAdminStatus())
                 .build();
     }
 }

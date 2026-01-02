@@ -60,8 +60,6 @@ public enum ErrorCode {
     
     // 배송  
     ORDER_CANNOT_BE_CANCELLED(HttpStatus.BAD_REQUEST, "이미 배송 중이거나 완료된 주문은 취소할 수 없습니다.");
-    ORDER_CANNOT_BE_CANCELLED(HttpStatus.BAD_REQUEST, "이미 배송 중이거나 완료된 주문은 취소할 수 없습니다."),
-    INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태입니다.");
 
     private final HttpStatus status;
     private final String message;

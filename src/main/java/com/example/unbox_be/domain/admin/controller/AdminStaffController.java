@@ -81,7 +81,7 @@ public class AdminStaffController implements AdminStaffApi {
 
     // ✅ 관리자 내 정보 수정
     @PatchMapping("/me")
-    public ApiResponse<AdminMeUpdateResponseDto> updateUserMe(
+    public ApiResponse<AdminMeUpdateResponseDto> updateAdminMe(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid AdminMeUpdateRequestDto requestDto) {
         AdminMeUpdateResponseDto result = adminStaffService.updateAdminMe(userDetails.getUsername(), requestDto);

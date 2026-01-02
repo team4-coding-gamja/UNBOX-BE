@@ -1,6 +1,6 @@
 package com.example.unbox_be.domain.auth.mapper;
 
-import com.example.unbox_be.domain.admin.entity.Admin;
+import com.example.unbox_be.domain.admin.common.entity.Admin;
 import com.example.unbox_be.domain.auth.dto.response.AdminSignupResponseDto;
 import com.example.unbox_be.domain.auth.dto.response.UserSignupResponseDto;
 import com.example.unbox_be.domain.user.entity.User;

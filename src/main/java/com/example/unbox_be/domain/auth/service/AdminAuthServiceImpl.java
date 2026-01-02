@@ -1,10 +1,10 @@
 package com.example.unbox_be.domain.auth.service;
 
-import com.example.unbox_be.domain.admin.entity.Admin;
-import com.example.unbox_be.domain.admin.entity.AdminRole;
+import com.example.unbox_be.domain.admin.common.entity.Admin;
+import com.example.unbox_be.domain.admin.common.entity.AdminRole;
 import com.example.unbox_be.domain.auth.dto.response.AdminSignupResponseDto;
 import com.example.unbox_be.domain.auth.dto.request.AdminSignupRequestDto;
-import com.example.unbox_be.domain.admin.repository.AdminRepository;
+import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
 import com.example.unbox_be.domain.auth.mapper.AuthMapper;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;

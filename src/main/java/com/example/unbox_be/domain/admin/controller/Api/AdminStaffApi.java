@@ -183,7 +183,7 @@ public interface AdminStaffApi {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "관리자를 찾을 수 없음")
     })
     @PatchMapping("/me")
-    ApiResponse<AdminMeUpdateResponseDto> updateUserMe(
+    ApiResponse<AdminMeUpdateResponseDto> updateAdminMe(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails userDetails,
 

@@ -3,6 +3,8 @@ package com.example.unbox_be.domain.order.entity;
 import com.example.unbox_be.domain.common.BaseEntity;
 import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.user.entity.User;
+import com.example.unbox_be.global.error.exception.CustomException;
+import com.example.unbox_be.global.error.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -10,6 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -60,6 +63,9 @@ public class Order extends BaseEntity {
     @Column(name = "final_tracking_number", length = 100)
     private String finalTrackingNumber;
 
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
     // 생성자 레벨 @Builder
     // - ID, Audit 필드는 제외
     // - 필수 값만 파라미터로 받음
@@ -78,12 +84,27 @@ public class Order extends BaseEntity {
         this.status = OrderStatus.PENDING_SHIPMENT; // 초기 상태 강제
     }
 
-    // 상태 변경 메서드 (비즈니스 로직)
+    // 상태 변경 메서드
     public void updateStatus(OrderStatus newStatus) {
         if (this.status == OrderStatus.COMPLETED || this.status == OrderStatus.CANCELLED) {
             throw new IllegalStateException("이미 종료된 주문의 상태는 변경할 수 없습니다.");
         }
         this.status = newStatus;
+    }
+
+    public void cancel() {
+        // 이미 배송 중이거나 완료된 경우 예외 처리
+        if (this.status == OrderStatus.SHIPPED_TO_CENTER || this.status == OrderStatus.SHIPPED_TO_BUYER || this.status == OrderStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+        }
+
+        // 이미 취소된 경우도 체크
+        if (this.status == OrderStatus.CANCELLED) {
+            throw new CustomException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+        }
+
+        this.status = OrderStatus.CANCELLED;
+        this.cancelledAt = LocalDateTime.now();
     }
 
     public void registerTrackingNumber(String trackingNumber) {

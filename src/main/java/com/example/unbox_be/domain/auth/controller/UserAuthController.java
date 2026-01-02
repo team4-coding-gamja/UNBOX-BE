@@ -1,6 +1,6 @@
 package com.example.unbox_be.domain.auth.controller;
 
-import com.example.unbox_be.domain.auth.controller.Api.UserAuthApi;
+import com.example.unbox_be.domain.auth.controller.api.UserAuthApi;
 import com.example.unbox_be.domain.auth.dto.request.UserLoginRequestDto;
 import com.example.unbox_be.domain.auth.dto.response.UserTokenResponseDto;
 import com.example.unbox_be.domain.auth.dto.request.UserSignupRequestDto;

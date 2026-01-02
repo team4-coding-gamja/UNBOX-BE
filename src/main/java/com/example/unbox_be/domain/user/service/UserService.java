@@ -1,51 +1,16 @@
 package com.example.unbox_be.domain.user.service;
 
-import com.example.unbox_be.domain.user.dto.request.UserSignupRequestDto;
-import com.example.unbox_be.domain.user.dto.response.UserSignupResponseDto;
-import com.example.unbox_be.domain.user.entity.User;
-import com.example.unbox_be.domain.user.repository.UserRepository;
-import com.example.unbox_be.global.error.exception.CustomException;
-import com.example.unbox_be.global.error.exception.ErrorCode;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.stereotype.Service;
+import com.example.unbox_be.domain.user.dto.request.UserUpdateRequestDto;
+import com.example.unbox_be.domain.user.dto.response.UserResponseDto;
 
-@Service
-public class UserService {
+public interface UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    // 회원 정보 조회
+    UserResponseDto getUserByEmail(String email);
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+    // 회원 정보 수정
+    void updateUser(String email, UserUpdateRequestDto userUpdateRequestDto);
 
-    // 회원가입 API
-    @Transactional
-    public UserSignupResponseDto signup(UserSignupRequestDto userSignupRequestDto) {
-        String email = userSignupRequestDto.getEmail();
-        String password = userSignupRequestDto.getPassword();
-
-        // 이메일 중복 확인
-        if (userRepository.existsByEmail(email)) {
-            throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
-        }
-
-        // 회원 객체 생성
-        User user = User.createUser(
-                userSignupRequestDto.getEmail(),
-                passwordEncoder.encode(password),
-                userSignupRequestDto.getNickname(),
-                userSignupRequestDto.getPhone()
-        );
-
-        // 저장
-        User savedUser = userRepository.save(user);
-
-        // Entity -> Dto 변환 후 반환
-        return UserSignupResponseDto.from(savedUser);
-
-    }
-
+    // 회원 탈퇴
+    void deleteUser(String email);
 }

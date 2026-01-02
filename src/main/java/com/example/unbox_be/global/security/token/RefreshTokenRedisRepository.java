@@ -1,28 +1,39 @@
 package com.example.unbox_be.global.security.token;
 
+import com.example.unbox_be.global.security.jwt.JwtConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 @Repository
 @RequiredArgsConstructor
 public class RefreshTokenRedisRepository {
 
     private final StringRedisTemplate redisTemplate;
-    private static final long REFRESH_TOKEN_EXPIRATION = 60 * 60 * 24; // 1일
 
-    public void saveRefreshToken(String username, String refreshToken) {
-        redisTemplate.opsForValue().set(username, refreshToken, REFRESH_TOKEN_EXPIRATION, TimeUnit.SECONDS);
+    private String key(String email) {
+        return JwtConstants.REFRESH_TOKEN_KEY_PREFIX + email;
     }
 
-
-    public String getRefreshToken(String username) {
-        return redisTemplate.opsForValue().get(username);
+    public void saveRefreshToken(String email, String refreshToken) {
+        redisTemplate.opsForValue().set(
+                key(email),
+                refreshToken,
+                Duration.ofMillis(JwtConstants.REFRESH_TOKEN_EXPIRE_MS)
+        );
     }
 
-    public void deleteRefreshToken(String username) {
-        redisTemplate.delete(username);
+    public String getRefreshToken(String email) {
+        return redisTemplate.opsForValue().get(key(email));
+    }
+
+    public void deleteRefreshToken(String email) {
+        redisTemplate.delete(key(email));
+    }
+
+    public boolean exists(String email) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey(key(email)));
     }
 }

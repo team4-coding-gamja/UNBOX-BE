@@ -148,19 +148,15 @@ public class OrderService {
      */
     private void validateCancelRequest(Order order, User user) {
         // 1. 기본 접근 권한 체크
-        // -> 여기서 구매자도 아니고 판매자도 아니면 ACCESS_DENIED 예외 발생
         validateOrderAccess(order, user);
 
         // 2. 구매자인 경우 상태 체크
-        boolean isBuyer = order.getBuyer().getId().equals(user.getId());
-
-        if (isBuyer) {
+        if (order.getBuyer().getId().equals(user.getId())) {
             // 구매자는 오직 'PENDING_SHIPMENT(배송 대기)' 상태일 때만 취소 가능
             if (order.getStatus() != OrderStatus.PENDING_SHIPMENT) {
                 throw new CustomException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
             }
         }
-
-        // (판매자는 Entity의 cancel() 메서드 내에서 SHIPPED/DELIVERED 여부만 체크하면 되므로 별도 로직 불필요)
+        // 판매자는 Order.cancel() 메서드에서 배송 상태 검증
     }
 }

@@ -19,28 +19,28 @@ public class UserController implements UserApi {
 
     private final UserService userService;
 
-    // 회원 정보 조회
+    // ✅ 회원 정보 조회
     @GetMapping("/me")
     public ApiResponse<UserMeResponseDto> getUserMe(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        UserMeResponseDto userMeResponseDto = userService.getUserMe(userDetails.getUsername());
+        UserMeResponseDto userMeResponseDto = userService.getUserMe(userDetails.getUserId());
         return ApiResponse.success(userMeResponseDto);
     }
 
-    // 회원 정보 수정
+    // ✅ 회원 정보 수정
     @PatchMapping("/me")
     public ApiResponse<UserMeUpdateResponseDto> updateUserMe(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid UserMeUpdateRequestDto userMeUpdateRequestDto) {
-        UserMeUpdateResponseDto userMeUpdateResponseDto = userService.updateUserMe(userDetails.getUsername(), userMeUpdateRequestDto);
+        UserMeUpdateResponseDto userMeUpdateResponseDto = userService.updateUserMe(userDetails.getUserId(), userMeUpdateRequestDto);
         return ApiResponse.success(userMeUpdateResponseDto);
     }
 
-    // 회원 탈퇴
+    // ✅ 회원 탈퇴
     @DeleteMapping("/me")
     public ApiResponse<String> deleteUserMe(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        userService.deleteUserMe(userDetails.getUsername());
+        userService.deleteUserMe(userDetails.getUserId());
         return ApiResponse.successWithNoData();
     }
 }

@@ -20,32 +20,35 @@ public class UserServiceImpl implements UserService {
         this.userRepository = userRepository;
     }
 
-    // 회원 정보 조회 API
+    // ✅ 회원 정보 조회
     @Transactional(readOnly = true)
-    public UserMeResponseDto getUserMe(String email) {
-        User user = userRepository.findByEmail(email)
+    public UserMeResponseDto getUserMe(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         return UserMapper.toUserMeResponseDto(user);
     }
 
-    // 회원 정보 수정 API
+    // ✅ 회원 정보 수정
     @Transactional
-    public UserMeUpdateResponseDto updateUserMe(String email, UserMeUpdateRequestDto userMeUpdateRequestDto) {
-        User user = userRepository.findByEmail(email)
+    public UserMeUpdateResponseDto updateUserMe(Long userId, UserMeUpdateRequestDto userMeUpdateRequestDto) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         user.updateUser(
                 userMeUpdateRequestDto.getNickname(),
                 userMeUpdateRequestDto.getPhone()
         );
         return UserMapper.toUserMeUpdateResponseDto(user);
     }
-    
-    // 회원 탈퇴 API
+
+    // ✅ 회원 탈퇴
     // 추후에 JWT 토큰 무효화 처리하기
     @Transactional
-    public void deleteUserMe(String email) {
-        User user = userRepository.findByEmail(email)
+    public void deleteUserMe(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
         userRepository.delete(user);
     }
 }

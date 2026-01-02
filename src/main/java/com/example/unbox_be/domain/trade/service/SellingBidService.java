@@ -33,88 +33,81 @@ public class SellingBidService {
     private final SellingBidMapper sellingBidMapper;
 
     @Transactional
-    public UUID createSellingBid(SellingBidRequestDto requestDto) {
-        // 현재 날짜 기준 30일 뒤의 00시 00분 00초 계산
-        // 오늘로부터 30일 뒤 날짜의 시작 시간(00:00:00) - 1월 1일->1월 31일 00시
-        if (!userRepository.existsById(requestDto.getUserId())) {
-            throw new CustomException(ErrorCode.USER_NOT_FOUND);
-        }
-// 상품 옵션 확인
-        if (!productOptionRepository.existsById(requestDto.getOptionId())) {
-            throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
-        }
+    public UUID createSellingBid(Long userId, SellingBidRequestDto requestDto) {
+
+        // 1. [수정] 단순히 존재 확인(exists)만 하지 말고, 실제 객체를 조회(findById)합니다.
+        ProductOption productOption = productOptionRepository.findById(requestDto.getOptionId())
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
         LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();
 
-        // DTO -> Entity 변환
-        SellingBid sellingBid = sellingBidMapper.toEntity(requestDto, deadline);
+        // 2. [수정] 조회한 productOption을 매퍼에게 같이 넘깁니다.
+        SellingBid sellingBid = sellingBidMapper.toEntity(requestDto, userId, deadline, productOption);
 
         SellingBid savedBid = sellingBidRepository.save(sellingBid);
         return savedBid.getSellingId();
     }
 
     @Transactional
-    public void cancelSellingBid(UUID sellingId, String email) {
-        // 1. 해당 입찰 조회
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public void cancelSellingBid(UUID sellingId, Long userId, String email) {
+        // 1. 입찰 조회
         SellingBid sellingBid = sellingBidRepository.findById(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
-        // 2. 본인 확인
-        if (!sellingBid.getUserId().equals(user.getId())) {
+        // 2. [변경] 본인 확인 (DB 조회 없이 ID 비교만 수행)
+        if (!sellingBid.getUserId().equals(userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
-        if (sellingBid.getStatus() != SellingStatus.LIVE) {
-            throw new IllegalArgumentException("아직 판매, 취소되지 않거나 구매중이 아닌 상품만 취소할 수 있습니다.");
-        }
-        //sellingBid.softDelete(user.getEmail());
 
-        // 3. 상태 변경 (Dirty Checking에 의해 자동 업데이트)s
-        updateSellingBidStatus(sellingId, SellingStatus.CANCELLED, email);
+        if (sellingBid.getStatus() != SellingStatus.LIVE) {
+            throw new IllegalArgumentException("취소할 수 없는 상태입니다.");
+        }
+
+        updateSellingBidStatus(sellingId, SellingStatus.CANCELLED, userId, email);
     }
 
     @Transactional
-    public void updateSellingBidPrice(UUID sellingId, Integer newPrice, String email) {
-        // 1. 조회
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
+    public void updateSellingBidPrice(UUID sellingId, Integer newPrice, Long userId, String email) {
         SellingBid sellingBid = sellingBidRepository.findById(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+
         if (newPrice == null || newPrice <= 0) {
             throw new CustomException(ErrorCode.INVALID_BID_PRICE);
         }
         if (sellingBid.getStatus() != SellingStatus.LIVE) {
-            throw new IllegalArgumentException("아직 판매, 취소되지 않거나 구매중이 아닌 상품만 취소할 수 있습니다.");
+            throw new IllegalArgumentException("수정할 수 없는 상태입니다.");
         }
-        // 2. 엔티티의 비즈니스 로직 호출 (검증 및 변경)
-        sellingBid.updatePrice(newPrice, user.getId(), email);
-    }
 
-    @Transactional(readOnly = true)
-    public SellingBidResponseDto getSellingBidDetail(UUID sellingId,String email){
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        SellingBid sellingBid = sellingBidRepository.findWithDetailsBySellingId(sellingId) // 이걸로 변경!
-                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
-        SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
-
-        if (!sellingBid.getUserId().equals(user.getId())) {
+        // [변경] 엔티티 업데이트 메서드 호출 (ID 비교 로직은 엔티티 내부에서 수행하거나 여기서 미리 검증)
+        if (!sellingBid.getUserId().equals(userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 3. optionId로 실제 상품 옵션과 상품 정보 조회
-        ProductOption option = sellingBid.getProductOption();
-        if (option == null) throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
+        sellingBid.updatePrice(newPrice, userId, email);
+    }
 
-        // 4. 부족한 정보(product, size)를 채워넣기
+    @Transactional(readOnly = true)
+    public SellingBidResponseDto getSellingBidDetail(UUID sellingId, Long userId) {
+        // User 조회 삭제
+
+        SellingBid sellingBid = sellingBidRepository.findWithDetailsBySellingId(sellingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+
+        // [변경] ID 비교
+        if (!sellingBid.getUserId().equals(userId)) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+
+        SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
+        ProductOption option = sellingBid.getProductOption();
+
+        // ... (Response 빌더 로직 동일)
         return SellingBidResponseDto.builder()
                 .sellingId(response.getSellingId())
                 .status(response.getStatus())
                 .price(response.getPrice())
                 .deadline(response.getDeadline())
-                .size(option.getOption()) // option에서 가져옴
+                .size(option.getOption())
                 .product(SellingBidResponseDto.ProductInfo.builder()
                         .id(option.getProduct().getId())
                         .name(option.getProduct().getName())
@@ -124,20 +117,15 @@ public class SellingBidService {
     }
 
     @Transactional(readOnly = true)
-    public Slice<SellingBidResponseDto> getMySellingBids(String email, Pageable pageable) {
-        // 1. 유저 조회
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public Slice<SellingBidResponseDto> getMySellingBids(Long userId, Pageable pageable) {
+        // 1. 유저 조회 삭제
+        // 2. [변경] 바로 userId로 조회
+        Slice<SellingBid> bidSlice = sellingBidRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
 
-        // 2. 페이징 조회 (Slice 사용)
-        Slice<SellingBid> bidSlice = sellingBidRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable);
-
-        // 3. DTO 변환 및 반환
+        // 3. 변환 (동일)
         return bidSlice.map(bid -> {
             SellingBidResponseDto dto = sellingBidMapper.toResponseDto(bid);
-
-            ProductOption option= bid.getProductOption();
-
+            ProductOption option = bid.getProductOption();
             return dto.toBuilder()
                     .size(option.getOption())
                     .product(SellingBidResponseDto.ProductInfo.builder()
@@ -151,15 +139,12 @@ public class SellingBidService {
 
     //판매 상태 변환 service이고, 이거 나중에 MSA로 변환하면 API로 따로 관리ㄱㄱ
     @Transactional
-    public void updateSellingBidStatus(UUID sellingId, SellingStatus newStatus, String email) {
+    public void updateSellingBidStatus(UUID sellingId, SellingStatus newStatus, Long userId, String email) {
         SellingBid sellingBid = sellingBidRepository.findById(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
-
         // 1. 권한 검증: 사용자가 직접 바꿀 때만 체크 (시스템 자동 변경 시에는 생략 가능하도록 설계)
-        if (email != null) {
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-            if (!sellingBid.getUserId().equals(user.getId())) {
+        if (userId != null) {
+            if (!sellingBid.getUserId().equals(userId)) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED);
             }
         }

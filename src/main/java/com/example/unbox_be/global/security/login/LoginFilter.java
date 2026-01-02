@@ -80,13 +80,14 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String email = userDetails.getUsername();
+        Long userId = userDetails.getUserId();
         log.info("[LoginFilter/successfulAuthentication] 3. 인증된 사용자 정보 가져오기: {}", email);
 
         String role = authentication.getAuthorities().iterator().next().getAuthority();
         log.info("[LoginFilter/successfulAuthentication] 4. 인증된 사용자 권한 가져오기: {}", role);
 
-        String access = jwtUtil.createAccessToken(email, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
-        String refresh = jwtUtil.createRefreshToken(email, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
+        String access = jwtUtil.createAccessToken(userId, email, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
+        String refresh = jwtUtil.createRefreshToken(userId, email, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
         log.info("[LoginFilter/successfulAuthentication] 5. JWT 토큰 생성 - Access: {}, Refresh: {}", access, refresh);
 
         // Redis에 Refresh 저장

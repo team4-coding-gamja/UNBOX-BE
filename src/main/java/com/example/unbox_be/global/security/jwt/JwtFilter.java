@@ -78,11 +78,12 @@ public class JwtFilter extends OncePerRequestFilter {
         // 토큰 정보 추출
         String email = jwtUtil.getUsername(token);
         String role = jwtUtil.getRole(token);
+        Long userId = jwtUtil.getUserId(token);
 
         log.info("[JwtFilter] JWT 검증 성공 - email: {}, role: {}", email, role);
 
         // CustomUserDetails 생성 (JWT 기반)
-        CustomUserDetails customUserDetails = new CustomUserDetails(email, "", role);
+        CustomUserDetails customUserDetails = new CustomUserDetails(userId, email, "", role);
 
         log.info("[JwtFilter] CustomUserDetails 생성 완료");
 

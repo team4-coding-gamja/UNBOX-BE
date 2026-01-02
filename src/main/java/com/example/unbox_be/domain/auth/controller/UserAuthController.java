@@ -75,12 +75,15 @@ public class UserAuthController implements UserAuthApi {
         // 사용자 정보 가져오기
         String username = jwtUtil.getUsername(refreshToken);
 
+        // 사용자 아이디
+        Long userId = jwtUtil.getUserId(refreshToken);
+
         // 역할 정보 설정 (기본값 사용)
         String role = "ROLE_USER";
 
         // 새로운 액세스 토큰 생성
-        String newAccessToken = jwtUtil.createAccessToken(username, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
-        String newRefreshToken = jwtUtil.createRefreshToken(username, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
+        String newAccessToken = jwtUtil.createAccessToken(userId, username, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
+        String newRefreshToken = jwtUtil.createRefreshToken(userId, username, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
 
         // RefreshToken 저장 (Redis)
         refreshTokenRedisRepository.saveRefreshToken(username, newRefreshToken);

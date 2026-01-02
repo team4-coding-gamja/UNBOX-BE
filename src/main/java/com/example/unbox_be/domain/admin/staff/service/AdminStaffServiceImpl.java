@@ -90,6 +90,7 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     // 관리자 내 정보 조회 API
     @Override
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER','INSPECTOR')")
     public AdminMeResponseDto getAdminMe(Long adminId) {
         Admin admin = adminRepository.findById(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
@@ -100,6 +101,7 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     // 관리자 내 정보 수정 API
     @Override
     @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER','INSPECTOR')")
     public AdminMeUpdateResponseDto updateAdminMe(Long adminId, AdminMeUpdateRequestDto adminUpdateRequestDto) {
         Admin admin = adminRepository.findById(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));

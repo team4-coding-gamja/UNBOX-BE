@@ -6,6 +6,8 @@ import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.product.repository.ProductRepository;
+import com.example.unbox_be.domain.trade.dto.response.ProductSizePriceResponseDto;
+import com.example.unbox_be.domain.trade.service.TradeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class ProductService {
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
+    private final TradeService tradeService;
 
     // 상품 전체 조회 (페이징 처리)
     public Page<ProductResponseDto> getProducts(ProductSearchCondition condition, Pageable pageable){
@@ -55,5 +58,14 @@ public class ProductService {
         List<ProductOption> optionList = productOptionRepository.findAllByProductId(product.getId());
         // 3. DTO 변환
         return ProductResponseDto.from(product, optionList);
+    }
+
+
+    // 상품 최저가 조회
+    public List<ProductSizePriceResponseDto> getProductLowestPrice(Long productId) {
+        // (선택사항) 필요하다면 여기서 productId로 상품이 실제 존재하는지 검증할 수 있습니다.
+        // productRepository.findById(productId).orElseThrow(...);
+        // Trade 도메인에게 "가격표 좀 줘" 요청
+        return tradeService.getLowestPriceList(productId);
     }
 }

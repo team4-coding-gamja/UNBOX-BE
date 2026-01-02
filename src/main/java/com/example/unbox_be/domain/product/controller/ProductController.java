@@ -3,6 +3,7 @@ package com.example.unbox_be.domain.product.controller;
 import com.example.unbox_be.domain.product.dto.ProductResponseDto;
 import com.example.unbox_be.domain.product.dto.ProductSearchCondition;
 import com.example.unbox_be.domain.product.service.ProductService;
+import com.example.unbox_be.domain.trade.dto.response.ProductSizePriceResponseDto;
 import com.example.unbox_be.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject; // ★ 이 import 필수!
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -34,4 +36,14 @@ public class ProductController {
     public ApiResponse<ProductResponseDto> getProductById(@PathVariable("productId") UUID id) {
         return ApiResponse.success(productService.getProductById(id));
     }
+
+    @GetMapping("/{productId}/lowest-price")
+    public ApiResponse<List<ProductSizePriceResponseDto>> getProductLowestPrice(
+            @PathVariable Long productId
+    ) {
+        List<ProductSizePriceResponseDto> response = productService.getProductLowestPrice(productId);
+
+        return ApiResponse.success(response);
+    }
+
 }

@@ -1,10 +1,14 @@
 package com.example.unbox_be.domain.trade.repository;
 
+import com.example.unbox_be.domain.trade.dto.response.ProductSizePriceResponseDto;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
+import com.example.unbox_be.domain.trade.entity.SellingStatus;
+import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -25,4 +29,18 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
 
     @EntityGraph(attributePaths = {"productOption", "productOption.product"})
     Optional<SellingBid> findWithDetailsBySellingId(UUID sellingId);
+
+    @Query("SELECT new com.example.unbox_be.domain.trade.dto.response.ProductSizePriceResponseDto(" +
+            "po.option, MIN(s.price)) " +  // ✅ Enum → String 변환
+            "FROM SellingBid s " +
+            "JOIN s.productOption po " +
+            "WHERE po.product.id = :productId " +
+            "AND s.status = :status " +
+            "GROUP BY po.option " +        // ✅ SELECT 일반 필드와 동일하게
+            "ORDER BY po.option ASC")
+    List<ProductSizePriceResponseDto> findLowestPriceByProductId(
+            @Param("productId") Long productId,
+            @Param("status") SellingStatus status
+    );
+
 }

@@ -134,4 +134,22 @@ public class OrderController {
 
         return ResponseEntity.ok(ApiResponse.success(responseDto));
     }
+
+    /**
+     * 구매 확정 (구매자용)
+     * - 배송 받은 상품을 확인하고 거래를 종료함
+     * - status: DELIVERED -> COMPLETED
+     */
+    @PatchMapping("/{orderId}/confirm")
+    public ResponseEntity<ApiResponse<OrderDetailResponseDto>> confirmOrder(
+            @PathVariable UUID orderId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        OrderDetailResponseDto responseDto = orderService.confirmOrder(
+                orderId,
+                userDetails.getUsername()
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(responseDto));
+    }
 }

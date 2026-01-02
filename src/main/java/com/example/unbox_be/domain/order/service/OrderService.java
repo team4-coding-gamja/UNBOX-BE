@@ -217,4 +217,26 @@ public class OrderService {
         // 5. 결과 반환
         return orderMapper.toDetailResponseDto(order);
     }
+
+    /**
+     * 구매 확정 (구매자 전용)
+     * - PATCH /api/orders/{orderId}/confirm
+     * - 배송 완료(DELIVERED) 상태일 때만 가능
+     */
+    @Transactional
+    public OrderDetailResponseDto confirmOrder(UUID orderId, String email) {
+        // 1. 요청 사용자(구매자) 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. 주문 조회
+        Order order = orderRepository.findWithDetailsById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 3. 구매 확정 (Entity 내부 confirm 메서드 호출)
+        order.confirm(user);
+
+        // 4. 결과 반환
+        return orderMapper.toDetailResponseDto(order);
+    }
 }

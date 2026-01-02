@@ -15,6 +15,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,16 +23,13 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class AdminUserServiceImpl implements  AdminUserService {
 
-    private final AdminRepository adminRepository;
     private final UserRepository userRepository;
 
     // ✅ 사용자 목록 조회
     @Override
     @Transactional(readOnly = true)
-    public Page<AdminUserListResponseDto> getAdminUserPage(String email, int page, int size) {
-        Admin admin = adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
-
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public Page<AdminUserListResponseDto> getAdminUserPage(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<User> users = userRepository.findAll(pageable);
         return users.map(AdminUserMapper::toAdminUserListResponseDto);
@@ -39,10 +37,9 @@ public class AdminUserServiceImpl implements  AdminUserService {
 
     // ✅ 사용자 상세 정보 조회
     @Override
-    @Transactional
-    public AdminUserDetailResponseDto getAdminUserDetail(String email, Long userId) {
-        adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public AdminUserDetailResponseDto getAdminUserDetail(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -52,9 +49,8 @@ public class AdminUserServiceImpl implements  AdminUserService {
     // ✅ 사용자 상세 정보 수정
     @Override
     @Transactional
-    public AdminUserUpdateResponseDto updateAdminUser(String email, Long userId, AdminUserUpdateRequestDto requestDto) {
-        adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public AdminUserUpdateResponseDto updateAdminUser(Long userId, AdminUserUpdateRequestDto requestDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -68,9 +64,8 @@ public class AdminUserServiceImpl implements  AdminUserService {
     // ✅ 사용자 상세 정보 삭제
     @Override
     @Transactional
-    public void deleteAdminUser(String email, Long userId) {
-        Admin admin = adminRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public void deleteAdminUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 

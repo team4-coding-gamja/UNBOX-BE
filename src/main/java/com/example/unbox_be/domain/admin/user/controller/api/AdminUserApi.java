@@ -39,9 +39,6 @@ public interface AdminUserApi {
     })
     @GetMapping
     ApiResponse<Page<AdminUserListResponseDto>> getAdminUserPage(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @Parameter(description = "페이지 번호 (0부터 시작)", example = "0", required = true)
             @RequestParam int page,
 
@@ -67,8 +64,6 @@ public interface AdminUserApi {
     })
     @GetMapping("/{userId}")
     ApiResponse<AdminUserDetailResponseDto> getAdminUserDetail(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
 
             @Parameter(description = "사용자 ID", required = true)
             @PathVariable Long userId
@@ -93,9 +88,6 @@ public interface AdminUserApi {
     })
     @PatchMapping("/{userId}")
     ApiResponse<AdminUserUpdateResponseDto> updateAdminUser(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @Parameter(description = "사용자 ID", required = true)
             @PathVariable Long userId,
 
@@ -120,9 +112,6 @@ public interface AdminUserApi {
     })
     @DeleteMapping("/{userId}")
     ApiResponse<Void> deleteAdminUser(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @Parameter(description = "사용자 ID", required = true)
             @PathVariable Long userId
     );

@@ -1,8 +1,12 @@
 package com.example.unbox_be.domain.admin.common.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity;
+import com.example.unbox_be.domain.order.entity.Inspection;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Entity

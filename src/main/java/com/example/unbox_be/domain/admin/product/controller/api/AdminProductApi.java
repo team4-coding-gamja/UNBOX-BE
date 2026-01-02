@@ -41,9 +41,6 @@ public interface AdminProductApi {
     })
     @PostMapping
     ApiResponse<AdminProductCreateResponseDto> createProduct(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @RequestBody @Valid AdminProductCreateRequestDto requestDto
     );
 
@@ -65,9 +62,6 @@ public interface AdminProductApi {
     })
     @DeleteMapping("/{productId}")
     ApiResponse<Void> deleteProduct(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @Parameter(description = "상품 ID (UUID)", required = true)
             @PathVariable UUID productId
     );
@@ -92,9 +86,6 @@ public interface AdminProductApi {
     })
     @PostMapping("/{productId}/options")
     ApiResponse<AdminProductOptionCreateResponseDto> createProductOption(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @Parameter(description = "상품 ID (UUID)", required = true)
             @PathVariable UUID productId,
 
@@ -120,9 +111,6 @@ public interface AdminProductApi {
     })
     @DeleteMapping("/{productId}/options/{optionId}")
     ApiResponse<Void> deleteProductOption(
-            @Parameter(hidden = true)
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-
             @Parameter(description = "상품 ID (UUID)", required = true)
             @PathVariable UUID productId,
 

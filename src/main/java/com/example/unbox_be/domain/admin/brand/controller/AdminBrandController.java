@@ -23,18 +23,16 @@ public class AdminBrandController implements AdminBrandApi {
     // ✅ 브랜드 등록
     @PostMapping
     public ApiResponse<AdminBrandCreateResponseDto> createBrand(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody @Valid AdminBrandCreateRequestDto adminBrandCreateRequestDto) {
-        AdminBrandCreateResponseDto result = adminBrandService.createBrand(userDetails.getUsername(), adminBrandCreateRequestDto);
+            @RequestBody @Valid AdminBrandCreateRequestDto requestDto) {
+        AdminBrandCreateResponseDto result = adminBrandService.createBrand(requestDto);
         return ApiResponse.success(result);
     }
 
     // ✅ 브랜드 삭제
     @DeleteMapping("/{brandId}")
     public ApiResponse<Void> deleteBrand(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID brandId) {
-        adminBrandService.deleteBrand(userDetails.getUsername(), brandId);
+        adminBrandService.deleteBrand(brandId);
         return ApiResponse.success(null);
     }
 }

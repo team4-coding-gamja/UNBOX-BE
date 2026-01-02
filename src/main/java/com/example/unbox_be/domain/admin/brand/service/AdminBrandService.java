@@ -8,7 +8,7 @@ import java.util.UUID;
 public interface AdminBrandService {
 
     // ✅ 브랜드 등록
-    AdminBrandCreateResponseDto createBrand(String email, AdminBrandCreateRequestDto requestDto);
+    AdminBrandCreateResponseDto createBrand(AdminBrandCreateRequestDto requestDto);
     // ✅ 브랜드 삭제
-    void deleteBrand(String email, UUID brandId);
+    void deleteBrand(UUID brandId);
 }

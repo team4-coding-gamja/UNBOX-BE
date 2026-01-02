@@ -20,7 +20,7 @@ public class AdminBrandController implements AdminBrandApi {
 
     private final AdminBrandService adminBrandService;
 
-    // ✅ 브랜드 등록 API
+    // ✅ 브랜드 등록
     @PostMapping
     public ApiResponse<AdminBrandCreateResponseDto> createBrand(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -29,7 +29,7 @@ public class AdminBrandController implements AdminBrandApi {
         return ApiResponse.success(result);
     }
 
-    // ✅ 브랜드 삭제 API
+    // ✅ 브랜드 삭제
     @DeleteMapping("/{brandId}")
     public ApiResponse<Void> deleteBrand(
             @AuthenticationPrincipal CustomUserDetails userDetails,

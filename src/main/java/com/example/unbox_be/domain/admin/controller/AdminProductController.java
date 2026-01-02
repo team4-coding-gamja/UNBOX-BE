@@ -23,7 +23,7 @@ public class AdminProductController implements AdminProductApi {
 
     private final AdminProductService adminProductService;
 
-    // ✅ 상품 등록 API
+    // ✅ 상품 등록
     @PostMapping
     public ApiResponse<AdminProductCreateResponseDto> createProduct(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -32,7 +32,7 @@ public class AdminProductController implements AdminProductApi {
         return ApiResponse.success(result);
     }
 
-    // ✅ 상품 삭제 API
+    // ✅ 상품 삭제
     @DeleteMapping("/{productId}")
     public ApiResponse<Void> deleteProduct(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -41,7 +41,7 @@ public class AdminProductController implements AdminProductApi {
         return ApiResponse.success(null);
     }
 
-    // ✅ 옵션 등록 API
+    // ✅ 상품 옵션 등록
     @PostMapping("/{productId}/options")
     public ApiResponse<AdminProductOptionCreateResponseDto> createProductOption(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -51,7 +51,7 @@ public class AdminProductController implements AdminProductApi {
         return ApiResponse.success(result);
     }
 
-    // ✅ 사이즈 삭제 API
+    // ✅ 상품 옵션 삭제
     @DeleteMapping("/{productId}/options/{optionId}")
     public ApiResponse<Void> deleteProductOption(
             @AuthenticationPrincipal CustomUserDetails userDetails,

@@ -39,7 +39,7 @@ public class ProductController {
 
     @GetMapping("/{productId}/lowest-price")
     public ApiResponse<List<ProductSizePriceResponseDto>> getProductLowestPrice(
-            @PathVariable Long productId
+            @PathVariable UUID productId
     ) {
         List<ProductSizePriceResponseDto> response = productService.getProductLowestPrice(productId);
 

@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -55,7 +56,7 @@ public class SellingBidService {
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
         // 2. [변경] 본인 확인 (DB 조회 없이 ID 비교만 수행)
-        if (!sellingBid.getUserId().equals(userId)) {
+        if (!Objects.equals(sellingBid.getUserId(), userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
@@ -79,7 +80,7 @@ public class SellingBidService {
         }
 
         // [변경] 엔티티 업데이트 메서드 호출 (ID 비교 로직은 엔티티 내부에서 수행하거나 여기서 미리 검증)
-        if (!sellingBid.getUserId().equals(userId)) {
+        if (!Objects.equals(sellingBid.getUserId(), userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
@@ -94,7 +95,7 @@ public class SellingBidService {
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
         // [변경] ID 비교
-        if (!sellingBid.getUserId().equals(userId)) {
+        if (!Objects.equals(sellingBid.getUserId(), userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
@@ -148,7 +149,7 @@ public class SellingBidService {
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
         // 1. 권한 검증: 사용자가 직접 바꿀 때만 체크 (시스템 자동 변경 시에는 생략 가능하도록 설계)
         if (userId != null) {
-            if (!sellingBid.getUserId().equals(userId)) {
+            if (!Objects.equals(sellingBid.getUserId(), userId)) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED);
             }
         }

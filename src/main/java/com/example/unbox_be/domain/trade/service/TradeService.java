@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +23,7 @@ public class TradeService {
      * - 내부적으로 'LIVE' 상태인 것만 필터링합니다.
      */
 
-    public List<ProductSizePriceResponseDto> getLowestPriceList(Long productId) {
+    public List<ProductSizePriceResponseDto> getLowestPriceList(UUID productId) {
         return sellingBidRepository.findLowestPriceByProductId(
                 productId,
                 SellingStatus.LIVE // 여기서 Enum 상수를 넘겨줍니다.

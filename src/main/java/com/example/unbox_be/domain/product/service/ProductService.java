@@ -62,7 +62,7 @@ public class ProductService {
 
 
     // 상품 최저가 조회
-    public List<ProductSizePriceResponseDto> getProductLowestPrice(Long productId) {
+    public List<ProductSizePriceResponseDto> getProductLowestPrice(UUID productId) {
         // (선택사항) 필요하다면 여기서 productId로 상품이 실제 존재하는지 검증할 수 있습니다.
         // productRepository.findById(productId).orElseThrow(...);
         // Trade 도메인에게 "가격표 좀 줘" 요청

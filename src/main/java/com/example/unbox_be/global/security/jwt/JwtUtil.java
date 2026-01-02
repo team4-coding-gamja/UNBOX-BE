@@ -28,12 +28,22 @@ public class JwtUtil {
     // ✅ [추가] 토큰에서 userId(PK) 추출 메서드
     public Long getUserId(String token) {
         log.info("[JWTUtil/getUserId] 토큰에서 userId 추출 시도");
-        return Jwts.parser()
+
+        Long userId = Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .get("userId", Long.class); // "userId" 키로 저장된 값을 Long으로 꺼냄
+
+        // 🚨 유효성 검사: userId가 없으면 예외 발생 (NPE 방지)
+        if (userId == null) {
+            log.error("[JWTUtil/getUserId] 토큰에 'userId' Claim이 존재하지 않습니다.");
+            // 명확한 예외를 던져서 호출부에서 NPE가 아닌 원인을 알 수 있게 함
+            throw new IllegalArgumentException("토큰에 userId 정보가 없습니다.");
+        }
+
+        return userId;
     }
 
     // 토큰에서 username 추출

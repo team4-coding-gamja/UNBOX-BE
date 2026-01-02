@@ -96,7 +96,7 @@ public class SellingBidService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+        SellingBid sellingBid = sellingBidRepository.findWithDetailsBySellingId(sellingId) // 이걸로 변경!
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
         SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
 
@@ -105,8 +105,8 @@ public class SellingBidService {
         }
 
         // 3. optionId로 실제 상품 옵션과 상품 정보 조회
-        ProductOption option = productOptionRepository.findById(sellingBid.getOptionId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+        ProductOption option = sellingBid.getProductOption();
+        if (option == null) throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
 
         // 4. 부족한 정보(product, size)를 채워넣기
         return SellingBidResponseDto.builder()
@@ -136,8 +136,7 @@ public class SellingBidService {
         return bidSlice.map(bid -> {
             SellingBidResponseDto dto = sellingBidMapper.toResponseDto(bid);
 
-            ProductOption option = productOptionRepository.findById(bid.getOptionId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+            ProductOption option= bid.getProductOption();
 
             return dto.toBuilder()
                     .size(option.getOption())

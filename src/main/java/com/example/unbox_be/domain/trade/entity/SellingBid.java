@@ -1,6 +1,7 @@
 package com.example.unbox_be.domain.trade.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity;
+import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import jakarta.persistence.*;
@@ -27,8 +28,9 @@ public class SellingBid extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "option_id")
-    private UUID optionId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "option_id") // 기존 컬럼 유지 시
+    private ProductOption productOption;
 
     @Column(name = "price", nullable = false)
     private Integer price;

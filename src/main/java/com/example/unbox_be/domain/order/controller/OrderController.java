@@ -81,4 +81,17 @@ public class OrderController {
 
         return ResponseEntity.ok(ApiResponse.success(detailDto));
     }
+
+    /**
+     * 주문 취소 (판매자)
+     */
+    @PatchMapping("/{orderId}/cancel")
+    public ResponseEntity<ApiResponse<OrderDetailResponseDto>> cancelOrder(
+            @PathVariable UUID orderId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        OrderDetailResponseDto responseDto = orderService.cancelOrder(orderId, userDetails.getUsername());
+
+        return ResponseEntity.ok(ApiResponse.success(responseDto));
+    }
 }

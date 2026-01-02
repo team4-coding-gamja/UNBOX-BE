@@ -99,6 +99,32 @@ public class OrderService {
     }
 
     /**
+     * 주문 취소 (판매자 전용)
+     * - PATCH /api/orders/{orderId}/cancel
+     */
+    @Transactional
+    public OrderDetailResponseDto cancelOrder(UUID orderId, String email) {
+        // 1. 요청 사용자(판매자) 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. 주문 조회 (권한 검증을 위해 fetch join 사용)
+        Order order = orderRepository.findWithDetailsById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 3. 판매자 권한 검증 (판매자만 일단 취소 가능)
+        if (!order.getSeller().getId().equals(user.getId())) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // 4. 주문 취소 (Entity 비즈니스 로직 호출 -> 상태 변경 및 시간 기록)
+        order.cancel();
+
+        // 5. 변경된 결과 반환
+        return orderMapper.toDetailResponseDto(order);
+    }
+
+    /**
      * 접근 권한 검증 메서드
      * - 요청한 사용자가 주문의 구매자(Buyer)이거나 판매자(Seller)여야 함
      */

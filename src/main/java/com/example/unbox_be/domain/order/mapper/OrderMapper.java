@@ -52,6 +52,7 @@ public class OrderMapper {
                 .price(order.getPrice())
                 .status(order.getStatus())
                 .createdAt(order.getCreatedAt())
+                .cancelledAt(order.getCancelledAt())
                 // 배송 정보
                 .receiverName(order.getReceiverName())
                 .receiverPhone(order.getReceiverPhone())

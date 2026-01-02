@@ -1,12 +1,13 @@
 package com.example.unbox_be.domain.auth.controller;
 
-import com.example.unbox_be.domain.auth.controller.Api.AuthApi;
+import com.example.unbox_be.domain.auth.controller.Api.AdminAuthApi;
+import com.example.unbox_be.domain.auth.dto.request.AdminSignupRequestDto;
+import com.example.unbox_be.domain.auth.dto.response.AdminSignupResponseDto;
+import com.example.unbox_be.domain.auth.dto.response.AdminTokenResponseDto;
 import com.example.unbox_be.domain.auth.dto.request.UserLoginRequestDto;
-import com.example.unbox_be.domain.auth.dto.response.UserTokenResponseDto;
-import com.example.unbox_be.domain.auth.dto.request.UserSignupRequestDto;
-import com.example.unbox_be.domain.auth.dto.response.UserSignupResponseDto;
-import com.example.unbox_be.domain.auth.service.AuthService;
+import com.example.unbox_be.domain.auth.service.AdminAuthService;
 import com.example.unbox_be.global.response.ApiResponse;
+import com.example.unbox_be.global.security.jwt.JwtConstants;
 import com.example.unbox_be.global.security.jwt.JwtUtil;
 import com.example.unbox_be.global.security.token.RefreshTokenRedisRepository;
 import jakarta.servlet.http.Cookie;
@@ -17,35 +18,38 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/admin/auth")
 @RequiredArgsConstructor
-public class AuthController implements AuthApi {
+public class AdminAuthController implements AdminAuthApi {
 
     private final JwtUtil jwtUtil;
-
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
+    private final AdminAuthService adminAuthService;
 
-    private final AuthService authService;
 
-    // 회원가입
+    // ✅ 회원가입
     @PostMapping("/signup")
-    public ApiResponse<UserSignupResponseDto> signup(@Valid @RequestBody UserSignupRequestDto userSignupRequestDto) {
-        UserSignupResponseDto userResponseDto = authService.signup(userSignupRequestDto);
-        return ApiResponse.success(userResponseDto);
+    public ApiResponse<AdminSignupResponseDto> signup(
+            @Valid @RequestBody AdminSignupRequestDto adminSignupRequestDto) {
+        AdminSignupResponseDto adminSignupResponseDto = adminAuthService.signup(adminSignupRequestDto);
+        return ApiResponse.success(adminSignupResponseDto);
     }
 
-    // 로그인 (실제 로그인 로직은 LoginFilter에서 처리)
+    // ✅ 로그인 (실제 로그인 로직은 LoginFilter에서 처리)
     @PostMapping("/login")
     public ResponseEntity<String> login(UserLoginRequestDto userLoginRequestDto) {
         log.info("[AuthController] 로그인 요청: {}", userLoginRequestDto.getEmail());
         return ResponseEntity.ok("로그인 요청이 처리되었습니다.");
     }
 
-    // 로그아웃
+    // ✅ 로그아웃
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
         log.info("[AuthController/logout] 로그아웃 요청 처리");
@@ -53,9 +57,9 @@ public class AuthController implements AuthApi {
         return ResponseEntity.ok("로그아웃 되었습니다.");
     }
 
-    // 토큰 재발급(엑세스 토큰 만료 시 리프레시 토큰을 통해 새로 생성하기)
+    // ✅ 토큰 재발급(엑세스 토큰 만료 시 리프레시 토큰을 통해 새로 생성하기)
     @PostMapping("/reissue")
-    public ResponseEntity<UserTokenResponseDto> reissue(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<AdminTokenResponseDto> reissue(HttpServletRequest request, HttpServletResponse response) {
         // 리프레시 토큰 가져오기 (쿠키 또는 헤더에서)
         String refreshToken = extractRefreshToken(request);
 
@@ -74,18 +78,28 @@ public class AuthController implements AuthApi {
         // 사용자 정보 가져오기
         String username = jwtUtil.getUsername(refreshToken);
 
-        // 역할 정보 설정 (기본값 사용)
-        String role = "ROLE_USER";
+        // 새 토큰 만들기 전에 서버 저장값과 비교
+        String saved = refreshTokenRedisRepository.getRefreshToken(username); // 없으면 메서드 추가 필요
+        if (saved == null || !saved.equals(refreshToken)) {
+            log.info("[AuthController/reissue] Redis refreshToken 불일치 또는 없음 - username={}", username);
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        String role = jwtUtil.getRole(refreshToken);
+        if (role == null || role.isBlank()) {
+            log.info("[AuthController/reissue] refreshToken role 없음 - username={}", username);
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
 
         // 새로운 액세스 토큰 생성
-        String newAccessToken = jwtUtil.createAccessToken(username, role, 60 * 60 * 1000L); // 1시간
-        String newRefreshToken = jwtUtil.createRefreshToken(username, 60 * 60 * 24 * 30 * 1000L); // 30일
+        String newAccessToken = jwtUtil.createAccessToken(username, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
+        String newRefreshToken = jwtUtil.createRefreshToken(username, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
 
         // RefreshToken 저장 (Redis)
         refreshTokenRedisRepository.saveRefreshToken(username, newRefreshToken);
 
         // 새로운 TokenDTO 객체 생성
-        UserTokenResponseDto userTokenResponseDto = UserTokenResponseDto.builder()
+        AdminTokenResponseDto adminTokenResponseDto = AdminTokenResponseDto.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .build();
@@ -98,7 +112,7 @@ public class AuthController implements AuthApi {
         response.addCookie(refreshCookie);
 
         log.info("[AuthController/reissue] 토큰 재발급 성공 - 사용자: {}", username);
-        return new ResponseEntity<>(userTokenResponseDto, HttpStatus.OK);
+        return new ResponseEntity<>(adminTokenResponseDto, HttpStatus.OK);
     }
 
     /**

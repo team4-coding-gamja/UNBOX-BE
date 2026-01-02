@@ -1,4 +1,4 @@
-package com.example.unbox_be.domain.user.dto.request;
+package com.example.unbox_be.domain.admin.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserUpdateRequestDto {
+public class AdminMeUpdateRequestDto {
 
-    @NotBlank(message = "사용자 이름은 필수입니다.")
-    @Pattern(regexp = "^[a-z0-9]{4,10}$", message = "아이디는 4~10자 영문 소문자, 숫자로 입력해야 합니다.")
+    @NotBlank(message = "닉네임은 필수입니다.")
+    @Pattern(regexp = "^[a-z0-9]{4,10}$", message = "닉네임은 4~10자 영문 소문자, 숫자로 입력해야 합니다.")
     private String nickname;
 
     @NotBlank(message = "전화번호는 필수입니다.")

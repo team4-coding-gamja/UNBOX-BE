@@ -1,5 +1,6 @@
 package com.example.unbox_be.global.security.auth;
 
+import com.example.unbox_be.domain.admin.entity.Admin;
 import com.example.unbox_be.domain.user.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
@@ -25,14 +26,14 @@ public class CustomUserDetails implements UserDetails {  // Spring Security의 U
         );
     }
 
-//    // Admin용 생성자 (Admin 엔티티에 맞게 수정)
-//    public static CustomUserDetails ofAdmin(Admin admin) {
-//        return new CustomUserDetails(
-//                admin.getEmail(),
-//                admin.getPassword(),
-//                admin.getRole()
-//        );
-//    }
+    // Admin용 생성자 (Admin 엔티티에 맞게 수정)
+    public static CustomUserDetails ofAdmin(Admin admin) {
+        return new CustomUserDetails(
+                admin.getEmail(),
+                admin.getPassword(),
+                admin.getAdminRole().name()
+        );
+    }
 
     // 생성자로 Member 객체를 받아 저장
     public CustomUserDetails(String email, String password, String role) {

@@ -17,11 +17,8 @@ import java.util.UUID;
 public class Address extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "address_uuid", nullable = false, unique = true, updatable = false)
-    private UUID addressUuid; // 외부 노출용 UUID
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(name = "receiver_name", nullable = false, length = 50)
     private String receiver_name;
@@ -42,15 +39,4 @@ public class Address extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
-
-    public Address(User user, String receiver_name, String address, String detailAddress, String zipCode, boolean isDefault) {
-        this.addressUuid = UUID.randomUUID();
-        this.user = user;
-        this.receiver_name = receiver_name;
-        this.address = address;
-        this.detailAddress = detailAddress;
-        this.zipCode = zipCode;
-        this.isDefault = isDefault;
-    }
-
 }

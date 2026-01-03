@@ -1,31 +1,22 @@
-package com.example.unbox_be.domain.order.dto;
+package com.example.unbox_be.domain.order.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 @Getter
-@Builder // DTO는 모든 필드 입력 가능하므로 클래스 레벨 빌더 허용
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderCreateRequestDto {
 
-    @NotNull(message = "판매자 ID는 필수입니다.")
-    private Long sellerId;
-
-    @NotNull(message = "상품 옵션 ID는 필수입니다.")
-    private UUID productOptionId;
-
-    @NotNull(message = "가격 정보는 필수입니다.")
-    @Positive(message = "가격은 0보다 커야 합니다.")
-    private BigDecimal price;
+    @NotNull(message = "판매 입찰 ID는 필수입니다.")
+    private UUID sellingBidId;
 
     @NotBlank(message = "수령인 이름은 필수입니다.")
     private String receiverName;

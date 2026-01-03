@@ -6,8 +6,10 @@ import com.example.unbox_be.global.security.login.CustomLogoutFilter;
 import com.example.unbox_be.global.security.login.LoginFilter;
 import com.example.unbox_be.global.security.token.RefreshTokenRedisRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,13 +19,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
 import com.example.unbox_be.global.security.exception.CustomAuthenticationEntryPoint;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -33,6 +35,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@EnableConfigurationProperties(CorsProperties.class)
 public class SecurityConfig {
 
     private final AuthenticationConfiguration authenticationConfiguration;
@@ -40,6 +43,8 @@ public class SecurityConfig {
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
     private final ObjectMapper objectMapper;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
+    private final CorsProperties corsProperties;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -55,16 +60,7 @@ public class SecurityConfig {
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = new CorsConfiguration();
-
-        // 프론트엔드 주소 (마지막 슬래시 빼세요!)
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
-
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
-        config.setAllowCredentials(true);
-        config.setMaxAge(3600L);
+        CorsConfiguration config = getCorsConfiguration();
 
         source.registerCorsConfiguration("/**", config);
 
@@ -76,15 +72,29 @@ public class SecurityConfig {
         return bean;
     }
 
+    private @NonNull CorsConfiguration getCorsConfiguration() {
+        CorsConfiguration config = new CorsConfiguration();
+
+        // 프론트엔드 주소
+        config.setAllowedOrigins(corsProperties.allowedOrigins());
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        // 와일드카드("*") 대신 명시적 헤더 지정 (보안 강화)
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        config.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+        return config;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
                 // ✅ REST/JWT 기본
-                // .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .httpBasic(httpBasic -> httpBasic.disable())
-                .formLogin(form -> form.disable())
+                .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // ✅ 로그인 안 됐을 때 JSON 메시지 내려줌 (인증 필요한 요청에서만 동작)

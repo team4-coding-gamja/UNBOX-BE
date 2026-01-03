@@ -8,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,8 +28,8 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
         String path = request.getRequestURI();
@@ -84,14 +85,14 @@ public class JwtFilter extends OncePerRequestFilter {
             log.info("[JwtFilter] SecurityContext 인증 정보 저장 완료 - User: {}, Role: {}", email, role);
 
         } catch (CustomAuthenticationException e) {
-            // 필터 내부에서 발생한 인증 예외는 여기서 잡히지 않고
-            // 보통 AuthenticationEntryPoint로 넘어갑니다.
-            // 하지만 명시적으로 로그를 남기기 위해 catch를 둘 수 있습니다.
-            request.setAttribute("exception", e); // EntryPoint에서 처리하도록 속성 저장
+            // 이미 잡힌 커스텀 예외는 다시 던져서 EntryPoint로 보냄
+            request.setAttribute("exception", e);
             throw e;
         } catch (Exception e) {
-            log.error("[JwtFilter] 토큰 검증 중 알 수 없는 에러", e);
-            // 필요하다면 예외를 던지거나 EntryPoint로 넘김
+            // 예기치 못한 에러(파싱 오류 등)가 났을 때, 보안상 인증 실패로 처리해야 함
+            log.error("[JwtFilter] 토큰 검증 중 알 수 없는 에러 발생", e);
+            request.setAttribute("exception", new CustomAuthenticationException(ErrorCode.INVALID_TOKEN));
+            throw new CustomAuthenticationException(ErrorCode.INVALID_TOKEN);
         }
 
         filterChain.doFilter(request, response);

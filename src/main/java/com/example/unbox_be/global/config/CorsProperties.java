@@ -1,11 +1,14 @@
 package com.example.unbox_be.global.config;
 
+import jakarta.validation.constraints.NotEmpty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
-// yml의 "cors" 로 시작하는 설정을 이 객체로 매핑합니다.
+@Validated // 유효성 검사 활성화
 @ConfigurationProperties(prefix = "cors")
 public record CorsProperties(
+        @NotEmpty(message = "CORS allowed origins must not be empty")
         List<String> allowedOrigins
 ) {}

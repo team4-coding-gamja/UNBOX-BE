@@ -73,8 +73,15 @@ public class JwtFilter extends OncePerRequestFilter {
             CustomUserDetails customUserDetails;
             if ("ROLE_USER".equals(role)) {
                 customUserDetails = CustomUserDetails.ofUserIdOnly(id, email, role);
-            } else {
+            }
+            // 우리 프로젝트의 관리자 Role들만 허용
+            else if ("ROLE_MASTER".equals(role) || "ROLE_MANAGER".equals(role) || "ROLE_INSPECTOR".equals(role)) {
                 customUserDetails = CustomUserDetails.ofAdminIdOnly(id, email, role);
+            }
+            else {
+                // DB에 없는 이상한 Role이 토큰에 들어있는 경우 -> 보안 위협으로 간주하고 차단
+                log.warn("[JwtFilter] 알 수 없는 역할(Role) 감지: {}", role);
+                throw new CustomAuthenticationException(ErrorCode.INVALID_TOKEN);
             }
 
             Authentication authentication = new UsernamePasswordAuthenticationToken(
@@ -82,7 +89,7 @@ public class JwtFilter extends OncePerRequestFilter {
             );
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            log.info("[JwtFilter] SecurityContext 인증 정보 저장 완료 - User: {}, Role: {}", email, role);
+            log.info("[JwtFilter] SecurityContext 인증 완료 - UserId: {}, Role: {}", id, role);
 
         } catch (CustomAuthenticationException e) {
             // 이미 잡힌 커스텀 예외는 다시 던져서 EntryPoint로 보냄

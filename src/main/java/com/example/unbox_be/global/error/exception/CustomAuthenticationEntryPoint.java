@@ -1,4 +1,4 @@
-package com.example.unbox_be.global.security.exception;
+package com.example.unbox_be.global.error.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;

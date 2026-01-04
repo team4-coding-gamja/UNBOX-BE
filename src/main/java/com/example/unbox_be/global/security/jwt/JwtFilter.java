@@ -52,7 +52,11 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         try {
-            String token = authorization.split(" ")[1];
+            String token = authorization.substring(7);
+            if (token.isBlank()) {
+                log.warn("[JwtFilter] Bearer 토큰이 비어있음");
+                throw new CustomAuthenticationException(ErrorCode.INVALID_TOKEN);
+            }
 
             // 토큰 만료 검사
             if (jwtUtil.isExpired(token)) {

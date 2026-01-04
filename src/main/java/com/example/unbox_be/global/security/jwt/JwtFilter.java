@@ -8,6 +8,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,78 +28,84 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
         String path = request.getRequestURI();
-        log.info("[JwtFilter] 요청 진입 - URI: {}", path);
 
-        // 인증 제외 경로
-        if (path.startsWith("/api/auth/signup")
-                || path.startsWith("/api/auth/login")
-                || path.startsWith("/api/auth/reissue")
-                || path.startsWith("/api/admin/auth/login")
-                || path.startsWith("/api/admin/auth/reissue")
-                || path.startsWith("/swagger-ui")
-                || path.startsWith("/v3/api-docs")
-                || path.equals("/swagger-ui.html")
-                || path.startsWith("/api/test")) {
-
-            log.info("[JwtFilter] 인증 제외 경로 → 필터 통과");
+        if (HttpMethod.OPTIONS.matches(request.getMethod())) {
+            log.info("[JwtFilter] OPTIONS 요청(Preflight) → 통과");
             filterChain.doFilter(request, response);
             return;
         }
 
         String authorization = request.getHeader("Authorization");
 
+        // 토큰이 없거나 Bearer 형식이 아니면 -> "로그인 안 했네? 일단 지나가" (비인증 요청)
+        // 이후 SecurityConfig에서 permitAll이면 통과, 아니면 403 에러가 남.
         if (authorization == null || !authorization.startsWith("Bearer ")) {
-            log.info("[JwtFilter] Authorization 헤더 없음 또는 Bearer 아님 → 비인증 요청으로 통과");
+            log.info("[JwtFilter] Authorization 헤더 없음 또는 Bearer 아님 → 비인증 요청으로 통과: {}", path);
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authorization.split(" ")[1];
-        log.info("[JwtFilter] JWT 추출 완료 - token prefix: {}", token.substring(0, 10));
+        try {
+            String token = authorization.substring(7);
+            if (token.isBlank()) {
+                log.warn("[JwtFilter] Bearer 토큰이 비어있음");
+                throw new CustomAuthenticationException(ErrorCode.INVALID_TOKEN);
+            }
 
-        if (jwtUtil.isExpired(token)) {
-            log.warn("[JwtFilter] JWT 만료됨");
-            throw new CustomAuthenticationException(ErrorCode.TOKEN_EXPIRED);
+            // 토큰 만료 검사
+            if (jwtUtil.isExpired(token)) {
+                log.warn("[JwtFilter] JWT 만료됨");
+                throw new CustomAuthenticationException(ErrorCode.TOKEN_EXPIRED);
+            }
+
+            // 로그아웃된 토큰 검사
+            if (jwtUtil.isBlacklisted(token)) {
+                log.warn("[JwtFilter] JWT 블랙리스트 토큰");
+                throw new CustomAuthenticationException(ErrorCode.TOKEN_LOGOUT);
+            }
+
+            // 토큰 정보 추출 및 SecurityContext 저장
+            String email = jwtUtil.getUsername(token);
+            String role = jwtUtil.getRole(token);
+            Long id = jwtUtil.getUserId(token);
+
+            CustomUserDetails customUserDetails;
+            if ("ROLE_USER".equals(role)) {
+                customUserDetails = CustomUserDetails.ofUserIdOnly(id, email, role);
+            }
+            // 우리 프로젝트의 관리자 Role들만 허용
+            else if ("ROLE_MASTER".equals(role) || "ROLE_MANAGER".equals(role) || "ROLE_INSPECTOR".equals(role)) {
+                customUserDetails = CustomUserDetails.ofAdminIdOnly(id, email, role);
+            }
+            else {
+                // DB에 없는 이상한 Role이 토큰에 들어있는 경우 -> 보안 위협으로 간주하고 차단
+                log.warn("[JwtFilter] 알 수 없는 역할(Role) 감지: {}", role);
+                throw new CustomAuthenticationException(ErrorCode.INVALID_TOKEN);
+            }
+
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    customUserDetails, null, customUserDetails.getAuthorities()
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            log.info("[JwtFilter] SecurityContext 인증 완료 - UserId: {}, Role: {}", id, role);
+
+        } catch (CustomAuthenticationException e) {
+            // 이미 잡힌 커스텀 예외는 다시 던져서 EntryPoint로 보냄
+            request.setAttribute("exception", e);
+            throw e;
+        } catch (Exception e) {
+            // 예기치 못한 에러(파싱 오류 등)가 났을 때, 보안상 인증 실패로 처리해야 함
+            log.error("[JwtFilter] 토큰 검증 중 알 수 없는 에러 발생", e);
+            request.setAttribute("exception", new CustomAuthenticationException(ErrorCode.INVALID_TOKEN));
+            throw new CustomAuthenticationException(ErrorCode.INVALID_TOKEN);
         }
-
-        if (jwtUtil.isBlacklisted(token)) {
-            log.warn("[JwtFilter] JWT 블랙리스트 토큰(로그아웃 처리됨)");
-            throw new CustomAuthenticationException(ErrorCode.TOKEN_LOGOUT);
-        }
-
-        // 토큰 정보 추출
-        String email = jwtUtil.getUsername(token);
-        String role = jwtUtil.getRole(token);
-
-        // ✅ 핵심: 이제 CustomUserDetails를 new로 만들지 말고,
-        // role에 따라 userId/adminId를 적절히 넣어서 생성한다.
-        Long id = jwtUtil.getUserId(token); // (현재 토큰에 들어있는 id claim)
-
-        CustomUserDetails customUserDetails;
-
-        if ("ROLE_USER".equals(role)) {
-            // userId만 세팅
-            customUserDetails = CustomUserDetails.ofUserIdOnly(id, email, role);
-        } else {
-            // adminId만 세팅 (MASTER/MANAGER/INSPECTOR 등)
-            customUserDetails = CustomUserDetails.ofAdminIdOnly(id, email, role);
-        }
-
-        Authentication authentication =
-                new UsernamePasswordAuthenticationToken(
-                        customUserDetails,
-                        null,
-                        customUserDetails.getAuthorities()
-                );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        log.info("[JwtFilter] SecurityContext 인증 정보 저장 완료 - email={}, role={}", email, role);
 
         filterChain.doFilter(request, response);
     }

@@ -6,29 +6,36 @@ import com.example.unbox_be.global.security.login.CustomLogoutFilter;
 import com.example.unbox_be.global.security.login.LoginFilter;
 import com.example.unbox_be.global.security.token.RefreshTokenRedisRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
 import com.example.unbox_be.global.security.exception.CustomAuthenticationEntryPoint;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@EnableConfigurationProperties(CorsProperties.class)
 public class SecurityConfig {
 
     private final AuthenticationConfiguration authenticationConfiguration;
@@ -36,6 +43,8 @@ public class SecurityConfig {
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
     private final ObjectMapper objectMapper;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
+    private final CorsProperties corsProperties;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -48,25 +57,34 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // ✅ CORS는 명시적으로 허용 Origin을 지정 (쿠키 사용 시 필수)
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        return (HttpServletRequest request) -> {
-            CorsConfiguration config = new CorsConfiguration();
+    public FilterRegistrationBean<CorsFilter> corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = getCorsConfiguration();
 
-            // 예시: 프론트가 로컬/배포 둘 다 있을 때
-            config.setAllowedOrigins(List.of("*"
-                    // "https://your-frontend-domain.com"
-            ));
+        source.registerCorsConfiguration("/**", config);
 
-            config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-            config.setAllowedHeaders(List.of("Authorization","Content-Type"));
-            config.setExposedHeaders(List.of("Authorization"));
-            config.setAllowCredentials(true); // ✅ refresh 쿠키 쓰면 true 필수
-            config.setMaxAge(3600L);
+        CorsFilter corsFilter = new CorsFilter(source);
 
-            return config;
-        };
+        // 핵심: 이 필터를 가장 먼저 실행시킴 (SecurityFilter보다 먼저!)
+        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(corsFilter);
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return bean;
+    }
+
+    private @NonNull CorsConfiguration getCorsConfiguration() {
+        CorsConfiguration config = new CorsConfiguration();
+
+        // 프론트엔드 주소
+        config.setAllowedOrigins(corsProperties.allowedOrigins());
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        // 와일드카드("*") 대신 명시적 헤더 지정 (보안 강화)
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        config.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+        return config;
     }
 
     @Bean
@@ -74,10 +92,9 @@ public class SecurityConfig {
 
         http
                 // ✅ REST/JWT 기본
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .httpBasic(httpBasic -> httpBasic.disable())
-                .formLogin(form -> form.disable())
+                .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // ✅ 로그인 안 됐을 때 JSON 메시지 내려줌 (인증 필요한 요청에서만 동작)
@@ -86,6 +103,7 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/", "/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**", "/api-docs/**", "/swagger-resources/**"

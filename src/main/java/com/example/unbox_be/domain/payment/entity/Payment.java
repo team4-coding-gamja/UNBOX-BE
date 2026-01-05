@@ -44,6 +44,12 @@ public class Payment extends BaseEntity {
     private Long version;
 
     public void completePayment(String pgPaymentKey) {
+        if (this.status == PaymentStatus.DONE) {
+            throw new IllegalStateException("이미 완료된 결제입니다.");
+        }
+        if (this.status == PaymentStatus.CANCELED) {
+            throw new IllegalStateException("취소된 결제는 완료 처리할 수 없습니다.");
+        }
         this.pgPaymentReceiptKey = pgPaymentKey;
         this.status = PaymentStatus.DONE;
         this.capturedAt = LocalDateTime.now();

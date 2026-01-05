@@ -1,6 +1,6 @@
 package com.example.unbox_be.domain.admin.productRequest.dto.response;
 
-import com.example.unbox_be.domain.product.entity.RequestStatus;
+import com.example.unbox_be.domain.product.entity.ProductRequestStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,6 +18,6 @@ public class AdminProductRequestListResponseDto {
     private Long userId;
     private String name;
     private String brandName;
-    private RequestStatus status;
+    private ProductRequestStatus status;
     private LocalDateTime createdAt;
 }

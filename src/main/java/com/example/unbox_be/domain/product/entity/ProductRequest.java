@@ -78,7 +78,7 @@ public class ProductRequest extends BaseEntity {
         }
     }
 
-    public void updateStatus(RequestStatus status) {
+    public void updateStatus(ProductRequestStatus status) {
         this.status = status;
     }
 }

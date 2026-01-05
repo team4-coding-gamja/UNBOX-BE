@@ -1,6 +1,6 @@
 package com.example.unbox_be.domain.admin.productRequest.dto.response;
 
-import com.example.unbox_be.domain.product.entity.RequestStatus;
+import com.example.unbox_be.domain.product.entity.ProductRequestStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,5 +14,5 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AdminProductRequestUpdateResponseDto {
     private UUID id;
-    private RequestStatus status;
+    private ProductRequestStatus status;
 }

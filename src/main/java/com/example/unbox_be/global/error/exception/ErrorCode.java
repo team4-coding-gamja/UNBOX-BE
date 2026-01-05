@@ -64,9 +64,17 @@ public enum ErrorCode {
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태입니다."),
     INVALID_ORDER_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태 변경입니다."),
 
+
     //위시리스트
     WISHLIST_ALREADY_EXISTS(HttpStatus.BAD_REQUEST,"이미 찜 목록에 존재하는 상품입니다."),
-    WISHLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "찜 목록에서 찾을 수 없습니다.");
+    WISHLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "찜 목록에서 찾을 수 없습니다."),
+
+    //결제
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"결제 정보를 찾을 수 없습니다."),
+    PAYMENT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 결제가 진행중인 주문입니다."),
+    NOT_SELF_ORDER_PAYMENT(HttpStatus.FORBIDDEN, "본인의 구매 주문만 결제할 수 있습니다."),
+    PG_PROCESSED_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 완료된 결제 내용입니다."),
+    NOT_SELF_PG_TRANSACTION(HttpStatus.FORBIDDEN, "본인의 PG결제만 진행할 수 있습니다.");
     private final HttpStatus status;
     private final String message;
 }

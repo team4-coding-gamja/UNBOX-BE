@@ -81,25 +81,13 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String email = userDetails.getUsername();
         Long userId = userDetails.getUserId();
-        Long adminId = userDetails.getAdminId();
         log.info("[LoginFilter/successfulAuthentication] 3. 인증된 사용자 정보 가져오기: {}", email);
 
         String role = authentication.getAuthorities().iterator().next().getAuthority();
         log.info("[LoginFilter/successfulAuthentication] 4. 인증된 사용자 권한 가져오기: {}", role);
 
-        String access;
-        String refresh;
-
-        if (userId != null) {
-            access = jwtUtil.createAccessToken(userId, email, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
-            refresh = jwtUtil.createRefreshToken(userId, email, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
-        } else if (adminId != null) {
-            access = jwtUtil.createAdminAccessToken(adminId, email, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
-            refresh = jwtUtil.createAdminRefreshToken(adminId, email, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
-        } else {
-            // 둘 다 없으면 비정상 principal
-            throw new CustomAuthenticationException(ErrorCode.INVALID_TOKEN);
-        }
+        String access = jwtUtil.createAccessToken(userId, email, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
+        String refresh = jwtUtil.createRefreshToken(userId, email, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
         log.info("[LoginFilter/successfulAuthentication] 5. JWT 토큰 생성 - Access: {}, Refresh: {}", access, refresh);
 
         // Redis에 Refresh 저장

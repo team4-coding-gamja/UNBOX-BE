@@ -44,6 +44,13 @@ out/
 ### ENV ###
 .env
 
+.env.test
+.env.mvp
+.env.prod
+.env.local
+.env.*.local
+
+
 # 도커 데이터 볼륨 (PostgreSQL 데이터 저장 폴더)
 postgres_data/
 redis_data/
@@ -51,6 +58,47 @@ redis_data/
 # macOS 시스템 파일
 .DS_Store
 
-### Logs ###
+# Terraform 실행 엔진 및 플러그인
+.terraform/
+
+# 테라폼 배포 시 생성되는 로컬 상태 파일 (S3에 저장하므로 로컬 파일은 무시)
+*.tfstate
+*.tfstate.*
+
+# 테라폼 크래시 로그
+crash.log
+
+# 변수 정의 파일 (민감 정보가 포함될 수 있으므로 제외)
+*.tfvars
+*.tfvars.json
+
+# 테라폼 작업 중 생기는 임시 파일
+.terraform.tfstate.lock.info
+
+# Terraform 락 파일
+.terraform.lock.hcl
+
+# 로그 파일
 logs/
 *.log
+
+# SSH 키 파일
+*.pem
+*.key
+
+# AWS 자격증명
+.aws/
+
+# 임시/백업 파일
+*.tmp
+*.bak
+*.swp
+*~
+
+# 데이터베이스 덤프
+*.sql
+*.dump
+
+
+
+

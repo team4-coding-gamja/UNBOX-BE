@@ -1,0 +1,45 @@
+spring:
+  profiles:
+    active: test
+    
+  # 서버 포트 설정 (8080이 사용 중일 때)
+  server:
+    port: 8081
+    
+  # H2 인메모리 데이터베이스 (테스트용)
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # 테스트 시마다 새로 생성
+    show-sql: true          # 개발 시 SQL 확인
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.H2Dialect
+    
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+  jwt:
+    secret: ${SPRING_JWT_SECRET:test-secret-key-for-development-only}
+
+# 테스트용 로깅 설정
+logging:
+  level:
+    com.unbox: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+  file:
+    name: /var/log/unbox/test-application.log

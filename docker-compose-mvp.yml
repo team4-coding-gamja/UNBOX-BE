@@ -1,0 +1,35 @@
+# MVP 발표용 - RDS PostgreSQL 사용
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: unbox-mvp-app
+    ports:
+      - "80:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=mvp
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${RDS_ENDPOINT}:5432/unboxdb
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=password123!
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_JWT_SECRET=${SPRING_JWT_SECRET:-mvp-jwt-secret-key}
+    depends_on:
+      - redis
+    volumes:
+      - ./logs:/var/log/unbox
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    container_name: unbox-mvp-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:

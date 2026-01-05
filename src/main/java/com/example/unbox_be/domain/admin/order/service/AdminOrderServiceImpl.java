@@ -15,6 +15,7 @@ import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,12 +31,16 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     private final OrderMapper orderMapper;
 
     @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public Page<OrderResponseDto> getAdminOrders(OrderSearchCondition condition, Pageable pageable) {
         Page<Order> orders = adminOrderRepository.findAdminOrders(condition, pageable);
         return orders.map(orderMapper::toResponseDto);
     }
 
     @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public OrderDetailResponseDto getAdminOrderDetail(UUID orderId, Long adminId) {
         // 관리자 존재 여부 확인
         if (!adminRepository.existsById(adminId)) {
@@ -48,6 +53,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public OrderDetailResponseDto updateAdminStatus(UUID orderId, OrderStatus newStatus, String finalTrackingNumber, Long adminId) {
         // 1. 관리자 조회
         Admin admin = adminRepository.findById(adminId)

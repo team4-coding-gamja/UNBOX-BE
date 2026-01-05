@@ -11,17 +11,22 @@ import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/admin/orders")
 public class AdminOrderController implements AdminOrderApi {
 
     private final AdminOrderService orderAdminService;
 
     @Override
+    @GetMapping
     public CustomApiResponse<Page<OrderResponseDto>> getAdminOrders(
             OrderSearchCondition condition,
             Pageable pageable,
@@ -32,6 +37,7 @@ public class AdminOrderController implements AdminOrderApi {
     }
 
     @Override
+    @GetMapping("{orderId}")
     public CustomApiResponse<OrderDetailResponseDto> getAdminOrderDetail(
             UUID orderId,
             CustomUserDetails userDetails
@@ -42,6 +48,7 @@ public class AdminOrderController implements AdminOrderApi {
     }
 
     @Override
+    @PutMapping("/{orderId}/status")
     public CustomApiResponse<OrderDetailResponseDto> updateOrderStatus(
             UUID orderId,
             OrderStatusUpdateRequestDto requestDto,

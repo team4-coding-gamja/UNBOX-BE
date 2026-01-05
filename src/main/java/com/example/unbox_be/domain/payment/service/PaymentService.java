@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -37,15 +38,23 @@ public class PaymentService {
         // 주문 검사
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
-
         // 유저 검사
         if (!order.getBuyer().getId().equals(currentUserId)) {
             throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
         }
+        Optional<Payment> existingPayment = paymentRepository.findByOrderId(orderId);
 
-        // 중복 결제 체크
-        if (paymentRepository.existsByOrderId(orderId)) {
-            throw new CustomException(ErrorCode.PAYMENT_ALREADY_EXISTS);
+        if (existingPayment.isPresent()) {
+            Payment payment = existingPayment.get();
+
+            // 이미 성공한 경우가 있을 때
+            if (payment.getStatus() == PaymentStatus.DONE) {
+                throw new CustomException(ErrorCode.PAYMENT_ALREADY_EXISTS);
+            }
+
+            // 실패거나 대기일 때 -> 기존 결제 정보 가져오기
+            String mockPaymentKey = "mock_key_" + UUID.randomUUID().toString().substring(0, 8);
+            return new PaymentReadyResponseDto(payment.getId(), mockPaymentKey);
         }
 
         // 결제 생성

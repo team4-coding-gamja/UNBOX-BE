@@ -53,7 +53,18 @@ public class Payment extends BaseEntity {
         this.status = PaymentStatus.FAILED;
     }
 
-    public void changeStatus(PaymentStatus status) {
-        this.status = status;
+    public void changeStatus(PaymentStatus nextStatus) {
+        if (this.status == PaymentStatus.DONE && nextStatus != PaymentStatus.CANCELED) {
+            throw new IllegalStateException("이미 완료된 결제는 상태를 변경할 수 없습니다.");
+        }
+
+        if (this.status == PaymentStatus.FAILED && nextStatus == PaymentStatus.DONE) {
+            throw new IllegalStateException("실패한 결제를 성공 상태로 변경할 수 없습니다.");
+        }
+
+        // 3. 자기 자신과 같은 상태로 바꾸는 것은 무시하거나 허용
+        if (this.status == nextStatus) return;
+
+        this.status = nextStatus;
     }
 }

@@ -1,15 +1,15 @@
 package com.example.unbox_be.domain.product.controller;
 
-import com.example.unbox_be.domain.product.dto.ProductResponseDto;
-import com.example.unbox_be.domain.product.dto.ProductSearchCondition;
+import com.example.unbox_be.domain.product.controller.api.ProductApi;
+import com.example.unbox_be.domain.product.dto.response.ProductDetailResponseDto;
+import com.example.unbox_be.domain.product.dto.response.ProductListResponseDto;
+import com.example.unbox_be.domain.product.dto.response.ProductOptionListResponseDto;
 import com.example.unbox_be.domain.product.service.ProductService;
-import com.example.unbox_be.domain.trade.dto.response.ProductSizePriceResponseDto;
 import com.example.unbox_be.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject; // ★ 이 import 필수!
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,32 +18,33 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
-public class ProductController {
+public class ProductController implements ProductApi {
+
     private final ProductService productService;
 
+    // ✅ 상품 목록 조회 (검색 + 페이징)
     @GetMapping
-    public ApiResponse<Page<ProductResponseDto>> getProducts(
-            // ▼ 여기에 @ParameterObject 추가! (스웨거야, 이거 필드별로 쪼개서 보여줘!)
-            @ParameterObject @ModelAttribute ProductSearchCondition condition,
-
-            // ▼ Pageable 앞에도 붙여주면 page, size, sort 입력창이 깔끔하게 나옵니다.
-            @ParameterObject @PageableDefault(size = 10, sort = "id") Pageable pageable
-    ){
-        return ApiResponse.success(productService.getProducts(condition, pageable));
+    public ApiResponse<Page<ProductListResponseDto>> getProducts(
+            @RequestParam(required = false) UUID brandId,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String keyword,
+            @ParameterObject Pageable pageable) {
+        return ApiResponse.success(productService.getProducts(brandId, category, keyword, pageable));
     }
 
+    // ✅ 상품 상세 조회
     @GetMapping("/{productId}")
-    public ApiResponse<ProductResponseDto> getProductById(@PathVariable("productId") UUID id) {
-        return ApiResponse.success(productService.getProductById(id));
+    public ApiResponse<ProductDetailResponseDto> getProductDetail(
+            @PathVariable UUID productId) {
+        ProductDetailResponseDto result = productService.getProductDetail(productId);
+        return ApiResponse.success(result);
     }
 
-    @GetMapping("/{productId}/lowest-price")
-    public ApiResponse<List<ProductSizePriceResponseDto>> getProductLowestPrice(
-            @PathVariable UUID productId
-    ) {
-        List<ProductSizePriceResponseDto> response = productService.getProductLowestPrice(productId);
-
-        return ApiResponse.success(response);
+    // ✅ 상품 옵션별 최저가 조회
+    @GetMapping("/{productId}/options")
+    public ApiResponse<List<ProductOptionListResponseDto>> getProductOptions(
+            @PathVariable UUID productId) {
+        List<ProductOptionListResponseDto> result = productService.getProductOptions(productId);
+        return ApiResponse.success(result);
     }
-
 }

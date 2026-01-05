@@ -96,6 +96,8 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+
                 // ✅ 로그인 안 됐을 때 JSON 메시지 내려줌 (인증 필요한 요청에서만 동작)
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
@@ -107,6 +109,8 @@ public class SecurityConfig {
                                 "/", "/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**", "/api-docs/**", "/swagger-resources/**"
                         ).permitAll()
+
+                        .requestMatchers("/h2-console/**").permitAll()
 
                         // ✅ 테스트용 부트스트랩(운영 시 삭제)
                         .requestMatchers(HttpMethod.POST, "/api/test/bootstrap/master").permitAll()
@@ -141,7 +145,7 @@ public class SecurityConfig {
                                 "/api/admin/staff/**"
                         ).hasRole("MASTER")
 
-                                // 로그아웃은 인증 필요(선택)
+                        // 로그아웃은 인증 필요(선택)
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/logout",
                                 "/api/admin/auth/logout"

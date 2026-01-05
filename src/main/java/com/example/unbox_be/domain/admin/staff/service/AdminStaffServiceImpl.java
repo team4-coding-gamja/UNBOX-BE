@@ -129,7 +129,7 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @PreAuthorize("hasRole('MASTER')")
     public Page<AdminStaffListResponseDto> getAdminStaffPageIncludeDeleted(Pageable pageable) {
 
-        Page<Admin> admins = adminRepository.findByAdminRoleIn(
+        Page<Admin> admins = adminRepository.findByAdminRoleInAndDeletedAtIsNull(
                 List.of(AdminRole.ROLE_MANAGER, AdminRole.ROLE_INSPECTOR),
                 pageable
                 );

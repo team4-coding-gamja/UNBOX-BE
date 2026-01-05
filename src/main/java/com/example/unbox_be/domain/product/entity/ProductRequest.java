@@ -31,10 +31,10 @@ public class ProductRequest extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProductStatus status;
+    private ProductRequestStatus status;
 
     // 생성자
-    private ProductRequest(Long userId, String name, String brandName, ProductStatus status) {
+    private ProductRequest(Long userId, String name, String brandName, ProductRequestStatus status) {
         this.userId = userId;
         this.name = name;
         this.brandName = brandName;
@@ -51,7 +51,7 @@ public class ProductRequest extends BaseEntity {
                 userId,
                 requestDto.getName(),
                 requestDto.getBrandName(),
-                ProductStatus.PENDING
+                ProductRequestStatus.PENDING
         );
     }
 

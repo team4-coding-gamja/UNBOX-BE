@@ -9,7 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
-public interface OrderAdminService {
+public interface AdminOrderService {
     /**
      * 전체 주문 목록 조회 (검색 조건 포함)
      * @param condition 검색 조건

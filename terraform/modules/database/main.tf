@@ -1,25 +1,55 @@
+# =============================================================================
+# RDS (Relational Database Service) 구성
+# PostgreSQL 데이터베이스 서비스 (조건부 생성)
+# =============================================================================
+
+# DB 서브넷 그룹 생성
+# - RDS 인스턴스를 배치할 서브넷들을 그룹화
+# - Multi-AZ 구성을 위해 여러 가용 영역의 서브넷 필요
+# - 고가용성: 한 지역 장애 시 다른 지역에서 자동 전환
 resource "aws_db_subnet_group" "main" {
-  name       = "${var.project_name}-db-subnet-group"
-  subnet_ids = var.subnet_ids
+  name       = "${var.project_name}-db-subnet-group"  # 서브넷 그룹 이름
+  subnet_ids = var.subnet_ids                        # Private 서브넷 ID 목록
 
   tags = {
     Name = "${var.project_name}-db-subnet-group"
+    Type = "Database-Subnet-Group"
   }
 }
 
+# RDS PostgreSQL 인스턴스 생성
+# - UNBOX 애플리케이션의 메인 데이터베이스
+# - 프로덕션 환경에서 사용할 관리형 데이터베이스
 resource "aws_db_instance" "postgres" {
-  allocated_storage      = 20
-  engine                 = "postgres"
-  engine_version         = "16.1"
-  instance_class         = "db.t3.micro"
-  db_name                = "unboxdb"
-  username               = "admin"
-  password               = "password123!"
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-  vpc_security_group_ids = [var.security_group_id]
-  skip_final_snapshot    = true
+  # 스토리지 설정
+  allocated_storage      = 20                    # 20GB SSD 스토리지 (프리티어 범위)
+  
+  # 데이터베이스 엔진 설정
+  engine                 = "postgres"            # PostgreSQL 사용
+  engine_version         = "16.1"                # PostgreSQL 16.1 버전
+  instance_class         = "db.t3.micro"         # 프리티어 대상 인스턴스 타입
+  
+  # 데이터베이스 설정
+  db_name                = "unboxdb"             # 초기 데이터베이스 이름
+  username               = "admin"               # 마스터 사용자명
+  password               = "password123!"        # 마스터 비밀번호 (프로덕션에서는 보안 강화 필요)
+  
+  # 네트워크 설정
+  db_subnet_group_name   = aws_db_subnet_group.main.name  # 위에서 생성한 서브넷 그룹 사용
+  vpc_security_group_ids = [var.security_group_id]        # RDS 전용 보안 그룹 연결
+  
+  # 백업 설정
+  skip_final_snapshot    = true                  # 인스턴스 삭제 시 최종 스냅샷 생성 안 함 (개발용)
 
   tags = {
     Name = "${var.project_name}-postgres"
+    Type = "Primary-Database"
+    Engine = "PostgreSQL"
   }
 }
+
+# 주의사항:
+# 1. 비밀번호는 프로덕션에서 더 복잡하게 설정해야 함
+# 2. skip_final_snapshot=false로 설정하여 데이터 보호 강화 가능
+# 3. Multi-AZ 배포를 위해 여러 서브넷에 배치
+# 4. 비용 절약을 위해 개발 시 H2 DB 사용 권장

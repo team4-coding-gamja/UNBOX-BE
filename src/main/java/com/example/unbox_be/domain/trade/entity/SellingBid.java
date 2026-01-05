@@ -5,6 +5,7 @@ import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -27,6 +28,7 @@ public class SellingBid extends BaseEntity {
 
     @Id
     @Column(name = "selling_id")
+    @NotNull
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID sellingId;
 

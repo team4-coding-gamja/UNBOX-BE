@@ -1,0 +1,34 @@
+spring:
+  profiles:
+    active: mvp
+    
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    
+  jpa:
+    hibernate:
+      ddl-auto: update  # 발표용 데이터 유지
+    show-sql: false     # 발표 시 깔끔한 로그
+    properties:
+      hibernate:
+        format_sql: false
+        
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+  jwt:
+    secret: ${SPRING_JWT_SECRET}
+
+# 발표용 로깅 설정
+logging:
+  level:
+    com.unbox: INFO
+    org.springframework.security: WARN
+    org.springframework.web: INFO
+  file:
+    name: /var/log/unbox/mvp-application.log

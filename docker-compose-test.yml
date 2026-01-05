@@ -1,0 +1,30 @@
+# 테스트용 - H2 인메모리 DB 사용
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: unbox-test-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=test
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_JWT_SECRET=test-jwt-secret-key
+    depends_on:
+      - redis
+    volumes:
+      - ./logs:/var/log/unbox
+
+  redis:
+    image: redis:alpine
+    container_name: unbox-test-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

@@ -1,0 +1,17 @@
+package com.example.unbox_be.domain.admin.order.repository;
+
+import com.example.unbox_be.domain.order.entity.Order;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.lang.NonNull;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface OrderAdminRepository extends JpaRepository<Order, UUID>, OrderAdminRepositoryCustom {
+
+
+    // [Admin] 주문 상세 조회
+    @EntityGraph(attributePaths = {"buyer", "seller", "productOption", "productOption.product", "productOption.product.brand"})
+    Optional<Order> findWithDetailsById(@NonNull UUID id);
+}

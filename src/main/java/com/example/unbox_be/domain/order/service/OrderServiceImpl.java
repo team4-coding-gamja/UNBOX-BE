@@ -196,6 +196,8 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDetailResponseDto(order);
     }
 
+
+
     // --- Private Helper Methods ---
 
     private User getUserByIdOrThrow(Long userId) {

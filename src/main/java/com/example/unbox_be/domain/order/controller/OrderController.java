@@ -2,7 +2,7 @@ package com.example.unbox_be.domain.order.controller;
 
 import com.example.unbox_be.domain.order.controller.api.OrderApi;
 import com.example.unbox_be.domain.order.dto.request.OrderCreateRequestDto;
-import com.example.unbox_be.domain.order.dto.request.OrderStatusUpdateRequestDto;
+
 import com.example.unbox_be.domain.order.dto.request.OrderTrackingRequestDto;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
@@ -79,23 +79,6 @@ public class OrderController implements OrderApi {
                 orderId,
                 requestDto.getTrackingNumber(),
                 userDetails.getUserId()
-        );
-        return ResponseEntity.ok(CustomApiResponse.success(response));
-    }
-
-    @Override
-    public ResponseEntity<CustomApiResponse<OrderDetailResponseDto>> updateOrderStatus(
-            UUID orderId,
-            OrderStatusUpdateRequestDto requestDto,
-            CustomUserDetails userDetails
-    ) {
-        Long adminId = userDetails.getAdminId();
-
-        OrderDetailResponseDto response = orderService.updateAdminStatus(
-                orderId,
-                requestDto.getStatus(),
-                requestDto.getTrackingNumber(),
-                adminId
         );
         return ResponseEntity.ok(CustomApiResponse.success(response));
     }

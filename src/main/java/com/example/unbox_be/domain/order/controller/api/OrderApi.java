@@ -1,7 +1,6 @@
 package com.example.unbox_be.domain.order.controller.api;
 
 import com.example.unbox_be.domain.order.dto.request.OrderCreateRequestDto;
-import com.example.unbox_be.domain.order.dto.request.OrderStatusUpdateRequestDto;
 import com.example.unbox_be.domain.order.dto.request.OrderTrackingRequestDto;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
@@ -11,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -57,14 +57,6 @@ public interface OrderApi {
     ResponseEntity<CustomApiResponse<OrderDetailResponseDto>> registerTracking(
             @PathVariable UUID orderId,
             @Valid @RequestBody OrderTrackingRequestDto requestDto,
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
-    );
-
-    @Operation(summary = "주문 상태 변경 (관리자용)", description = "관리자/검수자가 주문 상태를 변경합니다 (예: 검수 합격, 배송 시작).")
-    @PatchMapping("/{orderId}/status")
-    ResponseEntity<CustomApiResponse<OrderDetailResponseDto>> updateOrderStatus(
-            @PathVariable UUID orderId,
-            @Valid @RequestBody OrderStatusUpdateRequestDto requestDto,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     );
 

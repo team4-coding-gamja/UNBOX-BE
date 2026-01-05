@@ -77,4 +77,8 @@ public class ProductRequest extends BaseEntity {
             throw new IllegalArgumentException("브랜드명은 50자를 초과할 수 없습니다.");
         }
     }
+
+    public void updateStatus(ProductRequestStatus status) {
+        this.status = status;
+    }
 }

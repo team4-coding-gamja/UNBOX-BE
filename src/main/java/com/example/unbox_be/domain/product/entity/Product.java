@@ -1,7 +1,6 @@
 package com.example.unbox_be.domain.product.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity;
-import com.example.unbox_be.domain.product.dto.request.ProductRequestRequestDto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

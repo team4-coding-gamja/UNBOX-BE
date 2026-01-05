@@ -46,23 +46,6 @@ public class JwtUtil {
         return userId;
     }
 
-    public Long getAdminId(String token) {
-        log.info("[JWTUtil/getAdminId] 토큰에서 adminId 추출 시도");
-
-        Long adminId = Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .get("adminId", Long.class);
-
-        if (adminId == null) {
-            log.error("[JWTUtil/getAdminId] 토큰에 'adminId' Claim이 존재하지 않습니다.");
-            throw new IllegalArgumentException("토큰에 adminId 정보가 없습니다.");
-        }
-        return adminId;
-    }
-
     // 토큰에서 username 추출
     public String getUsername(String token) {
         log.info("[JWTUtil/getUsername] 토큰에서 email 추출, 토큰: {}", token);  // 토큰 정보도 로그에 남김

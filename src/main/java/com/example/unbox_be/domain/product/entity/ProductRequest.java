@@ -1,7 +1,6 @@
 package com.example.unbox_be.domain.product.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity;
-import com.example.unbox_be.domain.product.dto.request.ProductRequestRequestDto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -42,15 +41,15 @@ public class ProductRequest extends BaseEntity {
     }
 
     // 요청 생성 메서드 (유일한 생성 진입점)
-    public static ProductRequest createProductRequest(Long userId, ProductRequestRequestDto requestDto) {
+    public static ProductRequest createProductRequest(Long userId, String name, String brandName) {
         validateUserId(userId);
-        validateName(requestDto.getName());
-        validateBrandName(requestDto.getBrandName());
+        validateName(name);
+        validateBrandName(brandName);
 
         return new ProductRequest(
                 userId,
-                requestDto.getName(),
-                requestDto.getBrandName(),
+                name,
+                brandName,
                 ProductRequestStatus.PENDING
         );
     }

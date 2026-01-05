@@ -2,10 +2,10 @@ package com.example.unbox_be.domain.admin.product.service;
 
 import com.example.unbox_be.domain.admin.product.dto.request.AdminProductCreateRequestDto;
 import com.example.unbox_be.domain.admin.product.dto.request.AdminProductOptionCreateRequestDto;
+import com.example.unbox_be.domain.admin.product.dto.request.AdminProductUpdateRequestDto;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductCreateResponseDto;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductOptionCreateResponseDto;
-import com.example.unbox_be.domain.admin.common.entity.Admin;
-import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
+import com.example.unbox_be.domain.admin.product.dto.response.AdminProductUpdateResponseDto;
 import com.example.unbox_be.domain.admin.product.mapper.AdminProductMapper;
 import com.example.unbox_be.domain.product.entity.Brand;
 import com.example.unbox_be.domain.product.entity.Product;
@@ -29,6 +29,7 @@ public class AdminProductServiceImpl implements AdminProductService {
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
     private final BrandRepository brandRepository;
+    private final AdminProductMapper adminProductMapper;
 
     // ✅ 상품 등록
     @Override
@@ -46,18 +47,43 @@ public class AdminProductServiceImpl implements AdminProductService {
                 brand
         );
         Product savedProduct = productRepository.save(product);
-        return AdminProductMapper.toAdminProductCreateResponseDto(savedProduct);
+        return adminProductMapper.toAdminProductCreateResponseDto(savedProduct);
     }
+
+    // ✅ 상품 수정
+    @Override
+    @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public AdminProductUpdateResponseDto updateProduct(UUID productId, AdminProductUpdateRequestDto requestDto) {
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        if (requestDto.getModelNumber() != null &&
+                productRepository.existsByModelNumberAndIdNotAndDeletedAtIsNull(requestDto.getModelNumber(), productId)) {
+            throw new CustomException(ErrorCode.PRODUCT_MODEL_NUMBER_ALREADY_EXISTS);
+        }
+
+        product.update(
+                requestDto.getName(),
+                requestDto.getModelNumber(),
+                requestDto.getCategory(),
+                requestDto.getImageUrl()
+        );
+
+        return adminProductMapper.toAdminProductUpdateResponseDto(product);
+    }
+
 
     // ✅ 상품 삭제
     @Override
     @Transactional
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
-    public void deleteProduct(UUID productId) {
+    public void deleteProduct(UUID productId, String deletedBy) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        productRepository.delete(product); // 실무에서는 소프트 삭제 추천 (현재는 하드 삭제)
+        product.softDelete(deletedBy);
     }
 
     // ✅ 상품 옵션 등록
@@ -73,14 +99,14 @@ public class AdminProductServiceImpl implements AdminProductService {
 
         ProductOption option = ProductOption.createProductOption(product, requestDto.getOption());
         ProductOption savedOption = productOptionRepository.save(option);
-        return AdminProductMapper.toAdminProductOptionCreateResponseDto(savedOption);
+        return adminProductMapper.toAdminProductOptionCreateResponseDto(savedOption);
     }
 
     // ✅ 상품 옵션 삭제
     @Override
     @Transactional
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
-    public void deleteProductOption(UUID productId, UUID optionId) {
+    public void deleteProductOption(UUID productId, UUID optionId, String deletedBy) {
         productRepository.findById(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
         ProductOption option = productOptionRepository.findById(optionId)
@@ -89,6 +115,6 @@ public class AdminProductServiceImpl implements AdminProductService {
             throw new CustomException(ErrorCode.INVALID_PRODUCT_OPTION);
         }
 
-        productOptionRepository.delete(option);
+        option.softDelete(deletedBy);
     }
 }

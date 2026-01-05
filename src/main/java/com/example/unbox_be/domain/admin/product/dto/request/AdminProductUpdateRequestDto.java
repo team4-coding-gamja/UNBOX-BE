@@ -15,10 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AdminProductCreateRequestDto {
-
-    @NotNull(message = "브랜드 ID는 필수입니다.")
-    private UUID brandId;
+public class AdminProductUpdateRequestDto {
 
     @NotBlank(message = "상품명은 필수입니다.")
     private String name;

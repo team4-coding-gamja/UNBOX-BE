@@ -2,7 +2,6 @@ package com.example.unbox_be.domain.admin.brand.dto.response;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter

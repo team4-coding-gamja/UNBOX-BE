@@ -3,8 +3,10 @@ package com.example.unbox_be.domain.admin.product.controller;
 import com.example.unbox_be.domain.admin.product.controller.api.AdminProductApi;
 import com.example.unbox_be.domain.admin.product.dto.request.AdminProductCreateRequestDto;
 import com.example.unbox_be.domain.admin.product.dto.request.AdminProductOptionCreateRequestDto;
+import com.example.unbox_be.domain.admin.product.dto.request.AdminProductUpdateRequestDto;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductCreateResponseDto;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductOptionCreateResponseDto;
+import com.example.unbox_be.domain.admin.product.dto.response.AdminProductUpdateResponseDto;
 import com.example.unbox_be.domain.admin.product.service.AdminProductService;
 import com.example.unbox_be.global.response.ApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
@@ -30,11 +32,23 @@ public class AdminProductController implements AdminProductApi {
         return ApiResponse.success(result);
     }
 
+    // ✅ 상품 수정
+    @PatchMapping("/{productId}")
+    public ApiResponse<AdminProductUpdateResponseDto> updateProduct(
+            @PathVariable UUID productId,
+            @RequestBody @Valid AdminProductUpdateRequestDto requestDto) {
+        AdminProductUpdateResponseDto result = adminProductService.updateProduct(productId, requestDto);
+        return ApiResponse.success(result);
+    }
+
+
     // ✅ 상품 삭제
     @DeleteMapping("/{productId}")
     public ApiResponse<Void> deleteProduct(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID productId) {
-        adminProductService.deleteProduct(productId);
+        String deletedBy = userDetails.getUsername();
+        adminProductService.deleteProduct(productId, deletedBy);
         return ApiResponse.success(null);
     }
 
@@ -50,9 +64,11 @@ public class AdminProductController implements AdminProductApi {
     // ✅ 상품 옵션 삭제
     @DeleteMapping("/{productId}/options/{optionId}")
     public ApiResponse<Void> deleteProductOption(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID productId,
             @PathVariable UUID optionId) {
-        adminProductService.deleteProductOption(productId, optionId);
+        String deletedBy = userDetails.getUsername();
+        adminProductService.deleteProductOption(productId, optionId, deletedBy);
         return ApiResponse.success(null);
     }
 }

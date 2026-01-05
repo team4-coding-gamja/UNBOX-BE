@@ -52,6 +52,17 @@ public class Product extends BaseEntity {
         return new Product(name, modelNumber, category, imageUrl, brand);
     }
 
+    public void update(String name, String modelNumber, Category category, String imageUrl) {
+        this.name = name;
+        this.modelNumber = modelNumber;
+        this.category = category;
+        this.imageUrl = imageUrl;
+        validateName(name);
+        validateModelNumber(modelNumber);
+        validateCategory(category);
+        validateImageUrl(imageUrl);
+    }
+
     // 유효성 검증 메서드
     private static void validateName(String name) {
         if (name == null || name.isBlank()) {
@@ -59,6 +70,12 @@ public class Product extends BaseEntity {
         }
         if (name.length() > 100) {
             throw new IllegalArgumentException("상품명은 100자를 초과할 수 없습니다.");
+        }
+    }
+
+    private static void validateModelNumber(String modelNumber) {
+        if (modelNumber == null || modelNumber.isBlank()) {
+            throw new IllegalArgumentException("상품번호는 필수입니다.");
         }
     }
 

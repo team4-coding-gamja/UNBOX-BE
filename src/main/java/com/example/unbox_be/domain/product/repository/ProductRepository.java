@@ -38,4 +38,5 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Query("select p from Product p where p.id = :id")
     Optional<Product> findByIdWithBrand(UUID id);
 
+    boolean existsByModelNumberAndIdNotAndDeletedAtIsNull(String modelNumber, UUID id);
 }

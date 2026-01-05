@@ -6,65 +6,84 @@ import com.example.unbox_be.global.security.login.CustomLogoutFilter;
 import com.example.unbox_be.global.security.login.LoginFilter;
 import com.example.unbox_be.global.security.token.RefreshTokenRedisRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
+import com.example.unbox_be.global.error.exception.CustomAuthenticationEntryPoint;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@EnableConfigurationProperties(CorsProperties.class)
 public class SecurityConfig {
 
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtUtil jwtUtil;
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
     private final ObjectMapper objectMapper;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
+    private final CorsProperties corsProperties;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
-    // ✅ 실무: PasswordEncoder는 인터페이스 타입으로 Bean 등록
+    // ✅ PasswordEncoder는 인터페이스 타입으로 Bean 등록
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // ✅ 실무: CORS는 명시적으로 허용 Origin을 지정 (쿠키 사용 시 필수)
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        return (HttpServletRequest request) -> {
-            CorsConfiguration config = new CorsConfiguration();
+    public FilterRegistrationBean<CorsFilter> corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = getCorsConfiguration();
 
-            // 예시: 프론트가 로컬/배포 둘 다 있을 때
-            config.setAllowedOrigins(List.of("*"
-                    // "https://your-frontend-domain.com"
-            ));
+        source.registerCorsConfiguration("/**", config);
 
-            config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-            config.setAllowedHeaders(List.of("Authorization","Content-Type"));
-            config.setExposedHeaders(List.of("Authorization"));
-            config.setAllowCredentials(true); // ✅ refresh 쿠키 쓰면 true 필수
-            config.setMaxAge(3600L);
+        CorsFilter corsFilter = new CorsFilter(source);
 
-            return config;
-        };
+        // 핵심: 이 필터를 가장 먼저 실행시킴 (SecurityFilter보다 먼저!)
+        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(corsFilter);
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return bean;
+    }
+
+    private @NonNull CorsConfiguration getCorsConfiguration() {
+        CorsConfiguration config = new CorsConfiguration();
+
+        // 프론트엔드 주소
+        config.setAllowedOrigins(corsProperties.allowedOrigins());
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        // 와일드카드("*") 대신 명시적 헤더 지정 (보안 강화)
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        config.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+        return config;
     }
 
     @Bean
@@ -72,30 +91,70 @@ public class SecurityConfig {
 
         http
                 // ✅ REST/JWT 기본
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .httpBasic(httpBasic -> httpBasic.disable())
-                .formLogin(form -> form.disable())
+                .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // ✅ 권한 설정 (실무: 경로는 최대한 “패턴으로” 관리)
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+
+                // ✅ 로그인 안 됐을 때 JSON 메시지 내려줌 (인증 필요한 요청에서만 동작)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                )
+
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
-                                "/", "/api/auth/login",
-                                "/swagger-ui/**", "/swagger-ui.html",
+                                "/", "/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**", "/api-docs/**", "/swagger-resources/**"
                         ).permitAll()
 
-                        // 회원가입/로그인/재발급은 인증 없이
+                        .requestMatchers("/h2-console/**").permitAll()
+
+                        // ✅ 테스트용 부트스트랩(운영 시 삭제)
+                        .requestMatchers(HttpMethod.POST, "/api/test/bootstrap/master").permitAll()
+
+                        // 유저 인증 관련
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/signup",
                                 "/api/auth/login",
                                 "/api/auth/reissue"
                         ).permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
+                        // ✅ 관리자 로그인/재발급은 열어둠
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/admin/auth/login",
+                                "/api/admin/auth/reissue"
+                        ).permitAll()
 
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // ✅ 관리자 생성(회원가입)은 MASTER만 가능
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/admin/auth/signup"
+                        ).hasRole("MASTER")   // ROLE_MASTER 필요
+
+                        // ✅ staff - 내 정보(/me)는 관리자 전체 허용
+                        .requestMatchers(
+                                "/api/admin/staff/me",
+                                "/api/admin/staff/me/**"
+                        ).hasAnyRole("MASTER", "MANAGER", "INSPECTOR")
+
+                        // ✅ staff - 나머지(목록/상세/수정/삭제)는 MASTER만
+                        .requestMatchers(
+                                "/api/admin/staff",
+                                "/api/admin/staff/**"
+                        ).hasRole("MASTER")
+
+                        // 로그아웃은 인증 필요(선택)
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/logout",
+                                "/api/admin/auth/logout"
+                        ).authenticated()
+
+                        // ✅ 관리자 API 전체 보호 (3개 롤 허용)
+                        .requestMatchers("/api/admin/**")
+                        .hasAnyRole("MASTER", "MANAGER", "INSPECTOR")
+
                         .anyRequest().authenticated()
                 );
 
@@ -105,17 +164,25 @@ public class SecurityConfig {
                 new CustomLogoutFilter(jwtUtil, refreshTokenRedisRepository),
                 UsernamePasswordAuthenticationFilter.class
         );
-
-        // 2) LoginFilter - UsernamePasswordAuthenticationFilter 자리 “대체”
-        LoginFilter loginFilter = new LoginFilter(
+        // 1) 유저 로그인 필터
+        LoginFilter userLoginFilter = new LoginFilter(
                 authenticationManager(authenticationConfiguration),
                 jwtUtil,
                 refreshTokenRedisRepository,
                 objectMapper
         );
+        userLoginFilter.setFilterProcessesUrl("/api/auth/login");
+        http.addFilterAt(userLoginFilter, UsernamePasswordAuthenticationFilter.class);
 
-        loginFilter.setFilterProcessesUrl("/api/auth/login"); // ✅ 실무: 명시적으로 지정
-        http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
+        // 2) 관리자 로그인 필터
+        LoginFilter adminLoginFilter = new LoginFilter(
+                authenticationManager(authenticationConfiguration),
+                jwtUtil,
+                refreshTokenRedisRepository,
+                objectMapper
+        );
+        adminLoginFilter.setFilterProcessesUrl("/api/admin/auth/login");
+        http.addFilterAt(adminLoginFilter, UsernamePasswordAuthenticationFilter.class);
 
         // 3) JwtFilter - 나머지 요청 Authorization 검증
         http.addFilterAfter(new JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);

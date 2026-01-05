@@ -9,14 +9,14 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "p_product_request")
+@Table(name = "p_product_requests")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProductRequest extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "request_id")
+    @Column(name = "product_request_id")
     private UUID id;
 
     @Column(nullable = false)
@@ -25,13 +25,60 @@ public class ProductRequest extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(nullable = false)
+    private String brandName;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private RequestStatus status;
+    private ProductRequestStatus status;
 
-    public ProductRequest(Long userId, String name) {
+    // 생성자
+    private ProductRequest(Long userId, String name, String brandName, ProductRequestStatus status) {
         this.userId = userId;
         this.name = name;
-        this.status = RequestStatus.PENDING; // 생성 시 무조건 대기 상태
+        this.brandName = brandName;
+        this.status = status;
+    }
+
+    // 요청 생성 메서드 (유일한 생성 진입점)
+    public static ProductRequest createProductRequest(Long userId, String name, String brandName) {
+        validateUserId(userId);
+        validateName(name);
+        validateBrandName(brandName);
+
+        return new ProductRequest(
+                userId,
+                name,
+                brandName,
+                ProductRequestStatus.PENDING
+        );
+    }
+
+    private static void validateUserId(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("요청자 userId는 필수입니다.");
+        }
+    }
+
+    private static void validateName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("상품명은 필수입니다.");
+        }
+        if (name.length() > 100) {
+            throw new IllegalArgumentException("상품명은 100자를 초과할 수 없습니다.");
+        }
+    }
+
+    private static void validateBrandName(String brandName) {
+        if (brandName == null || brandName.isBlank()) {
+            throw new IllegalArgumentException("브랜드명은 필수입니다.");
+        }
+        if (brandName.length() > 50) {
+            throw new IllegalArgumentException("브랜드명은 50자를 초과할 수 없습니다.");
+        }
+    }
+
+    public void updateStatus(ProductRequestStatus status) {
+        this.status = status;
     }
 }

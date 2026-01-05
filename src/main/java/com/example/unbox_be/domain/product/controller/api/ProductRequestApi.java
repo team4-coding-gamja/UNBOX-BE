@@ -1,0 +1,46 @@
+package com.example.unbox_be.domain.product.controller.api;
+
+import com.example.unbox_be.domain.product.dto.request.ProductRequestRequestDto;
+import com.example.unbox_be.domain.product.dto.response.ProductRequestResponseDto;
+import com.example.unbox_be.global.response.ApiResponse;
+import com.example.unbox_be.global.security.auth.CustomUserDetails;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+@Tag(name = "상품 요청", description = "상품 등록 요청 API")
+@RequestMapping("/api/products")
+public interface ProductRequestApi {
+
+    @Operation(
+            summary = "상품 등록 요청 생성",
+            description = """
+                    사용자가 상품 등록 요청을 생성합니다.
+                    - 로그인 필요(JWT)
+                    - 요청 DTO는 name, brandName만 받습니다. (ID는 서버에서 생성)
+                    """
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "상품 등록 요청 생성 성공",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음")
+    })
+    @PostMapping("/requests")
+    ApiResponse<ProductRequestResponseDto> createProductRequest(
+            @Parameter(hidden = true)
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+
+            @RequestBody @Valid ProductRequestRequestDto requestDto
+    );
+}

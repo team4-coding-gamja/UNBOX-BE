@@ -1,5 +1,7 @@
 package com.example.unbox_be.global.security.auth;
 
+import com.example.unbox_be.domain.admin.common.entity.Admin;
+import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
 import com.example.unbox_be.domain.user.repository.UserRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.global.error.exception.CustomException;
@@ -14,12 +16,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository; // 사용자 정보를 조회하기 위한 MemberRepository
-//    private final AdminRepository adminRepository;
+    private final UserRepository userRepository;
+    private final AdminRepository adminRepository;
 
     // 생성자를 통해 MemberRepository 의존성 주입
-    public CustomUserDetailsService(UserRepository userRepository) {
+    public CustomUserDetailsService(UserRepository userRepository, AdminRepository adminRepository) {
         this.userRepository = userRepository;
+        this.adminRepository = adminRepository;
         log.info("[CustomUserDetailsService] CustomUserDetailsService 생성자 주입");
 
     }
@@ -27,12 +30,12 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
-//        // 1) 관리자 우선 조회
-//        Admin admin = adminRepository.findByEmail(email).orElse(null);
-//        if (admin != null) {
-//            log.info("[Auth] ADMIN 로그인: {}", email);
-//            return CustomUserDetails.ofAdmin(admin);
-//        }
+        // 1) 관리자 우선 조회
+        Admin admin = adminRepository.findByEmail(email).orElse(null);
+        if (admin != null) {
+            log.info("[CustomUserDetailsService/loadUserByUsername] Admin 조회 성공, email: {}", email);
+            return CustomUserDetails.ofAdmin(admin);
+        }
 
         // 2) 일반 사용자 조회
         User user = userRepository.findByEmail(email)

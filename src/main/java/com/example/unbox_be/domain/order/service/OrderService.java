@@ -1,162 +1,72 @@
 package com.example.unbox_be.domain.order.service;
 
-import com.example.unbox_be.domain.order.dto.OrderDetailResponseDto;
-import com.example.unbox_be.domain.order.dto.OrderCreateRequestDto;
-import com.example.unbox_be.domain.order.dto.OrderResponseDto;
-import com.example.unbox_be.domain.order.entity.Order;
+import com.example.unbox_be.domain.order.dto.request.OrderCreateRequestDto;
+import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
+import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
-import com.example.unbox_be.domain.order.mapper.OrderMapper;
-import com.example.unbox_be.domain.order.repository.OrderRepository;
-import com.example.unbox_be.domain.product.entity.ProductOption;
-import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
-import com.example.unbox_be.domain.user.entity.User;
-import com.example.unbox_be.domain.user.repository.UserRepository;
-import com.example.unbox_be.global.error.exception.CustomException;
-import com.example.unbox_be.global.error.exception.ErrorCode;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-@Service
-@RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class OrderService {
-
-    private final OrderRepository orderRepository;
-    private final UserRepository userRepository;
-    private final ProductOptionRepository productOptionRepository;
-    private final OrderMapper orderMapper;
+public interface OrderService {
 
     /**
-     * 주문 생성 (즉시 구매)
-     * - buyerEmail: 로그인한 사용자의 이메일 (CustomUserDetails에서 가져옴)
+     * 주문 생성
+     * @param requestDto 주문 요청 정보
+     * @param buyerId 구매자 ID (PK)
+     * @return 생성된 주문의 UUID
      */
-    @Transactional
-    public OrderResponseDto createOrder(OrderCreateRequestDto requestDto, String buyerEmail) {
-        // 1. 구매자 조회 (이메일로 조회)
-        User buyer = userRepository.findByEmail(buyerEmail)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        // 2. 판매자 조회
-        User seller = userRepository.findById(requestDto.getSellerId())
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        // 3. 상품 옵션 조회
-        ProductOption productOption = productOptionRepository.findById(requestDto.getProductOptionId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-
-        // 4. Entity 생성
-        Order order = Order.builder()
-                .buyer(buyer)
-                .seller(seller)
-                .productOption(productOption)
-                .price(requestDto.getPrice())
-                .receiverName(requestDto.getReceiverName())
-                .receiverPhone(requestDto.getReceiverPhone())
-                .receiverAddress(requestDto.getReceiverAddress())
-                .receiverZipCode(requestDto.getReceiverZipCode())
-                .build();
-
-        // 5. 저장 및 반환
-        Order savedOrder = orderRepository.save(order);
-        return orderMapper.toResponseDto(savedOrder);
-    }
+    UUID createOrder(OrderCreateRequestDto requestDto, Long buyerId);
 
     /**
-     * 내 구매 내역 조회 (페이징)
+     * 내 주문 목록 조회 (페이징)
+     * @param buyerId 구매자 ID (PK)
+     * @param pageable 페이징 정보
+     * @return 주문 목록 Page 객체
      */
-    public Page<OrderResponseDto> getMyOrders(String email, Pageable pageable) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        Page<Order> orderPage = orderRepository.findAllByBuyerId(user.getId(), pageable);
-
-        return orderPage.map(orderMapper::toResponseDto);
-    }
+    Page<OrderResponseDto> getMyOrders(Long buyerId, Pageable pageable);
 
     /**
      * 주문 상세 조회
-     * - N+1 방지를 위해 fetch join된 메서드 사용
-     * - 본인의 주문(구매자 or 판매자)인지 권한 검증 포함
+     * @param orderId 주문 UUID
+     * @param userId 요청자 ID (본인 확인용)
+     * @return 주문 상세 정보
      */
-    public OrderDetailResponseDto getOrderDetail(UUID orderId, String email) {
-        // 1. 요청 사용자 조회
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        // 2. 주문 조회 (Repository에서 @EntityGraph로 연관 데이터 한 번에 로딩)
-        Order order = orderRepository.findWithDetailsById(orderId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
-
-        // 3. 권한 검증 (내 주문이 맞는지 확인)
-        validateOrderAccess(order, user);
-
-        // 4. 상세 조회용 DTO로 변환
-        return orderMapper.toDetailResponseDto(order);
-    }
+    OrderDetailResponseDto getOrderDetail(UUID orderId, Long userId);
 
     /**
-     * 주문 취소 (판매자/구매자 공용)
-     * - PATCH /api/orders/{orderId}/cancel
+     * 주문 취소 (배송 전)
+     * @param orderId 주문 UUID
+     * @param userId 요청자 ID (구매자 본인 확인용)
+     * @return 취소된 주문 정보
      */
-    @Transactional
-    public OrderDetailResponseDto cancelOrder(UUID orderId, String email) {
-        // 1. 요청 사용자(판매자) 조회
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        // 2. 주문 조회 (권한 검증을 위해 fetch join 사용)
-        Order order = orderRepository.findWithDetailsById(orderId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
-
-        // 3. 권한 검증
-        validateCancelRequest(order, user);
-
-        // 4. 주문 취소 (Entity 비즈니스 로직 호출 -> 상태 변경 및 시간 기록)
-        order.cancel();
-
-        // 5. 변경된 결과 반환
-        return orderMapper.toDetailResponseDto(order);
-    }
+    OrderDetailResponseDto cancelOrder(UUID orderId, Long userId);
 
     /**
-     * 접근 권한 검증 메서드
-     * - 요청한 사용자가 주문의 구매자(Buyer)이거나 판매자(Seller)여야 함
+     * 운송장 번호 등록 (판매자용)
+     * @param orderId 주문 UUID
+     * @param trackingNumber 운송장 번호
+     * @param sellerId 판매자 ID (본인 확인용)
+     * @return 업데이트된 주문 정보
      */
-    private void validateOrderAccess(Order order, User user) {
-        // 방어적 코딩 (Buyer나 Seller가 없는 이상한 주문 데이터일 경우)
-        if (order.getBuyer() == null || order.getSeller() == null) {
-            throw new CustomException(ErrorCode.DATA_INTEGRITY_ERROR);
-        }
-
-        boolean isBuyer = order.getBuyer().getId().equals(user.getId());
-        boolean isSeller = order.getSeller().getId().equals(user.getId());
-
-        if (!isBuyer && !isSeller) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
-        }
-    }
+    OrderDetailResponseDto registerTracking(UUID orderId, String trackingNumber, Long sellerId);
 
     /**
-     * 취소 요청 유효성 검증
-     * - 1차: 이 주문의 당사자(구매자/판매자)가 맞는지?
-     * - 2차: 구매자라면 '배송 대기' 상태인지?
+     * 주문 상태 변경 (관리자/검수자용)
+     * @param orderId 주문 UUID
+     * @param newStatus 변경할 상태
+     * @param finalTrackingNumber 최종 운송장 번호 (센터 -> 구매자, 필요 시)
+     * @param adminId 관리자 ID (권한 확인용)
+     * @return 업데이트된 주문 정보
      */
-    private void validateCancelRequest(Order order, User user) {
-        // 1. 기본 접근 권한 체크
-        validateOrderAccess(order, user);
+    OrderDetailResponseDto updateAdminStatus(UUID orderId, OrderStatus newStatus, String finalTrackingNumber, Long adminId);
 
-        // 2. 구매자인 경우 상태 체크
-        if (order.getBuyer().getId().equals(user.getId())) {
-            // 구매자는 오직 'PENDING_SHIPMENT(배송 대기)' 상태일 때만 취소 가능
-            if (order.getStatus() != OrderStatus.PENDING_SHIPMENT) {
-                throw new CustomException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
-            }
-        }
-        // 판매자는 Order.cancel() 메서드에서 배송 상태 검증
-    }
+    /**
+     * 구매 확정 (구매자용)
+     * @param orderId 주문 UUID
+     * @param userId 구매자 ID (본인 확인용)
+     * @return 확정된 주문 정보
+     */
+    OrderDetailResponseDto confirmOrder(UUID orderId, Long userId);
 }

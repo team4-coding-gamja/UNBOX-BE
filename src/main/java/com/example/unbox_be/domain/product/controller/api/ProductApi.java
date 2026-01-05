@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.product.controller.api;
 
+import com.example.unbox_be.domain.product.dto.response.BrandListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductDetailResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductOptionListResponseDto;
@@ -89,4 +90,18 @@ public interface ProductApi {
             @Parameter(description = "상품 ID", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
             @PathVariable UUID productId
     );
+
+    @Operation(
+            summary = "브랜드 전체 조회",
+            description = "등록된 모든 브랜드를 조회합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "브랜드 전체 조회 성공",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+            )
+    })
+    @GetMapping("/brands")
+    ApiResponse<List<BrandListResponseDto>> getAllBrands();
 }

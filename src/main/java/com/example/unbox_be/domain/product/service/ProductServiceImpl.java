@@ -1,12 +1,16 @@
 package com.example.unbox_be.domain.product.service;
 
+import com.example.unbox_be.domain.product.dto.response.BrandListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductDetailResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductOptionListResponseDto;
+import com.example.unbox_be.domain.product.entity.Brand;
 import com.example.unbox_be.domain.product.entity.Category;
 import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.entity.ProductOption;
+import com.example.unbox_be.domain.product.mapper.BrandMapper;
 import com.example.unbox_be.domain.product.mapper.ProductMapper;
+import com.example.unbox_be.domain.product.repository.BrandRepository;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.product.repository.ProductRepository;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
@@ -29,7 +33,9 @@ public class ProductServiceImpl implements  ProductService {
 
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
+    private final BrandRepository brandRepository;
     private final ProductMapper productMapper;
+    private final BrandMapper brandMapper;
     private final SellingBidRepository sellingBidRepository;
     private final TradeService tradeService;
 
@@ -77,6 +83,15 @@ public class ProductServiceImpl implements  ProductService {
                                 lowestPriceMap.get(option.getId())
                         )
                 )
+                .toList();
+    }
+
+    // ✅ 브랜드 전체 조회
+    @Override
+    public List<BrandListResponseDto> getAllBrands() {
+        List<Brand> brands = brandRepository.findAll();
+        return brands.stream()
+                .map(brandMapper::toBrandListDto)
                 .toList();
     }
 }

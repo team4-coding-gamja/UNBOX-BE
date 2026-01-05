@@ -1,7 +1,7 @@
 package com.example.unbox_be.domain.product.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity;
-import com.example.unbox_be.domain.product.entity.Category;
+import com.example.unbox_be.domain.product.dto.request.ProductRequestRequestDto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -36,7 +36,7 @@ public class Product extends BaseEntity {
     @JoinColumn(name = "brand_id", nullable = false)
     private Brand brand;
 
-    public Product(String name, String modelNumber, Category category, String imageUrl,Brand brand) {
+    private Product(String name, String modelNumber, Category category, String imageUrl,Brand brand) {
         this.name = name;
         this.modelNumber = modelNumber;
         this.category = category;
@@ -44,8 +44,7 @@ public class Product extends BaseEntity {
         this.brand = brand;
     }
     // 생성 메서드
-    public static Product createProduct(String name, String modelNumber, Category category, String imageUrl, Brand brand
-    ) {
+    public static Product createProduct(String name, String modelNumber, Category category, String imageUrl, Brand brand) {
         validateName(name);
         validateCategory(category);
         validateBrand(brand);

@@ -1,0 +1,23 @@
+package com.example.unbox_be.domain.admin.productRequest.dto.response;
+
+import com.example.unbox_be.domain.product.entity.RequestStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AdminProductRequestListResponseDto {
+    private UUID id;
+    private Long userId;
+    private String name;
+    private String brandName;
+    private RequestStatus status;
+    private LocalDateTime createdAt;
+}

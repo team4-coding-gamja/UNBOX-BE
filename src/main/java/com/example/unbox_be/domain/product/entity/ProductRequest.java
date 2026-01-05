@@ -38,4 +38,8 @@ public class ProductRequest extends BaseEntity {
         this.brandName = brandName;
         this.status = RequestStatus.PENDING; // 생성 시 무조건 대기 상태
     }
+
+    public void updateStatus(RequestStatus status) {
+        this.status = status;
+    }
 }

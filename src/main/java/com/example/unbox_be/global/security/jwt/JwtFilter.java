@@ -73,14 +73,16 @@ public class JwtFilter extends OncePerRequestFilter {
             // 토큰 정보 추출 및 SecurityContext 저장
             String email = jwtUtil.getUsername(token);
             String role = jwtUtil.getRole(token);
-            Long id = jwtUtil.getUserId(token);
 
+            Long id;
             CustomUserDetails customUserDetails;
+
             if ("ROLE_USER".equals(role)) {
+                id = jwtUtil.getUserId(token);
                 customUserDetails = CustomUserDetails.ofUserIdOnly(id, email, role);
             }
-            // 우리 프로젝트의 관리자 Role들만 허용
             else if ("ROLE_MASTER".equals(role) || "ROLE_MANAGER".equals(role) || "ROLE_INSPECTOR".equals(role)) {
+                id = jwtUtil.getAdminId(token);
                 customUserDetails = CustomUserDetails.ofAdminIdOnly(id, email, role);
             }
             else {

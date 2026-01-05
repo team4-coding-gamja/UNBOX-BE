@@ -13,11 +13,16 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create  # 👈 hibernate는 jpa보다 2칸 더 들여쓰기
-    show-sql: true      # 👈 show-sql은 hibernate와 같은 라인(jpa 하위)
-    properties: # 👈 추가하면 좋은 설정
+      ddl-auto: create
+    defer-datasource-initialization: true
+    show-sql: true
+    properties:
       hibernate:
         format_sql: true
+
+  sql:
+    init:
+      mode: always
 
   data:
     redis:

@@ -1,6 +1,5 @@
 package com.example.unbox_be.global.config;
 
-import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
@@ -16,17 +15,19 @@ public class JpaAuditingConfig {
 
     @Bean
     public AuditorAware<String> auditorProvider() {
-        return new AuditorAware<>() {
-            @Override
-            public @NonNull Optional<String> getCurrentAuditor() {
-                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return () -> {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-                if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
-                    return Optional.empty();
-                }
-
-                return Optional.ofNullable(authentication.getName());
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return Optional.empty();
             }
+
+            Object principal = authentication.getPrincipal();
+            if (principal == null || "anonymousUser".equals(principal)) {
+                return Optional.empty();
+            }
+
+            return Optional.of(authentication.getName());
         };
     }
 }

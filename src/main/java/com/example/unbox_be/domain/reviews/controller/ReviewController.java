@@ -1,9 +1,11 @@
 package com.example.unbox_be.domain.reviews.controller;
 
+import com.example.unbox_be.domain.reviews.controller.api.ReviewApi;
 import com.example.unbox_be.domain.reviews.dto.ReviewRequestDto;
+import com.example.unbox_be.domain.reviews.dto.ReviewResponseDto;
 import com.example.unbox_be.domain.reviews.dto.ReviewUpdateDto;
-import com.example.unbox_be.domain.reviews.entity.Review;
 import com.example.unbox_be.domain.reviews.service.ReviewService;
+import com.example.unbox_be.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,35 +19,35 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/reviews")
 @RequiredArgsConstructor
-public class ReviewController {
+public class ReviewController implements ReviewApi {
 
     private final ReviewService reviewService;
 
-    // POST
+    @Override
     @PostMapping
-    public ResponseEntity<UUID> create(@RequestBody ReviewRequestDto dto /*, @RequestHeader("X-User-Id") Long userId */) {
-        Long tempUserId = 1L; // 테스트용 임시 ID
-        return ResponseEntity.ok(reviewService.createReview(dto, tempUserId));
+    public ResponseEntity<ApiResponse<UUID>> create(ReviewRequestDto dto, Long userId) {
+        return ResponseEntity.ok(ApiResponse.success(reviewService.createReview(dto, userId)));
     }
 
-    // GET
+    @Override
     @GetMapping
-    public ResponseEntity<Page<Review>> getList(@RequestParam UUID productId,
-                                                @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(reviewService.getReviewsByProduct(productId, pageable));
+    public ResponseEntity<ApiResponse<Page<ReviewResponseDto>>> getList(
+            @RequestParam UUID productId,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(reviewService.getReviewsByProduct(productId, pageable)));
     }
 
-    // PATCH
+    @Override
     @PatchMapping("/{reviewId}")
-    public ResponseEntity<Void> update(@PathVariable UUID reviewId, @RequestBody ReviewUpdateDto dto, @RequestHeader("X-User-Id") Long userId) {
+    public ResponseEntity<ApiResponse<Void>> update(UUID reviewId, ReviewUpdateDto dto, Long userId) {
         reviewService.updateReview(reviewId, dto, userId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(ApiResponse.successWithNoData());
     }
 
-    // Delete
+    @Override
     @DeleteMapping("/{reviewId}")
-    public ResponseEntity<Void> delete(@PathVariable UUID reviewId, @RequestHeader("X-User-Id") String userId) {
+    public ResponseEntity<ApiResponse<Void>> delete(UUID reviewId, Long userId) {
         reviewService.deleteReview(reviewId, userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.successWithNoData());
     }
 }

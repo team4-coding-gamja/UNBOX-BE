@@ -1,9 +1,17 @@
 package com.example.unbox_be.domain.reviews.service;
 
+import com.example.unbox_be.domain.order.entity.Order;
+import com.example.unbox_be.domain.order.entity.OrderStatus;
+import com.example.unbox_be.domain.order.repository.OrderRepository;
 import com.example.unbox_be.domain.reviews.dto.ReviewRequestDto;
+import com.example.unbox_be.domain.reviews.dto.ReviewResponseDto;
 import com.example.unbox_be.domain.reviews.dto.ReviewUpdateDto;
 import com.example.unbox_be.domain.reviews.entity.Review;
+import com.example.unbox_be.domain.reviews.mapper.ReviewMapper;
 import com.example.unbox_be.domain.reviews.repository.ReviewRepository;
+import com.example.unbox_be.domain.user.entity.User;
+import com.example.unbox_be.global.error.exception.CustomException;
+import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,68 +26,118 @@ import java.util.UUID;
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
+    private final OrderRepository orderRepository;
+    private final ReviewMapper reviewMapper;
 
-    // 리뷰 생성
+    /**
+     * [리뷰 생성]
+     * 비즈니스 규칙:
+     * 1. 주문 상태가 반드시 'COMPLETED'여야 함.
+     * 2. 주문 1개당 리뷰는 오직 1개만 작성 가능 (1:1 관계).
+     * 3. 주문한 구매자 본인만 리뷰 작성 가능.
+     * 4. 평점은 반드시 1점 ~ 5점 사이여야 함.
+     */
     @Transactional
     public UUID createReview(ReviewRequestDto requestDto, Long userId) {
+        // 1. 주문 존재 여부 확인
+        Order order = orderRepository.findById(requestDto.getOrderId())
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
-        // 1. [요구사항] 주문 및 배송 완료 여부 확인
-        // TODO: OrderService 또는 OrderRepository를 통해 주문 상태가 'DELIVERED'인지 확인하는 로직 필요
-        boolean isDelivered = true; // 우선 검증 통과로 가정
-        if (!isDelivered) {
-            throw new IllegalArgumentException("배송이 완료된 주문만 리뷰를 작성할 수 있습니다.");
+        // 2. 주문 상태 검증 (거래 완료 상태인지 확인)
+        if (order.getStatus() != OrderStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
         }
 
-        // 2. 주문당 리뷰 중복 작성 방지
+        // 3. 리뷰 중복 작성 검증 (해당 주문에 이미 리뷰가 있는지 확인)
         if (reviewRepository.existsByOrderId(requestDto.getOrderId())) {
-            throw new IllegalStateException("이미 해당 주문에 대한 리뷰를 작성했습니다.");
+            throw new CustomException(ErrorCode.ALREADY_REVIEWED);
         }
 
-        // 3. [요구사항] 평점 1~5점 제한
+        // 4. 작성 권한 검증 (로그인한 유저가 실제 구매자인지 확인)
+        User buyer = getBuyerOrThrow(order);
+        if (!buyer.getId().equals(userId)) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // 5. 평점 유효성 검증 (1~5점 범위 체크)
         if (requestDto.getRating() < 1 || requestDto.getRating() > 5) {
-            throw new IllegalArgumentException("평점은 1점에서 5점 사이여야 합니다.");
+            throw new CustomException(ErrorCode.INVALID_RATING);
         }
 
-        // 4. 엔티티 빌드 및 저장
-        Review review = Review.builder()
-                .productId(requestDto.getProductId())
-                .orderId(requestDto.getOrderId())
-                .buyerId(userId)
-                .content(requestDto.getContent())
-                .rating(requestDto.getRating())
-                .imageUrl(requestDto.getImageUrl())
-                .build();
+        // 6. 상품 정보 추출 (주문서의 연관 관계를 통해 Product ID 획득)
+        UUID productId = getProductIdFromOrder(order);
+
+        // 7. 리뷰 엔티티 생성 및 DB 저장
+        Review review = Review.createReview(
+                productId,
+                order,
+                buyer,
+                requestDto.getContent(),
+                requestDto.getRating(),
+                requestDto.getImageUrl()
+        );
 
         return reviewRepository.save(review).getReviewId();
     }
 
-    public Page<Review> getReviewsByProduct(UUID productId, Pageable pageable) {
-        return reviewRepository.findAllByProductIdAndDeletedAtIsNull(productId, pageable);
+    /**
+     * [상품별 리뷰 목록 조회]
+     * 삭제되지 않은 리뷰들을 최신순으로 페이징하여 반환합니다.
+     */
+    public Page<ReviewResponseDto> getReviewsByProduct(UUID productId, Pageable pageable) {
+        return reviewRepository.findAllByProductIdAndDeletedAtIsNull(productId, pageable)
+                .map(reviewMapper::toResponseDto);
     }
 
+    /**
+     * [리뷰 수정]
+     * 작성자 본인 확인 후 내용, 평점, 이미지를 수정합니다.
+     */
     @Transactional
     public void updateReview(UUID reviewId, ReviewUpdateDto dto, Long userId) {
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다."));
+        Review review = findReviewOrThrow(reviewId);
 
-        // [추가] 작성자 본인 확인 로직
-        if (!review.getBuyerId().equals(userId)) {
-            throw new SecurityException("본인이 작성한 리뷰만 수정할 수 있습니다.");
+        if (!review.getBuyer().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
         }
 
+        // 수정 시에도 평점 범위 검증이 필요할 경우 추가 가능
         review.update(dto.getContent(), dto.getRating(), dto.getImageUrl());
     }
 
+    /**
+     * [리뷰 삭제]
+     * 작성자 본인 확인 후 Soft Delete 처리를 수행합니다.
+     */
     @Transactional
-    public void deleteReview(UUID reviewId, String userId) {
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다."));
-        review.delete(userId);
+    public void deleteReview(UUID reviewId, Long userId) {
+        Review review = findReviewOrThrow(reviewId);
+
+        if (!review.getBuyer().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
+        }
+
+        review.softDelete(String.valueOf(userId));
     }
 
+    // --- Private Helper Methods (내부 보조 메서드) ---
 
-    // 상품 PK로 삭제되지 않은 리뷰 리스트를 페이징 조회
-    public Page<Review> getReviewsByProductId(UUID productId, Pageable pageable) {
-        return reviewRepository.findAllByProductIdAndDeletedAtIsNull(productId, pageable);
+    private User getBuyerOrThrow(Order order) {
+        User buyer = order.getBuyer();
+        if (buyer == null) throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        return buyer;
+    }
+
+    private UUID getProductIdFromOrder(Order order) {
+        // Order -> ProductOption -> Product 연관 구조를 통한 ID 추출로 무결성 보장
+        if (order.getProductOption() == null || order.getProductOption().getProduct() == null) {
+            throw new CustomException(ErrorCode.DATA_INTEGRITY_ERROR);
+        }
+        return order.getProductOption().getProduct().getId();
+    }
+
+    private Review findReviewOrThrow(UUID reviewId) {
+        return reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
     }
 }

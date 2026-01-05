@@ -121,6 +121,8 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         // 바디(JSON)
         UserTokenResponseDto dto = UserTokenResponseDto.builder()
                 .accessToken(access)
+                .refreshToken(refresh)
+                .role(role)
                 .build();
         log.info("[LoginFilter/successfulAuthentication] 8. JWT TokenDTO 생성 완료: {}", dto);
 

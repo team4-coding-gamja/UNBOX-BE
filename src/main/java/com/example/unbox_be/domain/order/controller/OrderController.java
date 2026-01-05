@@ -7,7 +7,7 @@ import com.example.unbox_be.domain.order.dto.request.OrderTrackingRequestDto;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
 import com.example.unbox_be.domain.order.service.OrderService;
-import com.example.unbox_be.global.response.ApiResponse;
+import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,27 +25,27 @@ public class OrderController implements OrderApi {
     private final OrderService orderService;
 
     @Override
-    public ResponseEntity<ApiResponse<UUID>> createOrder(
+    public ResponseEntity<CustomApiResponse<UUID>> createOrder(
             OrderCreateRequestDto requestDto,
             CustomUserDetails userDetails
     ) {
         // 컨트롤러는 오직 '요청 수신'과 '응답 반환'에만 집중합니다.
         UUID orderId = orderService.createOrder(requestDto, userDetails.getUserId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(orderId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(CustomApiResponse.success(orderId));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<Page<OrderResponseDto>>> getMyOrders(
+    public ResponseEntity<CustomApiResponse<Page<OrderResponseDto>>> getMyOrders(
             CustomUserDetails userDetails,
             Pageable pageable
     ) {
         // 페이지 사이즈 검증 로직은 Service 내부로 이동시켰습니다.
         Page<OrderResponseDto> response = orderService.getMyOrders(userDetails.getUserId(), pageable);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(CustomApiResponse.success(response));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<OrderDetailResponseDto>> getOrderDetail(
+    public ResponseEntity<CustomApiResponse<OrderDetailResponseDto>> getOrderDetail(
             UUID orderId,
             CustomUserDetails userDetails
     ) {
@@ -57,20 +57,20 @@ public class OrderController implements OrderApi {
         // Tip: 관리자 조회 기능이 필요하면 여기서 userDetails.getAdminId() 체크 로직 추가 권장
 
         OrderDetailResponseDto response = orderService.getOrderDetail(orderId, userId);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(CustomApiResponse.success(response));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<OrderDetailResponseDto>> cancelOrder(
+    public ResponseEntity<CustomApiResponse<OrderDetailResponseDto>> cancelOrder(
             UUID orderId,
             CustomUserDetails userDetails
     ) {
         OrderDetailResponseDto response = orderService.cancelOrder(orderId, userDetails.getUserId());
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(CustomApiResponse.success(response));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<OrderDetailResponseDto>> registerTracking(
+    public ResponseEntity<CustomApiResponse<OrderDetailResponseDto>> registerTracking(
             UUID orderId,
             OrderTrackingRequestDto requestDto,
             CustomUserDetails userDetails
@@ -80,11 +80,11 @@ public class OrderController implements OrderApi {
                 requestDto.getTrackingNumber(),
                 userDetails.getUserId()
         );
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(CustomApiResponse.success(response));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<OrderDetailResponseDto>> updateOrderStatus(
+    public ResponseEntity<CustomApiResponse<OrderDetailResponseDto>> updateOrderStatus(
             UUID orderId,
             OrderStatusUpdateRequestDto requestDto,
             CustomUserDetails userDetails
@@ -97,15 +97,15 @@ public class OrderController implements OrderApi {
                 requestDto.getTrackingNumber(),
                 adminId
         );
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(CustomApiResponse.success(response));
     }
 
     @Override
-    public ResponseEntity<ApiResponse<OrderDetailResponseDto>> confirmOrder(
+    public ResponseEntity<CustomApiResponse<OrderDetailResponseDto>> confirmOrder(
             UUID orderId,
             CustomUserDetails userDetails
     ) {
         OrderDetailResponseDto response = orderService.confirmOrder(orderId, userDetails.getUserId());
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(CustomApiResponse.success(response));
     }
 }

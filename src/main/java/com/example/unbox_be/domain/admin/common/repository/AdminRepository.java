@@ -17,30 +17,30 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
     // ✅ 닉네임 중복 여부 확인
     boolean existsByNickname(String nickname);
 
-    // ✅ 특정 역할의 관리자 존재 여부 확인
-    // (예: MASTER 관리자 존재 여부 체크용)
+    // ✅ 특정 역할의 관리자 존재 여부 확인 (예: MASTER 존재 여부)
     boolean existsByAdminRole(AdminRole adminRole);
 
-    // ✅ 이메일로 관리자 조회 (로그인용)
+    // ✅ 이메일로 관리자 조회 (로그인용) - 삭제 포함(주의)
     Optional<Admin> findByEmail(String email);
 
-    // ✅ 관리자 목록 조회 (역할 여러 개 포함, Soft Delete 미적용)
-    // ⚠️ 삭제된 관리자도 포함되므로 사용 주의
+    // ✅ 관리자 목록 조회(역할 여러 개) - 삭제 포함(주의)
     Page<Admin> findByAdminRoleIn(List<AdminRole> roles, Pageable pageable);
 
     // =========================
-    // Soft Delete 적용 조회
+    // ✅ Soft Delete "제외" 조회 (deleted_at is null)
     // =========================
 
     // ✅ 삭제되지 않은 관리자 전체 목록 조회
     Page<Admin> findAllByDeletedAtIsNull(Pageable pageable);
 
-    // ✅ 삭제되지 않은 특정 관리자 단건 조회
     Optional<Admin> findByIdAndDeletedAtIsNull(Long id);
 
-    // ✅ 특정 역할 목록 조회 (여러 역할, Soft Delete 적용)
+    // ✅ 삭제되지 않은 특정 관리자 단건 조회
+    Optional<Admin> findByIdAndDeletedAtIsNullAndDeletedAtIsNull(Long id);
+
+    // ✅ 삭제되지 않은 특정 역할 목록 조회(여러 역할)
     Page<Admin> findAllByAdminRoleInAndDeletedAtIsNull(List<AdminRole> roles, Pageable pageable);
 
-    // ✅ 특정 역할 목록 조회 (단일 역할, Soft Delete 적용)
+    // ✅ 삭제되지 않은 특정 역할 목록 조회(단일 역할)
     Page<Admin> findAllByAdminRoleAndDeletedAtIsNull(AdminRole role, Pageable pageable);
 }

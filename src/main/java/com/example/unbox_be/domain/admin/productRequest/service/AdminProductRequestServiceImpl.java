@@ -9,10 +9,13 @@ import com.example.unbox_be.domain.product.repository.ProductRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+
+import static org.antlr.v4.runtime.tree.xpath.XPath.findAll;
 
 @Service
 @RequiredArgsConstructor
@@ -22,16 +25,21 @@ public class AdminProductRequestServiceImpl implements AdminProductRequestServic
     private final ProductRequestRepository productRequestRepository;
     private final AdminProductRequestMapper adminProductRequestMapper;
 
-    @Override
-    public Page<AdminProductRequestListResponseDto> getProductRequests(Pageable pageable) {
-        return productRequestRepository.findAll(pageable)
-                .map(adminProductRequestMapper::toListResponseDto);
-    }
-
+    // ✅ 상품 요청 목록 조회
     @Override
     @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public Page<AdminProductRequestListResponseDto> getProductRequests(Pageable pageable) {
+        Page<ProductRequest> productRequests = productRequestRepository.findAll(pageable);
+        return productRequests.map(adminProductRequestMapper::toListResponseDto);
+    }
+
+    // ✅ 상품 요청 상태 변경
+    @Override
+    @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public AdminProductRequestUpdateResponseDto updateProductRequestStatus(UUID id, AdminProductRequestUpdateRequestDto requestDto) {
-        ProductRequest productRequest = productRequestRepository.findById(id)
+        ProductRequest productRequest = productRequestRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product request not found"));
 
         productRequest.updateStatus(requestDto.getStatus());

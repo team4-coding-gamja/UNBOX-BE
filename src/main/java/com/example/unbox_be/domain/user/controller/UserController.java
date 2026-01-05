@@ -5,7 +5,7 @@ import com.example.unbox_be.domain.user.dto.request.UserMeUpdateRequestDto;
 import com.example.unbox_be.domain.user.dto.response.UserMeResponseDto;
 import com.example.unbox_be.domain.user.dto.response.UserMeUpdateResponseDto;
 import com.example.unbox_be.domain.user.service.UserService;
-import com.example.unbox_be.global.response.ApiResponse;
+import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,26 +21,26 @@ public class UserController implements UserApi {
 
     // ✅ 회원 정보 조회
     @GetMapping("/me")
-    public ApiResponse<UserMeResponseDto> getUserMe(
+    public CustomApiResponse<UserMeResponseDto> getUserMe(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         UserMeResponseDto userMeResponseDto = userService.getUserMe(userDetails.getUserId());
-        return ApiResponse.success(userMeResponseDto);
+        return CustomApiResponse.success(userMeResponseDto);
     }
 
     // ✅ 회원 정보 수정
     @PatchMapping("/me")
-    public ApiResponse<UserMeUpdateResponseDto> updateUserMe(
+    public CustomApiResponse<UserMeUpdateResponseDto> updateUserMe(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid UserMeUpdateRequestDto requestDto) {
         UserMeUpdateResponseDto userMeUpdateResponseDto = userService.updateUserMe(userDetails.getUserId(), requestDto);
-        return ApiResponse.success(userMeUpdateResponseDto);
+        return CustomApiResponse.success(userMeUpdateResponseDto);
     }
 
     // ✅ 회원 탈퇴
     @DeleteMapping("/me")
-    public ApiResponse<String> deleteUserMe(
+    public CustomApiResponse<String> deleteUserMe(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         userService.deleteUserMe(userDetails.getUserId());
-        return ApiResponse.successWithNoData();
+        return CustomApiResponse.successWithNoData();
     }
 }

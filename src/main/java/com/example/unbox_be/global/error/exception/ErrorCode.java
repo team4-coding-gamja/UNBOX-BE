@@ -66,7 +66,6 @@ public enum ErrorCode {
     BRAND_NOT_FOUND(HttpStatus.NOT_FOUND, "브랜드 정보를 찾을 수 없습니다."),
 
     // 주문
-    //ORDER_CANNOT_BE_CANCELLED(HttpStatus.BAD_REQUEST, "이미 배송 중이거나 완료된 주문은 취소할 수 없습니다."),
     TRACKING_NUMBER_REQUIRED(HttpStatus.BAD_REQUEST, "배송 시작 시 운송장 번호는 필수입니다."),
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태입니다."),
     INVALID_ORDER_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태 변경입니다."),

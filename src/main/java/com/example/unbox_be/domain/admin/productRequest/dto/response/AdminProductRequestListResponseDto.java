@@ -19,5 +19,4 @@ public class AdminProductRequestListResponseDto {
     private String name;
     private String brandName;
     private ProductRequestStatus status;
-    private LocalDateTime createdAt;
 }

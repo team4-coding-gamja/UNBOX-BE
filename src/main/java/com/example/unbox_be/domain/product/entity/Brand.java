@@ -62,4 +62,13 @@ public class Brand extends BaseEntity {
         }
     }
 
+    public void updateName(String name) {
+        validateName(name);
+        this.name = name;
+    }
+
+    public void updateLogoUrl(String logoUrl) {
+        validateLogoUrl(logoUrl);
+        this.logoUrl = logoUrl;
+    }
 }

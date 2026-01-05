@@ -45,6 +45,7 @@ public enum ErrorCode {
     PRODUCT_OPTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 상품 옵션입니다."),
     PRODUCT_OPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "상품 옵션을 찾을 수 없습니다."),
     INVALID_PRODUCT_OPTION(HttpStatus.BAD_REQUEST, "해당 상품에 속하지 않은 옵션입니다."),
+    PRODUCT_MODEL_NUMBER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 모델 번호입니다."),
 
     // 비즈니스
     // 판매 관련 에러

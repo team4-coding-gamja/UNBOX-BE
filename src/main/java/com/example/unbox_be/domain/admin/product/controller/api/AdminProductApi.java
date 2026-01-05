@@ -2,8 +2,10 @@ package com.example.unbox_be.domain.admin.product.controller.api;
 
 import com.example.unbox_be.domain.admin.product.dto.request.AdminProductCreateRequestDto;
 import com.example.unbox_be.domain.admin.product.dto.request.AdminProductOptionCreateRequestDto;
+import com.example.unbox_be.domain.admin.product.dto.request.AdminProductUpdateRequestDto;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductCreateResponseDto;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductOptionCreateResponseDto;
+import com.example.unbox_be.domain.admin.product.dto.response.AdminProductUpdateResponseDto;
 import com.example.unbox_be.global.response.ApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,6 +47,27 @@ public interface AdminProductApi {
     );
 
     @Operation(
+            summary = "상품 수정",
+            description = "관리자가 상품 정보를 수정합니다. (MASTER, MANAGER 가능)"
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "상품 수정 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "상품/브랜드를 찾을 수 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "모델번호 중복")
+    })
+    @PatchMapping("/{productId}")
+    ApiResponse<AdminProductUpdateResponseDto> updateProduct(
+
+            @Parameter(description = "상품 ID (UUID)", required = true)
+            @PathVariable UUID productId,
+
+            @RequestBody @Valid AdminProductUpdateRequestDto requestDto
+    );
+
+    @Operation(
             summary = "상품 삭제",
             description = "관리자가 상품을 삭제합니다."
     )
@@ -62,9 +85,13 @@ public interface AdminProductApi {
     })
     @DeleteMapping("/{productId}")
     ApiResponse<Void> deleteProduct(
+            @Parameter(hidden = true)
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+
             @Parameter(description = "상품 ID (UUID)", required = true)
             @PathVariable UUID productId
     );
+
 
     @Operation(
             summary = "상품 옵션 등록",
@@ -111,6 +138,9 @@ public interface AdminProductApi {
     })
     @DeleteMapping("/{productId}/options/{optionId}")
     ApiResponse<Void> deleteProductOption(
+            @Parameter(hidden = true)
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+
             @Parameter(description = "상품 ID (UUID)", required = true)
             @PathVariable UUID productId,
 

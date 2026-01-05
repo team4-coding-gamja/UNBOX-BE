@@ -25,7 +25,7 @@ public class JwtUtil {
         log.info("[JWTUtil] JWT secretKey 생성: {}", secretKey);
     }
 
-    // ✅ [추가] 토큰에서 userId(PK) 추출 메서드
+    // ✅ 토큰에서 userId / adminId 추출 메서드
     public Long getUserId(String token) {
         log.info("[JWTUtil/getUserId] 토큰에서 userId 추출 시도");
 
@@ -44,6 +44,21 @@ public class JwtUtil {
         }
 
         return userId;
+    }
+
+    public Long getAdminId(String token) {
+        Long adminId = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("adminId", Long.class);
+
+        if (adminId == null) {
+            log.error("[JWTUtil/getAdminId] 토큰에 'adminId' Claim이 존재하지 않습니다.");
+            throw new IllegalArgumentException("토큰에 adminId 정보가 없습니다.");
+        }
+        return adminId;
     }
 
     // 토큰에서 username 추출
@@ -115,7 +130,7 @@ public class JwtUtil {
                 .before(new Date());
     }
 
-    // 새로운 JWT 생성 (email, role, 만료 시간 지정)
+    // 사용자 - 새로운 JWT 생성 (email, role, 만료 시간 지정)
     public String createAccessToken(Long userId, String email, String role, Long expiredMs) {
         log.info("[JWTUtil/createJwt] 새로운 JWT 생성, username: {}, role: {}, 만료 시간(ms): {}", email, role, expiredMs);
         return Jwts.builder()
@@ -128,7 +143,6 @@ public class JwtUtil {
                 .compact(); // 토큰 생성 및 반환
     }
 
-    // Refresh Token
     public String createRefreshToken(Long userId, String email, String role, Long expiredMs) {
         log.info("[JWTUtil/createRefreshToken] 새로운 리프레시 토큰 생성, email: {}, 만료 시간(ms): {}", email, expiredMs);
         return Jwts.builder()
@@ -140,4 +154,28 @@ public class JwtUtil {
                 .signWith(secretKey)
                 .compact();
     }
+
+    // 관리자 - 새로운 JWT 생성 (email, role, 만료 시간 지정)
+    public String createAdminAccessToken(Long adminId, String email, String role, Long expiredMs) {
+        return Jwts.builder()
+                .claim("adminId", adminId)
+                .claim("email", email)
+                .claim("role", role)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiredMs))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String createAdminRefreshToken(Long adminId, String email, String role, Long expiredMs) {
+        return Jwts.builder()
+                .claim("adminId", adminId)
+                .claim("email", email)
+                .claim("role", role)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + expiredMs))
+                .signWith(secretKey)
+                .compact();
+    }
+
 }

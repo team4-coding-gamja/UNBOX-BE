@@ -33,10 +33,8 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
     // ✅ 삭제되지 않은 관리자 전체 목록 조회
     Page<Admin> findAllByDeletedAtIsNull(Pageable pageable);
 
-    Optional<Admin> findByIdAndDeletedAtIsNull(Long id);
-
     // ✅ 삭제되지 않은 특정 관리자 단건 조회
-    Optional<Admin> findByIdAndDeletedAtIsNullAndDeletedAtIsNull(Long id);
+    Optional<Admin> findByIdAndDeletedAtIsNull(Long id);
 
     // ✅ 삭제되지 않은 특정 역할 목록 조회(여러 역할)
     Page<Admin> findAllByAdminRoleInAndDeletedAtIsNull(List<AdminRole> roles, Pageable pageable);

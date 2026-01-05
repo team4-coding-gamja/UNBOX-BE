@@ -41,6 +41,6 @@ public class UserController implements UserApi {
     public CustomApiResponse<String> deleteUserMe(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         userService.deleteUserMe(userDetails.getUserId());
-        return CustomApiResponse.successWithNoData();
+        return CustomApiResponse.success(null);
     }
 }

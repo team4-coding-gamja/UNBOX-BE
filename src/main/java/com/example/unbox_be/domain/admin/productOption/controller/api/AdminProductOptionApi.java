@@ -42,7 +42,7 @@ public interface AdminProductOptionApi {
     @GetMapping
     CustomApiResponse<Page<AdminProductOptionListResponseDto>> getProductOptions(
             @Parameter(description = "상품 ID (UUID) - 특정 상품의 옵션만 조회할 때 사용")
-            @RequestParam(required = false) UUID productId,
+            @PathVariable UUID productId,
 
             @Parameter(hidden = true)
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable

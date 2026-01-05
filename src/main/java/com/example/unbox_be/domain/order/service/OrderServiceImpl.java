@@ -98,7 +98,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Repository에서 EntityGraph 등을 활용해 조회
-        return orderRepository.findAllByBuyerId(buyerId, pageable)
+        return orderRepository.findAllByBuyerIdAndDeletedAtIsNull(buyerId, pageable)
                 .map(orderMapper::toResponseDto); // Static Method Reference
     }
 

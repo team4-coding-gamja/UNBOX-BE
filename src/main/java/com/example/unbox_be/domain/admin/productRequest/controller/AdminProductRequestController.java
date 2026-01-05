@@ -35,8 +35,10 @@ public class AdminProductRequestController implements AdminProductRequestApi {
 
     // ✅ 상품 요청 상태 변경
     @PutMapping("/{productRequestId}")
-    public CustomApiResponse<AdminProductRequestUpdateResponseDto> updateProductRequestStatus(UUID id, AdminProductRequestUpdateRequestDto requestDto) {
-        AdminProductRequestUpdateResponseDto result = adminProductRequestService.updateProductRequestStatus(id, requestDto);
+    public CustomApiResponse<AdminProductRequestUpdateResponseDto> updateProductRequestStatus(
+            @PathVariable UUID productRequestId,
+            @RequestBody AdminProductRequestUpdateRequestDto requestDto) {
+        AdminProductRequestUpdateResponseDto result = adminProductRequestService.updateProductRequestStatus(productRequestId, requestDto);
         return CustomApiResponse.success(result);
     }
 }

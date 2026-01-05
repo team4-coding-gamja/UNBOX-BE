@@ -29,7 +29,7 @@ public class AdminProductOptionController implements AdminProductOptionApi {
     // ✅ 상품 옵션 목록 조회
     @GetMapping
     public CustomApiResponse<Page<AdminProductOptionListResponseDto>> getProductOptions(
-            @RequestParam(required = false) UUID productId,
+            @PathVariable UUID productId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Pageable limited = PageSizeLimiter.limit(pageable);
         return CustomApiResponse.success(adminProductService.getProductOptions(productId, limited));

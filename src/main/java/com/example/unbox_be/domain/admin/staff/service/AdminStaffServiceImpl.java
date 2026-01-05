@@ -67,7 +67,7 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('MASTER')")
     public AdminStaffDetailResponseDto getAdminStaffDetail(Long targetAdminId) {
-        Admin admin = adminRepository.findByIdAndDeletedAtIsNullAndDeletedAtIsNull(targetAdminId)
+        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(targetAdminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
         return adminStaffMapper.toAdminStaffDetailResponseDto(admin);
@@ -78,7 +78,7 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @Transactional
     @PreAuthorize("hasRole('MASTER')")
     public AdminStaffUpdateResponseDto updateAdminStaff(Long targetAdminId, AdminStaffUpdateRequestDto requestDto) {
-        Admin admin = adminRepository.findByIdAndDeletedAtIsNullAndDeletedAtIsNull(targetAdminId)
+        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(targetAdminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
         admin.updateAdmin(requestDto.getNickname(), requestDto.getPhone());
@@ -91,7 +91,7 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @PreAuthorize("hasRole('MASTER')")
     public void deleteAdmin(Long adminId, String deletedBy) {
 
-        Admin admin = adminRepository.findByIdAndDeletedAtIsNullAndDeletedAtIsNull(adminId)
+        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
         admin.softDelete(deletedBy);
@@ -102,7 +102,7 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('MASTER','MANAGER','INSPECTOR')")
     public AdminMeResponseDto getAdminMe(Long adminId) {
-        Admin admin = adminRepository.findByIdAndDeletedAtIsNullAndDeletedAtIsNull(adminId)
+        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
         return adminStaffMapper.toAdminMeResponseDto(admin);
@@ -113,7 +113,7 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @Transactional
     @PreAuthorize("hasAnyRole('MASTER','MANAGER','INSPECTOR')")
     public AdminMeUpdateResponseDto updateAdminMe(Long adminId, AdminMeUpdateRequestDto adminUpdateRequestDto) {
-        Admin admin = adminRepository.findByIdAndDeletedAtIsNullAndDeletedAtIsNull(adminId)
+        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
         admin.updateAdmin(

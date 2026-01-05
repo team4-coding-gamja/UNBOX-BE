@@ -43,5 +43,13 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
             @Param("status") SellingStatus status
     );
 
+    @Query("""
+        select sb.productOption.id, min(sb.price)
+        from SellingBid sb
+        where sb.productOption.id in :optionIds
+        group by sb.productOption.id
+    """)
+    List<Object[]> findLowestPriceByOptionIds(List<UUID> optionIds);
+
     Optional<SellingBid> findBySellingId(UUID sellingId);
 }

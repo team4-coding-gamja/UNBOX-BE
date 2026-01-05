@@ -115,13 +115,13 @@ INSERT INTO p_users (
     id, created_at, updated_at, deleted_at,
     email, password, nickname, phone, created_by, updated_by, deleted_by
 ) VALUES
-(1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'user@unbox.com', '{noop}12341234!', 'user1', '010-9999-8888', 'system', 'system', NULL),
-(2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'buyer1@unbox.com', '{noop}12341234!', 'buyer1', '010-1000-0001', 'system', 'system', NULL),
-(3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'buyer2@unbox.com', '{noop}12341234!', 'buyer2', '010-1000-0002', 'system', 'system', NULL),
-(4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'buyer3@unbox.com', '{noop}12341234!', 'buyer3', '010-1000-0003', 'system', 'system', NULL),
-(5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'seller1@unbox.com', '{noop}12341234!', 'seller1', '010-2000-0001', 'system', 'system', NULL),
-(6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'seller2@unbox.com', '{noop}12341234!', 'seller2', '010-2000-0002', 'system', 'system', NULL),
-(7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'seller3@unbox.com', '{noop}12341234!', 'seller3', '010-2000-0003', 'system', 'system', NULL);
+(1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'user@unbox.com', '$2a$12$Fu11YxI5NCSBY8g6Nrr0rO/rzKCYIDN4ZbS64arRzr8xJLNpP8lQm', 'user1', '010-9999-8888', 'system', 'system', NULL),
+(2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'buyer1@unbox.com', '$2a$12$Fu11YxI5NCSBY8g6Nrr0rO/rzKCYIDN4ZbS64arRzr8xJLNpP8lQm', 'buyer1', '010-1000-0001', 'system', 'system', NULL),
+(3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'buyer2@unbox.com', '$2a$12$Fu11YxI5NCSBY8g6Nrr0rO/rzKCYIDN4ZbS64arRzr8xJLNpP8lQm', 'buyer2', '010-1000-0002', 'system', 'system', NULL),
+(4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'buyer3@unbox.com', '$2a$12$Fu11YxI5NCSBY8g6Nrr0rO/rzKCYIDN4ZbS64arRzr8xJLNpP8lQm', 'buyer3', '010-1000-0003', 'system', 'system', NULL),
+(5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'seller1@unbox.com', '$2a$12$Fu11YxI5NCSBY8g6Nrr0rO/rzKCYIDN4ZbS64arRzr8xJLNpP8lQm', 'seller1', '010-2000-0001', 'system', 'system', NULL),
+(6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'seller2@unbox.com', '$2a$12$Fu11YxI5NCSBY8g6Nrr0rO/rzKCYIDN4ZbS64arRzr8xJLNpP8lQm', 'seller2', '010-2000-0002', 'system', 'system', NULL),
+(7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 'seller3@unbox.com', '$2a$12$Fu11YxI5NCSBY8g6Nrr0rO/rzKCYIDN4ZbS64arRzr8xJLNpP8lQm', 'seller3', '010-2000-0003', 'system', 'system', NULL);
 
 
 -- =========================

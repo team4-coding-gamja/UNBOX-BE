@@ -1,8 +1,10 @@
 package com.example.unbox_be.domain.admin.brand.service;
 
 import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandCreateRequestDto;
+import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandUpdateRequestDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandCreateResponseDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandListResponseDto;
+import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandUpdateResponseDto;
 import com.example.unbox_be.domain.admin.brand.mapper.AdminBrandMapper;
 import com.example.unbox_be.domain.admin.common.entity.Admin;
 import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
@@ -28,7 +30,7 @@ public class AdminBrandServiceImpl implements AdminBrandService {
     private final BrandRepository brandRepository;
     private final AdminBrandMapper adminBrandMapper;
 
-    // ✅ 브랜드 조회
+    // ✅ 브랜드 목록 조회
     @Override
     @Transactional(readOnly = true)
     public Page<AdminBrandListResponseDto> getBrands(String keyword, Pageable pageable) {
@@ -59,6 +61,34 @@ public class AdminBrandServiceImpl implements AdminBrandService {
         );
         Brand savedBrand = brandRepository.save(brand);
         return adminBrandMapper.toAdminBrandCreateResponseDto(savedBrand);
+    }
+
+    // ✅ 브랜드 수정
+    @Override
+    @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public AdminBrandUpdateResponseDto updateBrand(UUID brandId, AdminBrandUpdateRequestDto requestDto) {
+
+        Brand brand = brandRepository.findById(brandId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BRAND_NOT_FOUND));
+
+        if (brand.getDeletedAt() != null) {
+            throw new CustomException(ErrorCode.BRAND_NOT_FOUND);
+        }
+
+        if (requestDto.getName() != null && !requestDto.getName().trim().isEmpty()) {
+            String newName = requestDto.getName().trim();
+            if (brandRepository.existsByNameAndIdNot(newName, brandId)) {
+                throw new CustomException(ErrorCode.BRAND_ALREADY_EXISTS);
+            }
+            brand.updateName(newName);
+        }
+
+        if (requestDto.getLogoUrl() != null) {
+            brand.updateLogoUrl(requestDto.getLogoUrl());
+        }
+
+        return adminBrandMapper.toAdminBrandUpdateResponseDto(brand);
     }
 
     // ✅ 브랜드 삭제

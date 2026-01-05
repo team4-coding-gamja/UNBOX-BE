@@ -22,7 +22,8 @@ public interface BrandRepository extends JpaRepository<Brand, UUID> {
     select b
     from Brand b
     where lower(b.name) like lower(concat('%', :keyword, '%'))
-""")
+    """)
     Page<Brand> searchByName(@Param("keyword") String keyword, Pageable pageable);
 
+    boolean existsByNameAndIdNot(String name, UUID id);
 }

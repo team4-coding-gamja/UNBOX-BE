@@ -2,8 +2,10 @@ package com.example.unbox_be.domain.admin.brand.controller;
 
 import com.example.unbox_be.domain.admin.brand.controller.api.AdminBrandApi;
 import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandCreateRequestDto;
+import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandUpdateRequestDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandCreateResponseDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandListResponseDto;
+import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandUpdateResponseDto;
 import com.example.unbox_be.domain.admin.brand.service.AdminBrandService;
 import com.example.unbox_be.global.pagination.PageSizeLimiter;
 import com.example.unbox_be.global.response.ApiResponse;
@@ -41,6 +43,14 @@ public class AdminBrandController implements AdminBrandApi {
     public ApiResponse<AdminBrandCreateResponseDto> createBrand(
             @RequestBody @Valid AdminBrandCreateRequestDto requestDto) {
         AdminBrandCreateResponseDto result = adminBrandService.createBrand(requestDto);
+        return ApiResponse.success(result);
+    }
+
+    @PatchMapping("/{brandId}")
+    public ApiResponse<AdminBrandUpdateResponseDto> updateBrand(
+            @PathVariable UUID brandId,
+            @RequestBody @Valid AdminBrandUpdateRequestDto requestDto) {
+        AdminBrandUpdateResponseDto result = adminBrandService.updateBrand(brandId, requestDto);
         return ApiResponse.success(result);
     }
 

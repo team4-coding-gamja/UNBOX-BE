@@ -1,8 +1,10 @@
 package com.example.unbox_be.domain.admin.brand.controller.api;
 
 import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandCreateRequestDto;
+import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandUpdateRequestDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandCreateResponseDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandListResponseDto;
+import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandUpdateResponseDto;
 import com.example.unbox_be.global.response.ApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -86,6 +88,46 @@ public interface AdminBrandApi {
     @PostMapping
     ApiResponse<AdminBrandCreateResponseDto> createBrand(
             @RequestBody @Valid AdminBrandCreateRequestDto requestDto
+    );
+
+    @Operation(
+            summary = "브랜드 수정",
+            description = "관리자가 브랜드 정보를 수정합니다. (MASTER, MANAGER 가능) - PATCH"
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "브랜드 수정 성공",
+                    content = @Content(schema = @Schema(implementation = AdminBrandUpdateResponseDto.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "요청 값 검증 실패 / 이미 존재하는 브랜드",
+                    content = @Content
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "인증 실패",
+                    content = @Content
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "403",
+                    description = "권한 없음",
+                    content = @Content
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "브랜드를 찾을 수 없음",
+                    content = @Content
+            )
+    })
+    @PatchMapping("/{brandId}")
+    ApiResponse<AdminBrandUpdateResponseDto> updateBrand(
+
+            @Parameter(description = "브랜드 ID", example = "e7b7a8f9-1b2c-4d5e-8f90-123456789abc")
+            @PathVariable UUID brandId,
+
+            @RequestBody @Valid AdminBrandUpdateRequestDto requestDto
     );
 
     @Operation(

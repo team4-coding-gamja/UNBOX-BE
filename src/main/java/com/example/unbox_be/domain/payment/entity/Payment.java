@@ -40,6 +40,9 @@ public class Payment extends BaseEntity {
     @Column(name = "captured_at")
     private LocalDateTime capturedAt;
 
+    @Version
+    private Long version;
+
     public void completePayment(String pgPaymentKey) {
         this.pgPaymentReceiptKey = pgPaymentKey;
         this.status = PaymentStatus.DONE;

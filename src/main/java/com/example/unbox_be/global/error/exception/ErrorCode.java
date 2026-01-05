@@ -71,10 +71,10 @@ public enum ErrorCode {
 
     //결제
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"결제 정보를 찾을 수 없습니다."),
-    PAYMENT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 결제가 진행중인 주문입니다"),
+    PAYMENT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 결제가 진행중인 주문입니다."),
     NOT_SELF_ORDER_PAYMENT(HttpStatus.FORBIDDEN, "본인의 구매 주문만 결제할 수 있습니다."),
     PG_PROCESSED_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 완료된 결제 내용입니다."),
-    NOT_SELF_PG_TRANSACTION(HttpStatus.FORBIDDEN, "본인의 PG결제만 진행할 수 있습니다");
+    NOT_SELF_PG_TRANSACTION(HttpStatus.FORBIDDEN, "본인의 PG결제만 진행할 수 있습니다.");
     private final HttpStatus status;
     private final String message;
 }

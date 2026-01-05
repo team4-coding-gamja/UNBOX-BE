@@ -6,6 +6,7 @@ import com.example.unbox_be.domain.payment.dto.response.PaymentReadyResponseDto;
 import com.example.unbox_be.domain.payment.service.PaymentService;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,7 @@ public class PaymentController {
     @PostMapping("/ready")
     public ResponseEntity<PaymentReadyResponseDto> createPayment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody PaymentCreateRequestDto request
+            @RequestBody @Valid PaymentCreateRequestDto request
     ) {
         PaymentReadyResponseDto response = paymentService.createPayment(
                 userDetails.getUserId(),
@@ -51,7 +52,7 @@ public class PaymentController {
     @PostMapping("/confirm")
     public ResponseEntity<Void> confirmPayment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody PaymentConfirmRequestDto request
+            @RequestBody @Valid PaymentConfirmRequestDto request
     ) {
         paymentService.confirmPayment(
                 userDetails.getUserId(),

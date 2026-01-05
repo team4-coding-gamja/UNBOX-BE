@@ -15,6 +15,7 @@ import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,8 @@ public class PaymentTransactionService {
     private final PgTransactionRepository pgTransactionRepository; // 추가
     private final SellingBidService sellingBidService;
     private final OrderRepository orderRepository;
+    @Value("${payment.toss.seller-key:MOCK_SELLER_KEY_TEST}")
+    private String pgSellerKey;
 
     @Transactional
     public void processSuccessfulPayment(UUID paymentId, TossConfirmResponse response, String paymentKeyFromFront) {
@@ -64,7 +67,7 @@ public class PaymentTransactionService {
                 .rawPayload(response.getRawJson()) // 전체 응답값 저장
                 .eventAmount(response.getTotalAmount().intValue())
                 .pgProvider(response.getMethod())
-                .pgSellerKey("MOCK_SELLER_KEY_TEST")
+                .pgSellerKey(pgSellerKey)
                 .build();
         pgTransactionRepository.save(transaction);
     }

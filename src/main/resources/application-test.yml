@@ -2,9 +2,9 @@ spring:
   profiles:
     active: test
     
-  # 서버 포트 설정 (8080이 사용 중일 때)
+  # 서버 포트 설정 (8080이 사용 중일 때 8081로 바꾸기)
   server:
-    port: 8081
+    port: 8080
     
   # H2 인메모리 데이터베이스 (테스트용)
   datasource:

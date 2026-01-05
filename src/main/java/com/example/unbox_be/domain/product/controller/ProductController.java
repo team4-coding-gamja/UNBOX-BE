@@ -1,6 +1,7 @@
 package com.example.unbox_be.domain.product.controller;
 
 import com.example.unbox_be.domain.product.controller.api.ProductApi;
+import com.example.unbox_be.domain.product.dto.response.BrandListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductDetailResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductOptionListResponseDto;
@@ -46,5 +47,11 @@ public class ProductController implements ProductApi {
             @PathVariable UUID productId) {
         List<ProductOptionListResponseDto> result = productService.getProductOptions(productId);
         return ApiResponse.success(result);
+    }
+
+    // ✅ 브랜드 전체 조회
+    @GetMapping("/brands")
+    public ApiResponse<List<BrandListResponseDto>> getAllBrands() {
+        return ApiResponse.success(productService.getAllBrands());
     }
 }

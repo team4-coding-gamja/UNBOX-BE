@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.product.service;
 
+import com.example.unbox_be.domain.product.dto.response.BrandListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductDetailResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductOptionListResponseDto;
@@ -16,4 +17,6 @@ public interface ProductService {
     ProductDetailResponseDto getProductDetail(UUID productId);
 
     List<ProductOptionListResponseDto> getProductOptions(UUID productId);
+
+    List<BrandListResponseDto> getAllBrands();
 }

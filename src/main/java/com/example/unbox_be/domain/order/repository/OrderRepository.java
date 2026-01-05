@@ -17,4 +17,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     // 주문 상세 조회 (N+1 방지 + 권한 검증을 위해 Buyer, Seller까지 모두 Fetch Join)
     @EntityGraph(attributePaths = {"buyer", "seller", "productOption", "productOption.product", "productOption.product.brand"})
     Optional<Order> findWithDetailsById(UUID id);
+
+
 }

@@ -34,7 +34,7 @@ public class Payment extends BaseEntity {
     private String pgPaymentReceiptKey;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     private PaymentStatus status;
 
     @Column(name = "captured_at")

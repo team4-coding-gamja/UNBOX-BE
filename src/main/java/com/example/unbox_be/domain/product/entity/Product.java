@@ -53,14 +53,14 @@ public class Product extends BaseEntity {
     }
 
     public void update(String name, String modelNumber, Category category, String imageUrl) {
-        this.name = name;
-        this.modelNumber = modelNumber;
-        this.category = category;
-        this.imageUrl = imageUrl;
         validateName(name);
         validateModelNumber(modelNumber);
         validateCategory(category);
         validateImageUrl(imageUrl);
+        this.name = name;
+        this.modelNumber = modelNumber;
+        this.category = category;
+        this.imageUrl = imageUrl;
     }
 
     // 유효성 검증 메서드

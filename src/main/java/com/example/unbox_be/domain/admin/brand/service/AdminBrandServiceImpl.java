@@ -33,6 +33,7 @@ public class AdminBrandServiceImpl implements AdminBrandService {
     // ✅ 브랜드 목록 조회
     @Override
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public Page<AdminBrandListResponseDto> getBrands(String keyword, Pageable pageable) {
 
         Page<Brand> page;

@@ -80,14 +80,24 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String email = userDetails.getUsername();
-        Long userId = userDetails.getUserId();
-        log.info("[LoginFilter/successfulAuthentication] 3. 인증된 사용자 정보 가져오기: {}", email);
+
+        // User인지 Admin인지 확인하여 올바른 ID 추출
+        Long id;
+        if (userDetails.isAdmin()) {
+            id = userDetails.getAdminId(); // Admin이면 adminId 사용
+        } else {
+            id = userDetails.getUserId();  // User면 userId 사용
+        }
+
+        log.info("[LoginFilter/successfulAuthentication] 3. 인증된 사용자 정보 가져오기: email={}, id={}", email, id);
 
         String role = authentication.getAuthorities().iterator().next().getAuthority();
         log.info("[LoginFilter/successfulAuthentication] 4. 인증된 사용자 권한 가져오기: {}", role);
 
-        String access = jwtUtil.createAccessToken(userId, email, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
-        String refresh = jwtUtil.createRefreshToken(userId, email, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
+        // createAccessToken의 첫 번째 인자는 "userId"라는 클레임 키에 저장되지만,
+        // 실제로는 "User 혹은 Admin의 PK" 역할을 합니다.
+        String access = jwtUtil.createAccessToken(id, email, role, JwtConstants.ACCESS_TOKEN_EXPIRE_MS);
+        String refresh = jwtUtil.createRefreshToken(id, email, role, JwtConstants.REFRESH_TOKEN_EXPIRE_MS);
         log.info("[LoginFilter/successfulAuthentication] 5. JWT 토큰 생성 - Access: {}, Refresh: {}", access, refresh);
 
         // Redis에 Refresh 저장
@@ -110,6 +120,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         // 바디(JSON)
         UserTokenResponseDto dto = UserTokenResponseDto.builder()
                 .accessToken(access)
+                .role(role)
                 .build();
         log.info("[LoginFilter/successfulAuthentication] 8. JWT TokenDTO 생성 완료: {}", dto);
 

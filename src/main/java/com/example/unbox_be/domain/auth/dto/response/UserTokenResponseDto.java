@@ -13,4 +13,5 @@ public class UserTokenResponseDto {
 
     private String accessToken;  // 액세스 토큰
     private String refreshToken; // 리프레시 토큰
+    private String role;         // 유저 권한 (ROLE_USER, ROLE_MASTER, etc.)
 }

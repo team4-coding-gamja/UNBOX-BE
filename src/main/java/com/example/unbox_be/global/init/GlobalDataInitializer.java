@@ -54,6 +54,16 @@ public class GlobalDataInitializer implements ApplicationRunner {
                 "user1",
                 "010-9999-8888"
         );
+        
+        // Buyers
+        initUserIfNotExists("buyer1@unbox.com", "buyer1", "010-1000-0001");
+        initUserIfNotExists("buyer2@unbox.com", "buyer2", "010-1000-0002");
+        initUserIfNotExists("buyer3@unbox.com", "buyer3", "010-1000-0003");
+
+        // Sellers
+        initUserIfNotExists("seller1@unbox.com", "seller1", "010-2000-0001");
+        initUserIfNotExists("seller2@unbox.com", "seller2", "010-2000-0002");
+        initUserIfNotExists("seller3@unbox.com", "seller3", "010-2000-0003");
 
     }
 

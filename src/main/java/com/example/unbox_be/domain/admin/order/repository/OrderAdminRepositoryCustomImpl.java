@@ -29,6 +29,7 @@ public class OrderAdminRepositoryCustomImpl implements OrderAdminRepositoryCusto
     public Page<Order> findAdminOrders(OrderSearchCondition condition, Pageable pageable) {
         List<Order> content = queryFactory
                 .selectFrom(order)
+                .leftJoin(order.buyer).fetchJoin()
                 .leftJoin(order.productOption, productOption).fetchJoin()
                 .leftJoin(productOption.product, product).fetchJoin()
                 .leftJoin(product.brand, brand).fetchJoin()
@@ -71,9 +72,6 @@ public class OrderAdminRepositoryCustomImpl implements OrderAdminRepositoryCusto
     }
 
     private BooleanExpression buyerNameContains(String buyerName) {
-        // Buyer fetch join logic might be needed if buyer is not joined.
-        // Assuming buyer relation exists. If lazy loaded, might trigger N+1 if not careful,
-        // but here we are just filtering.
         // Wait, Order -> Buyer relationship exists.
         return buyerName != null ? order.buyer.nickname.containsIgnoreCase(buyerName) : null;
     }

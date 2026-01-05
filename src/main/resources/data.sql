@@ -21,7 +21,7 @@ INSERT INTO p_products (
     name, model_number, image_url,
     created_by, updated_by, deleted_by,
     category
-) VALUES
+) VALUES    
       -- NIKE 3개
       ('aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111',
        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL,
@@ -105,3 +105,63 @@ INSERT INTO p_product_options (
       ('bbbb0000-0000-0000-0000-00000000000d', 'bbbbbbbb-0000-0000-0000-000000000003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, '250', 'system', 'system', NULL),
       ('bbbb0000-0000-0000-0000-00000000000e', 'bbbbbbbb-0000-0000-0000-000000000003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, '255', 'system', 'system', NULL),
       ('bbbb0000-0000-0000-0000-00000000000f', 'bbbbbbbb-0000-0000-0000-000000000003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, '260', 'system', 'system', NULL);
+-- =========================
+-- Orders (주문 데이터 - 실제 서비스 상태 흐름 반영)
+-- user_id: 위에서 생성한 Long ID (2: buyer1, 3: buyer2, 4: buyer3)
+-- =========================
+
+-- 1. PENDING_SHIPMENT (발송 대기) - Buyer1 (ID: 2)
+INSERT INTO p_orders (
+    order_id, created_at, updated_at, deleted_at,
+    user_id, product_option_id, status, total_amount, shipping_address, created_by, updated_by, deleted_by
+) VALUES
+('cccccccc-0000-0000-0000-000000000001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, 2, 'aaaa0000-0000-0000-0000-000000000003', 'PENDING_SHIPMENT', 150000, '서울시 강남구 테헤란로 123', 'system', 'system', NULL);
+
+-- 2. SHIPPED_TO_CENTER (센터로 발송됨 - 운송장 있음) - Buyer2 (ID: 3)
+INSERT INTO p_orders (
+    order_id, created_at, updated_at, deleted_at,
+    user_id, product_option_id, status, total_amount, shipping_address, tracking_number, created_by, updated_by, deleted_by
+) VALUES
+('cccccccc-0000-0000-0000-000000000002', CURRENT_TIMESTAMP - INTERVAL '1' DAY, CURRENT_TIMESTAMP, NULL, 3, 'aaaa0000-0000-0000-0000-000000000006', 'SHIPPED_TO_CENTER', 130000, '경기도 성남시 분당구 판교역로 456', 'S-TRACK-001', 'system', 'system', NULL);
+
+-- 3. IN_INSPECTION (검수 중 - 센터 도착 완료) - Buyer3 (ID: 4)
+INSERT INTO p_orders (
+    order_id, created_at, updated_at, deleted_at,
+    user_id, product_option_id, status, total_amount, shipping_address, tracking_number, created_by, updated_by, deleted_by
+) VALUES
+('cccccccc-0000-0000-0000-000000000003', CURRENT_TIMESTAMP - INTERVAL '2' DAY, CURRENT_TIMESTAMP, NULL, 4, 'bbbb0000-0000-0000-0000-000000000001', 'IN_INSPECTION', 120000, '서울시 서초구 서초대로 777', 'S-TRACK-002', 'system', 'system', NULL);
+
+-- 4. INSPECTION_PASSED (검수 합격 - 사용자 발송 준비) - Buyer1 (ID: 2)
+INSERT INTO p_orders (
+    order_id, created_at, updated_at, deleted_at,
+    user_id, product_option_id, status, total_amount, shipping_address, tracking_number, created_by, updated_by, deleted_by
+) VALUES
+('cccccccc-0000-0000-0000-000000000004', CURRENT_TIMESTAMP - INTERVAL '3' DAY, CURRENT_TIMESTAMP, NULL, 2, 'bbbb0000-0000-0000-0000-000000000006', 'INSPECTION_PASSED', 125000, '부산시 해운대구', 'S-TRACK-003', 'system', 'system', NULL);
+
+-- 5. SHIPPED_TO_BUYER (구매자에게 배송 중) - Buyer2 (ID: 3)
+INSERT INTO p_orders (
+    order_id, created_at, updated_at, deleted_at,
+    user_id, product_option_id, status, total_amount, shipping_address, tracking_number, created_by, updated_by, deleted_by
+) VALUES
+('cccccccc-0000-0000-0000-000000000005', CURRENT_TIMESTAMP - INTERVAL '4' DAY, CURRENT_TIMESTAMP, NULL, 3, 'aaaa0000-0000-0000-0000-00000000000e', 'SHIPPED_TO_BUYER', 180000, '대구시 수성구', 'B-TRACK-001', 'system', 'system', NULL);
+
+-- 6. DELIVERED (배송 완료) - Buyer3 (ID: 4)
+INSERT INTO p_orders (
+    order_id, created_at, updated_at, deleted_at,
+    user_id, product_option_id, status, total_amount, shipping_address, tracking_number, created_by, updated_by, deleted_by
+) VALUES
+('cccccccc-0000-0000-0000-000000000006', CURRENT_TIMESTAMP - INTERVAL '5' DAY, CURRENT_TIMESTAMP, NULL, 4, 'bbbb0000-0000-0000-0000-00000000000b', 'DELIVERED', 110000, '광주시 서구', 'B-TRACK-002', 'system', 'system', NULL);
+
+-- 7. COMPLETED (거래 완료 - 구매 확정) - Buyer1 (ID: 2)
+INSERT INTO p_orders (
+    order_id, created_at, updated_at, deleted_at,
+    user_id, product_option_id, status, total_amount, shipping_address, tracking_number, created_by, updated_by, deleted_by
+) VALUES
+('cccccccc-0000-0000-0000-000000000007', CURRENT_TIMESTAMP - INTERVAL '10' DAY, CURRENT_TIMESTAMP, NULL, 2, 'bbbb0000-0000-0000-0000-00000000000f', 'COMPLETED', 140000, '서울시 송파구', 'B-TRACK-003', 'system', 'system', NULL);
+
+-- 8. CANCELLED (주문 취소) - Buyer2 (ID: 3)
+INSERT INTO p_orders (
+    order_id, created_at, updated_at, deleted_at,
+    user_id, product_option_id, status, total_amount, shipping_address, created_by, updated_by, deleted_by
+) VALUES
+('cccccccc-0000-0000-0000-000000000008', CURRENT_TIMESTAMP - INTERVAL '1' DAY, CURRENT_TIMESTAMP, NULL, 3, 'aaaa0000-0000-0000-0000-000000000001', 'CANCELLED', 150000, '인천시 연수구', 'system', 'system', NULL);

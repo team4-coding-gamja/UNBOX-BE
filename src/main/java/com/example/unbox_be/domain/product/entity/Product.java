@@ -108,4 +108,20 @@ public class Product extends BaseEntity {
             throw new IllegalArgumentException("이미지 URL은 http 또는 https 형식이어야 합니다.");
         }
     }
+
+    public void addReviewData(int rating) {
+        this.reviewCount++;
+        this.totalScore += rating;
+    }
+    public void deleteReviewData(int rating) {
+        if (this.reviewCount > 0) {
+            this.reviewCount--;
+            this.totalScore -= rating;
+        }
+        if (this.totalScore < 0) this.totalScore = 0;
+    }
+    public void updateReviewData(int oldRating, int newRating) {
+        this.totalScore -= oldRating;
+        this.totalScore += newRating;
+    }
 }

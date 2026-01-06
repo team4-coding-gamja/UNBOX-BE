@@ -31,6 +31,12 @@ public class Product extends BaseEntity {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(columnDefinition = "integer default 0", nullable = false)
+    private int reviewCount = 0;
+
+    @Column(columnDefinition = "integer default 0", nullable = false)
+    private int totalScore = 0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id", nullable = false)
     private Brand brand;

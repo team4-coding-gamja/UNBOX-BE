@@ -3,6 +3,7 @@ package com.example.unbox_be.domain.admin.product.controller;
 import com.example.unbox_be.domain.admin.product.controller.api.AdminProductApi;
 import com.example.unbox_be.domain.admin.product.dto.request.AdminProductCreateRequestDto;
 import com.example.unbox_be.domain.admin.product.dto.request.AdminProductUpdateRequestDto;
+import com.example.unbox_be.domain.admin.product.dto.request.ProductSearchCondition;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductCreateResponseDto;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductListResponseDto;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductUpdateResponseDto;
@@ -31,12 +32,10 @@ public class AdminProductController implements AdminProductApi {
     // ✅ 상품 목록 조회 (검색 + 페이징)
     @GetMapping
     public CustomApiResponse<Page<AdminProductListResponseDto>> getProducts(
-            @RequestParam(required = false) UUID brandId,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String keyword,
+            @ModelAttribute ProductSearchCondition condition,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Pageable limited = PageSizeLimiter.limit(pageable);
-        return CustomApiResponse.success(adminProductService.getProducts(brandId, category, keyword, limited));
+        return CustomApiResponse.success(adminProductService.getProducts(condition, limited));
     }
 
     // ✅ 상품 등록

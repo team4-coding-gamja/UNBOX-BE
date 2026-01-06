@@ -2,6 +2,7 @@ package com.example.unbox_be.domain.admin.product.service;
 
 import com.example.unbox_be.domain.admin.product.dto.request.AdminProductCreateRequestDto;
 import com.example.unbox_be.domain.admin.product.dto.request.AdminProductUpdateRequestDto;
+import com.example.unbox_be.domain.admin.product.dto.request.ProductSearchCondition;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductCreateResponseDto;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductListResponseDto;
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductUpdateResponseDto;
@@ -37,10 +38,16 @@ public class AdminProductServiceImpl implements AdminProductService {
     @Override
     @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
-    public Page<AdminProductListResponseDto> getProducts(UUID brandId, String category, String keyword, Pageable pageable) {
+    public Page<AdminProductListResponseDto> getProducts(ProductSearchCondition condition, Pageable pageable) {
+
+        UUID brandId = condition.getBrandId();
+        String category = condition.getCategory();
+        String keyword = condition.getKeyword();
+
         Category categoryEnum = Category.fromNullable(category);
 
-        Page<Product> products = productRepository.findByFiltersAndDeletedAtIsNull(brandId, categoryEnum, keyword, pageable);
+        Page<Product> products =
+                productRepository.findByFiltersAndDeletedAtIsNull(brandId, categoryEnum, keyword, pageable);
 
         return products.map(adminProductMapper::toAdminProductListResponseDto);
     }

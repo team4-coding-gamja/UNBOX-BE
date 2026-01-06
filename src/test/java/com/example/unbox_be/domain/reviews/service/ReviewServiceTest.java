@@ -48,42 +48,42 @@ class ReviewServiceTest {
     @DisplayName("리뷰 생성 테스트")
     class CreateReview {
 
-//        @Test
-//        @DisplayName("성공: 모든 조건이 충족되면 리뷰가 정상적으로 생성된다.")
-//        void createReview_success() {
-//            // given
-//            Long userId = 1L;
-//            UUID orderId = UUID.randomUUID();
-//
-//            User buyer = mock(User.class);
-//            given(buyer.getId()).willReturn(userId);
-//
-//            Product product = mock(Product.class);
-//            given(product.getId()).willReturn(UUID.randomUUID());
-//
-//            ProductOption option = mock(ProductOption.class);
-//            given(option.getProduct()).willReturn(product);
-//
-//            Order order = mock(Order.class);
-//            given(order.getBuyer()).willReturn(buyer);
-//            given(order.getStatus()).willReturn(OrderStatus.COMPLETED);
-//            given(order.getProductOption()).willReturn(option);
-//
-//            ReviewRequestDto requestDto = new ReviewRequestDto(orderId, "최고예요!", 5, null);
-//
-//            given(orderRepository.findByIdAndDeletedAtIsNull(orderId)).willReturn(Optional.of(order));
-//            given(reviewRepository.existsByOrderId(orderId)).willReturn(false);
-//
-//            // NPE 방지: 저장 후 반환될 Mock 객체 설정
-//            Review mockReview = Review.builder().reviewId(UUID.randomUUID()).build();
-//            given(reviewRepository.save(any(Review.class))).willReturn(mockReview);
-//
-//            // when
-//            UUID resultId = reviewService.createReview(requestDto, userId);
-//
-//            // then
-//            assertThat(resultId).isEqualTo(mockReview.getReviewId());
-//        }
+        @Test
+        @DisplayName("성공: 모든 조건이 충족되면 리뷰가 정상적으로 생성된다.")
+        void createReview_success() {
+            // given
+            Long userId = 1L;
+            UUID orderId = UUID.randomUUID();
+
+            User buyer = mock(User.class);
+            given(buyer.getId()).willReturn(userId);
+
+            Product product = mock(Product.class);
+            given(product.getId()).willReturn(UUID.randomUUID());
+
+            ProductOption option = mock(ProductOption.class);
+            given(option.getProduct()).willReturn(product);
+
+            Order order = mock(Order.class);
+            given(order.getBuyer()).willReturn(buyer);
+            given(order.getStatus()).willReturn(OrderStatus.COMPLETED);
+            given(order.getProductOption()).willReturn(option);
+
+            ReviewRequestDto requestDto = new ReviewRequestDto(orderId, "최고예요!", 5, null);
+
+            given(orderRepository.findByIdAndDeletedAtIsNull(orderId)).willReturn(Optional.of(order));
+            given(reviewRepository.existsByOrderId(orderId)).willReturn(false);
+
+            // NPE 방지: 저장 후 반환될 Mock 객체 설정
+            Review mockReview = Review.builder().id(UUID.randomUUID()).build();
+            given(reviewRepository.save(any(Review.class))).willReturn(mockReview);
+
+            // when
+            UUID resultId = reviewService.createReview(requestDto, userId);
+
+            // then
+            assertThat(resultId).isEqualTo(mockReview.getId());
+        }
 
         @Test
         @DisplayName("실패: 주문 상태가 COMPLETED가 아니면 예외가 발생한다.")

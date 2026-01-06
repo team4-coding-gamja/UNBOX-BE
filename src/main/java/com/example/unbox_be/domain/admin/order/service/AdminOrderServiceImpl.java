@@ -1,18 +1,17 @@
 package com.example.unbox_be.domain.admin.order.service;
 
-import com.example.unbox_be.domain.admin.common.entity.Admin;
-import com.example.unbox_be.domain.admin.common.entity.AdminRole;
 import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
 import com.example.unbox_be.domain.admin.order.dto.OrderSearchCondition;
 import com.example.unbox_be.domain.admin.order.repository.AdminOrderRepository;
+import com.example.unbox_be.domain.order.dto.request.OrderStatusUpdateRequestDto;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
 import com.example.unbox_be.domain.order.entity.Order;
-import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.mapper.OrderMapper;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -30,51 +30,37 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     private final AdminRepository adminRepository;
     private final OrderMapper orderMapper;
 
+    // ✅ 관리자 주문 목록 조회 (검색 + 페이징)
     @Override
-    @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public Page<OrderResponseDto> getAdminOrders(OrderSearchCondition condition, Pageable pageable) {
         Page<Order> orders = adminOrderRepository.findAdminOrders(condition, pageable);
         return orders.map(orderMapper::toResponseDto);
     }
 
+    // ✅ 관리자 주문 상세 조회
     @Override
-    @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
-    public OrderDetailResponseDto getAdminOrderDetail(UUID orderId, Long adminId) {
-        // 관리자 존재 여부 확인
-        if (!adminRepository.existsById(adminId)) {
-            throw new CustomException(ErrorCode.ADMIN_NOT_FOUND);
-        }
+    public OrderDetailResponseDto getAdminOrderDetail(UUID orderId) {
+        Order order = adminOrderRepository.findWithDetailsById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
-        Order order = getOrderWithDetailsOrThrow(orderId);
         return orderMapper.toDetailResponseDto(order);
     }
 
+    // ✅ 관리자 주문 상태 변경
     @Override
     @Transactional
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
-    public OrderDetailResponseDto updateAdminStatus(UUID orderId, OrderStatus newStatus, String finalTrackingNumber, Long adminId) {
-        // 1. 관리자 조회
-        Admin admin = adminRepository.findById(adminId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+    public OrderDetailResponseDto updateAdminStatus(UUID orderId, OrderStatusUpdateRequestDto requestDto) {
+        Order order = adminOrderRepository.findWithDetailsById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
-        // 2. 권한 검증 (MASTER, INSPECTOR만 가능)
-        if (admin.getAdminRole() != AdminRole.ROLE_MASTER && admin.getAdminRole() != AdminRole.ROLE_INSPECTOR) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
-        }
-
-        // 3. 주문 조회
-        Order order = getOrderWithDetailsOrThrow(orderId);
-
-        // 4. 도메인 로직 호출 (Entity 내부에서 상태 전이 검증 수행)
-        order.updateAdminStatus(newStatus, finalTrackingNumber);
+        order.updateAdminStatus(
+                requestDto.getStatus(),
+                requestDto.getTrackingNumber()
+        );
 
         return orderMapper.toDetailResponseDto(order);
-    }
-
-    private Order getOrderWithDetailsOrThrow(UUID orderId) {
-        return adminOrderRepository.findWithDetailsById(orderId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
     }
 }

@@ -37,7 +37,6 @@ public class AdminOrderRepositoryCustomImpl implements AdminOrderRepositoryCusto
                         statusEq(condition.getStatus()),
                         productNameContains(condition.getProductName()),
                         brandNameContains(condition.getBrandName()),
-                        buyerNameContains(condition.getBuyerName()),
                         periodBetween(condition.getStartDate(), condition.getEndDate())
                 )
                 .offset(pageable.getOffset())
@@ -52,7 +51,6 @@ public class AdminOrderRepositoryCustomImpl implements AdminOrderRepositoryCusto
                         statusEq(condition.getStatus()),
                         productNameContains(condition.getProductName()),
                         brandNameContains(condition.getBrandName()),
-                        buyerNameContains(condition.getBuyerName()),
                         periodBetween(condition.getStartDate(), condition.getEndDate())
                 );
 
@@ -69,11 +67,6 @@ public class AdminOrderRepositoryCustomImpl implements AdminOrderRepositoryCusto
 
     private BooleanExpression brandNameContains(String brandName) {
         return brandName != null ? brand.name.containsIgnoreCase(brandName) : null;
-    }
-
-    private BooleanExpression buyerNameContains(String buyerName) {
-        // Wait, Order -> Buyer relationship exists.
-        return buyerName != null ? order.buyer.nickname.containsIgnoreCase(buyerName) : null;
     }
 
     private BooleanExpression periodBetween(java.time.LocalDate startDate, java.time.LocalDate endDate) {

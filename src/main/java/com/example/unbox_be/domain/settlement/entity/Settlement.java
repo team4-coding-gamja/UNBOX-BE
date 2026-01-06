@@ -14,6 +14,8 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor // 모든 필드를 인자로 받는 생성자 (빌더가 내부적으로 사용)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE p_settlements SET deleted_at = NOW() WHERE settlements_id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
 public class Settlement extends BaseEntity {
     @Id
     @Column(name = "settlements_id")

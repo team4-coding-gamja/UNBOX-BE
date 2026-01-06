@@ -3,24 +3,13 @@ package com.example.unbox_be.domain.user.mapper;
 import com.example.unbox_be.domain.user.dto.response.UserMeResponseDto;
 import com.example.unbox_be.domain.user.dto.response.UserMeUpdateResponseDto;
 import com.example.unbox_be.domain.user.entity.User;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
-public class UserMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface UserMapper {
 
-    public static UserMeResponseDto toUserMeResponseDto (User user) {
-        return UserMeResponseDto.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .phone(user.getPhone())
-                .build();
-    }
+    UserMeResponseDto toUserMeResponseDto(User user);
 
-    public static UserMeUpdateResponseDto toUserMeUpdateResponseDto (User user) {
-        return UserMeUpdateResponseDto.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .phone(user.getPhone())
-                .build();
-    }
+    UserMeUpdateResponseDto toUserMeUpdateResponseDto(User user);
 }

@@ -47,7 +47,6 @@ out/
 .env.test
 .env.mvp
 .env.prod
-.env.local
 .env.*.local
 
 

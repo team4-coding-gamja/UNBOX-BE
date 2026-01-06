@@ -70,10 +70,8 @@ module "compute" {
   security_group_id = module.security.ec2_sg_id     # EC2 전용 보안 그룹 사용
 }
 
-# Storage 모듈: S3 버킷 및 CloudFront 배포
-# - 이미지 저장용 S3 + CDN
-# - 로그 저장용 S3
-# - 프론트엔드 호스팅용 S3 + CDN
+# Storage 모듈: S3 버킷 (사용 안 함)
+# - 로그는 EC2에서 직접 Docker 로그로 확인
 module "storage" {
   source = "../../modules/storage"
   

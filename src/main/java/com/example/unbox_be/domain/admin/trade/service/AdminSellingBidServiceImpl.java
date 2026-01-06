@@ -43,7 +43,7 @@ public class AdminSellingBidServiceImpl implements AdminSellingBidService {
     @Transactional
     public void deleteSellingBid(UUID sellingId, String deletedBy) {
         SellingBid sellingBid = sellingBidRepository.findById(sellingId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
 
         sellingBid.softDelete(deletedBy);
     }

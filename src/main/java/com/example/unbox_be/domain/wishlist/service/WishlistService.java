@@ -77,6 +77,7 @@ public class WishlistService {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        wishlistRepository.delete(wishlist);
+        // Soft Delete
+        wishlist.softDelete(email);
     }
 }

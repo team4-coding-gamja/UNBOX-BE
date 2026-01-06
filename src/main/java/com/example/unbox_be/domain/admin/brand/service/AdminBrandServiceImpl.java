@@ -40,7 +40,7 @@ public class AdminBrandServiceImpl implements AdminBrandService {
         Page<Brand> page;
 
         if (keyword == null || keyword.trim().isEmpty()) {
-            page = brandRepository.findAll(pageable);
+            page = brandRepository.findAllByDeletedAtIsNull(pageable);
         } else {
             page = brandRepository.searchByNameAndDeletedAtIsNull(keyword.trim(), pageable);
         }
@@ -48,7 +48,7 @@ public class AdminBrandServiceImpl implements AdminBrandService {
         return page.map(adminBrandMapper::toAdminBrandListResponseDto);
     }
 
-    // ✅ 브랜드 조회
+    // ✅ 브랜드 상세 조회
     @Override
     @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
@@ -85,10 +85,6 @@ public class AdminBrandServiceImpl implements AdminBrandService {
 
         Brand brand = brandRepository.findByIdAndDeletedAtIsNull(brandId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BRAND_NOT_FOUND));
-
-        if (brand.getDeletedAt() != null) {
-            throw new CustomException(ErrorCode.BRAND_NOT_FOUND);
-        }
 
         if (requestDto.getName() != null && !requestDto.getName().trim().isEmpty()) {
             String newName = requestDto.getName().trim();

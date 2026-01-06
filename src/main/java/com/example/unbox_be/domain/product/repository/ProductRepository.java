@@ -6,7 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -66,4 +68,20 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     // ✅ 모델번호 중복 체크(본인 제외) - 삭제 제외
     boolean existsByModelNumberAndIdNotAndDeletedAtIsNull(String modelNumber, UUID id);
+
+    // ✅ 리뷰 수, 리뷰 총점 추가(리뷰 추가시)
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Product p SET p.reviewCount = p.reviewCount + 1, p.totalScore = p.totalScore + :score WHERE p.id = :id")
+    int increaseReviewCountAndScore(@Param("productid") UUID productid, @Param("score") int score);
+
+    // ✅ 리뷰 수, 리뷰 총점 삭제(리뷰 삭제시)
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Product p SET p.reviewCount = p.reviewCount - 1, p.totalScore = p.totalScore - :score WHERE p.id = :id")
+    int decreaseReviewCountAndScore(@Param("productid") UUID productid, @Param("score") int score);
+
+    // ✅ 리뷰 수, 리뷰 총점 업데이트(리뷰 수정시)
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Product p SET p.totalScore = p.totalScore + :delta WHERE p.id = :id")
+    int updateReviewCountAndScore(@Param("productid") UUID productid, @Param("delta") int delta);
+
 }

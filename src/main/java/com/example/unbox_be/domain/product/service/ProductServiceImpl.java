@@ -17,6 +17,7 @@ import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
 import com.example.unbox_be.domain.trade.service.TradeService;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -111,5 +112,23 @@ public class ProductServiceImpl implements  ProductService {
         return brands.stream()
                 .map(brandMapper::toBrandListDto)
                 .toList();
+    }
+
+    @Transactional
+    public void addReviewData(UUID productId, int score){
+        productRepository.increaseReviewCountAndScore(productId, score);
+    }
+
+    @Transactional
+    public void deleteReviewData(UUID productId, int score){
+        productRepository.decreaseReviewCountAndScore(productId, score);
+    }
+
+    @Transactional
+    public void updateReviewData(UUID productId, int oldScore, int newScore) {
+        int delta = newScore - oldScore;
+        if (delta != 0) {
+            productRepository.updateReviewCountAndScore(productId, delta);
+        }
     }
 }

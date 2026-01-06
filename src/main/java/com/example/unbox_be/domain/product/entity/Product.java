@@ -31,16 +31,24 @@ public class Product extends BaseEntity {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(columnDefinition = "integer default 0", nullable = false)
+    private int reviewCount = 0;
+
+    @Column(columnDefinition = "integer default 0", nullable = false)
+    private int totalScore = 0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id", nullable = false)
     private Brand brand;
 
-    private Product(String name, String modelNumber, Category category, String imageUrl,Brand brand) {
+    private Product(String name, String modelNumber, Category category, String imageUrl, Brand brand, int reviewCount, int totalScore) {
         this.name = name;
         this.modelNumber = modelNumber;
         this.category = category;
         this.imageUrl = imageUrl;
         this.brand = brand;
+        this.reviewCount = reviewCount;
+        this.totalScore = totalScore;
     }
     // 생성 메서드
     public static Product createProduct(String name, String modelNumber, Category category, String imageUrl, Brand brand) {
@@ -49,7 +57,7 @@ public class Product extends BaseEntity {
         validateBrand(brand);
         validateImageUrl(imageUrl);
 
-        return new Product(name, modelNumber, category, imageUrl, brand);
+        return new Product(name, modelNumber, category, imageUrl, brand, 0, 0);
     }
 
     public void update(String name, String modelNumber, Category category, String imageUrl) {
@@ -57,6 +65,7 @@ public class Product extends BaseEntity {
         validateModelNumber(modelNumber);
         validateCategory(category);
         validateImageUrl(imageUrl);
+
         this.name = name;
         this.modelNumber = modelNumber;
         this.category = category;

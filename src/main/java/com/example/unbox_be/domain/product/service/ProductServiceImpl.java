@@ -116,19 +116,25 @@ public class ProductServiceImpl implements  ProductService {
 
     @Transactional
     public void addReviewData(UUID productId, int score){
-        productRepository.increaseReviewCountAndScore(productId, score);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+        product.addReviewData(score);
     }
 
     @Transactional
     public void deleteReviewData(UUID productId, int score){
-        productRepository.decreaseReviewCountAndScore(productId, score);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+        product.deleteReviewData(score);
     }
 
     @Transactional
     public void updateReviewData(UUID productId, int oldScore, int newScore) {
-        int delta = newScore - oldScore;
-        if (delta != 0) {
-            productRepository.updateReviewCountAndScore(productId, delta);
-        }
+        if (oldScore == newScore) return;
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        product.updateReviewData(oldScore, newScore);
     }
 }

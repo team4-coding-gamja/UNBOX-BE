@@ -64,7 +64,7 @@
 //        // 검색 결과로 product1을 담은 페이지 반환
 //        given(productRepository.search(any(), any())).willReturn(new PageImpl<>(List.of(product1)));
 //        // 옵션 조회 시 option1, option2 반환
-//        given(productOptionRepository.findAllByProductIdIn(anyList())).willReturn(List.of(option1, option2));
+//        given(productOptionRepository.findAllByProductIdInAndDeletedAtIsNullIn(anyList())).willReturn(List.of(option1, option2));
 //
 //        // when
 //        Page<ProductListResponseDto> result = productService.getProducts(condition, pageable);
@@ -80,7 +80,7 @@
 //
 //        // 리포지토리 호출 횟수 검증
 //        verify(productRepository, times(1)).search(any(), any());
-//        verify(productOptionRepository, times(1)).findAllByProductIdIn(anyList());
+//        verify(productOptionRepository, times(1)).findAllByProductIdInAndDeletedAtIsNullIn(anyList());
 //    }
 //
 //    @Test
@@ -100,7 +100,7 @@
 //        assertThat(result).isEmpty();
 //
 //        // ** 핵심 검증: 방어 코드가 작동하여 옵션 레포지토리는 호출되지 않아야 함 **
-//        verify(productOptionRepository, never()).findAllByProductIdIn(anyList());
+//        verify(productOptionRepository, never()).findAllByProductIdInAndDeletedAtIsNullIn(anyList());
 //    }
 //
 //    @Test
@@ -117,8 +117,8 @@
 //
 //        ProductOption option = new ProductOption(product, "250");
 //
-//        given(productRepository.findById(productId)).willReturn(Optional.of(product));
-//        given(productOptionRepository.findAllByProductId(productId)).willReturn(List.of(option));
+//        given(productRepository.findByIdAndDeletedAtIsNull(productId)).willReturn(Optional.of(product));
+//        given(productOptionRepository.findAllByProductIdInAndDeletedAtIsNull(productId)).willReturn(List.of(option));
 //
 //        // when
 //        ProductListResponseDto result = productService.getProductById(productId);

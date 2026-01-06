@@ -6,7 +6,7 @@ import com.example.unbox_be.domain.auth.dto.response.AdminSignupResponseDto;
 import com.example.unbox_be.domain.auth.dto.response.AdminTokenResponseDto;
 import com.example.unbox_be.domain.auth.dto.request.UserLoginRequestDto;
 import com.example.unbox_be.domain.auth.service.AdminAuthService;
-import com.example.unbox_be.global.response.ApiResponse;
+import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.jwt.JwtConstants;
 import com.example.unbox_be.global.security.jwt.JwtUtil;
 import com.example.unbox_be.global.security.token.RefreshTokenRedisRepository;
@@ -35,10 +35,10 @@ public class AdminAuthController implements AdminAuthApi {
 
     // ✅ 회원가입
     @PostMapping("/signup")
-    public ApiResponse<AdminSignupResponseDto> signup(
+    public CustomApiResponse<AdminSignupResponseDto> signup(
             @Valid @RequestBody AdminSignupRequestDto requestDto) {
         AdminSignupResponseDto adminSignupResponseDto = adminAuthService.signup(requestDto);
-        return ApiResponse.success(adminSignupResponseDto);
+        return CustomApiResponse.success(adminSignupResponseDto);
     }
 
     // ✅ 로그인 (실제 로그인 로직은 LoginFilter에서 처리)

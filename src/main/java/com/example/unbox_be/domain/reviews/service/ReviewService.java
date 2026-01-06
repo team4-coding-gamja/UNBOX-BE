@@ -40,7 +40,7 @@ public class ReviewService {
     @Transactional
     public UUID createReview(ReviewRequestDto requestDto, Long userId) {
         // 1. 주문 존재 여부 확인
-        Order order = orderRepository.findById(requestDto.getOrderId())
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(requestDto.getOrderId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
         // 2. 주문 상태 검증 (거래 완료 상태인지 확인)
@@ -77,7 +77,7 @@ public class ReviewService {
                 requestDto.getImageUrl()
         );
 
-        return reviewRepository.save(review).getReviewId();
+        return reviewRepository.save(review).getId();
     }
 
     /**
@@ -137,7 +137,7 @@ public class ReviewService {
     }
 
     private Review findReviewOrThrow(UUID reviewId) {
-        return reviewRepository.findById(reviewId)
+        return reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
     }
 }

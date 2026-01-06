@@ -25,7 +25,7 @@ public class ProductRequestServiceImpl implements ProductRequestService {
     @Override
     @Transactional
     public ProductRequestResponseDto createProductRequest(Long userId, ProductRequestRequestDto requestDto) {
-        userRepository.findById(userId)
+        userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         ProductRequest requestProduct = ProductRequest.createProductRequest(userId, requestDto.getName(), requestDto.getBrandName());

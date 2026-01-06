@@ -34,7 +34,7 @@ public class AdminAuthServiceImpl implements AdminAuthService{
         if (requestDto.getAdminRole() == AdminRole.ROLE_MASTER) {
             throw new CustomException(ErrorCode.MASTER_CANNOT_CREATE_MASTER);
         }
-        if (adminRepository.existsByEmail(email)) {
+        if (adminRepository.existsByEmailAndDeletedAtIsNull(email)) {
             throw new CustomException(ErrorCode.ADMIN_ALREADY_EXISTS);
         }
 

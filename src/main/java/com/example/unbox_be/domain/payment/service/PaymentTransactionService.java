@@ -33,7 +33,7 @@ public class PaymentTransactionService {
 
     @Transactional
     public void processSuccessfulPayment(UUID paymentId, TossConfirmResponse response, String paymentKeyFromFront) {
-        Payment payment = paymentRepository.findById(paymentId)
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
         if (payment.getStatus() == PaymentStatus.DONE) {
@@ -41,7 +41,7 @@ public class PaymentTransactionService {
             throw new CustomException(ErrorCode.PG_PROCESSED_ALREADY_EXISTS);
         }
 
-        Order order = orderRepository.findById(payment.getOrderId())
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(payment.getOrderId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
         // 결제 가격 맞는지 한번 더 확인
@@ -75,7 +75,7 @@ public class PaymentTransactionService {
     @Transactional
     public void processFailedPayment(UUID paymentId, TossConfirmResponse response) {
         // 1. 결제 정보 조회
-        Payment payment = paymentRepository.findById(paymentId)
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
         // 2. 결제 상태를 FAILED로 변경

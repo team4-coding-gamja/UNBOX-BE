@@ -47,7 +47,7 @@ public class TestBootstrapMasterController implements TestBootstrapMasterControl
         }
 
         // 2️⃣ 중복 체크
-        if (adminRepository.existsByEmail(req.getEmail())) {
+        if (adminRepository.existsByEmailAndDeletedAtIsNull(req.getEmail())) {
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
                     .body("이미 사용 중인 이메일입니다.");

@@ -109,7 +109,7 @@ class SellingBidServiceTest {
 
         given(userRepository.findByEmail(anyString())).willReturn(Optional.of(user));
 
-        // 어떤 UUID가 들어와도 sellingBid를 반환하도록 설정 (findById와 커스텀 메서드 둘 다 대응)
+        // 어떤 UUID가 들어와도 sellingBid를 반환하도록 설정 (findByIdAndDeletedAtIsNull와 커스텀 메서드 둘 다 대응)
         given(sellingBidRepository.findBySellingId(any(UUID.class))) // 서비스와 이름 맞춤
                 .willReturn(Optional.of(sellingBid));
 
@@ -161,7 +161,7 @@ class SellingBidServiceTest {
         String email = "test@example.com";
         Integer newPrice = 160000;
         given(userRepository.findByEmail(anyString())).willReturn(Optional.of(user));
-        given(sellingBidRepository.findById(any(UUID.class))).willReturn(Optional.of(sellingBid));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNull(any(UUID.class))).willReturn(Optional.of(sellingBid));
 
         // when
         sellingBidService.updateSellingBidPrice(bidId, newPrice, email);
@@ -183,7 +183,7 @@ class SellingBidServiceTest {
         ReflectionTestUtils.setField(otherUser, "email", email);
 
         given(userRepository.findByEmail(anyString())).willReturn(Optional.of(otherUser));
-        given(sellingBidRepository.findById(any(UUID.class))).willReturn(Optional.of(sellingBid));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNull(any(UUID.class))).willReturn(Optional.of(sellingBid));
 
         // when & then
         assertThatThrownBy(() -> sellingBidService.updateSellingBidPrice(bidId, 160000, email))

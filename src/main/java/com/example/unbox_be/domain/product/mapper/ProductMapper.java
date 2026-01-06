@@ -47,4 +47,24 @@ public interface ProductMapper {
                 .lowestPrice(lowestPrice)
                 .build();
     }
+
+    /* =========================
+       목록 조회 (최저가 포함)
+       ========================= */
+
+    default ProductListResponseDto toProductListResponseDto(
+            Product product,
+            Integer lowestPrice
+    ) {
+        return ProductListResponseDto.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .modelNumber(product.getModelNumber())
+                .category(product.getCategory())
+                .imageUrl(product.getImageUrl())
+                .brandId(product.getBrand().getId())
+                .brandName(product.getBrand().getName())
+                .lowestPrice(lowestPrice)
+                .build();
+    }
 }

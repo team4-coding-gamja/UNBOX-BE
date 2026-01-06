@@ -14,10 +14,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminProductRequestListResponseDto {
+
     private UUID id;
     private Long userId;
     private String name;
     private String brandName;
     private ProductRequestStatus status;
-    private LocalDateTime createdAt;
 }

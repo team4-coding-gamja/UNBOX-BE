@@ -20,7 +20,7 @@ public class BuyingBid extends BaseEntity {
     @Id
     @Column(name = "buying_id")
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID buyingId;
+    private UUID id;
 
     @Column(name = "user_id", nullable = false)
     private Long userId;

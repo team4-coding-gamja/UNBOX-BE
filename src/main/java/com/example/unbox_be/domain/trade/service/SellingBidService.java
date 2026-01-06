@@ -36,8 +36,8 @@ public class SellingBidService {
     @Transactional
     public UUID createSellingBid(Long userId, SellingBidRequestDto requestDto) {
 
-        //  option 존재 여부 확인
-        ProductOption productOption = productOptionRepository.findById(requestDto.getOptionId())
+        // 1. [수정] 단순히 존재 확인(exists)만 하지 말고, 실제 객체를 조회(findByIdAndDeletedAtIsNull)합니다.
+        ProductOption productOption = productOptionRepository.findByIdAndDeletedAtIsNull(requestDto.getOptionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
         // 30일 뒤 00시로 deadline 설정
         LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();
@@ -46,16 +46,16 @@ public class SellingBidService {
         SellingBid sellingBid = sellingBidMapper.toEntity(requestDto, userId, deadline, productOption);
         // 생성된 주문 저장
         SellingBid savedBid = sellingBidRepository.save(sellingBid);
-        return savedBid.getSellingId();
+        return savedBid.getId();
     }
 
     @Transactional
     public void cancelSellingBid(UUID sellingId, Long userId, String email) {
-        // 입찰 조회
-        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+        // 1. 입찰 조회
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
-        // 본인 확인 (DB 조회 없이 ID 비교만 수행)
+        // 2. [변경] 본인 확인 (DB 조회 없이 ID 비교만 수행)
         if (!Objects.equals(sellingBid.getUserId(), userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
@@ -69,7 +69,7 @@ public class SellingBidService {
 
     @Transactional
     public void updateSellingBidPrice(UUID sellingId, Integer newPrice, Long userId, String email) {
-        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
         // 입력 가격 유효성 검사
         if (newPrice == null || newPrice <= 0) {
@@ -90,7 +90,9 @@ public class SellingBidService {
 
     @Transactional(readOnly = true)
     public SellingBidResponseDto getSellingBidDetail(UUID sellingId, Long userId) {
-        SellingBid sellingBid = sellingBidRepository.findBySellingId(sellingId)
+        // User 조회 삭제
+
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId) // 이걸로 변경!
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
         // 로그인 유저와 해당 예약 유저 동일성 검사
@@ -103,7 +105,7 @@ public class SellingBidService {
 
         // 객체 반환
         return SellingBidResponseDto.builder()
-                .sellingId(response.getSellingId())
+                .id(response.getId())
                 .status(response.getStatus())
                 .price(response.getPrice())
                 .deadline(response.getDeadline())
@@ -143,7 +145,7 @@ public class SellingBidService {
     //판매 상태 변환. 나중에 MSA로 변환하면 API로 따로 관리
     @Transactional
     public void updateSellingBidStatus(UUID sellingId, SellingStatus newStatus, Long userId, String email) {
-        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
         // 유저 정보 검사
         if (userId != null) {

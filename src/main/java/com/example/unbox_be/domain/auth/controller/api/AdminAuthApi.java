@@ -4,12 +4,13 @@ import com.example.unbox_be.domain.auth.dto.request.AdminSignupRequestDto;
 import com.example.unbox_be.domain.auth.dto.request.UserLoginRequestDto;
 import com.example.unbox_be.domain.auth.dto.response.AdminSignupResponseDto;
 import com.example.unbox_be.domain.auth.dto.response.AdminTokenResponseDto;
-import com.example.unbox_be.global.response.ApiResponse;
+import com.example.unbox_be.global.response.CustomApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,7 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@Tag(name = "관리자 인증", description = "관리자 회원가입 / 로그인 / 로그아웃 / 토큰 재발급 API")
+@Tag(name = "[관리자] 인증 관리", description = "관리자용 인증 관리 API")
 public interface AdminAuthApi {
 
     @Operation(
@@ -40,24 +41,24 @@ public interface AdminAuthApi {
                     """
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "200",
                     description = "관리자 회원가입 성공",
                     content = @Content(schema = @Schema(implementation = AdminSignupResponseDto.class))
             ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "409",
                     description = "회원가입 실패(중복 등)",
                     content = @Content(schema = @Schema(type = "string", example = "이미 존재하는 관리자입니다."))
             ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "400",
                     description = "요청 값 누락/형식 오류",
                     content = @Content(schema = @Schema(type = "string", example = "잘못된 요청입니다."))
             )
     })
     @PostMapping("/api/admin/auth/signup")
-    ApiResponse<AdminSignupResponseDto> signup(
+    CustomApiResponse<AdminSignupResponseDto> signup(
             @Parameter(description = "관리자 회원가입 요청 DTO", required = true)
             @RequestBody AdminSignupRequestDto adminSignupRequestDto
     );
@@ -80,7 +81,7 @@ public interface AdminAuthApi {
                     """
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "200",
                     description = "로그인 성공",
                     headers = {
@@ -88,12 +89,12 @@ public interface AdminAuthApi {
                     },
                     content = @Content(schema = @Schema(type = "string", example = "로그인 요청이 처리되었습니다."))
             ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "401",
                     description = "로그인 실패(아이디/비밀번호 불일치)",
                     content = @Content(schema = @Schema(type = "string", example = "아이디 또는 비밀번호가 일치하지 않습니다."))
             ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "400",
                     description = "요청 값 누락/형식 오류",
                     content = @Content(schema = @Schema(type = "string", example = "잘못된 요청입니다."))
@@ -135,12 +136,12 @@ public interface AdminAuthApi {
                     """
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "200",
                     description = "로그아웃 성공",
                     content = @Content(schema = @Schema(type = "string", example = "로그아웃 되었습니다."))
             ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "400",
                     description = "토큰이 없거나 유효하지 않음",
                     content = @Content(schema = @Schema(type = "string", example = "토큰이 없습니다. 로그아웃을 진행할 수 없습니다."))
@@ -172,7 +173,7 @@ public interface AdminAuthApi {
                     """
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "200",
                     description = "재발급 성공",
                     headers = {
@@ -180,12 +181,12 @@ public interface AdminAuthApi {
                     },
                     content = @Content(schema = @Schema(implementation = AdminTokenResponseDto.class))
             ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "400",
                     description = "refresh token 없음",
                     content = @Content(schema = @Schema(type = "string", example = "리프레시 토큰을 찾을 수 없음"))
             ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "401",
                     description = "refresh token 만료/유효하지 않음",
                     content = @Content(schema = @Schema(type = "string", example = "리프레시 토큰이 만료됨"))

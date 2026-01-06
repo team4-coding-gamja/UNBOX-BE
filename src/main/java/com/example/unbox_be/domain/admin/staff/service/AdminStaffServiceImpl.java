@@ -24,44 +24,42 @@ import java.util.List;
 public class AdminStaffServiceImpl implements  AdminStaffService {
 
     private AdminRepository adminRepository;
+    private AdminStaffMapper adminStaffMapper;
 
     // ✅ 관리자(스태프, 검수자) 목록 조회
     @Override
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('MASTER')")
-    public Page<AdminStaffListResponseDto> getAdminStaffPage(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Admin> admins = adminRepository.findByAdminRoleIn(
+    public Page<AdminStaffListResponseDto> getAdminStaffPage(Pageable pageable) {
+        Page<Admin> admins = adminRepository.findAllByAdminRoleInAndDeletedAtIsNull(
                 List.of(AdminRole.ROLE_MANAGER, AdminRole.ROLE_INSPECTOR),
                 pageable
         );
-        return admins.map(AdminStaffMapper::toAdminStaffPageResponseDto);
+        return admins.map(adminStaffMapper::toAdminStaffListResponseDto);
     }
 
     // ✅ 관리자(매니저) 목록 조회
     @Override
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('MASTER')")
-    public Page<AdminStaffListResponseDto> getAdminManagerPage(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Admin> admins = adminRepository.findByAdminRoleIn(
+    public Page<AdminStaffListResponseDto> getAdminManagerPage(Pageable pageable) {
+        Page<Admin> admins = adminRepository.findAllByAdminRoleInAndDeletedAtIsNull(
                 List.of(AdminRole.ROLE_MANAGER),
                 pageable
         );
-        return admins.map(AdminStaffMapper::toAdminStaffPageResponseDto);
+        return admins.map(adminStaffMapper::toAdminStaffListResponseDto);
     }
 
     // ✅ 관리자(검수자) 목록 조회
     @Override
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('MASTER')")
-    public Page<AdminStaffListResponseDto> getAdminInspectorPage(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Admin> admins = adminRepository.findByAdminRoleIn(
+    public Page<AdminStaffListResponseDto> getAdminInspectorPage(Pageable pageable) {
+        Page<Admin> admins = adminRepository.findAllByAdminRoleInAndDeletedAtIsNull(
                 List.of(AdminRole.ROLE_INSPECTOR),
                 pageable
         );
-        return admins.map(AdminStaffMapper::toAdminStaffPageResponseDto);
+        return admins.map(adminStaffMapper::toAdminStaffListResponseDto);
     }
 
     // ✅ 특정 관리자(스태프) 상세 조회
@@ -69,10 +67,10 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('MASTER')")
     public AdminStaffDetailResponseDto getAdminStaffDetail(Long targetAdminId) {
-        Admin admin = adminRepository.findById(targetAdminId)
+        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(targetAdminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
-        return AdminStaffMapper.toAdminStaffDetailResponseDto(admin);
+        return adminStaffMapper.toAdminStaffDetailResponseDto(admin);
     }
 
     // ✅ 특정 관리자(스태프) 정보 수정
@@ -80,36 +78,62 @@ public class AdminStaffServiceImpl implements  AdminStaffService {
     @Transactional
     @PreAuthorize("hasRole('MASTER')")
     public AdminStaffUpdateResponseDto updateAdminStaff(Long targetAdminId, AdminStaffUpdateRequestDto requestDto) {
-        Admin admin = adminRepository.findById(targetAdminId)
+        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(targetAdminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
         admin.updateAdmin(requestDto.getNickname(), requestDto.getPhone());
-        return AdminStaffMapper.toAdminStaffUpdateResponseDto(admin);
+        return adminStaffMapper.toAdminStaffUpdateResponseDto(admin);
     }
 
-    // 관리자 내 정보 조회 API
+    // ✅ 특정 관리자(스태프) 삭제
+    @Override
+    @Transactional
+    @PreAuthorize("hasRole('MASTER')")
+    public void deleteAdmin(Long adminId, String deletedBy) {
+
+        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(adminId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
+
+        admin.softDelete(deletedBy);
+    }
+
+    // ✅ 내 관리자 정보 조회
     @Override
     @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('MASTER','MANAGER','INSPECTOR')")
     public AdminMeResponseDto getAdminMe(Long adminId) {
-        Admin admin = adminRepository.findById(adminId)
+        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
-        return AdminStaffMapper.toAdminMeResponseDto(admin);
+        return adminStaffMapper.toAdminMeResponseDto(admin);
     }
 
-    // 관리자 내 정보 수정 API
+    // ✅ 내 관리자 정보 수정
     @Override
     @Transactional
     @PreAuthorize("hasAnyRole('MASTER','MANAGER','INSPECTOR')")
     public AdminMeUpdateResponseDto updateAdminMe(Long adminId, AdminMeUpdateRequestDto adminUpdateRequestDto) {
-        Admin admin = adminRepository.findById(adminId)
+        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
         admin.updateAdmin(
                 adminUpdateRequestDto.getNickname(),
                 adminUpdateRequestDto.getPhone()
         );
-        return AdminStaffMapper.toAdminMeUpdateResponseDto(admin);
+        return adminStaffMapper.toAdminMeUpdateResponseDto(admin);
     }
+
+    // ✅ 관리자(스태프, 검수자) 목록 조회(삭제 포함)
+    @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('MASTER')")
+    public Page<AdminStaffListResponseDto> getAdminStaffPageIncludeDeleted(Pageable pageable) {
+
+        Page<Admin> admins = adminRepository.findByAdminRoleInAndDeletedAtIsNull(
+                List.of(AdminRole.ROLE_MANAGER, AdminRole.ROLE_INSPECTOR),
+                pageable
+                );
+        return admins.map(adminStaffMapper::toAdminStaffListResponseDto);
+    }
+
 }

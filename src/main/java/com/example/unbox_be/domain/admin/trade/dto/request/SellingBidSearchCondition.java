@@ -1,6 +1,6 @@
-package com.example.unbox_be.domain.admin.order.dto;
+package com.example.unbox_be.domain.admin.trade.dto.request;
 
-import com.example.unbox_be.domain.order.entity.OrderStatus;
+import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,14 +13,14 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderSearchCondition {
-    private OrderStatus status;
+public class SellingBidSearchCondition {
+    private SellingStatus status;
     private String productName;
     private String brandName;
-    
+
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;
-    
+
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
 }

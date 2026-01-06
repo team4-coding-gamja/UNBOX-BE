@@ -10,7 +10,6 @@ import java.util.UUID;
 
 public interface AdminOrderRepository extends JpaRepository<Order, UUID>, AdminOrderRepositoryCustom {
 
-
     // [Admin] 주문 상세 조회
     @EntityGraph(attributePaths = {"buyer", "seller", "productOption", "productOption.product", "productOption.product.brand"})
     Optional<Order> findWithDetailsById(@NonNull UUID id);

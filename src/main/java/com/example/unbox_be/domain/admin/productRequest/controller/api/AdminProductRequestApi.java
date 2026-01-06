@@ -50,7 +50,7 @@ public interface AdminProductRequestApi {
             @ApiResponse(responseCode = "403", description = "권한 없음"),
             @ApiResponse(responseCode = "404", description = "요청 데이터 없음")
     })
-    @PutMapping("/{productRequestId}")
+    @PutMapping("/{productRequestId}/status")
     CustomApiResponse<AdminProductRequestUpdateResponseDto> updateProductRequestStatus(
             @Parameter(description = "상품 요청 ID", required = true)
             @PathVariable UUID productRequestId,

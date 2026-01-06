@@ -46,7 +46,7 @@ public class OrderServiceImpl implements OrderService {
 
         // 2. 판매 입찰 글(SellingBid) 조회
         // SellingBid ID는 UUID이므로 DTO도 UUID여야 함
-        SellingBid sellingBid = sellingBidRepository.findById(requestDto.getSellingBidId())
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(requestDto.getSellingBidId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
         if (sellingBid.getStatus() == SellingStatus.MATCHED || sellingBid.getStatus() == SellingStatus.HOLD) {
@@ -69,7 +69,7 @@ public class OrderServiceImpl implements OrderService {
 
         // 6. Order 생성
         Order order = Order.builder()
-                .sellingBidId(sellingBid.getSellingId()) // getId() -> getSellingId()
+                .sellingBidId(sellingBid.getId())
                 .buyer(buyer)
                 .seller(seller)          // 위에서 조회한 User 객체 주입
                 .productOption(sellingBid.getProductOption())
@@ -98,7 +98,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Repository에서 EntityGraph 등을 활용해 조회
-        return orderRepository.findAllByBuyerId(buyerId, pageable)
+        return orderRepository.findAllByBuyerIdAndDeletedAtIsNull(buyerId, pageable)
                 .map(orderMapper::toResponseDto); // Static Method Reference
     }
 
@@ -164,7 +164,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderDetailResponseDto updateAdminStatus(UUID orderId, OrderStatus newStatus, String finalTrackingNumber, Long adminId) {
         // 1. 관리자 조회
-        Admin admin = adminRepository.findById(adminId)
+        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
         // 2. 권한 검증 (MASTER, INSPECTOR만 가능)
@@ -201,7 +201,7 @@ public class OrderServiceImpl implements OrderService {
     // --- Private Helper Methods ---
 
     private User getUserByIdOrThrow(Long userId) {
-        return userRepository.findById(userId)
+        return userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 

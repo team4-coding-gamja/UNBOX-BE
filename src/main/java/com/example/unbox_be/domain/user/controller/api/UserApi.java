@@ -3,7 +3,7 @@ package com.example.unbox_be.domain.user.controller.api;
 import com.example.unbox_be.domain.user.dto.request.UserMeUpdateRequestDto;
 import com.example.unbox_be.domain.user.dto.response.UserMeResponseDto;
 import com.example.unbox_be.domain.user.dto.response.UserMeUpdateResponseDto;
-import com.example.unbox_be.global.response.ApiResponse;
+import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,7 +24,7 @@ public interface UserApi {
     @ApiResponses({
     })
     @GetMapping("/me")
-    ApiResponse<UserMeResponseDto> getUserMe(
+    CustomApiResponse<UserMeResponseDto> getUserMe(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails userDetails
     );
@@ -37,7 +37,7 @@ public interface UserApi {
     @ApiResponses({
     })
     @PatchMapping("/me")
-    ApiResponse<UserMeUpdateResponseDto> updateUserMe(
+    CustomApiResponse<UserMeUpdateResponseDto> updateUserMe(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails userDetails,
 
@@ -53,7 +53,7 @@ public interface UserApi {
     @ApiResponses({
     })
     @DeleteMapping("/me")
-    ApiResponse<String> deleteUserMe(
+    CustomApiResponse<String> deleteUserMe(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails userDetails
     );

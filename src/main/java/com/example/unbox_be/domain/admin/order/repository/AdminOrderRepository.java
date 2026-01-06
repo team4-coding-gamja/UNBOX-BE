@@ -8,7 +8,7 @@ import org.springframework.lang.NonNull;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface OrderAdminRepository extends JpaRepository<Order, UUID>, OrderAdminRepositoryCustom {
+public interface AdminOrderRepository extends JpaRepository<Order, UUID>, AdminOrderRepositoryCustom {
 
 
     // [Admin] 주문 상세 조회

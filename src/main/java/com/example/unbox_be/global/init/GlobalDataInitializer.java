@@ -73,7 +73,7 @@ public class GlobalDataInitializer implements ApplicationRunner {
             String phone,
             AdminRole role
     ) {
-        if (adminRepository.existsByEmail(email)) {
+        if (adminRepository.existsByEmailAndDeletedAtIsNull(email)) {
             return;
         }
 

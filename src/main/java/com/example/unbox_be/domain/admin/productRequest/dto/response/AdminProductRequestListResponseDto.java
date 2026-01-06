@@ -14,6 +14,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminProductRequestListResponseDto {
+
     private UUID id;
     private Long userId;
     private String name;

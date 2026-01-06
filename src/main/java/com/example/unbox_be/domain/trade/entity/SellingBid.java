@@ -30,7 +30,7 @@ public class SellingBid extends BaseEntity {
     @Column(name = "selling_id")
     @NotNull
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID sellingId;
+    private UUID id;
 
     @Column(name = "user_id", nullable = false)
     private Long userId;

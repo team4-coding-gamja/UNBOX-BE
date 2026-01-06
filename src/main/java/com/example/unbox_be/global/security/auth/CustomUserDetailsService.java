@@ -31,14 +31,14 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
         // 1) 관리자 우선 조회
-        Admin admin = adminRepository.findByEmail(email).orElse(null);
+        Admin admin = adminRepository.findByEmailAndDeletedAtIsNull(email).orElse(null);
         if (admin != null) {
             log.info("[CustomUserDetailsService/loadUserByUsername] Admin 조회 성공, email: {}", email);
             return CustomUserDetails.ofAdmin(admin);
         }
 
         // 2) 일반 사용자 조회
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         log.info("[CustomUserDetailsService/loadUserByUsername] CustomUserDetails 객체로 변환하기 전 User 정보 조회, email: {}", email);

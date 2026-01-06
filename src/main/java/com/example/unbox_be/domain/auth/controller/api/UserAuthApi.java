@@ -4,6 +4,7 @@ import com.example.unbox_be.domain.auth.dto.request.UserLoginRequestDto;
 import com.example.unbox_be.domain.auth.dto.response.UserTokenResponseDto;
 import com.example.unbox_be.domain.auth.dto.request.UserSignupRequestDto;
 import com.example.unbox_be.domain.auth.dto.response.UserSignupResponseDto;
+import com.example.unbox_be.global.response.CustomApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
@@ -47,7 +48,7 @@ public interface UserAuthApi {
             )
     })
     @PostMapping("/api/auth/signup")
-    com.example.unbox_be.global.response.ApiResponse<UserSignupResponseDto> signup(
+    CustomApiResponse<UserSignupResponseDto> signup(
             @Parameter(description = "회원가입 요청 DTO", required = true)
             @RequestBody UserSignupRequestDto userSignupRequestDto
     );

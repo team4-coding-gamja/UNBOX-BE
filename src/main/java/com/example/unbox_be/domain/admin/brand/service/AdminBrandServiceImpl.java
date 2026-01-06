@@ -3,6 +3,7 @@ package com.example.unbox_be.domain.admin.brand.service;
 import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandCreateRequestDto;
 import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandUpdateRequestDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandCreateResponseDto;
+import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandDetailResponseDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandListResponseDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandUpdateResponseDto;
 import com.example.unbox_be.domain.admin.brand.mapper.AdminBrandMapper;
@@ -41,10 +42,22 @@ public class AdminBrandServiceImpl implements AdminBrandService {
         if (keyword == null || keyword.trim().isEmpty()) {
             page = brandRepository.findAll(pageable);
         } else {
-            page = brandRepository.searchByName(keyword.trim(), pageable);
+            page = brandRepository.searchByNameAndDeletedAtIsNull(keyword.trim(), pageable);
         }
 
         return page.map(adminBrandMapper::toAdminBrandListResponseDto);
+    }
+
+    // ✅ 브랜드 조회
+    @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+    public AdminBrandDetailResponseDto getBrandDetail(UUID brandId) {
+
+        Brand brand = brandRepository.findByIdAndDeletedAtIsNull(brandId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BRAND_NOT_FOUND));
+
+        return adminBrandMapper.toAdminBrandDetailResponseDto(brand);
     }
 
     // ✅ 브랜드 등록
@@ -52,7 +65,7 @@ public class AdminBrandServiceImpl implements AdminBrandService {
     @Transactional
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public AdminBrandCreateResponseDto createBrand(AdminBrandCreateRequestDto requestDto) {
-        if (brandRepository.existsByName(requestDto.getName())) {
+        if (brandRepository.existsByNameAndDeletedAtIsNull(requestDto.getName())) {
             throw new CustomException(ErrorCode.BRAND_ALREADY_EXISTS);
         }
 
@@ -70,7 +83,7 @@ public class AdminBrandServiceImpl implements AdminBrandService {
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public AdminBrandUpdateResponseDto updateBrand(UUID brandId, AdminBrandUpdateRequestDto requestDto) {
 
-        Brand brand = brandRepository.findById(brandId)
+        Brand brand = brandRepository.findByIdAndDeletedAtIsNull(brandId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BRAND_NOT_FOUND));
 
         if (brand.getDeletedAt() != null) {
@@ -79,7 +92,7 @@ public class AdminBrandServiceImpl implements AdminBrandService {
 
         if (requestDto.getName() != null && !requestDto.getName().trim().isEmpty()) {
             String newName = requestDto.getName().trim();
-            if (brandRepository.existsByNameAndIdNot(newName, brandId)) {
+            if (brandRepository.existsByNameAndIdNotAndDeletedAtIsNull(newName, brandId)) {
                 throw new CustomException(ErrorCode.BRAND_ALREADY_EXISTS);
             }
             brand.updateName(newName);
@@ -97,7 +110,7 @@ public class AdminBrandServiceImpl implements AdminBrandService {
     @Transactional
     @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public void deleteBrand(UUID brandId, String deletedBy) {
-        Brand brand = brandRepository.findById(brandId)
+        Brand brand = brandRepository.findByIdAndDeletedAtIsNull(brandId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BRAND_NOT_FOUND));
 
         brand.softDelete(deletedBy);

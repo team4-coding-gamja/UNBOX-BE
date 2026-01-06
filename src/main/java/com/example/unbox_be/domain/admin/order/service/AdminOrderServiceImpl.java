@@ -4,7 +4,7 @@ import com.example.unbox_be.domain.admin.common.entity.Admin;
 import com.example.unbox_be.domain.admin.common.entity.AdminRole;
 import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
 import com.example.unbox_be.domain.admin.order.dto.OrderSearchCondition;
-import com.example.unbox_be.domain.admin.order.repository.OrderAdminRepository;
+import com.example.unbox_be.domain.admin.order.repository.AdminOrderRepository;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
 import com.example.unbox_be.domain.order.entity.Order;
@@ -15,6 +15,7 @@ import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,19 +24,23 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class OrderAdminServiceImpl implements OrderAdminService {
+public class AdminOrderServiceImpl implements AdminOrderService {
 
-    private final OrderAdminRepository orderAdminRepository;
+    private final AdminOrderRepository adminOrderRepository;
     private final AdminRepository adminRepository;
     private final OrderMapper orderMapper;
 
     @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public Page<OrderResponseDto> getAdminOrders(OrderSearchCondition condition, Pageable pageable) {
-        Page<Order> orders = orderAdminRepository.findAdminOrders(condition, pageable);
+        Page<Order> orders = adminOrderRepository.findAdminOrders(condition, pageable);
         return orders.map(orderMapper::toResponseDto);
     }
 
     @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public OrderDetailResponseDto getAdminOrderDetail(UUID orderId, Long adminId) {
         // 관리자 존재 여부 확인
         if (!adminRepository.existsById(adminId)) {
@@ -48,6 +53,7 @@ public class OrderAdminServiceImpl implements OrderAdminService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
     public OrderDetailResponseDto updateAdminStatus(UUID orderId, OrderStatus newStatus, String finalTrackingNumber, Long adminId) {
         // 1. 관리자 조회
         Admin admin = adminRepository.findById(adminId)
@@ -68,7 +74,7 @@ public class OrderAdminServiceImpl implements OrderAdminService {
     }
 
     private Order getOrderWithDetailsOrThrow(UUID orderId) {
-        return orderAdminRepository.findWithDetailsById(orderId)
+        return adminOrderRepository.findWithDetailsById(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
     }
 }

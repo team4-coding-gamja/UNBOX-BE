@@ -4,33 +4,15 @@ import com.example.unbox_be.domain.admin.user.dto.response.AdminUserDetailRespon
 import com.example.unbox_be.domain.admin.user.dto.response.AdminUserListResponseDto;
 import com.example.unbox_be.domain.admin.user.dto.response.AdminUserUpdateResponseDto;
 import com.example.unbox_be.domain.user.entity.User;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
-public class AdminUserMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface AdminUserMapper {
 
-    public static AdminUserListResponseDto toAdminUserListResponseDto(User user) {
-        return AdminUserListResponseDto.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .phone(user.getPhone())
-                .build();
-    }
+    AdminUserListResponseDto toAdminUserListResponseDto(User user);
 
-    public static AdminUserDetailResponseDto toAdminUserDetailResponseDto(User user) {
-        return AdminUserDetailResponseDto.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .phone(user.getPhone())
-                .build();
-    }
+    AdminUserDetailResponseDto toAdminUserDetailResponseDto(User user);
 
-    public static AdminUserUpdateResponseDto toAdminUserUpdateResponseDto(User user) {
-        return AdminUserUpdateResponseDto.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .phone(user.getPhone())
-                .build();
-    }
+    AdminUserUpdateResponseDto toAdminUserUpdateResponseDto(User user);
 }

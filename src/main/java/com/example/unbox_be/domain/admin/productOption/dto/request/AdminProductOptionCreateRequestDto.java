@@ -1,4 +1,4 @@
-package com.example.unbox_be.domain.admin.product.dto.request;
+package com.example.unbox_be.domain.admin.productOption.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

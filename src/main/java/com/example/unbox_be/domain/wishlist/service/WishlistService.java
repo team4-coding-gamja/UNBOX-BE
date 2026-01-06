@@ -33,7 +33,7 @@ public class WishlistService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        ProductOption option = productOptionRepository.findById(optionId)
+        ProductOption option = productOptionRepository.findByIdAndDeletedAtIsNull(optionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND));
 
         // 중복 체크 (영속화된 user 객체 사용)
@@ -69,7 +69,7 @@ public class WishlistService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        Wishlist wishlist = wishlistRepository.findById(wishlistId)
+        Wishlist wishlist = wishlistRepository.findByIdAndDeletedAtIsNull(wishlistId)
                 .orElseThrow(() -> new CustomException(ErrorCode.WISHLIST_NOT_FOUND));
 
         // 보안 검증: 삭제하려는 항목의 주인이 현재 로그인한 유저인지 확인

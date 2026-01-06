@@ -36,7 +36,7 @@ public class PaymentService {
     @Transactional
     public PaymentReadyResponseDto createPayment(Long currentUserId, UUID orderId, String method) {
         // 주문 검사
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
         // 유저 검사
         if (!order.getBuyer().getId().equals(currentUserId)) {
@@ -75,10 +75,10 @@ public class PaymentService {
 
     public void confirmPayment(Long userId, UUID paymentId, String paymentKeyFromFront) {
         // PG사 승인 API 호출
-        Payment payment = paymentRepository.findById(paymentId)
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        Order order = orderRepository.findById(payment.getOrderId())
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(payment.getOrderId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
         if (order.getBuyer() == null || !order.getBuyer().getId().equals(userId)) {

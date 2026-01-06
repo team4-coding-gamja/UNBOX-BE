@@ -13,6 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminProductRequestUpdateResponseDto {
+
     private UUID id;
     private ProductRequestStatus status;
 }

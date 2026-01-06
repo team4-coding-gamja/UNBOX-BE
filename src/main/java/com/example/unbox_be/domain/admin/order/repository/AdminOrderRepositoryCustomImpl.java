@@ -21,7 +21,7 @@ import static com.example.unbox_be.domain.product.entity.QProductOption.productO
 
 @Repository
 @RequiredArgsConstructor
-public class OrderAdminRepositoryCustomImpl implements OrderAdminRepositoryCustom {
+public class AdminOrderRepositoryCustomImpl implements AdminOrderRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 

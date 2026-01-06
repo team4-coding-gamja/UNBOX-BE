@@ -193,4 +193,10 @@ public class SellingBidService {
         return sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
     }
+
+    // [Internal System] 엔티티 조회
+    @Transactional(readOnly = true)
+    public SellingBid findSellingBidById(UUID sellingId) {
+        return findSellingBid(sellingId);
+    }
 }

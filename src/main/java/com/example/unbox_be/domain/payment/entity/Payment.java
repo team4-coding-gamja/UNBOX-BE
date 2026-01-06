@@ -15,6 +15,8 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE p_payment SET deleted_at = NOW() WHERE payment_id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
 public class Payment extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

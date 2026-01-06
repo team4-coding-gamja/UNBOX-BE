@@ -1,11 +1,14 @@
 package com.example.unbox_be.domain.product.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity;
+import com.example.unbox_be.domain.reviews.entity.Review;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity

@@ -99,7 +99,7 @@ public class ProductServiceImpl implements  ProductService {
                 .map(option ->
                         productMapper.toProductOptionListDto(
                                 option,
-                                lowestPriceMap.get(option.getId())
+                                lowestPriceMap.getOrDefault(option.getId(), 0)
                         )
                 )
                 .toList();

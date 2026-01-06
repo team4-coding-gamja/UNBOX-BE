@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -79,7 +78,7 @@ public class CartServiceImpl implements CartService {
        }
        
        // -> Soft Delete 사용
-       cart.softDelete(userService.findUser(userId).getEmail());
+       cart.softDelete(cart.getUser().getEmail());
     }
 
     @Override

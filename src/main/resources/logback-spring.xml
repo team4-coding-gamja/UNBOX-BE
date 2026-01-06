@@ -25,10 +25,10 @@
     </root>
 
     <springProfile name="dev,prod">
-        <root level="INFO">
+        <logger name="com.example.unbox_be" level="INFO" additivity="false">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE_JSON"/>
-        </root>
+        </logger>
     </springProfile>
 
 </configuration>

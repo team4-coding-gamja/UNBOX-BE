@@ -3,6 +3,7 @@ package com.example.unbox_be.domain.admin.brand.service;
 import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandCreateRequestDto;
 import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandUpdateRequestDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandCreateResponseDto;
+import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandDetailResponseDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandListResponseDto;
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandUpdateResponseDto;
 import org.springframework.data.domain.Page;
@@ -15,6 +16,8 @@ public interface AdminBrandService {
 
     // ✅ 브랜드 목록 조회
     Page<AdminBrandListResponseDto> getBrands(String keyword, Pageable pageable);
+    // ✅ 브랜드 조회
+    AdminBrandDetailResponseDto getBrandDetail(UUID brandId);
     // ✅ 브랜드 등록
     AdminBrandCreateResponseDto createBrand(AdminBrandCreateRequestDto requestDto);
     // ✅ 브랜드 수정

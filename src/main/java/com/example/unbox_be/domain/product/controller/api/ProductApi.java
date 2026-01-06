@@ -4,11 +4,12 @@ import com.example.unbox_be.domain.product.dto.response.BrandListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductDetailResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductOptionListResponseDto;
-import com.example.unbox_be.global.response.ApiResponse;
+import com.example.unbox_be.global.response.CustomApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
@@ -34,15 +35,15 @@ public interface ProductApi {
                     """
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "200",
                     description = "상품 목록 조회 성공",
-                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+                    content = @Content(schema = @Schema(implementation = CustomApiResponse.class))
             ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패")
+            @ApiResponse(responseCode = "400", description = "요청 값 검증 실패")
     })
     @GetMapping
-    ApiResponse<Page<ProductListResponseDto>> getProducts(
+    CustomApiResponse<Page<ProductListResponseDto>> getProducts(
             @Parameter(description = "브랜드 ID(선택)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
             @RequestParam(required = false) UUID brandId,
 
@@ -60,15 +61,15 @@ public interface ProductApi {
             description = "상품 ID로 상품 상세 정보를 조회합니다."
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "200",
                     description = "상품 상세 조회 성공",
-                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+                    content = @Content(schema = @Schema(implementation = CustomApiResponse.class))
             ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "상품을 찾을 수 없음")
+            @ApiResponse(responseCode = "404", description = "상품을 찾을 수 없음")
     })
     @GetMapping("/{productId}")
-    ApiResponse<ProductDetailResponseDto> getProductDetail(
+    CustomApiResponse<ProductDetailResponseDto> getProductDetail(
             @Parameter(description = "상품 ID", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
             @PathVariable UUID productId
     );
@@ -78,15 +79,15 @@ public interface ProductApi {
             description = "특정 상품(productId)의 옵션(사이즈)별 최저가 목록을 조회합니다."
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "200",
                     description = "옵션별 최저가 조회 성공",
-                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+                    content = @Content(schema = @Schema(implementation = CustomApiResponse.class))
             ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "상품을 찾을 수 없음")
+            @ApiResponse(responseCode = "404", description = "상품을 찾을 수 없음")
     })
     @GetMapping("/{productId}/options")
-    ApiResponse<List<ProductOptionListResponseDto>> getProductOptions(
+    CustomApiResponse<List<ProductOptionListResponseDto>> getProductOptions(
             @Parameter(description = "상품 ID", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
             @PathVariable UUID productId
     );
@@ -96,12 +97,12 @@ public interface ProductApi {
             description = "등록된 모든 브랜드를 조회합니다."
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "200",
                     description = "브랜드 전체 조회 성공",
-                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+                    content = @Content(schema = @Schema(implementation = CustomApiResponse.class))
             )
     })
     @GetMapping("/brands")
-    ApiResponse<List<BrandListResponseDto>> getAllBrands();
+    CustomApiResponse<List<BrandListResponseDto>> getAllBrands();
 }

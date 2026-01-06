@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.admin.product.dto.response;
 
+import com.example.unbox_be.domain.product.entity.Category;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,11 +12,14 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class AdminProductOptionCreateResponseDto {
+public class AdminProductListResponseDto {
 
-    private UUID optionId;
-    private UUID productId;
     private UUID id;
-    private String option;
+    private String name;
+    private String modelNumber;
+    private Category category;
+    private String imageUrl;
 
+    private UUID brandId;
+    private String brandName;
 }

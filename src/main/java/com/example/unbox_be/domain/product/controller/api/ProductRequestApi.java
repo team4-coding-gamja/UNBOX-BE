@@ -2,12 +2,13 @@ package com.example.unbox_be.domain.product.controller.api;
 
 import com.example.unbox_be.domain.product.dto.request.ProductRequestRequestDto;
 import com.example.unbox_be.domain.product.dto.response.ProductRequestResponseDto;
-import com.example.unbox_be.global.response.ApiResponse;
+import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,17 +28,17 @@ public interface ProductRequestApi {
                     """
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            @ApiResponse(
                     responseCode = "200",
                     description = "상품 등록 요청 생성 성공",
-                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+                    content = @Content(schema = @Schema(implementation = CustomApiResponse.class))
             ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음")
+            @ApiResponse(responseCode = "400", description = "요청 값 검증 실패"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "403", description = "권한 없음")
     })
     @PostMapping("/requests")
-    ApiResponse<ProductRequestResponseDto> createProductRequest(
+    CustomApiResponse<ProductRequestResponseDto> createProductRequest(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails userDetails,
 

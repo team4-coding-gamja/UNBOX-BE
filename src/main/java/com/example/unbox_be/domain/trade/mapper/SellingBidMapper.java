@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 public interface SellingBidMapper {
 
     // 1. DTO -> Entity 변환
-    @Mapping(target = "sellingId", ignore = true)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "userId", source = "userId")
     @Mapping(target = "deadline", source = "deadline")

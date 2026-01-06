@@ -71,7 +71,7 @@ class ReviewServiceTest {
 
             ReviewRequestDto requestDto = new ReviewRequestDto(orderId, "최고예요!", 5, null);
 
-            given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+            given(orderRepository.findByIdAndDeletedAtIsNull(orderId)).willReturn(Optional.of(order));
             given(reviewRepository.existsByOrderId(orderId)).willReturn(false);
 
             // NPE 방지: 저장 후 반환될 Mock 객체 설정
@@ -95,7 +95,7 @@ class ReviewServiceTest {
             given(order.getStatus()).willReturn(OrderStatus.PENDING_SHIPMENT); // 거래 완료 전 상태
 
             ReviewRequestDto requestDto = new ReviewRequestDto(orderId, "내용", 5, null);
-            given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+            given(orderRepository.findByIdAndDeletedAtIsNull(orderId)).willReturn(Optional.of(order));
 
             // when & then
             assertThatThrownBy(() -> reviewService.createReview(requestDto, userId))
@@ -112,7 +112,7 @@ class ReviewServiceTest {
             Order order = mock(Order.class);
 
             // 상태 체크는 통과해야 하므로 최소한의 설정만 진행
-            given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+            given(orderRepository.findByIdAndDeletedAtIsNull(orderId)).willReturn(Optional.of(order));
             given(order.getStatus()).willReturn(OrderStatus.COMPLETED);
 
             // [수정] UnnecessaryStubbing 방지: 예외 발생 시점까지만 설정
@@ -140,7 +140,7 @@ class ReviewServiceTest {
             given(order.getBuyer()).willReturn(buyer); // buyer를 찾지 못해 NPE가 나는 것을 방지
             given(order.getStatus()).willReturn(OrderStatus.COMPLETED);
 
-            given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+            given(orderRepository.findByIdAndDeletedAtIsNull(orderId)).willReturn(Optional.of(order));
             given(reviewRepository.existsByOrderId(orderId)).willReturn(false);
 
             // 평점 검증 단계에서 예외가 발생하므로, 그 이후의 'ProductOption' 설정은 불필요 (삭제됨)
@@ -173,7 +173,7 @@ class ReviewServiceTest {
             Review review = mock(Review.class);
             given(review.getBuyer()).willReturn(otherUser);
 
-            given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+            given(reviewRepository.findByIdAndDeletedAtIsNull(reviewId)).willReturn(Optional.of(review));
 
             // when & then
             assertThatThrownBy(() -> reviewService.deleteReview(reviewId, loginUserId))

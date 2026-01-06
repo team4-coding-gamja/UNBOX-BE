@@ -36,8 +36,8 @@ public class SellingBidService {
     @Transactional
     public UUID createSellingBid(Long userId, SellingBidRequestDto requestDto) {
 
-        // 1. [수정] 단순히 존재 확인(exists)만 하지 말고, 실제 객체를 조회(findById)합니다.
-        ProductOption productOption = productOptionRepository.findById(requestDto.getOptionId())
+        // 1. [수정] 단순히 존재 확인(exists)만 하지 말고, 실제 객체를 조회(findByIdAndDeletedAtIsNull)합니다.
+        ProductOption productOption = productOptionRepository.findByIdAndDeletedAtIsNull(requestDto.getOptionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
         LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();
@@ -46,13 +46,13 @@ public class SellingBidService {
         SellingBid sellingBid = sellingBidMapper.toEntity(requestDto, userId, deadline, productOption);
 
         SellingBid savedBid = sellingBidRepository.save(sellingBid);
-        return savedBid.getSellingId();
+        return savedBid.getId();
     }
 
     @Transactional
     public void cancelSellingBid(UUID sellingId, Long userId, String email) {
         // 1. 입찰 조회
-        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
         // 2. [변경] 본인 확인 (DB 조회 없이 ID 비교만 수행)
@@ -69,7 +69,7 @@ public class SellingBidService {
 
     @Transactional
     public void updateSellingBidPrice(UUID sellingId, Integer newPrice, Long userId, String email) {
-        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
         if (newPrice == null || newPrice <= 0) {
@@ -91,7 +91,7 @@ public class SellingBidService {
     public SellingBidResponseDto getSellingBidDetail(UUID sellingId, Long userId) {
         // User 조회 삭제
 
-        SellingBid sellingBid = sellingBidRepository.findBySellingId(sellingId) // 이걸로 변경!
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId) // 이걸로 변경!
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
         // [변경] ID 비교
@@ -104,7 +104,7 @@ public class SellingBidService {
 
         // ... (Response 빌더 로직 동일)
         return SellingBidResponseDto.builder()
-                .sellingId(response.getSellingId())
+                .id(response.getId())
                 .status(response.getStatus())
                 .price(response.getPrice())
                 .deadline(response.getDeadline())
@@ -145,7 +145,7 @@ public class SellingBidService {
     //판매 상태 변환 service이고, 이거 나중에 MSA로 변환하면 API로 따로 관리ㄱㄱ
     @Transactional
     public void updateSellingBidStatus(UUID sellingId, SellingStatus newStatus, Long userId, String email) {
-        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
         // 1. 권한 검증: 사용자가 직접 바꿀 때만 체크 (시스템 자동 변경 시에는 생략 가능하도록 설계)
         if (userId != null) {

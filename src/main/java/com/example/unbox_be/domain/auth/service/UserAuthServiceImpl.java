@@ -27,7 +27,7 @@ public class UserAuthServiceImpl implements UserAuthService {
         String email = requestDto.getEmail();
         String password = requestDto.getPassword();
 
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmailAndDeletedAtIsNull(email)) {
             throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
         }
 

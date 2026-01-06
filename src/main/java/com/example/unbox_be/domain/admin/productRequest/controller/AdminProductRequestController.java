@@ -34,7 +34,7 @@ public class AdminProductRequestController implements AdminProductRequestApi {
     }
 
     // ✅ 상품 요청 상태 변경
-    @PutMapping("/{productRequestId}/status")
+    @PatchMapping("/{productRequestId}/status")
     public CustomApiResponse<AdminProductRequestUpdateResponseDto> updateProductRequestStatus(
             @PathVariable UUID productRequestId,
             @RequestBody AdminProductRequestUpdateRequestDto requestDto) {

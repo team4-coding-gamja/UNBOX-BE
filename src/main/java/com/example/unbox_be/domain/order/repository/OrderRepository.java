@@ -19,9 +19,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     @EntityGraph(attributePaths = {"productOption", "productOption.product", "productOption.product.brand"})
     Page<Order> findAllByBuyerIdAndDeletedAtIsNull(Long buyerId, Pageable pageable);
 
-    // 주문 ID로 단건 조회(삭제 제외)
-    Optional<Order> findByIdAndDeletedAtIsNull(UUID id);
-
     // 주문 상세 조회(삭제 포함)
     @EntityGraph(attributePaths = {"buyer", "seller", "productOption", "productOption.product", "productOption.product.brand"})
     Optional<Order> findWithDetailsById(UUID id);

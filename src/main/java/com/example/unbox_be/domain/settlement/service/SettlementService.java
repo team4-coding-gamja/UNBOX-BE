@@ -4,6 +4,7 @@ import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.repository.OrderRepository;
 import com.example.unbox_be.domain.payment.entity.Payment;
 import com.example.unbox_be.domain.payment.repository.PaymentRepository;
+import com.example.unbox_be.domain.settlement.dto.response.SettlementResponseDto;
 import com.example.unbox_be.domain.settlement.entity.Settlement;
 import com.example.unbox_be.domain.settlement.entity.SettlementStatus;
 import com.example.unbox_be.domain.settlement.repository.SettlementRepository;
@@ -14,19 +15,24 @@ import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class SettlementService {
+    private static final double FEE_RATE = 0.03;
+
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final SettlementRepository settlementRepository;
     private final SellingBidRepository sellingBidRepository;
 
-    public void createSettlement(UUID paymentId, UUID orderId){
+    @Transactional
+    public SettlementResponseDto createSettlement(UUID paymentId, UUID orderId){
         if (settlementRepository.existsByOrderId(orderId)) {
             throw new CustomException(ErrorCode.SETTLEMENT_ALREADY_EXISTS);
         }
@@ -48,7 +54,7 @@ public class SettlementService {
         }
 
         Integer totalAmount = payment.getAmount();
-        Integer fees = (int)(totalAmount * 0.03);
+        Integer fees = (int) Math.round(totalAmount * FEE_RATE);
         Integer settlementAmount = totalAmount - fees;
 
         Settlement settlement = Settlement.builder()
@@ -61,15 +67,18 @@ public class SettlementService {
                 .settlementStatus(SettlementStatus.WAITING) // 초기 상태
                 .build();
 
-        settlementRepository.save(settlement);
+        Settlement savedSettlement = settlementRepository.save(settlement);
+        return SettlementResponseDto.from(savedSettlement);
     }
-    public void confirmSettlement(UUID orderId) {
+
+    @Transactional
+    public SettlementResponseDto confirmSettlement(UUID orderId) {
         Settlement settlement = settlementRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
         if (settlement.getSettlementStatus() == SettlementStatus.DONE) {
             throw new CustomException(ErrorCode.SETTLEMENT_ALREADY_DONE);
         }
         settlement.updateStatus(SettlementStatus.DONE);
-        log.info("정산 완료 처리됨: OrderId={}, SettlementId={}", orderId, settlement.getId());
+        return SettlementResponseDto.from(settlement);
     }
 }

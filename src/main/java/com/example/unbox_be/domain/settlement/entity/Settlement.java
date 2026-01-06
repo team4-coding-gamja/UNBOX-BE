@@ -21,13 +21,13 @@ public class Settlement extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "order_id")
+    @Column(name = "order_id", nullable = false)
     private UUID orderId;
 
-    @Column(name = "seller_id")
+    @Column(name = "seller_id", nullable = false)
     private Long sellerId;
 
-    @Column(name = "payment_id")
+    @Column(name = "payment_id",nullable = false)
     private UUID paymentId;
 
     @Column(name = "total_amount", nullable = false)

@@ -51,39 +51,40 @@ public class SellingBidService {
 
     @Transactional
     public void cancelSellingBid(UUID sellingId, Long userId, String email) {
-        // 1. 입찰 조회
+        // 입찰 조회
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
-        // 2. [변경] 본인 확인 (DB 조회 없이 ID 비교만 수행)
+        // 본인 확인 (DB 조회 없이 ID 비교만 수행)
         if (!Objects.equals(sellingBid.getUserId(), userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
         // 판매 예약 주문 LIVE 상태 확인
         if (sellingBid.getStatus() != SellingStatus.LIVE) {
-            throw new IllegalArgumentException("취소할 수 없는 상태입니다.");
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        updateSellingBidStatus(sellingId, SellingStatus.CANCELLED, userId, email);
+        processUpdate(sellingBid, SellingStatus.CANCELLED, email);
     }
 
     @Transactional
     public void updateSellingBidPrice(UUID sellingId, Integer newPrice, Long userId, String email) {
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+        // 로그인 유저와 해당 예약 유저 동일성 검사
+        if (!Objects.equals(sellingBid.getUserId(), userId)) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+
         // 입력 가격 유효성 검사
         if (newPrice == null || newPrice <= 0) {
             throw new CustomException(ErrorCode.INVALID_BID_PRICE);
         }
         // 해당 예약 상태 검사
         if (sellingBid.getStatus() != SellingStatus.LIVE) {
-            throw new IllegalArgumentException("수정할 수 없는 상태입니다.");
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        // 로그인 유저와 해당 예약 유저 동일성 검사
-        if (!Objects.equals(sellingBid.getUserId(), userId)) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
-        }
         // 업데이트
         sellingBid.updatePrice(newPrice, userId, email);
     }
@@ -142,24 +143,30 @@ public class SellingBidService {
         });
     }
 
-    //판매 상태 변환. 나중에 MSA로 변환하면 API로 따로 관리
+    // 유저용 Bid status 변환. 나중에 확인 후 삭제
     @Transactional
     public void updateSellingBidStatus(UUID sellingId, SellingStatus newStatus, Long userId, String email) {
-        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
-                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
-        // 유저 정보 검사
-        if (userId != null) {
-            if (!Objects.equals(sellingBid.getUserId(), userId)) {
-                throw new CustomException(ErrorCode.ACCESS_DENIED);
-            }
+        // userId가 null이면 아예 진입도 못하게 막기
+        if (userId == null) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 상태 변환 괜찮은지 확인
-        validateTransition(sellingBid.getStatus(), newStatus);
+        SellingBid sellingBid = findSellingBid(sellingId);
 
-        // 상태 변경 및 기록
-        sellingBid.updateStatus(newStatus);
-        if (email != null) sellingBid.updateModifiedBy(email);
+        // 본인 확인 (반드시 수행됨)
+        validateOwner(sellingBid, userId);
+
+        // 실제 상태 변경 로직 수행
+        processUpdate(sellingBid, newStatus, email);
+    }
+
+    // 내부 시스템용 Bid status 변환
+    @Transactional
+    public void updateSellingBidStatusBySystem(UUID sellingId, SellingStatus newStatus, String email) {
+        SellingBid sellingBid = findSellingBid(sellingId);
+
+        // 본인 확인 없이 바로 로직 수행 (내부에서만 호출하니까 안전)
+        processUpdate(sellingBid, newStatus, email);
     }
 
     // 변환할 수 있을 sellingBID인지 검사
@@ -168,5 +175,22 @@ public class SellingBidService {
                 && next == SellingStatus.LIVE) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
+    }
+    // 실제 업데이트
+    private void processUpdate(SellingBid sellingBid, SellingStatus newStatus, String email) {
+        validateTransition(sellingBid.getStatus(), newStatus);
+        sellingBid.updateStatus(newStatus);
+        if (email != null) sellingBid.updateModifiedBy(email);
+    }
+    // 유저 검증
+    private void validateOwner(SellingBid sellingBid, Long userId) {
+        if (!Objects.equals(sellingBid.getUserId(), userId)) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+    }
+    // Bid ID를 통한 sellingBid 검색
+    private SellingBid findSellingBid(UUID sellingId) {
+        return sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
     }
 }

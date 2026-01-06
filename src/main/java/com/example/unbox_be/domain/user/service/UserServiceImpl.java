@@ -8,17 +8,16 @@ import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.mapper.UserMapper;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-
-    public UserServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private final UserMapper userMapper;
 
     // ✅ 회원 정보 조회
     @Transactional(readOnly = true)
@@ -26,7 +25,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        return UserMapper.toUserMeResponseDto(user);
+        return userMapper.toUserMeResponseDto(user);
     }
 
     // ✅ 회원 정보 수정
@@ -39,7 +38,7 @@ public class UserServiceImpl implements UserService {
                 requestDto.getNickname(),
                 requestDto.getPhone()
         );
-        return UserMapper.toUserMeUpdateResponseDto(user);
+        return userMapper.toUserMeUpdateResponseDto(user);
     }
 
     // ✅ 회원 탈퇴

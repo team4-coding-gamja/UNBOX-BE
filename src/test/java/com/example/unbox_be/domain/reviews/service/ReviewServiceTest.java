@@ -75,14 +75,14 @@ class ReviewServiceTest {
             given(reviewRepository.existsByOrderId(orderId)).willReturn(false);
 
             // NPE 방지: 저장 후 반환될 Mock 객체 설정
-            Review mockReview = Review.builder().reviewId(UUID.randomUUID()).build();
+            Review mockReview = Review.builder().id(UUID.randomUUID()).build();
             given(reviewRepository.save(any(Review.class))).willReturn(mockReview);
 
             // when
             UUID resultId = reviewService.createReview(requestDto, userId);
 
             // then
-            assertThat(resultId).isEqualTo(mockReview.getReviewId());
+            assertThat(resultId).isEqualTo(mockReview.getId());
         }
 
         @Test

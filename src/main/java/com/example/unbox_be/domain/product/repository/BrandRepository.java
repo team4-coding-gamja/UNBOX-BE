@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,6 +16,8 @@ public interface BrandRepository extends JpaRepository<Brand, UUID> {
     // =========================
     // ✅ Soft Delete "제외" 조회 (deleted_at is null)
     // =========================
+
+    Page<Brand> findAllByDeletedAtIsNull(Pageable pageable);
 
     // ✅ 중복 체크 - 삭제 제외(실무 권장)
     boolean existsByNameAndDeletedAtIsNull(String name);

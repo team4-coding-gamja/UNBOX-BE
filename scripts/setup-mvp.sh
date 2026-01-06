@@ -87,12 +87,14 @@ fi
 print_info "Spring Boot 애플리케이션 빌드 중..."
 ./gradlew clean build -x test
 
-if [ ! -f build/libs/*.jar ]; then
+# JAR 파일 확인
+JAR_FILE=$(find build/libs -name "*.jar" -not -name "*-plain.jar" | head -1)
+if [ ! -f "$JAR_FILE" ]; then
     print_error "JAR 파일 빌드에 실패했습니다."
     exit 1
 fi
 
-print_success "애플리케이션 빌드 완료!"
+print_success "애플리케이션 빌드 완료: $(basename $JAR_FILE)"
 
 # EC2 접속 대기
 print_info "EC2 인스턴스 준비 대기 중... (30초)"
@@ -111,7 +113,7 @@ ssh -i ~/.ssh/unbox_key -o StrictHostKeyChecking=no ec2-user@$EC2_PUBLIC_IP "mkd
 scp -i ~/.ssh/unbox_key .env.mvp ec2-user@$EC2_PUBLIC_IP:~/UNBOX-BE/.env
 scp -i ~/.ssh/unbox_key docker-compose-mvp.yml ec2-user@$EC2_PUBLIC_IP:~/UNBOX-BE/
 scp -i ~/.ssh/unbox_key Dockerfile ec2-user@$EC2_PUBLIC_IP:~/UNBOX-BE/
-scp -i ~/.ssh/unbox_key build/libs/*.jar ec2-user@$EC2_PUBLIC_IP:~/UNBOX-BE/build/libs/
+scp -i ~/.ssh/unbox_key "$JAR_FILE" ec2-user@$EC2_PUBLIC_IP:~/UNBOX-BE/build/libs/
 
 print_success "파일 전송 완료!"
 
@@ -153,7 +155,7 @@ HEALTH_URL="http://$EC2_PUBLIC_IP:8080/actuator/health"
 SWAGGER_URL="http://$EC2_PUBLIC_IP:8080/swagger-ui/index.html"
 
 print_info "헬스체크 시작..."
-for i in {1..5}; do
+for i in 1 2 3 4 5; do
     if curl -s --connect-timeout 10 "$HEALTH_URL" | grep -q '"status":"UP"'; then
         print_success "🎉 MVP 배포 완료!"
         echo ""

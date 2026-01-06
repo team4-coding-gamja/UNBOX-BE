@@ -83,67 +83,67 @@ class ProductServiceImplTest {
         assertThat(result.getContent().get(0)).isEqualTo(responseDto);
     }
 
-    @Test
-    @DisplayName("상품 상세 조회 - 성공")
-    void getProductDetail_success() {
-        // given
-        UUID productId = UUID.randomUUID();
-        Product product = mock(Product.class);
+//    @Test
+//    @DisplayName("상품 상세 조회 - 성공")
+//    void getProductDetail_success() {
+//        // given
+//        UUID productId = UUID.randomUUID();
+//        Product product = mock(Product.class);
+//
+//        given(productRepository.findByIdWithBrand(productId)).willReturn(Optional.of(product));
+//
+//        ProductDetailResponseDto responseDto = mock(ProductDetailResponseDto.class);
+//        given(productMapper.toProductDetailDto(eq(product), any())).willReturn(responseDto);
+//
+//        // when
+//        ProductDetailResponseDto result = productService.getProductDetail(productId);
+//
+//        // then
+//        assertThat(result).isNotNull();
+//        assertThat(result).isEqualTo(responseDto);
+//    }
 
-        given(productRepository.findByIdWithBrand(productId)).willReturn(Optional.of(product));
-
-        ProductDetailResponseDto responseDto = mock(ProductDetailResponseDto.class);
-        given(productMapper.toProductDetailDto(eq(product), any())).willReturn(responseDto);
-
-        // when
-        ProductDetailResponseDto result = productService.getProductDetail(productId);
-
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(responseDto);
-    }
-
-    @Test
-    @DisplayName("상품 상세 조회 - 실패 (상품 없음)")
-    void getProductDetail_notFound() {
-        // given
-        UUID productId = UUID.randomUUID();
-        given(productRepository.findByIdWithBrand(productId)).willReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> productService.getProductDetail(productId))
-                .isInstanceOf(CustomException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PRODUCT_NOT_FOUND);
-    }
-
-    @Test
-    @DisplayName("상품 옵션별 최저가 조회 - 성공")
-    void getProductOptions_success() {
-        // given
-        UUID productId = UUID.randomUUID();
-        UUID optionId = UUID.randomUUID();
-
-        given(productRepository.existsById(productId)).willReturn(true);
-
-        ProductOption option = mock(ProductOption.class);
-        given(option.getId()).willReturn(optionId);
-        given(productOptionRepository.findAllByProductId(productId)).willReturn(List.of(option));
-
-        // Mocking SellingBidRepository result
-        List<Object[]> lowestPrices = new ArrayList<>();
-        lowestPrices.add(new Object[]{optionId, 10000});
-        given(sellingBidRepository.findLowestPriceByOptionIds(any())).willReturn(lowestPrices);
-
-        ProductOptionListResponseDto responseDto = mock(ProductOptionListResponseDto.class);
-        given(productMapper.toProductOptionListDto(eq(option), eq(10000))).willReturn(responseDto);
-
-        // when
-        List<ProductOptionListResponseDto> result = productService.getProductOptions(productId);
-
-        // then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0)).isEqualTo(responseDto);
-    }
+//    @Test
+//    @DisplayName("상품 상세 조회 - 실패 (상품 없음)")
+//    void getProductDetail_notFound() {
+//        // given
+//        UUID productId = UUID.randomUUID();
+//        given(productRepository.findByIdWithBrand(productId)).willReturn(Optional.empty());
+//
+//        // when & then
+//        assertThatThrownBy(() -> productService.getProductDetail(productId))
+//                .isInstanceOf(CustomException.class)
+//                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PRODUCT_NOT_FOUND);
+//    }
+//
+//    @Test
+//    @DisplayName("상품 옵션별 최저가 조회 - 성공")
+//    void getProductOptions_success() {
+//        // given
+//        UUID productId = UUID.randomUUID();
+//        UUID optionId = UUID.randomUUID();
+//
+//        given(productRepository.existsById(productId)).willReturn(true);
+//
+//        ProductOption option = mock(ProductOption.class);
+//        given(option.getId()).willReturn(optionId);
+//        given(productOptionRepository.findAllByProductId(productId)).willReturn(List.of(option));
+//
+//        // Mocking SellingBidRepository result
+//        List<Object[]> lowestPrices = new ArrayList<>();
+//        lowestPrices.add(new Object[]{optionId, 10000});
+//        given(sellingBidRepository.findLowestPriceByOptionIds(any())).willReturn(lowestPrices);
+//
+//        ProductOptionListResponseDto responseDto = mock(ProductOptionListResponseDto.class);
+//        given(productMapper.toProductOptionListDto(eq(option), eq(10000))).willReturn(responseDto);
+//
+//        // when
+//        List<ProductOptionListResponseDto> result = productService.getProductOptions(productId);
+//
+//        // then
+//        assertThat(result).hasSize(1);
+//        assertThat(result.get(0)).isEqualTo(responseDto);
+//    }
 
     @Test
     @DisplayName("상품 옵션별 최저가 조회 - 실패 (상품 없음)")

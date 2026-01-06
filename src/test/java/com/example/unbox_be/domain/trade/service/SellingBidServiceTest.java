@@ -87,7 +87,7 @@ class SellingBidServiceTest {
 
         // 4. SellingBid 생성
         sellingBid = SellingBid.builder()
-                .sellingId(bidId)
+                .id(bidId)
                 .userId(user.getId())
                 .productOption(productOption)
                 .price(150000)
@@ -100,9 +100,9 @@ class SellingBidServiceTest {
     @DisplayName("판매 입찰 상세 조회 성공")
     void getSellingBidDetail_Success() {
         // given
-        String email = "test@example.com";
+        Long userId = 1L;
         SellingBidResponseDto mockDto = SellingBidResponseDto.builder()
-                .sellingId(bidId)
+                .id(bidId)
                 .price(150000)
                 .status(SellingStatus.LIVE)
                 .build();
@@ -110,16 +110,16 @@ class SellingBidServiceTest {
         given(userRepository.findByEmail(anyString())).willReturn(Optional.of(user));
 
         // 어떤 UUID가 들어와도 sellingBid를 반환하도록 설정 (findByIdAndDeletedAtIsNull와 커스텀 메서드 둘 다 대응)
-        given(sellingBidRepository.findBySellingId(any(UUID.class))) // 서비스와 이름 맞춤
+        given(sellingBidRepository.findByIdAndDeletedAtIsNull(any(UUID.class))) // 서비스와 이름 맞춤
                 .willReturn(Optional.of(sellingBid));
 
         given(sellingBidMapper.toResponseDto(any(SellingBid.class))).willReturn(mockDto);
 
         // when
-        SellingBidResponseDto result = sellingBidService.getSellingBidDetail(bidId, email);
+        SellingBidResponseDto result = sellingBidService.getSellingBidDetail(bidId, userId);
 
         // then
-        assertThat(result.getSellingId()).isEqualTo(bidId);
+        assertThat(result.getId()).isEqualTo(bidId);
         assertThat(result.getSize()).isEqualTo("270");
         assertThat(result.getProduct().getName()).isEqualTo("Nike Air Max");
     }
@@ -129,12 +129,13 @@ class SellingBidServiceTest {
     void getMySellingBids_Success() {
         // given
         String email = "test@example.com";
+        Long userId = 1L;
         Pageable pageable = PageRequest.of(0, 10);
         List<SellingBid> bids = List.of(sellingBid);
         Slice<SellingBid> bidSlice = new SliceImpl<>(bids, pageable, false);
 
         SellingBidResponseDto mockDto = SellingBidResponseDto.builder()
-                .sellingId(bidId)
+                .id(bidId)
                 .price(150000)
                 .build();
 
@@ -143,7 +144,7 @@ class SellingBidServiceTest {
         given(sellingBidMapper.toResponseDto(any(SellingBid.class))).willReturn(mockDto);
 
         // when
-        Slice<SellingBidResponseDto> result = sellingBidService.getMySellingBids(email, pageable);
+        Slice<SellingBidResponseDto> result = sellingBidService.getMySellingBids(userId, pageable);
 
         // then
         assertThat(result).isNotNull();
@@ -158,13 +159,14 @@ class SellingBidServiceTest {
     @DisplayName("입찰 가격 수정 성공")
     void updateSellingBidPrice_Success() {
         // given
+        Long userId = 1L;
         String email = "test@example.com";
         Integer newPrice = 160000;
         given(userRepository.findByEmail(anyString())).willReturn(Optional.of(user));
         given(sellingBidRepository.findByIdAndDeletedAtIsNull(any(UUID.class))).willReturn(Optional.of(sellingBid));
 
         // when
-        sellingBidService.updateSellingBidPrice(bidId, newPrice, email);
+        sellingBidService.updateSellingBidPrice(bidId, newPrice, userId, email);
 
         // then
         assertThat(sellingBid.getPrice()).isEqualTo(newPrice);
@@ -174,6 +176,7 @@ class SellingBidServiceTest {
     @DisplayName("본인이 아닌 경우 가격 수정 시 예외 발생")
     void updateSellingBidPrice_AccessDenied() throws Exception {
         // given
+        Long userId = 1L;
         String email = "other@example.com";
 
         Constructor<User> userConstructor = User.class.getDeclaredConstructor();
@@ -186,7 +189,7 @@ class SellingBidServiceTest {
         given(sellingBidRepository.findByIdAndDeletedAtIsNull(any(UUID.class))).willReturn(Optional.of(sellingBid));
 
         // when & then
-        assertThatThrownBy(() -> sellingBidService.updateSellingBidPrice(bidId, 160000, email))
+        assertThatThrownBy(() -> sellingBidService.updateSellingBidPrice(bidId, 160000, userId, email))
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ACCESS_DENIED);

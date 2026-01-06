@@ -17,7 +17,6 @@ import java.util.UUID;
 public class Settlement extends BaseEntity {
     @Id
     @Column(name = "settlements_id")
-    @NotNull
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 

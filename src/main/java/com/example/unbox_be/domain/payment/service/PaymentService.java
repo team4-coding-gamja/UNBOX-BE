@@ -38,7 +38,7 @@ public class PaymentService {
         if (!order.getBuyer().getId().equals(currentUserId)) {
             throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
         }
-        Optional<Payment> existingPayment = paymentRepository.findByOrderId(orderId);
+        Optional<Payment> existingPayment = paymentRepository.findByOrderIdAndDeletedAtIsNull(orderId);
 
         if (existingPayment.isPresent()) {
             Payment payment = existingPayment.get();

@@ -44,8 +44,3 @@ logging:
   file:
     name: /var/log/unbox/test-application.log
 
-# S3 설정 (인프라)
-aws:
-  s3:
-    bucket: ${AWS_S3_BUCKET}
-    region: ${AWS_S3_REGION}

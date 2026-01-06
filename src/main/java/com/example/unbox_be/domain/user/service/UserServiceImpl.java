@@ -51,4 +51,11 @@ public class UserServiceImpl implements UserService {
 
         user.softDelete(userId.toString());
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public User findUser(Long userId) {
+        return userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
 }

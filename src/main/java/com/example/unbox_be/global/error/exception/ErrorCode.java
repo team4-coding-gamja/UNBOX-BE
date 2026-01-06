@@ -72,11 +72,18 @@ public enum ErrorCode {
     INVALID_ORDER_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태 변경입니다."),
 
 
-    //위시리스트
+    // 위시리스트
     WISHLIST_ALREADY_EXISTS(HttpStatus.BAD_REQUEST,"이미 찜 목록에 존재하는 상품입니다."),
     WISHLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "찜 목록에서 찾을 수 없습니다."),
 
-    //결제
+    // 장바구니 (Cart)
+    CART_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 장바구니에 담긴 상품입니다."),
+    CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "장바구니 항목을 찾을 수 없습니다."),
+    CANNOT_ADD_MY_OWN_BID(HttpStatus.BAD_REQUEST, "본인이 판매중인 상품은 장바구니에 담을 수 없습니다."),
+    BID_NOT_AVAILABLE_FOR_CART(HttpStatus.BAD_REQUEST, "판매 중이 아닌 상품은 장바구니에 담을 수 없습니다."),
+    NOT_CART_OWNER(HttpStatus.FORBIDDEN, "본인의 장바구니 항목만 삭제할 수 있습니다."),
+
+    // 결제
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"결제 정보를 찾을 수 없습니다."),
     PAYMENT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 결제가 진행중인 주문입니다."),
     NOT_SELF_ORDER_PAYMENT(HttpStatus.FORBIDDEN, "본인의 구매 주문만 결제할 수 있습니다."),

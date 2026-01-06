@@ -93,6 +93,9 @@ public class CartServiceImpl implements CartService {
 
     private CartResponseDto toResponseDto(Cart cart) {
         SellingBid bid = cart.getSellingBid();
+        var productOption = bid.getProductOption();
+        var product = productOption.getProduct();
+
         return CartResponseDto.builder()
                 .cartId(cart.getId())
                 .createdAt(cart.getCreatedAt())
@@ -100,12 +103,12 @@ public class CartServiceImpl implements CartService {
                         .id(bid.getId())
                         .price(bid.getPrice())
                         .status(bid.getStatus())
-                        .size(bid.getProductOption().getOption()) // N+1 @EntityGraph로 해결
+                        .size(productOption.getOption())
                         .product(CartResponseDto.ProductInfo.builder()
-                                .id(bid.getProductOption().getProduct().getId())
-                                .name(bid.getProductOption().getProduct().getName())
-                                .brandName(bid.getProductOption().getProduct().getBrand().getName())
-                                .imageUrl(bid.getProductOption().getProduct().getImageUrl())
+                                .id(product.getId())
+                                .name(product.getName())
+                                .brandName(product.getBrand().getName())
+                                .imageUrl(product.getImageUrl())
                                 .build())
                         .build())
                 .build();

@@ -114,14 +114,25 @@ public class Product extends BaseEntity {
         this.totalScore += rating;
     }
     public void deleteReviewData(int rating) {
-        if (this.reviewCount > 0) {
-            this.reviewCount--;
-            this.totalScore -= rating;
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("평점은 1~5 사이여야 합니다.");
         }
+        if (this.reviewCount == 0) {
+            throw new IllegalStateException("삭제할 리뷰가 없습니다.");
+        }
+        this.reviewCount--;
+        this.totalScore -= rating;
         if (this.totalScore < 0) this.totalScore = 0;
     }
     public void updateReviewData(int oldRating, int newRating) {
+        if (oldRating < 1 || oldRating > 5) {
+            throw new IllegalArgumentException("이전 평점은 1에서 5 사이여야 합니다.");
+        }
+        if (newRating < 1 || newRating > 5) {
+            throw new IllegalArgumentException("새 평점은 1에서 5 사이여야 합니다.");
+        }
         this.totalScore -= oldRating;
         this.totalScore += newRating;
+        if (this.totalScore < 0) this.totalScore = 0;
     }
 }

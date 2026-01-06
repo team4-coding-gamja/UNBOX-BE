@@ -1,12 +1,16 @@
 package com.example.unbox_be.domain.product.service;
 
+import com.example.unbox_be.domain.product.dto.response.BrandListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductDetailResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductOptionListResponseDto;
+import com.example.unbox_be.domain.product.entity.Brand;
 import com.example.unbox_be.domain.product.entity.Category;
 import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.entity.ProductOption;
+import com.example.unbox_be.domain.product.mapper.BrandMapper;
 import com.example.unbox_be.domain.product.mapper.ProductMapper;
+import com.example.unbox_be.domain.product.repository.BrandRepository;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.product.repository.ProductRepository;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
@@ -29,7 +33,9 @@ public class ProductServiceImpl implements  ProductService {
 
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
+    private final BrandRepository brandRepository;
     private final ProductMapper productMapper;
+    private final BrandMapper brandMapper;
     private final SellingBidRepository sellingBidRepository;
     private final TradeService tradeService;
 
@@ -37,17 +43,35 @@ public class ProductServiceImpl implements  ProductService {
     public Page<ProductListResponseDto> getProducts(UUID brandId, String category, String keyword, Pageable pageable) {
         Category parsedCategory = Category.fromNullable(category);
 
-        Page<Product> page = productRepository.findByFilters(brandId, parsedCategory, keyword, pageable);
+        // 1) category 문자열 -> Category Enum 변환 (null/빈값이면 필터 미적용)
+        Category categoryEnum = Category.fromNullable(category);
 
-        // ✅ 최저가(lowestPrice) 계산은 Trade 모듈이 있어야 정확히 가능.
-        // 지금은 “정상 동작”을 위해 null(또는 0)로 내려주고,
-        // 추후 TradeService 붙이면 여기서 매핑 시 lowestPrice를 채우면 됨.
-        return page.map(p -> productMapper.toProductListDto(p, null));
+        // 2) Repository 검색 + 페이징
+        Page<Product> products = productRepository.findByFiltersAndDeletedAtIsNull(brandId, categoryEnum, keyword, pageable);
+
+        // 3) 최저가 조회 (N+1 문제 방지: 한 번의 쿼리로 조회)
+        List<UUID> productIds = products.getContent().stream()
+                .map(Product::getId)
+                .toList();
+
+        // productId별 최저가 Map 생성 (key: productId, value: lowestPrice)
+        Map<UUID, Integer> lowestPriceMap =
+                sellingBidRepository.findLowestPricesByProductIds(productIds).stream()
+                        .collect(Collectors.toMap(
+                                row -> (UUID) row[0],
+                                row -> row[1] == null ? null : ((Number) row[1]).intValue()
+                        ));
+
+        return products.map(p ->
+                productMapper.toProductListResponseDto(
+                        p, lowestPriceMap.getOrDefault(p.getId(), 0)
+                )
+        );
     }
 
     // ✅ 상품 상세 조회
     public ProductDetailResponseDto getProductDetail(UUID productId) {
-        Product product = productRepository.findByIdWithBrand(productId)
+        Product product = productRepository.findByIdAndDeletedAtIsNullWithBrand(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
         return productMapper.toProductDetailDto(product, null);
@@ -60,7 +84,7 @@ public class ProductServiceImpl implements  ProductService {
             throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
         }
 
-        List<ProductOption> options = productOptionRepository.findAllByProductId(productId);
+        List<ProductOption> options = productOptionRepository.findAllByProductIdAndDeletedAtIsNull(productId);
         List<UUID> optionIds = options.stream().map(ProductOption::getId).toList();
 
         Map<UUID, Integer> lowestPriceMap = sellingBidRepository.findLowestPriceByOptionIds(optionIds)
@@ -77,6 +101,15 @@ public class ProductServiceImpl implements  ProductService {
                                 lowestPriceMap.get(option.getId())
                         )
                 )
+                .toList();
+    }
+
+    // ✅ 브랜드 전체 조회
+    @Override
+    public List<BrandListResponseDto> getAllBrands() {
+        List<Brand> brands = brandRepository.findAll();
+        return brands.stream()
+                .map(brandMapper::toBrandListDto)
                 .toList();
     }
 }

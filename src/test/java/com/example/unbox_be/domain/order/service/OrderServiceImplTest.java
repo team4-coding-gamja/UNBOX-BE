@@ -116,9 +116,9 @@ class OrderServiceImplTest {
                 .receiverZipCode("12345")
                 .build();
 
-        given(userRepository.findById(buyerId)).willReturn(Optional.of(buyer));
-        given(sellingBidRepository.findById(sellingBidId)).willReturn(Optional.of(sellingBid));
-        given(userRepository.findById(sellerId)).willReturn(Optional.of(seller));
+        given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)).willReturn(Optional.of(sellingBid));
+        given(userRepository.findByIdAndDeletedAtIsNull(sellerId)).willReturn(Optional.of(seller));
         given(orderRepository.save(any(Order.class))).willAnswer(inv -> {
             Order o = inv.getArgument(0);
             ReflectionTestUtils.setField(o, "id", orderId);
@@ -136,7 +136,7 @@ class OrderServiceImplTest {
         Long buyerId = 1L;
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().build();
 
-        given(userRepository.findById(buyerId)).willReturn(Optional.empty());
+        given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> orderService.createOrder(requestDto, buyerId))
                 .isInstanceOf(CustomException.class)
@@ -151,8 +151,8 @@ class OrderServiceImplTest {
         User buyer = createUser(buyerId);
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().sellingBidId(sellingBidId).build();
 
-        given(userRepository.findById(buyerId)).willReturn(Optional.of(buyer));
-        given(sellingBidRepository.findById(sellingBidId)).willReturn(Optional.empty());
+        given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> orderService.createOrder(requestDto, buyerId))
                 .isInstanceOf(CustomException.class)
@@ -169,8 +169,8 @@ class OrderServiceImplTest {
 
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().sellingBidId(sellingBidId).build();
 
-        given(userRepository.findById(buyerId)).willReturn(Optional.of(buyer));
-        given(sellingBidRepository.findById(sellingBidId)).willReturn(Optional.of(sellingBid));
+        given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)).willReturn(Optional.of(sellingBid));
 
         assertThatThrownBy(() -> orderService.createOrder(requestDto, buyerId))
                 .isInstanceOf(CustomException.class)
@@ -189,9 +189,9 @@ class OrderServiceImplTest {
 
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().sellingBidId(sellingBidId).build();
 
-        given(userRepository.findById(buyerId)).willReturn(Optional.of(buyer));
-        given(sellingBidRepository.findById(sellingBidId)).willReturn(Optional.of(sellingBid));
-        given(userRepository.findById(sellerId)).willReturn(Optional.empty()); // Seller Not Found
+        given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)).willReturn(Optional.of(sellingBid));
+        given(userRepository.findByIdAndDeletedAtIsNull(sellerId)).willReturn(Optional.empty()); // Seller Not Found
 
         assertThatThrownBy(() -> orderService.createOrder(requestDto, buyerId))
                 .isInstanceOf(CustomException.class)
@@ -364,7 +364,7 @@ class OrderServiceImplTest {
         Order order = createOrder(orderId, createUser(1L), createUser(2L));
         ReflectionTestUtils.setField(order, "status", OrderStatus.SHIPPED_TO_CENTER); // 상태 맞춰줌
 
-        given(adminRepository.findById(adminId)).willReturn(Optional.of(admin));
+        given(adminRepository.findByIdAndDeletedAtIsNull(adminId)).willReturn(Optional.of(admin));
         given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
         given(orderMapper.toDetailResponseDto(order)).willReturn(OrderDetailResponseDto.builder().build());
 
@@ -380,7 +380,7 @@ class OrderServiceImplTest {
         Admin admin = BeanUtils.instantiateClass(Admin.class);
         ReflectionTestUtils.setField(admin, "adminRole", AdminRole.ROLE_MANAGER); // MANAGER는 권한 없음
 
-        given(adminRepository.findById(adminId)).willReturn(Optional.of(admin));
+        given(adminRepository.findByIdAndDeletedAtIsNull(adminId)).willReturn(Optional.of(admin));
 
         assertThatThrownBy(() -> orderService.updateAdminStatus(UUID.randomUUID(), OrderStatus.ARRIVED_AT_CENTER, null, adminId))
                 .isInstanceOf(CustomException.class)
@@ -397,7 +397,7 @@ class OrderServiceImplTest {
         Order order = createOrder(orderId, createUser(buyerId), createUser(2L));
         ReflectionTestUtils.setField(order, "status", OrderStatus.DELIVERED);
 
-        given(userRepository.findById(buyerId)).willReturn(Optional.of(order.getBuyer()));
+        given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(order.getBuyer()));
         given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
         given(orderMapper.toDetailResponseDto(order)).willReturn(OrderDetailResponseDto.builder().build());
 
@@ -412,7 +412,7 @@ class OrderServiceImplTest {
         UUID orderId = UUID.randomUUID();
         Long buyerId = 1L;
 
-        given(userRepository.findById(buyerId)).willReturn(Optional.empty());
+        given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> orderService.confirmOrder(orderId, buyerId))
                 .isInstanceOf(CustomException.class)

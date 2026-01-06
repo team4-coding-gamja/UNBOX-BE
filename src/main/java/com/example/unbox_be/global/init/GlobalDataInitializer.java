@@ -3,11 +3,8 @@ package com.example.unbox_be.global.init;
 import com.example.unbox_be.domain.admin.common.entity.Admin;
 import com.example.unbox_be.domain.admin.common.entity.AdminRole;
 import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
-import com.example.unbox_be.domain.product.entity.Brand;
-import com.example.unbox_be.domain.product.entity.Category;
-import com.example.unbox_be.domain.product.entity.Product;
-import com.example.unbox_be.domain.product.repository.BrandRepository;
-import com.example.unbox_be.domain.product.repository.ProductRepository;
+import com.example.unbox_be.domain.user.entity.User;
+import com.example.unbox_be.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -24,78 +21,98 @@ import org.springframework.transaction.annotation.Transactional;
 public class GlobalDataInitializer implements ApplicationRunner {
 
     private final AdminRepository adminRepository;
-    private final BrandRepository brandRepository;
-    private final ProductRepository productRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        // 1. Master 관리자 계정 생성
-        initMasterAdmin();
-
-        // 2. 초기 브랜드 및 상품 데이터 생성 (브랜드가 없을 때만 실행)
-        if (brandRepository.count() == 0) {
-            initBrandsAndProducts();
-        }
-    }
-
-    private void initMasterAdmin() {
-        // 이메일 중복 체크 (이미 존재하면 Skip)
-        if (adminRepository.existsByEmail("master@unbox.com")) {
-            return;
-        }
-
-        // 팩토리 메서드 + 닉네임 정규식(소문자+숫자 4~10자) 준수
-        Admin master = Admin.createAdmin(
+        initAdminIfNotExists(
                 "master@unbox.com",
-                passwordEncoder.encode("12341234!"), // 암호화 필수
-                "master01",                          // 닉네임 규칙 준수
+                "master1",
                 "010-1234-5678",
                 AdminRole.ROLE_MASTER
         );
 
-        adminRepository.save(master);
-        log.info("=========== [Seed Data] Master Admin Created ===========");
-        log.info("ID: master@unbox.com / PW: 12341234!");
-        log.info("========================================================");
+        initAdminIfNotExists(
+                "manager@unbox.com",
+                "manager1",
+                "010-1111-2222",
+                AdminRole.ROLE_MANAGER
+        );
+
+        initAdminIfNotExists(
+                "inspector@unbox.com",
+                "inspector1",
+                "010-3333-4444",
+                AdminRole.ROLE_INSPECTOR
+        );
+
+        initUserIfNotExists(
+                "user@unbox.com",
+                "user1",
+                "010-9999-8888"
+        );
+        
+        // Buyers
+        initUserIfNotExists("buyer1@unbox.com", "buyer1", "010-1000-0001");
+        initUserIfNotExists("buyer2@unbox.com", "buyer2", "010-1000-0002");
+        initUserIfNotExists("buyer3@unbox.com", "buyer3", "010-1000-0003");
+
+        // Sellers
+        initUserIfNotExists("seller1@unbox.com", "seller1", "010-2000-0001");
+        initUserIfNotExists("seller2@unbox.com", "seller2", "010-2000-0002");
+        initUserIfNotExists("seller3@unbox.com", "seller3", "010-2000-0003");
+
     }
 
-    private void initBrandsAndProducts() {
-        // 1. 브랜드 생성
-        Brand nike = Brand.createBrand(
-                "Nike",
-                "https://dummyimage.com/200x200/000/fff&text=Nike"
+    private void initAdminIfNotExists(
+            String email,
+            String nickname,
+            String phone,
+            AdminRole role
+    ) {
+        if (adminRepository.existsByEmailAndDeletedAtIsNull(email)) {
+            return;
+        }
+
+        Admin admin = Admin.createAdmin(
+                email,
+                passwordEncoder.encode("12341234!"), // 공통 초기 비밀번호
+                nickname,
+                phone,
+                role
         );
 
-        Brand adidas = Brand.createBrand(
-                "Adidas",
-                "https://dummyimage.com/200x200/000/fff&text=Adidas"
+        adminRepository.save(admin);
+
+        log.info("=========== [Seed Data] Admin Created ===========");
+        log.info("ROLE: {}", role);
+        log.info("ID: {} / PW: 12341234!", email);
+        log.info("================================================");
+    }
+
+    private void initUserIfNotExists(
+            String email,
+            String nickname,
+            String phone
+    ) {
+        if (userRepository.existsByEmail(email)) {
+            return;
+        }
+
+        User user = User.createUser(
+                email,
+                passwordEncoder.encode("12341234!"),
+                nickname,
+                phone
         );
 
-        brandRepository.save(nike);
-        brandRepository.save(adidas);
+        userRepository.save(user);
 
-        // 2. 상품 생성 (Category.SHOES 사용)
-        Product jordan1 = Product.createProduct(
-                "Jordan 1 Retro High OG Chicago 2022",
-                "DZ5485-612",
-                Category.SHOES,
-                "https://dummyimage.com/600x600/000/fff&text=Jordan1",
-                nike
-        );
-
-        Product yeezySlide = Product.createProduct(
-                "Adidas Yeezy Slide Bone 2022",
-                "FZ5897",
-                Category.SHOES,
-                "https://dummyimage.com/600x600/000/fff&text=Yeezy",
-                adidas
-        );
-
-        productRepository.save(jordan1);
-        productRepository.save(yeezySlide);
-
-        log.info("=========== [Seed Data] Brand & Product Created ===========");
+        log.info("=========== [Seed Data] User Created ===========");
+        log.info("ID: {} / PW: 12341234!", email);
+        log.info("================================================");
     }
 }

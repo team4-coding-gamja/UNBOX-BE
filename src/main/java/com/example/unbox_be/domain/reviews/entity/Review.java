@@ -1,60 +1,61 @@
 package com.example.unbox_be.domain.reviews.entity;
 
-import com.example.unbox_be.domain.common.BaseEntity; //
+import com.example.unbox_be.domain.common.BaseEntity;
+import com.example.unbox_be.domain.order.entity.Order;
+import com.example.unbox_be.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
-
 
 @Entity
 @Table(name = "p_review")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED) //
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class Review extends BaseEntity {
-    // BaseEntity를 상속받아 생성/수정일 자동 관리
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // PK를 UUID로 자동 생성
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "review_id", updatable = false, nullable = false)
-    private UUID reviewId; // 상품리뷰ID (PK)
+    private UUID id;
 
-    @Column(name = "order_id", nullable = false)
-    private UUID orderId; // 주문ID (FK 역할, ID값만 저장), 배송완료 체크용
+    // 1주문 1리뷰 원칙
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    private Order order;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "buyer_id", nullable = false)
+    private User buyer;
+
+    // ERD상 Product 테이블과는 연관관계(FK)가 없으므로 ID값만 저장
     @Column(name = "product_id", nullable = false)
-    private UUID productId; // 상품 PK, 쿼리스트링 조회용
-
-    @Column(name = "buyer_id", nullable = false)
-    private Long buyerId; // 구매자ID (FK 역할, ID값만 저장)
+    private UUID productId;
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String content; // 리뷰 내용
+    private String content;
 
     @Column(nullable = false)
-    private Integer rating; // 평점 (1~5점)
+    private Integer rating;
 
     @Column(name = "image_url")
-    private String imageUrl; // 이미지 주소
+    private String imageUrl;
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;  // 삭제 한 날짜
+    public static Review createReview(UUID productId, Order order, User buyer, String content, Integer rating, String imageUrl) {
+        return Review.builder()
+                .productId(productId)
+                .order(order)
+                .buyer(buyer)
+                .content(content)
+                .rating(rating)
+                .imageUrl(imageUrl)
+                .build();
+    }
 
-    @Column(name = "deleted_by")
-    private String deletedBy;  // 누가 삭제했는지
-
-    // 리뷰수정 비즈니스 로직
     public void update(String content, Integer rating, String imageUrl) {
         this.content = content;
         this.rating = rating;
         this.imageUrl = imageUrl;
-    }
-
-    // 소프트 삭제 처리를 위한 비즈니스 메서드
-    public void delete(String adminOrUserId) {
-        this.deletedAt = LocalDateTime.now();
-        this.deletedBy = adminOrUserId;
     }
 }

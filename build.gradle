@@ -25,35 +25,25 @@ repositories {
 }
 
 dependencies {
-
-    // JPA
+    // Spring Boot Starters
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-    // Web
     implementation 'org.springframework.boot:spring-boot-starter-web'
-
-    // Actuator (헬스체크 및 모니터링)
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-
-    // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
-
-    // Validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-    // PostgreSQL
+    // Database
     runtimeOnly 'org.postgresql:postgresql'
+    runtimeOnly 'com.h2database:h2'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    // mapstruct
+    // MapStruct
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-
-    // 롬복과 MapStruct를 같이 쓸 때 필드를 연결해주는 필수 라이브러리
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
     // QueryDSL
@@ -61,12 +51,6 @@ dependencies {
     annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
-
-    // H2 + Test
-    testImplementation 'com.h2database:h2'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    runtimeOnly 'com.h2database:h2'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
@@ -76,11 +60,10 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
 
-    // Redis
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
-    // AWS
-    implementation 'software.amazon.awssdk:s3:2.20.26'
+    // Test
+    testImplementation 'com.h2database:h2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {

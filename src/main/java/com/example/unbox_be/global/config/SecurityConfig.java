@@ -18,12 +18,14 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import com.example.unbox_be.global.error.exception.CustomAuthenticationEntryPoint;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -96,6 +98,8 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+
                 // ✅ 로그인 안 됐을 때 JSON 메시지 내려줌 (인증 필요한 요청에서만 동작)
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
@@ -107,6 +111,8 @@ public class SecurityConfig {
                                 "/", "/swagger-ui/**", "/swagger-ui.html",
                                 "/v3/api-docs/**", "/api-docs/**", "/swagger-resources/**"
                         ).permitAll()
+
+                        .requestMatchers("/h2-console/**").permitAll()
 
                         // ✅ 테스트용 부트스트랩(운영 시 삭제)
                         .requestMatchers(HttpMethod.POST, "/api/test/bootstrap/master").permitAll()
@@ -141,7 +147,7 @@ public class SecurityConfig {
                                 "/api/admin/staff/**"
                         ).hasRole("MASTER")
 
-                                // 로그아웃은 인증 필요(선택)
+                        // 로그아웃은 인증 필요(선택)
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/logout",
                                 "/api/admin/auth/logout"

@@ -27,8 +27,14 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
     @EntityGraph(attributePaths = {"productOption", "productOption.product"})
     Slice<SellingBid> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"productOption", "productOption.product"})
-    Optional<SellingBid> findWithDetailsBySellingId(UUID sellingId);
+    @Query("""
+    select sb from SellingBid sb
+    join fetch sb.productOption po
+    join fetch po.product p
+    where sb.id = :sellingBidId
+      and sb.deletedAt is null
+""")
+    Optional<SellingBid> findWithDetailsByIdAndDeletedAtIsNull(@Param("sellingBidId") UUID sellingBidId);
 
     @Query("SELECT new com.example.unbox_be.domain.trade.dto.response.ProductSizePriceResponseDto(" +
             "po.option, MIN(s.price)) " +  // ✅ Enum → String 변환
@@ -51,5 +57,17 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
     """)
     List<Object[]> findLowestPriceByOptionIds(List<UUID> optionIds);
 
-    Optional<SellingBid> findBySellingId(UUID sellingId);
+    Optional<SellingBid> findByIdAndDeletedAtIsNull(UUID sellingId);
+
+    // ✅ 상품 ID 목록에 해당하는 최저가 조회 (상품별 최저가)
+    @Query("""
+        select po.product.id, min(sb.price)
+        from SellingBid sb
+        join sb.productOption po
+        where po.product.id in :productIds
+          and sb.status = 'IN_PROGRESS'
+          and sb.deletedAt is null
+        group by po.product.id
+    """)
+    List<Object[]> findLowestPricesByProductIds(@Param("productIds") List<UUID> productIds);
 }

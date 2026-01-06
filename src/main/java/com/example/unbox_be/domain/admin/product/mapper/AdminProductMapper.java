@@ -1,29 +1,23 @@
 package com.example.unbox_be.domain.admin.product.mapper;
 
 import com.example.unbox_be.domain.admin.product.dto.response.AdminProductCreateResponseDto;
-import com.example.unbox_be.domain.admin.product.dto.response.AdminProductOptionCreateResponseDto;
-import com.example.unbox_be.domain.admin.staff.dto.response.*;
+import com.example.unbox_be.domain.admin.product.dto.response.AdminProductListResponseDto;
+import com.example.unbox_be.domain.admin.product.dto.response.AdminProductUpdateResponseDto;
 import com.example.unbox_be.domain.product.entity.Product;
-import com.example.unbox_be.domain.product.entity.ProductOption;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-public class AdminProductMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface AdminProductMapper {
 
-    public static AdminProductCreateResponseDto toAdminProductCreateResponseDto(Product product) {
-        return AdminProductCreateResponseDto.builder()
-                .brandId(product.getBrand().getId())
-                .id(product.getId())
-                .name(product.getName())
-                .modelNumber(product.getModelNumber())
-                .category(product.getCategory())
-                .imageUrl(product.getImageUrl())
-                .build();
-    }
+    @Mapping(target = "brandId", source = "brand.id")
+    AdminProductCreateResponseDto toAdminProductCreateResponseDto(Product product);
 
-    public static AdminProductOptionCreateResponseDto toAdminProductOptionCreateResponseDto(ProductOption productOption) {
-        return AdminProductOptionCreateResponseDto.builder()
-                .id(productOption.getId())
-                .productId(productOption.getProduct().getId())
-                .option(productOption.getOption())
-                .build();
-    }
+    @Mapping(target = "brandId", source = "brand.id")
+    AdminProductUpdateResponseDto toAdminProductUpdateResponseDto(Product product);
+
+    @Mapping(target = "brandId", source = "brand.id")
+    @Mapping(target = "brandName", source = "brand.name")
+    AdminProductListResponseDto toAdminProductListResponseDto(Product product);
 }

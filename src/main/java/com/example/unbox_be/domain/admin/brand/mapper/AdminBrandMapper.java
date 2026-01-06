@@ -1,15 +1,41 @@
 package com.example.unbox_be.domain.admin.brand.mapper;
 
 import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandCreateResponseDto;
+import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandDetailResponseDto;
+import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandListResponseDto;
+import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandUpdateResponseDto;
 import com.example.unbox_be.domain.product.entity.Brand;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-public class AdminBrandMapper {
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.IGNORE
+)
+public interface AdminBrandMapper {
 
-    public static AdminBrandCreateResponseDto toAdminBrandCreateResponseDto(Brand brand) {
-        return AdminBrandCreateResponseDto.builder()
-                .id(brand.getId())
-                .name(brand.getName())
-                .logoUrl(brand.getLogoUrl())
-                .build();
-    }
+    // ✅ 브랜드 생성
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "logoUrl", source = "logoUrl")
+    AdminBrandCreateResponseDto toAdminBrandCreateResponseDto(Brand brand);
+
+    // ✅ 브랜드 목록 조회
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "logoUrl", source = "logoUrl")
+    AdminBrandListResponseDto toAdminBrandListResponseDto(Brand brand);
+
+    // ✅ 브랜드 조회
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "logoUrl", source = "logoUrl")
+    AdminBrandDetailResponseDto toAdminBrandDetailResponseDto(Brand brand);
+
+    // ✅ 브랜드 수정
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "logoUrl", source = "logoUrl")
+    AdminBrandUpdateResponseDto toAdminBrandUpdateResponseDto(Brand brand);
 }

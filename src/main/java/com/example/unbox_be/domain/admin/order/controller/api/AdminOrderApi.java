@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@Tag(name = "관리자 주문", description = "관리자 주문 관리 API")
+@Tag(name = "[관리자] 주문 관리", description = "관리자 주문 관리 API")
 @RequestMapping("/api/admin/orders")
 public interface AdminOrderApi {
 

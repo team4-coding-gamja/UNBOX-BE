@@ -4,25 +4,24 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.tags.Tag;
-import io.swagger.v3.oas.models.PathItem;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Configuration
 public class SwaggerConfig {
 
-    // ✅ Group 분리는 유지
+    // =========================================================
+    // ✅ Group 분리
+    // =========================================================
     @Bean
     public GroupedOpenApi totalApi(OpenApiCustomizer swaggerSortCustomizer) {
         return GroupedOpenApi.builder()
@@ -51,6 +50,9 @@ public class SwaggerConfig {
                 .build();
     }
 
+    // =========================================================
+    // ✅ OpenAPI 기본 정보 + JWT
+    // =========================================================
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
@@ -63,35 +65,47 @@ public class SwaggerConfig {
                                 .name("Authorization")))
                 .addSecurityItem(new SecurityRequirement().addList("bearer-key"))
                 .info(new Info()
-                        .title("Unbox 프로젝트 API")
-                        .description("Unbox 백엔드 API 명세서입니다. (태그/CRUD 정렬 강제 적용)")
+                        .title("Unbox API 명세서")
+                        .description(
+                                "Unbox 백엔드 API 명세서입니다.\n\n" +
+                                        "API는 전체 API, 사용자 API, 관리자 API로 구분되어 있습니다."
+                        )
                         .version("1.0.0"));
     }
 
     /**
-     * ✅ 핵심: (1) 태그 이름을 번호 붙인 “표준 태그명”으로 통일
-     *        (2) 각 태그 내부의 operationId / summary에 CRUD prefix를 붙여서 정렬 강제
+     * =========================================================
+     * ✅ 목표
+     * - 태그 이름 표준화 (tagMap 기준)
+     * - 태그 내부 operation 정렬: POST → GET → PATCH/PUT → DELETE
+     * - 화면(summary)에 숫자(prefix) 표시 ❌
      *
-     * Swagger UI에서 tagsSorter/operationsSorter가 alpha여도,
-     * prefix 때문에 항상 원하는 순서로 보이게 됩니다.
+     * ✅ 방법
+     * - Swagger UI 정렬 키로 실제로 쓰이는 operationId를 조작
+     * - operationId 앞에 A_/B_/C_/D_ prefix를 붙여 알파벳 정렬로 강제
+     * =========================================================
      */
     @Bean
     public OpenApiCustomizer swaggerSortCustomizer() {
 
         final Map<String, String> tagMap = new LinkedHashMap<>();
 
-        // ===== USER 시나리오 =====
+        // ===== TEST =====
+        tagMap.put("⚠️ 테스트 / 부트스트랩", "[테스트] 마스터 계정 생성");
+
+        // ===== USER =====
         tagMap.put("사용자 인증", "[사용자] 인증 관리");
         tagMap.put("회원 관리", "[사용자] 회원 관리");
         tagMap.put("상품", "[사용자] 상품 관리");
         tagMap.put("wishlist-controller", "[사용자] 찜 관리");
         tagMap.put("selling-bid-controller", "[사용자] 판매입찰 관리");
+        tagMap.put("[사용자] 장바구니 관리", "[사용자] 장바구니 관리");
         tagMap.put("주문 관리", "[사용자] 주문 관리");
         tagMap.put("Payment API", "[사용자] 결제 관리");
         tagMap.put("리뷰 관리", "[사용자] 리뷰 관리");
         tagMap.put("상품 요청", "[사용자] 상품 등록 요청 관리");
 
-        // ===== 관리자 =====
+        // ===== ADMIN =====
         tagMap.put("[관리자] 인증 관리", "[관리자] 인증 관리");
         tagMap.put("[관리자] 스태프 관리", "[관리자] 스태프 관리");
         tagMap.put("[관리자] 사용자 관리", "[관리자] 사용자 관리");
@@ -101,19 +115,15 @@ public class SwaggerConfig {
         tagMap.put("[관리자] 주문 관리", "[관리자] 주문 관리");
         tagMap.put("[관리자] 상품 등록 요청 관리", "[관리자] 상품 등록 요청 관리");
 
-        // ===== TEST =====
-        tagMap.put("⚠️ 테스트 / 부트스트랩", "99. 테스트 - 부트스트랩");
-
-        final Pattern alreadyPrefixed = Pattern.compile("^\\d{2}[._ -].*");
-
         return openApi -> {
 
-            // ✅ 이 문서에서 실제로 쓰인(치환된) 태그만 모으기
+            // ✅ 이 문서에서 실제로 사용된(치환된) 태그만 모으기
             LinkedHashSet<String> usedStandardTags = new LinkedHashSet<>();
 
             Paths paths = openApi.getPaths();
             if (paths != null) {
                 for (Map.Entry<String, PathItem> e : paths.entrySet()) {
+
                     String path = e.getKey();
                     PathItem item = e.getValue();
                     if (item == null) continue;
@@ -122,94 +132,90 @@ public class SwaggerConfig {
                     if (ops == null) continue;
 
                     for (Map.Entry<PathItem.HttpMethod, Operation> opEntry : ops.entrySet()) {
+
                         PathItem.HttpMethod method = opEntry.getKey();
                         Operation op = opEntry.getValue();
                         if (op == null) continue;
 
-                        // 1) 태그 치환 + usedTags 수집
+                        // -------------------------------------------------
+                        // 1) 태그 치환 + 실제 사용 태그 수집
+                        // -------------------------------------------------
                         if (op.getTags() != null && !op.getTags().isEmpty()) {
                             List<String> replaced = op.getTags().stream()
                                     .map(t -> tagMap.getOrDefault(t, t))
                                     .distinct()
                                     .toList();
+
                             op.setTags(replaced);
-                            usedStandardTags.addAll(replaced); // ✅ 이 문서에 실제 쓰인 표준 태그만 모음
+                            usedStandardTags.addAll(replaced);
                         }
 
-                        // 2) CRUD prefix (너 기존 로직 유지)
-                        String crudPrefix = crudPrefix(method, path);
-                        String prefixNumDot = crudPrefixToNumberDot(crudPrefix);
+                        // -------------------------------------------------
+                        // 2) 숫자 없이 정렬 강제: operationId에만 prefix
+                        //    POST(A_) → GET(B_) → PATCH/PUT(C_) → DELETE(D_)
+                        // -------------------------------------------------
+                        String methodPrefix = methodOrderPrefix(method);
 
-                        if (op.getOperationId() != null && !op.getOperationId().isBlank()) {
+                        // operationId가 없으면 스프링독이 자동 생성하는 경우가 있는데,
+                        // 커스터마이징 단계에서 null일 수 있어 안전 처리
+                        if (op.getOperationId() == null || op.getOperationId().isBlank()) {
+                            // path + method 기반으로 유니크하게 생성 (충돌 방지)
+                            String generated = (method != null ? method.name() : "UNKNOWN")
+                                    + "_" + safePathToId(path);
+                            op.setOperationId(methodPrefix + generated);
+                        } else {
                             String oid = op.getOperationId();
-                            if (!oid.startsWith(crudPrefix + "_")) {
-                                op.setOperationId(crudPrefix + "_" + oid);
+                            if (!oid.startsWith(methodPrefix)) {
+                                op.setOperationId(methodPrefix + oid);
                             }
                         }
 
-                        if (op.getSummary() != null && !op.getSummary().isBlank()) {
-                            String s = op.getSummary();
-                            if (!alreadyPrefixed.matcher(s).matches()) {
-                                op.setSummary(prefixNumDot + " - " + s);
-                            }
-                        }
+                        // -------------------------------------------------
+                        // ✅ summary는 건드리지 않는다 (숫자 표시 X)
+                        // -------------------------------------------------
                     }
                 }
             }
 
-            // ✅ 마지막에: “이 문서에서 사용된 태그만” + tagMap 순서대로 정렬해서 tags 세팅
+            // ✅ “이 문서에서 실제 사용된 태그만” + tagMap 순서대로 tags 세팅
             openApi.setTags(buildStandardTags(tagMap, usedStandardTags));
         };
     }
 
-
-    private List<Tag> buildStandardTags(Map<String, String> tagMap) {
-        // tagMap의 value(표준 태그명)에서 중복 제거 + 순서 유지
-        LinkedHashSet<String> ordered = new LinkedHashSet<>(tagMap.values());
-
-        List<Tag> tags = new ArrayList<>();
-        for (String name : ordered) {
-            tags.add(new Tag().name(name));
-        }
-        return tags;
+    /**
+     * Swagger UI에서 operationsSorter=alpha일 때,
+     * operationId를 알파벳으로 정렬하므로 prefix로 순서를 강제한다.
+     */
+    private String methodOrderPrefix(PathItem.HttpMethod method) {
+        if (method == null) return "Z_";
+        return switch (method) {
+            case POST -> "A_";
+            case GET -> "B_";
+            case PATCH, PUT -> "C_";
+            case DELETE -> "D_";
+            default -> "Z_";
+        };
     }
 
-    private String crudPrefix(PathItem.HttpMethod method, String path) {
-        // CRUD 우선순위: CREATE(POST) -> LIST(GET without {id}) -> DETAIL(GET with {id})
-        //             -> UPDATE(PATCH/PUT) -> DELETE(DELETE)
-        if (method == null) return "99_ETC";
-
-        switch (method) {
-            case POST:
-                return "01_CREATE";
-            case GET:
-                // path에 { } 있으면 단건, 없으면 목록으로 간주
-                return (path != null && path.contains("{")) ? "03_DETAIL" : "02_LIST";
-            case PATCH:
-            case PUT:
-                return "04_UPDATE";
-            case DELETE:
-                return "05_DELETE";
-            default:
-                return "99_ETC";
-        }
+    /**
+     * path를 operationId에 넣기 안전한 문자열로 변환
+     * 예) /api/admin/staff/{adminId} -> api_admin_staff_adminId
+     */
+    private String safePathToId(String path) {
+        if (path == null) return "unknown_path";
+        return path
+                .replaceAll("^/+", "")
+                .replace("/", "_")
+                .replace("{", "")
+                .replace("}", "")
+                .replaceAll("[^a-zA-Z0-9_]", "_");
     }
 
-    private String crudPrefixToNumberDot(String crudPrefix) {
-        // Swagger UI에 보여줄 summary prefix
-        switch (crudPrefix) {
-            case "01_CREATE": return "01. 생성";
-            case "02_LIST":   return "02. 목록 조회";
-            case "03_DETAIL": return "03. 상세 조회";
-            case "04_UPDATE": return "04. 수정";
-            case "05_DELETE": return "05. 삭제";
-            default:          return "99. 기타";
-        }
-    }
-
+    /**
+     * tagMap.values() 순서를 유지하되,
+     * 이 문서에서 실제로 사용된 태그만 남김
+     */
     private List<Tag> buildStandardTags(Map<String, String> tagMap, Set<String> usedStandardTags) {
-        // tagMap.values()의 순서(LinkedHashMap 유지)를 그대로 따르되,
-        // 이 문서에서 실제로 쓰인 태그만 남김
         LinkedHashSet<String> orderedAll = new LinkedHashSet<>(tagMap.values());
 
         List<Tag> tags = new ArrayList<>();

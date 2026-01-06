@@ -11,15 +11,18 @@ import java.util.UUID;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
 
-    // ✅ 구매자 ID로 주문 내역 페이징 조회(삭제 포함)
+    // 구매자 ID로 주문 내역 페이징 조회(삭제 포함)
     @EntityGraph(attributePaths = {"productOption", "productOption.product", "productOption.product.brand"})
     Page<Order> findAllByBuyerId(Long buyerId, Pageable pageable);
 
-    // ✅ 구매자 ID로 주문 내역 페이징 조회(삭제 제외)
+    // 구매자 ID로 주문 내역 페이징 조회(삭제 제외)
     @EntityGraph(attributePaths = {"productOption", "productOption.product", "productOption.product.brand"})
     Page<Order> findAllByBuyerIdAndDeletedAtIsNull(Long buyerId, Pageable pageable);
 
-    // ✅ 주문 상세 조회(삭제 포함)
+    // 주문 ID로 단건 조회(삭제 제외)
+    Optional<Order> findByIdAndDeletedAtIsNull(UUID id);
+
+    // 주문 상세 조회(삭제 포함)
     @EntityGraph(attributePaths = {"buyer", "seller", "productOption", "productOption.product", "productOption.product.brand"})
     Optional<Order> findWithDetailsById(UUID id);
 }

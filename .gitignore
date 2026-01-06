@@ -50,3 +50,7 @@ redis_data/
 
 # macOS 시스템 파일
 .DS_Store
+
+### Logs ###
+logs/
+*.log

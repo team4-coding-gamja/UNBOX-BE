@@ -36,30 +36,30 @@ public class SellingBidService {
     @Transactional
     public UUID createSellingBid(Long userId, SellingBidRequestDto requestDto) {
 
-        // 1. [수정] 단순히 존재 확인(exists)만 하지 말고, 실제 객체를 조회(findById)합니다.
+        //  option 존재 여부 확인
         ProductOption productOption = productOptionRepository.findById(requestDto.getOptionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-
+        // 30일 뒤 00시로 deadline 설정
         LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();
 
-        // 2. [수정] 조회한 productOption을 매퍼에게 같이 넘깁니다.
+        // 실제 주문 생성
         SellingBid sellingBid = sellingBidMapper.toEntity(requestDto, userId, deadline, productOption);
-
+        // 생성된 주문 저장
         SellingBid savedBid = sellingBidRepository.save(sellingBid);
         return savedBid.getSellingId();
     }
 
     @Transactional
     public void cancelSellingBid(UUID sellingId, Long userId, String email) {
-        // 1. 입찰 조회
+        // 입찰 조회
         SellingBid sellingBid = sellingBidRepository.findById(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
-        // 2. [변경] 본인 확인 (DB 조회 없이 ID 비교만 수행)
+        // 본인 확인 (DB 조회 없이 ID 비교만 수행)
         if (!Objects.equals(sellingBid.getUserId(), userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
-
+        // 판매 예약 주문 LIVE 상태 확인
         if (sellingBid.getStatus() != SellingStatus.LIVE) {
             throw new IllegalArgumentException("취소할 수 없는 상태입니다.");
         }
@@ -71,38 +71,37 @@ public class SellingBidService {
     public void updateSellingBidPrice(UUID sellingId, Integer newPrice, Long userId, String email) {
         SellingBid sellingBid = sellingBidRepository.findById(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
-
+        // 입력 가격 유효성 검사
         if (newPrice == null || newPrice <= 0) {
             throw new CustomException(ErrorCode.INVALID_BID_PRICE);
         }
+        // 해당 예약 상태 검사
         if (sellingBid.getStatus() != SellingStatus.LIVE) {
             throw new IllegalArgumentException("수정할 수 없는 상태입니다.");
         }
 
-        // [변경] 엔티티 업데이트 메서드 호출 (ID 비교 로직은 엔티티 내부에서 수행하거나 여기서 미리 검증)
+        // 로그인 유저와 해당 예약 유저 동일성 검사
         if (!Objects.equals(sellingBid.getUserId(), userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
-
+        // 업데이트
         sellingBid.updatePrice(newPrice, userId, email);
     }
 
     @Transactional(readOnly = true)
     public SellingBidResponseDto getSellingBidDetail(UUID sellingId, Long userId) {
-        // User 조회 삭제
-
-        SellingBid sellingBid = sellingBidRepository.findBySellingId(sellingId) // 이걸로 변경!
+        SellingBid sellingBid = sellingBidRepository.findBySellingId(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
-        // [변경] ID 비교
+        // 로그인 유저와 해당 예약 유저 동일성 검사
         if (!Objects.equals(sellingBid.getUserId(), userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
-
+        // 동일하다면 sellingBid 반환 객체 생성
         SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
         ProductOption option = sellingBid.getProductOption();
 
-        // ... (Response 빌더 로직 동일)
+        // 객체 반환
         return SellingBidResponseDto.builder()
                 .sellingId(response.getSellingId())
                 .status(response.getStatus())
@@ -119,8 +118,7 @@ public class SellingBidService {
 
     @Transactional(readOnly = true)
     public Slice<SellingBidResponseDto> getMySellingBids(Long userId, Pageable pageable) {
-        // 1. 유저 조회 삭제
-        // 2. [변경] 바로 userId로 조회
+        // 유저 정보 가져옴
         Slice<SellingBid> bidSlice = sellingBidRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
 
         // 3. 변환 (동일)
@@ -142,27 +140,27 @@ public class SellingBidService {
         });
     }
 
-    //판매 상태 변환 service이고, 이거 나중에 MSA로 변환하면 API로 따로 관리ㄱㄱ
+    //판매 상태 변환. 나중에 MSA로 변환하면 API로 따로 관리
     @Transactional
     public void updateSellingBidStatus(UUID sellingId, SellingStatus newStatus, Long userId, String email) {
         SellingBid sellingBid = sellingBidRepository.findById(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
-        // 1. 권한 검증: 사용자가 직접 바꿀 때만 체크 (시스템 자동 변경 시에는 생략 가능하도록 설계)
+        // 유저 정보 검사
         if (userId != null) {
             if (!Objects.equals(sellingBid.getUserId(), userId)) {
                 throw new CustomException(ErrorCode.ACCESS_DENIED);
             }
         }
 
-        // 2. 상태 변환 괜찮은지 확인
+        // 상태 변환 괜찮은지 확인
         validateTransition(sellingBid.getStatus(), newStatus);
 
-        // 3. 상태 변경 및 기록
+        // 상태 변경 및 기록
         sellingBid.updateStatus(newStatus);
         if (email != null) sellingBid.updateModifiedBy(email);
     }
 
-    //CANCELLED나 MATCHED를 LIVE로 바꾸지 않게 -> 나중에 더 추가
+    // 변환할 수 있을 sellingBID인지 검사
     private void validateTransition(SellingStatus current, SellingStatus next) {
         if ((current == SellingStatus.CANCELLED || current == SellingStatus.MATCHED)
                 && next == SellingStatus.LIVE) {

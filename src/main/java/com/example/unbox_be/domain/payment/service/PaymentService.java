@@ -6,13 +6,8 @@ import com.example.unbox_be.domain.payment.dto.response.PaymentReadyResponseDto;
 import com.example.unbox_be.domain.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_be.domain.payment.entity.Payment;
 import com.example.unbox_be.domain.payment.entity.PaymentStatus;
-import com.example.unbox_be.domain.payment.entity.PgTransaction;
-import com.example.unbox_be.domain.payment.entity.PgTransactionStatus;
 import com.example.unbox_be.domain.payment.repository.PaymentRepository;
-import com.example.unbox_be.domain.payment.repository.PgTransactionRepository;
-import com.example.unbox_be.domain.product.service.ProductService;
-import com.example.unbox_be.domain.trade.entity.SellingStatus;
-import com.example.unbox_be.domain.trade.service.SellingBidService;
+import com.example.unbox_be.domain.settlement.service.SettlementService;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +26,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final PaymentTransactionService paymentTransactionService;
+    private final SettlementService settlementService;
 
     //결제 생성하기
     @Transactional
@@ -94,6 +90,7 @@ public class PaymentService {
 
                 // [수정 포인트 2] 이후 트랜잭션 기록 저장 및 추가 비즈니스 로직 처리
                 paymentTransactionService.processSuccessfulPayment(paymentId, response, paymentKeyFromFront);
+                settlementService.createSettlement(paymentId, order.getId());
             } catch (Exception e) {
                 log.error("결제 승인 후 서버 내부 처리 중 에러 발생 - 자동 취소 시도: {}", confirmedReceiptKey);
                 tossApiService.cancel(confirmedReceiptKey, "서버 내부 오류로 인한 자동 취소");

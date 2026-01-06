@@ -10,6 +10,7 @@ import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.mapper.OrderMapper;
 import com.example.unbox_be.domain.order.repository.OrderRepository;
+import com.example.unbox_be.domain.settlement.service.SettlementService;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
@@ -35,6 +36,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
     private final SellingBidRepository sellingBidRepository;
+    private final SettlementService settlementService;
 
     private final OrderMapper orderMapper;
 
@@ -192,7 +194,7 @@ public class OrderServiceImpl implements OrderService {
 
         // 도메인 로직 호출 (Entity 내부에서 구매자 ID 일치 여부 및 상태 검증)
         order.confirm(user);
-
+        settlementService.confirmSettlement(orderId);
         return orderMapper.toDetailResponseDto(order);
     }
 

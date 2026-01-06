@@ -11,10 +11,7 @@ import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -48,7 +45,7 @@ public class AdminOrderController implements AdminOrderApi {
     }
 
     @Override
-    @PutMapping("/{orderId}/status")
+    @PatchMapping("/{orderId}/status")
     public CustomApiResponse<OrderDetailResponseDto> updateOrderStatus(
             UUID orderId,
             OrderStatusUpdateRequestDto requestDto,

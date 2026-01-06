@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@Tag(name = "관리자 - 상품 등록 요청", description = "관리자 상품 등록 요청 관리 API")
+@Tag(name = "[관리자] 상품 등록 요청 관리", description = "관리자용 상품 등록 요청 관리 API")
 @RequestMapping("/api/admin/product-requests")
 public interface AdminProductRequestApi {
 
@@ -50,7 +50,7 @@ public interface AdminProductRequestApi {
             @ApiResponse(responseCode = "403", description = "권한 없음"),
             @ApiResponse(responseCode = "404", description = "요청 데이터 없음")
     })
-    @PutMapping("/{productRequestId}")
+    @PatchMapping("/{productRequestId}/status")
     CustomApiResponse<AdminProductRequestUpdateResponseDto> updateProductRequestStatus(
             @Parameter(description = "상품 요청 ID", required = true)
             @PathVariable UUID productRequestId,

@@ -1,8 +1,8 @@
-package com.example.unbox_be.domain.admin.order.repository;
+package com.example.unbox_be.domain.admin.trade.repository;
 
-import com.example.unbox_be.domain.admin.order.dto.OrderSearchCondition;
-import com.example.unbox_be.domain.order.entity.Order;
-import com.example.unbox_be.domain.order.entity.OrderStatus;
+import com.example.unbox_be.domain.admin.trade.dto.request.SellingBidSearchCondition;
+import com.example.unbox_be.domain.trade.entity.SellingBid;
+import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -12,25 +12,26 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
-import static com.example.unbox_be.domain.order.entity.QOrder.order;
+import static com.example.unbox_be.domain.trade.entity.QSellingBid.sellingBid;
 import static com.example.unbox_be.domain.product.entity.QBrand.brand;
 import static com.example.unbox_be.domain.product.entity.QProduct.product;
 import static com.example.unbox_be.domain.product.entity.QProductOption.productOption;
 
 @Repository
 @RequiredArgsConstructor
-public class AdminOrderRepositoryCustomImpl implements AdminOrderRepositoryCustom {
+public class AdminSellingBidRepositoryCustomImpl implements AdminSellingBidRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Order> findAdminOrders(OrderSearchCondition condition, Pageable pageable) {
-        List<Order> content = queryFactory
-                .selectFrom(order)
-                .leftJoin(order.buyer).fetchJoin()
-                .leftJoin(order.productOption, productOption).fetchJoin()
+    public Page<SellingBid> findAdminSellingBids(SellingBidSearchCondition condition, Pageable pageable) {
+        
+        List<SellingBid> content = queryFactory
+                .selectFrom(sellingBid)
+                .leftJoin(sellingBid.productOption, productOption).fetchJoin()
                 .leftJoin(productOption.product, product).fetchJoin()
                 .leftJoin(product.brand, brand).fetchJoin()
                 .where(
@@ -41,12 +42,15 @@ public class AdminOrderRepositoryCustomImpl implements AdminOrderRepositoryCusto
                 )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(order.createdAt.desc()) // 최신순 기본 정렬
+                .orderBy(sellingBid.createdAt.desc())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(order.count())
-                .from(order)
+                .select(sellingBid.count())
+                .from(sellingBid)
+                .leftJoin(sellingBid.productOption, productOption)
+                .leftJoin(productOption.product, product)
+                .leftJoin(product.brand, brand)
                 .where(
                         statusEq(condition.getStatus()),
                         productNameContains(condition.getProductName()),
@@ -57,8 +61,8 @@ public class AdminOrderRepositoryCustomImpl implements AdminOrderRepositoryCusto
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
 
-    private BooleanExpression statusEq(OrderStatus status) {
-        return status != null ? order.status.eq(status) : null;
+    private BooleanExpression statusEq(SellingStatus status) {
+        return status != null ? sellingBid.status.eq(status) : null;
     }
 
     private BooleanExpression productNameContains(String productName) {
@@ -69,16 +73,16 @@ public class AdminOrderRepositoryCustomImpl implements AdminOrderRepositoryCusto
         return brandName != null ? brand.name.containsIgnoreCase(brandName) : null;
     }
 
-    private BooleanExpression periodBetween(java.time.LocalDate startDate, java.time.LocalDate endDate) {
+    private BooleanExpression periodBetween(LocalDate startDate, LocalDate endDate) {
         if (startDate == null && endDate == null) {
             return null;
         }
         if (startDate != null && endDate != null) {
-            return order.createdAt.between(startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
+            return sellingBid.createdAt.between(startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
         }
         if (startDate != null) {
-            return order.createdAt.goe(startDate.atStartOfDay());
+            return sellingBid.createdAt.goe(startDate.atStartOfDay());
         }
-        return order.createdAt.lt(endDate.plusDays(1).atStartOfDay());
+        return sellingBid.createdAt.lt(endDate.plusDays(1).atStartOfDay());
     }
 }

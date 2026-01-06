@@ -40,15 +40,15 @@ spring:
     access-token-expiration-ms: ${SPRING_JWT_ACCESS_TOKEN_EXPIRATION:3600000}
     refresh-token-expiration-ms: ${SPRING_JWT_REFRESH_TOKEN_EXPIRATION:604800000}
 
-# 액추에이터 설정 (기본 모니터링)
+# 액추에이터 설정 (헬스체크 및 모니터링)
 management:
   endpoints:
     web:
       exposure:
-        include: "health,info"  # 문자열로 설정
+        include: "health"  # health 엔드포인트만 노출
   endpoint:
     health:
-      show-details: "when-authorized"  # 문자열로 설정
+      show-details: "always"  # 상세 정보 항상 표시
 
 # 서버 설정
 server:

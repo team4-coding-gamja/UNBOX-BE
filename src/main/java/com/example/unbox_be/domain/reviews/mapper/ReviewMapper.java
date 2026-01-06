@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.reviews.mapper;
 
+import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewCreateResponseDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewDetailResponseDto;
@@ -27,13 +28,18 @@ public interface ReviewMapper {
     ReviewUpdateResponseDto toReviewUpdateResponseDto(Review review);
 
     // ===== 리뷰 상세 =====
-    @Mapping(target = "orderId", source = "order.id")
+    @Mapping(target = "order", source = "order")
     @Mapping(target = "product", source = "product")
     @Mapping(target = "user", source = "buyer")
     ReviewDetailResponseDto toReviewDetailResponseDto(Review review);
 
     // ===== inner DTO 변환 =====
+    @SuppressWarnings("unused")
+    ReviewDetailResponseDto.OrderInfo toOrderInfo(Order order);
+
+    @SuppressWarnings("unused")
     ReviewDetailResponseDto.ProductInfo toProductInfo(Product product);
 
+    @SuppressWarnings("unused")
     ReviewDetailResponseDto.UserInfo toUserInfo(User user);
 }

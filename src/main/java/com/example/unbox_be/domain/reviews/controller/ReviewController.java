@@ -9,6 +9,7 @@ import com.example.unbox_be.domain.reviews.dto.response.ReviewUpdateResponseDto;
 import com.example.unbox_be.domain.reviews.service.ReviewService;
 import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class ReviewController implements ReviewApi {
     @PostMapping
     public CustomApiResponse<ReviewCreateResponseDto> createReview(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody ReviewCreateRequestDto requestDto) {
+            @RequestBody @Valid ReviewCreateRequestDto requestDto) {
         ReviewCreateResponseDto result = reviewService.createReview(userDetails.getUserId(), requestDto);
         return CustomApiResponse.success(result);
     }
@@ -44,7 +45,7 @@ public class ReviewController implements ReviewApi {
     public CustomApiResponse<ReviewUpdateResponseDto> updateReview(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID reviewId,
-            @RequestBody ReviewUpdateRequestDto requestDto) {
+            @RequestBody @Valid ReviewUpdateRequestDto requestDto) {
         ReviewUpdateResponseDto result = reviewService.updateReview(userDetails.getUserId(), reviewId, requestDto);
         return CustomApiResponse.success(result);
     }

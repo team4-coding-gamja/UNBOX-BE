@@ -15,7 +15,6 @@ import java.util.UUID;
 @Table(name = "p_review")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @SQLDelete(sql = "UPDATE p_review SET deleted_at = NOW() WHERE review_id = ?")
 @SQLRestriction("deleted_at IS NULL")
 public class Review extends BaseEntity {
@@ -63,7 +62,7 @@ public class Review extends BaseEntity {
 
     public static Review createReview(Order order, User buyer, Product product, String content, Integer rating, String imageUrl) {
         validateCreate(order, buyer, product, content, rating, imageUrl);
-        return new Review(order, buyer, product, content, rating, imageUrl);
+        return new Review(order, buyer, product, normalizeContent(content), rating, normalizeImageUrl(imageUrl));
     }
 
     public void update(String content, Integer rating, String imageUrl) {

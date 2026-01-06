@@ -1,10 +1,6 @@
 package com.example.unbox_be.domain.reviews.dto.request;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,11 +9,12 @@ import org.hibernate.validator.constraints.URL;
 
 import java.util.UUID;
 
+
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ReviewCreateRequestDto {
+public class ReviewUpdateRequestDto {
 
     @NotBlank(message = "리뷰 내용은 필수입니다.")
     @Size(max = 1000, message = "리뷰 내용은 최대 1000자까지 가능합니다.")
@@ -31,7 +28,4 @@ public class ReviewCreateRequestDto {
     // 선택값: null 허용. 값이 들어오면 URL 형식 검사
     @URL(message = "imageUrl은 올바른 URL 형식이어야 합니다.")
     private String imageUrl;
-
-    @NotNull(message = "orderId는 필수입니다.")
-    private UUID orderId;
 }

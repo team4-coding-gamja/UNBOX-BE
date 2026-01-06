@@ -2,10 +2,6 @@ spring:
   profiles:
     active: test
     
-  # 서버 포트 설정 (8080이 사용 중일 때 8081로 바꾸기)
-  server:
-    port: 8080
-    
   # H2 인메모리 데이터베이스 (테스트용)
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -32,8 +28,15 @@ spring:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
 
+  # JWT 설정 (테스트용)
   jwt:
     secret: ${SPRING_JWT_SECRET:test-secret-key-for-development-only}
+    access-token-expiration-ms: 3600000
+    refresh-token-expiration-ms: 604800000
+
+# 서버 설정 (테스트용)
+server:
+  port: 8080
 
 # 테스트용 로깅 설정
 logging:
@@ -41,6 +44,4 @@ logging:
     com.unbox: DEBUG
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG
-  file:
-    name: /var/log/unbox/test-application.log
 

@@ -41,12 +41,14 @@ public class Product extends BaseEntity {
     @JoinColumn(name = "brand_id", nullable = false)
     private Brand brand;
 
-    private Product(String name, String modelNumber, Category category, String imageUrl,Brand brand) {
+    private Product(String name, String modelNumber, Category category, String imageUrl, Brand brand, Integer reviewCount, Integer totalScore) {
         this.name = name;
         this.modelNumber = modelNumber;
         this.category = category;
         this.imageUrl = imageUrl;
         this.brand = brand;
+        this.reviewCount = reviewCount;
+        this.totalScore = totalScore;
     }
     // 생성 메서드
     public static Product createProduct(String name, String modelNumber, Category category, String imageUrl, Brand brand) {
@@ -55,7 +57,7 @@ public class Product extends BaseEntity {
         validateBrand(brand);
         validateImageUrl(imageUrl);
 
-        return new Product(name, modelNumber, category, imageUrl, brand);
+        return new Product(name, modelNumber, category, imageUrl, brand, 0, 0);
     }
 
     public void update(String name, String modelNumber, Category category, String imageUrl) {
@@ -63,6 +65,7 @@ public class Product extends BaseEntity {
         validateModelNumber(modelNumber);
         validateCategory(category);
         validateImageUrl(imageUrl);
+
         this.name = name;
         this.modelNumber = modelNumber;
         this.category = category;
@@ -103,6 +106,18 @@ public class Product extends BaseEntity {
         }
         if (!imageUrl.startsWith("http")) {
             throw new IllegalArgumentException("이미지 URL은 http 또는 https 형식이어야 합니다.");
+        }
+    }
+
+    private static  void validateReviewCount(Integer reviewCount) {
+        if (reviewCount == null || reviewCount < 0) {
+            throw new IllegalArgumentException("리뷰 개수는 0 이상이어야 합니다.");
+        }
+    }
+
+    private static void validateTotalScore(Integer totalScore) {
+        if (totalScore == null || totalScore < 0) {
+            throw new IllegalArgumentException("총 점수는 0 이상이어야 합니다.");
         }
     }
 }

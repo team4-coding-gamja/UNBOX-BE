@@ -28,6 +28,14 @@ public interface ProductMapper {
     }
 
     default ProductDetailResponseDto toProductDetailDto(Product product, Integer lowestPrice) {
+
+        // 평균 리뷰 계산
+        double avg = 0.0;
+        if (product.getReviewCount() > 0){
+            avg = (double) product.getTotalScore() / product.getReviewCount();
+            avg = Math.round(avg * 10) / 10.0;
+        }
+
         return ProductDetailResponseDto.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -36,6 +44,8 @@ public interface ProductMapper {
                 .imageUrl(product.getImageUrl())
                 .brandId(product.getBrand().getId())
                 .brandName(product.getBrand().getName())
+                .reviewCount(product.getReviewCount())
+                .averageRating(avg)
                 .lowestPrice(lowestPrice)
                 .build();
     }

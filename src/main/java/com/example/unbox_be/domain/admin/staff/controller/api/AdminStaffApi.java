@@ -20,7 +20,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "관리자 - 스태프", description = "관리자(스태프) 관리 API")
+@Tag(name = "[관리자] 스태프 관리", description = "관리자용 스태프 관리 API")
 @RequestMapping("/api/admin/staff")
 public interface AdminStaffApi {
 

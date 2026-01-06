@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@Tag(name = "관리자 - 상품 옵션", description = "관리자 상품 / 옵션 관리 API")
+@Tag(name = "[관리자] 상품 옵션 관리", description = "관리자용 상품 옵션 관리 API")
 @RequestMapping("/api/admin/products/{productId}/options")
 public interface AdminProductOptionApi {
 

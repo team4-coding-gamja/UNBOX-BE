@@ -22,4 +22,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     // ✅ 주문 상세 조회(삭제 포함)
     @EntityGraph(attributePaths = {"buyer", "seller", "productOption", "productOption.product", "productOption.product.brand"})
     Optional<Order> findWithDetailsById(UUID id);
+
+    @EntityGraph(attributePaths = {"buyer", "seller", "productOption", "productOption.product", "productOption.product.brand"})
+    Optional<Order> findByIdAndDeletedAtIsNull(UUID id);
 }

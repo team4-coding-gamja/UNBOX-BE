@@ -20,7 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "관리자 - 사용자", description = "관리자 사용자 조회 / 수정 / 삭제 API")
+@Tag(name = "[관리자] 사용자 관리", description = "관리자용 사용자 괸리 API")
 public interface AdminUserApi {
 
     @Operation(

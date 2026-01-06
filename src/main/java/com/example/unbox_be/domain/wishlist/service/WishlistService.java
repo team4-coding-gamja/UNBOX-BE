@@ -37,7 +37,7 @@ public class WishlistService {
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND));
 
         // 중복 체크 (영속화된 user 객체 사용)
-        if (wishlistRepository.existsByUserAndProductOption(user, option)) {
+        if (wishlistRepository.existsByUserAndProductOptionAndDeletedAtIsNull(user, option)) {
             throw new CustomException(ErrorCode.WISHLIST_ALREADY_EXISTS);
         }
 
@@ -56,7 +56,7 @@ public class WishlistService {
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         // 해당 유저의 위시리스트 조회
-        Slice<Wishlist> wishlistSlice = wishlistRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+        Slice<Wishlist> wishlistSlice = wishlistRepository.findByUserAndDeletedAtIsNullOrderByCreatedAtDesc(user, pageable);
 
         return wishlistSlice.getContent().stream()
                 .map(WishlistResponseDTO::from)

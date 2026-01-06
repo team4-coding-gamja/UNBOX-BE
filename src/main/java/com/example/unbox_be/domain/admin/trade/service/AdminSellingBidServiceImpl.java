@@ -29,9 +29,9 @@ public class AdminSellingBidServiceImpl implements AdminSellingBidService {
         // DTO 변환 및 반환
         return sellingBids.map(bid -> AdminSellingBidListResponseDto.builder()
                 .id(bid.getId())
-                .productName(bid.getProductOption().getProduct().getName())
-                .brandName(bid.getProductOption().getProduct().getBrand().getName())
-                .size(bid.getProductOption().getOption())
+                .productName(bid.getProductOption() != null ? bid.getProductOption().getProduct().getName() : "Unknown Product")
+                .brandName(bid.getProductOption() != null ? bid.getProductOption().getProduct().getBrand().getName() : "Unknown Brand")
+                .size(bid.getProductOption() != null ? bid.getProductOption().getOption() : "Unknown Size")
                 .price(bid.getPrice())
                 .status(bid.getStatus())
                 .createdAt(bid.getCreatedAt())

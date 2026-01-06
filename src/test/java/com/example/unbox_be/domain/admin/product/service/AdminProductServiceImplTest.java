@@ -207,7 +207,7 @@ class AdminProductServiceImplTest {
         AdminProductUpdateRequestDto dto = mock(AdminProductUpdateRequestDto.class);
         when(dto.getName()).thenReturn("새상품명");
         when(dto.getModelNumber()).thenReturn("MDL-123");
-        when(dto.getCategory()).thenReturn(Category.SHOES); // ✅ 네 프로젝트에서 category 타입이 String이면 그대로, Enum이면 Enum으로 맞춰줘
+        when(dto.getCategory()).thenReturn(Category.SHOES);
         when(dto.getImageUrl()).thenReturn("http://img.com/1.png");
 
         when(productRepository.findByIdAndDeletedAtIsNull(productId))
@@ -242,7 +242,7 @@ class AdminProductServiceImplTest {
 
         AdminProductUpdateRequestDto dto = mock(AdminProductUpdateRequestDto.class);
         when(dto.getName()).thenReturn("새상품명");
-        when(dto.getModelNumber()).thenReturn(null); // ✅ 핵심
+        when(dto.getModelNumber()).thenReturn(null);
         when(dto.getCategory()).thenReturn(Category.SHOES);
         when(dto.getImageUrl()).thenReturn("http://img.com/1.png");
 

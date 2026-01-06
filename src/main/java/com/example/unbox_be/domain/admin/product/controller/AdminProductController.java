@@ -35,7 +35,7 @@ public class AdminProductController implements AdminProductApi {
             @ModelAttribute ProductSearchCondition condition,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Pageable limited = PageSizeLimiter.limit(pageable);
-        return CustomApiResponse.success(adminProductService.getProducts(condition, pageable));
+        return CustomApiResponse.success(adminProductService.getProducts(condition, limited));
     }
 
     // ✅ 상품 등록

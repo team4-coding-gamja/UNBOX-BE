@@ -1,7 +1,5 @@
 package com.example.unbox_be.domain.admin.order.service;
 
-import com.example.unbox_be.domain.admin.common.entity.Admin;
-import com.example.unbox_be.domain.admin.common.entity.AdminRole;
 import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
 import com.example.unbox_be.domain.admin.order.dto.OrderSearchCondition;
 import com.example.unbox_be.domain.admin.order.repository.AdminOrderRepository;
@@ -9,18 +7,14 @@ import com.example.unbox_be.domain.order.dto.request.OrderStatusUpdateRequestDto
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
 import com.example.unbox_be.domain.order.entity.Order;
-import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.mapper.OrderMapper;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
-import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

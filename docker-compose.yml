@@ -17,6 +17,9 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
+      - SPRING_PROFILES_ACTIVE=dev
+    volumes:
+      - ./logs:/app/logs
     depends_on:
       - db
       - redis

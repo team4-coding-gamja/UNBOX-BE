@@ -72,16 +72,16 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     // ✅ 리뷰 수, 리뷰 총점 추가(리뷰 추가시)
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Product p SET p.reviewCount = p.reviewCount + 1, p.totalScore = p.totalScore + :score WHERE p.id = :id")
-    int increaseReviewCountAndScore(@Param("id") UUID productid, @Param("score") int score);
+    int increaseReviewCountAndScore(@Param("productid") UUID productid, @Param("score") int score);
 
     // ✅ 리뷰 수, 리뷰 총점 삭제(리뷰 삭제시)
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Product p SET p.reviewCount = p.reviewCount - 1, p.totalScore = p.totalScore - :score WHERE p.id = :id")
-    int decreaseReviewCountAndScore(@Param("id") UUID productid, @Param("score") int score);
+    int decreaseReviewCountAndScore(@Param("productid") UUID productid, @Param("score") int score);
 
     // ✅ 리뷰 수, 리뷰 총점 업데이트(리뷰 수정시)
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Product p SET p.totalScore = p.totalScore + :delta WHERE p.id = :id")
-    int updateReviewCountAndScore(@Param("id") UUID productid, @Param("score") int score);
+    int updateReviewCountAndScore(@Param("productid") UUID productid, @Param("delta") int delta);
 
 }

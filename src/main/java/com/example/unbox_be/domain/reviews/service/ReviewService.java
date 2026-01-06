@@ -107,6 +107,10 @@ public class ReviewService {
         }
         Integer oldScore = review.getRating();
         // 수정 시에도 평점 범위 검증이 필요할 경우 추가 가능
+        if (dto.getRating() < 1 || dto.getRating() > 5) {
+            throw new CustomException(ErrorCode.INVALID_RATING);
+        }
+
         review.update(dto.getContent(), dto.getRating(), dto.getImageUrl());
         productService.updateReviewData(review.getProductId(), oldScore, dto.getRating());
     }

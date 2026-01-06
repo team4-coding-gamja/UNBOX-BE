@@ -41,7 +41,7 @@ public class Product extends BaseEntity {
     @JoinColumn(name = "brand_id", nullable = false)
     private Brand brand;
 
-    private Product(String name, String modelNumber, Category category, String imageUrl, Brand brand, Integer reviewCount, Integer totalScore) {
+    private Product(String name, String modelNumber, Category category, String imageUrl, Brand brand, int reviewCount, int totalScore) {
         this.name = name;
         this.modelNumber = modelNumber;
         this.category = category;
@@ -106,18 +106,6 @@ public class Product extends BaseEntity {
         }
         if (!imageUrl.startsWith("http")) {
             throw new IllegalArgumentException("이미지 URL은 http 또는 https 형식이어야 합니다.");
-        }
-    }
-
-    private static  void validateReviewCount(Integer reviewCount) {
-        if (reviewCount == null || reviewCount < 0) {
-            throw new IllegalArgumentException("리뷰 개수는 0 이상이어야 합니다.");
-        }
-    }
-
-    private static void validateTotalScore(Integer totalScore) {
-        if (totalScore == null || totalScore < 0) {
-            throw new IllegalArgumentException("총 점수는 0 이상이어야 합니다.");
         }
     }
 }

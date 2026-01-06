@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@Tag(name = "관리자 - 상품 등록 요청", description = "관리자 상품 등록 요청 관리 API")
+@Tag(name = "[관리자] 상품 등록 요청 관리", description = "관리자용 상품 등록 요청 관리 API")
 @RequestMapping("/api/admin/product-requests")
 public interface AdminProductRequestApi {
 

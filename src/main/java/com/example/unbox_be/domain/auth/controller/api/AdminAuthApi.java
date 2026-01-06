@@ -19,7 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@Tag(name = "관리자 인증", description = "관리자 회원가입 / 로그인 / 로그아웃 / 토큰 재발급 API")
+@Tag(name = "[관리자] 인증 관리", description = "관리자용 인증 관리 API")
 public interface AdminAuthApi {
 
     @Operation(

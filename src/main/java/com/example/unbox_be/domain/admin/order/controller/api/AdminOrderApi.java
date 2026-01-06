@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@Tag(name = "관리자 주문 관리", description = "관리자용 주문 조회 및 상태 변경 API")
+@Tag(name = "[관리자] 주문 관리", description = "관리자용 주문 관리 API")
 public interface AdminOrderApi {
 
     @Operation(summary = "전체 주문 목록 조회", description = "검색 조건(상태, 키워드 등)과 페이징을 이용해 주문 목록을 조회합니다.")

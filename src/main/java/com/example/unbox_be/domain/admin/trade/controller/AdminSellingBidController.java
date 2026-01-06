@@ -1,10 +1,12 @@
 package com.example.unbox_be.domain.admin.trade.controller;
 
+import com.example.unbox_be.domain.admin.trade.controller.api.AdminSellingBidApi;
 import com.example.unbox_be.domain.admin.trade.dto.request.SellingBidSearchCondition;
 import com.example.unbox_be.domain.admin.trade.dto.response.AdminSellingBidListResponseDto;
 import com.example.unbox_be.domain.admin.trade.service.AdminSellingBidService;
 import com.example.unbox_be.global.pagination.PageSizeLimiter;
 import com.example.unbox_be.global.response.CustomApiResponse;
+import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin/bids/selling")
 @RequiredArgsConstructor
-public class AdminSellingBidController {
+public class AdminSellingBidController implements AdminSellingBidApi {
 
     private final AdminSellingBidService adminSellingBidService;
 
@@ -37,12 +39,12 @@ public class AdminSellingBidController {
 
     // 판매 입찰 삭제
     @DeleteMapping("/{sellingId}")
-    @PreAuthorize("hasAnyRole('MASTER','MANAGER')") // 검수자(INSPECTOR)는 삭제 권한 제외 (정책에 따라 조정 가능)
+    @PreAuthorize("hasAnyRole('MASTER','MANAGER')") // 검수자(INSPECTOR)는 삭제 권한 제외
     public CustomApiResponse<Void> deleteSellingBid(
             @PathVariable UUID sellingId,
-            @AuthenticationPrincipal String deletedBy) { // SecurityConfig 설정에 따라 타입 결정 (보통 UserDetails or String)
+            @AuthenticationPrincipal CustomUserDetails userDetails) { // CustomUserDetails로 직접 받아서 타입 안정성 확보
         
-        adminSellingBidService.deleteSellingBid(sellingId, deletedBy);
+        adminSellingBidService.deleteSellingBid(sellingId, userDetails.getUsername());
         return CustomApiResponse.success(null);
     }
 }

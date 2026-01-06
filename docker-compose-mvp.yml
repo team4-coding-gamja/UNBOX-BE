@@ -47,7 +47,7 @@ services:
     
     restart: unless-stopped
     
-    # Spring Boot 애플리케이션 헬스체크
+    # Spring Boot Actuator 헬스체크
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s

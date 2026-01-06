@@ -32,6 +32,9 @@ dependencies {
     // Web
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
+    // Actuator (헬스체크 및 모니터링)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
     // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
 

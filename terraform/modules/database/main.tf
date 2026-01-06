@@ -5,8 +5,8 @@
 
 # DB 서브넷 그룹 생성
 # - RDS 인스턴스를 배치할 서브넷들을 그룹화
-# - Multi-AZ 구성을 위해 여러 가용 영역의 서브넷 필요
-# - 고가용성: 한 지역 장애 시 다른 지역에서 자동 전환
+# - AWS RDS 요구사항: 최소 2개 AZ에 서브넷 필요
+# - 실제 데이터베이스는 AZ-A에만 배치됨
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-db-subnet-group"  # 서브넷 그룹 이름
   subnet_ids = var.subnet_ids                        # Private 서브넷 ID 목록
@@ -19,7 +19,8 @@ resource "aws_db_subnet_group" "main" {
 
 # RDS PostgreSQL 인스턴스 생성
 # - UNBOX 애플리케이션의 메인 데이터베이스
-# - 프로덕션 환경에서 사용할 관리형 데이터베이스
+# - AZ-A의 Private 서브넷에만 배치 (비용 절약)
+# - Single-AZ 구성으로 개발용 최적화
 resource "aws_db_instance" "postgres" {
   # 스토리지 설정
   allocated_storage      = 20                    # 20GB SSD 스토리지 (프리티어 범위)
@@ -40,6 +41,9 @@ resource "aws_db_instance" "postgres" {
   
   # 백업 설정
   skip_final_snapshot    = true                  # 인스턴스 삭제 시 최종 스냅샷 생성 안 함 (개발용)
+  
+  # Single-AZ 구성 (비용 절약)
+  multi_az               = false                 # Multi-AZ 비활성화로 비용 절약
 
   tags = {
     Name = "${var.project_name}-postgres"

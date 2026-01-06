@@ -22,6 +22,16 @@ resource "aws_security_group" "ec2" {
     cidr_blocks = ["0.0.0.0/0"]     # 모든 IP 주소에서 접근 허용
   }
 
+  # Spring Boot 애플리케이션 포트 (8080번 포트)
+  # - Swagger UI 및 REST API 엔드포인트 접근용
+  # - 팀원들이 로컬에서 http://{EC2_IP}:8080/swagger-ui/index.html 접근
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]     # 팀원 로컬 접속용
+  }
+
   # SSH 트래픽 허용 (22번 포트)
   # - 서버 관리를 위한 SSH 접속 허용
   # - 보안상 특정 IP만 허용하는 것이 좋음

@@ -1,41 +1,9 @@
-output "images_bucket_name" {
-  value = aws_s3_bucket.images.bucket
-}
-
-output "logs_bucket_name" {
-  value = aws_s3_bucket.logs.bucket
-}
-
-output "cloudfront_domain_name" {
-  description = "CloudFront 도메인 이름 (이미지용)"
-  value       = aws_cloudfront_distribution.images.domain_name
-}
-
-output "cloudfront_distribution_id" {
-  description = "CloudFront Distribution ID (이미지용)"
-  value       = aws_cloudfront_distribution.images.id
-}
-
 # =============================================================================
-# 프론트엔드 관련 출력값
+# Storage 모듈 출력값 - 없음
+# S3 사용하지 않으므로 출력값 없음
 # =============================================================================
 
-output "frontend_bucket_name" {
-  description = "프론트엔드 S3 버킷 이름"
-  value       = aws_s3_bucket.frontend.bucket
-}
-
-output "frontend_cloudfront_domain" {
-  description = "프론트엔드 CloudFront 도메인 이름"
-  value       = aws_cloudfront_distribution.frontend.domain_name
-}
-
-output "frontend_cloudfront_distribution_id" {
-  description = "프론트엔드 CloudFront Distribution ID (캐시 무효화용)"
-  value       = aws_cloudfront_distribution.frontend.id
-}
-
-output "frontend_url" {
-  description = "프론트엔드 접속 URL"
-  value       = "https://${aws_cloudfront_distribution.frontend.domain_name}"
-}
+# 로그 확인 방법:
+# 1. EC2 접속: ssh -i ~/.ssh/unbox_key ec2-user@{EC2_IP}
+# 2. Docker 로그: docker logs unbox-mvp-app
+# 3. Spring Boot 로그: /var/log/unbox/ 디렉토리

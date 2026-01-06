@@ -59,8 +59,9 @@ resource "aws_subnet" "private_a" {
 }
 
 # Private 서브넷 C 생성 (AZ-C)
-# - RDS Multi-AZ 구성을 위해 다른 AZ에 추가 서브넷 생성
-# - 고가용성 확보: 한 지역에 장애 발생 시 다른 지역에서 서비스 계속
+# - RDS 서브넷 그룹 최소 요구사항을 위한 추가 서브넷
+# - 실제로는 사용하지 않지만 RDS 생성을 위해 2개 AZ 필요
+# - 비용 절약: 실제 리소스는 AZ-A에만 배치
 resource "aws_subnet" "private_c" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.3.0/24"      # 256개 IP 주소 (10.0.3.0 ~ 10.0.3.255)

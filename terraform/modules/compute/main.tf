@@ -24,6 +24,7 @@ resource "aws_instance" "web" {
   # User Data 스크립트
   # - 인스턴스 최초 시작 시 자동으로 실행되는 스크립트
   # - Docker, Docker Compose, Git 설치 및 환경 설정
+  # - Redis 컴테이너 자동 시작으로 캐시 서버 준비
   user_data = base64encode(<<-EOF
     #!/bin/bash
     # 시스템 업데이트
@@ -42,10 +43,21 @@ resource "aws_instance" "web" {
     # Git 설치 (소스 코드 다운로드용)
     yum install -y git
     
+    # Redis 컨테이너 시작 (캐시 서버용)
+    # - 애플리케이션에서 세션 및 캐시 데이터 저장용
+    # - 6379 포트로 로컬에서 접속 가능
+    docker run -d --name redis --restart unless-stopped -p 6379:6379 redis:7-alpine
+    # curl 설치 (헬스체크용)
+    yum install -y curl
+    
     # 환경 변수 설정
-    # H2 데이터베이스 사용 설정 (비용 절약)
-    echo "export USE_H2_DATABASE=true" >> /home/ec2-user/.bashrc
-    echo "export REDIS_HOST=localhost" >> /home/ec2-user/.bashrc
+    # - 애플리케이션 설정용 환경변수
+    echo "export USE_H2_DATABASE=false" >> /home/ec2-user/.bashrc    # RDS 사용 설정
+    echo "export REDIS_HOST=redis" >> /home/ec2-user/.bashrc         # Docker Compose 내 Redis 서비스명
+    echo "export REDIS_PORT=6379" >> /home/ec2-user/.bashrc          # Redis 포트
+    
+    # Docker 그룹 권한 적용을 위한 재로그인 없이 바로 사용 가능하도록 설정
+    newgrp docker
   EOF
   )
 
@@ -55,30 +67,3 @@ resource "aws_instance" "web" {
   }
 }
 
-# =============================================================================
-# Elastic IP (EIP) - 고정 퍼블릭 IP 주소
-# =============================================================================
-
-# EC2 인스턴스에 고정 퍼블릭 IP를 할당하는 Elastic IP
-# 용도: 
-# 1. EC2 재시작/교체 시에도 동일한 IP 주소 유지
-# 2. 프론트엔드에서 백엔드 API 호출 시 고정 엔드포인트 사용
-# 3. DNS 설정 또는 외부 서비스 연동 시 IP 변경 걱정 없음
-resource "aws_eip" "web" {
-  instance = aws_instance.web.id  # EC2 인스턴스에 연결
-  domain   = "vpc"                # VPC 내에서 사용
-  
-  tags = {
-    Name = "${var.project_name}-web-eip"
-    Type = "Web-Server-EIP"
-  }
-  
-  # EC2 인스턴스가 완전히 시작된 후 EIP 연결
-  # 이렇게 하지 않으면 EC2 생성 중에 EIP 연결을 시도하여 에러 발생 가능
-  depends_on = [aws_instance.web]
-}
-
-# EIP 사용 시 주의사항:
-# 1. EIP가 EC2에 연결되어 사용 중일 때: 무료
-# 2. EIP가 생성되었지만 사용하지 않을 때: 시간당 과금
-# 3. EC2 삭제 시 EIP도 함께 삭제해야 과금 방지

@@ -14,7 +14,6 @@ import com.example.unbox_be.domain.product.repository.BrandRepository;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.product.repository.ProductRepository;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
-import com.example.unbox_be.domain.trade.service.TradeService;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +37,6 @@ public class ProductServiceImpl implements  ProductService {
     private final ProductMapper productMapper;
     private final BrandMapper brandMapper;
     private final SellingBidRepository sellingBidRepository;
-    private final TradeService tradeService;
 
     // ✅ 상품 목록 조회 (검색 + 페이징)
     public Page<ProductListResponseDto> getProducts(UUID brandId, String category, String keyword, Pageable pageable) {

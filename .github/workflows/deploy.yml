@@ -16,7 +16,7 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   TERRAFORM_VERSION: 1.5.0
-  DOCKER_IMAGE: gahyunsong/unbox-backend
+  DOCKER_IMAGE: gahyunsong/unbox-backend-v2-v2
 
 jobs:
   # 변경사항 감지

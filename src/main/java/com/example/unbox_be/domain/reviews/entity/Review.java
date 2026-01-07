@@ -60,4 +60,8 @@ public class Review extends BaseEntity {
         this.rating = rating;
         this.imageUrl = imageUrl;
     }
+
+    public UUID getId() {
+        return this.reviewId;
+    }
 }

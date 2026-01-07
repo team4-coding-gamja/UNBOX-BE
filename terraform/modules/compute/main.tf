@@ -16,7 +16,7 @@ resource "aws_key_pair" "main" {
 # - Docker 환경이 자동으로 설치되어 컴테이너 기반 배포 가능
 resource "aws_instance" "web" {
   ami                    = "ami-0c2acfcb2ac4d02a0"  # Amazon Linux 2023 AMI (ap-northeast-2)
-  instance_type          = "t3.micro"               # 프리티어 대상 인스턴스 타입
+  instance_type          = "t3.micro"               # 프리티어 + Swap 활용
   key_name               = aws_key_pair.main.key_name
   subnet_id              = var.subnet_id            # Public 서브넷에 배치
   vpc_security_group_ids = [var.security_group_id]  # 보안 그룹 연결

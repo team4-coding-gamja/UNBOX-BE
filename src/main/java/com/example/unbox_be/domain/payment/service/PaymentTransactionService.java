@@ -86,7 +86,11 @@ public class PaymentTransactionService {
                 .pgPaymentKey(response != null ? response.getPaymentKey() : null)
                 .eventStatus(PgTransactionStatus.FAILED) // 실패 상태로 저장
                 .eventType("PAYMENT")
-                .rawPayload(response != null ? response.getRawJson() : "API Response is Null")
+                .rawPayload(
+                (response != null && response.getRawJson() != null)
+                        ? response.getRawJson()
+                        : "API Response is Null"
+        )
                 .eventAmount(response != null && response.getTotalAmount() != null
                         ? response.getTotalAmount().intValue() : payment.getAmount())
 

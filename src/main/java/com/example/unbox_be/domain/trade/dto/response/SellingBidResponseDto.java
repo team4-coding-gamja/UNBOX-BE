@@ -16,6 +16,7 @@ import java.util.UUID;
 public class SellingBidResponseDto {
     private UUID id;
     private SellingStatus status;
+    private Long sellerId;
     private Integer price;
     private LocalDateTime deadline;
     private LocalDateTime createdAt;

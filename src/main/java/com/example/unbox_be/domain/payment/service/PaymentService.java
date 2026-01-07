@@ -1,10 +1,12 @@
 package com.example.unbox_be.domain.payment.service;
 
 import com.example.unbox_be.domain.order.entity.Order;
+import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.repository.OrderRepository;
 import com.example.unbox_be.domain.payment.dto.response.PaymentReadyResponseDto;
 import com.example.unbox_be.domain.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_be.domain.payment.entity.Payment;
+import com.example.unbox_be.domain.payment.entity.PaymentMethod;
 import com.example.unbox_be.domain.payment.entity.PaymentStatus;
 import com.example.unbox_be.domain.payment.repository.PaymentRepository;
 import com.example.unbox_be.domain.settlement.service.SettlementService;
@@ -15,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,15 +33,15 @@ public class PaymentService {
 
     //결제 생성하기
     @Transactional
-    public PaymentReadyResponseDto createPayment(Long currentUserId, UUID orderId, String method) {
+    public PaymentReadyResponseDto createPayment(Long currentUserId, UUID orderId, PaymentMethod method) {
         // 주문 검사
-        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
-        // 유저 검사
-        if (!order.getBuyer().getId().equals(currentUserId)) {
-            throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
+        Order order = getAndValidateOrder(orderId, currentUserId);
+
+        if(method == null){
+            throw new CustomException(ErrorCode.PAYMENT_METHOD_INVALID);
         }
-        Optional<Payment> existingPayment = paymentRepository.findByOrderId(orderId);
+
+        Optional<Payment> existingPayment = paymentRepository.findByOrderIdAndDeletedAtIsNull(orderId);
 
         if (existingPayment.isPresent()) {
             Payment payment = existingPayment.get();
@@ -47,10 +50,10 @@ public class PaymentService {
             if (payment.getStatus() == PaymentStatus.DONE) {
                 throw new CustomException(ErrorCode.PAYMENT_ALREADY_EXISTS);
             }
-
-            // 실패거나 대기일 때 -> 기존 결제 정보 가져오기
-            String mockPaymentKey = "mock_key_" + UUID.randomUUID().toString().substring(0, 8);
-            return new PaymentReadyResponseDto(payment.getId(), mockPaymentKey);
+            if (payment.getStatus() == PaymentStatus.READY) {
+                String mockPaymentKey = "mock_key_" + UUID.randomUUID().toString().substring(0, 8);
+                return new PaymentReadyResponseDto(payment.getId(), mockPaymentKey);
+            }
         }
 
         // 결제 생성
@@ -73,13 +76,10 @@ public class PaymentService {
         // PG사 승인 API 호출
         Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
-
-        Order order = orderRepository.findByIdAndDeletedAtIsNull(payment.getOrderId())
-                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
-
-        if (order.getBuyer() == null || !order.getBuyer().getId().equals(userId)) {
-            throw new CustomException(ErrorCode.NOT_SELF_PG_TRANSACTION);
+        if (payment.getStatus() == PaymentStatus.DONE) {
+            throw new CustomException(ErrorCode.PAYMENT_ALREADY_EXISTS);
         }
+        Order order = getAndValidateOrder(payment.getOrderId(), userId);
 
         Integer amount = payment.getAmount();
         TossConfirmResponse response = tossApiService.confirm(paymentKeyFromFront, amount);
@@ -102,5 +102,28 @@ public class PaymentService {
         }
     }
 
+    // 주문 정보 및 구매자 정보 검사
+    private Order getAndValidateOrder(UUID orderId, Long userId) {
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 1. 구매자 존재 여부 및 본인 확인
+        if (order.getBuyer() == null || !order.getBuyer().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
+        }
+
+        // 2. 주문 금액 검증
+        if (order.getPrice() == null || order.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            log.error("주문 금액 정보가 올바르지 않습니다. OrderID: {}", order.getId());
+            throw new CustomException(ErrorCode.INVALID_BID_PRICE);
+        }
+
+        // 3. 주문 상태 검증 (결제가 가능한 상태인지)
+        if (order.getStatus() != OrderStatus.PENDING_SHIPMENT) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        return order;
+    }
 
 }

@@ -39,5 +39,5 @@ public interface PgTransactionRepository extends JpaRepository<PgTransaction, UU
     Optional<PgTransaction> findLatestSuccessTransaction(@Param("paymentId") UUID paymentId);
 
     // ✅ 4. 결제 건당 트랜잭션 존재 여부 확인
-    boolean existsByPaymentIdAndDeletedAtIsNull(UUID paymentId);
+    boolean existsByPayment_IdAndDeletedAtIsNull(UUID paymentId);
 }

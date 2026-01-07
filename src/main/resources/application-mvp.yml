@@ -2,6 +2,9 @@
 # EC2 + RDS 구성
 
 spring:
+  config:
+    import: "optional:file:.env.mvp[.properties]"
+    
   # RDS PostgreSQL 연결
   datasource:
     driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.postgresql.Driver}

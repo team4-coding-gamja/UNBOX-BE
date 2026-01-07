@@ -194,7 +194,22 @@ jobs:
         id: terraform-output
         run: |
           echo "ec2_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
-          echo "database_endpoint=$(terraform output -raw database_info | jq -r '.endpoint')" >> $GITHUB_OUTPUT
+          
+          # RDS 엔드포인트 추출 (여러 방법 시도)
+          if terraform output database_endpoint 2>/dev/null; then
+            echo "database_endpoint=$(terraform output -raw database_endpoint)" >> $GITHUB_OUTPUT
+          elif terraform output rds_endpoint 2>/dev/null; then
+            echo "database_endpoint=$(terraform output -raw rds_endpoint)" >> $GITHUB_OUTPUT
+          elif terraform output database_info 2>/dev/null; then
+            # JSON 형태인 경우
+            DB_ENDPOINT=$(terraform output -json database_info | jq -r '.endpoint // .address // .')
+            echo "database_endpoint=$DB_ENDPOINT" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ RDS 엔드포인트를 찾을 수 없습니다"
+            terraform output
+          fi
+          
+          echo "=== 모든 Terraform Outputs ==="
           terraform output
 
   # 애플리케이션 배포

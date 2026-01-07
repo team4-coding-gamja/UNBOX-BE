@@ -28,7 +28,7 @@ resource "aws_db_instance" "postgres" {
   
   # 데이터베이스 엔진 설정
   engine                 = "postgres"            # PostgreSQL 사용
-  engine_version         = "15.4"                # 최신 안정 버전으로 변경
+  engine_version         = "14.12"               # AWS RDS에서 확실히 지원하는 안정 버전
   instance_class         = "db.t3.micro"         # 프리티어 대상 인스턴스 타입
   
   # 데이터베이스 설정

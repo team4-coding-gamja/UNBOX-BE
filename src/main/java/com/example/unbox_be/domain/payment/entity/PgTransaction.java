@@ -4,6 +4,7 @@ import com.example.unbox_be.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
@@ -12,8 +13,9 @@ import java.util.UUID;
 @Table(name = "p_pg_transaction")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor
+@SQLRestriction("deleted_at IS NULL")
 public class PgTransaction extends BaseEntity {
 
     @Id

@@ -55,12 +55,13 @@ public enum ErrorCode {
     PRICE_MISMATCH(HttpStatus.BAD_REQUEST, "주문 가격이 실제 판매 가격과 일치하지 않습니다."),
     SELLING_BID_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 판매자가 판매 중인 상품이 아닙니다."),
     ORDER_CANNOT_BE_CANCELLED(HttpStatus.BAD_REQUEST, "이미 배송 중이거나 완료된 주문은 취소할 수 없습니다."),
-
+    INVALID_BID_STATUS(HttpStatus.BAD_REQUEST,"알맞지 않은 예약 상태 변경입니다."),
     // 리뷰 관련 에러 (Review)
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 리뷰를 찾을 수 없습니다."),
     ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 해당 주문에 대한 리뷰를 작성했습니다."),
     NOT_REVIEW_OWNER(HttpStatus.FORBIDDEN, "본인이 작성한 리뷰만 수정/삭제할 수 있습니다."),
     INVALID_RATING(HttpStatus.BAD_REQUEST, "평점은 1점에서 5점 사이여야 합니다."),
+    ORDER_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "주문 완료 상태가 아닙니다."),
 
     // 브랜드
     BRAND_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 브랜드입니다."),

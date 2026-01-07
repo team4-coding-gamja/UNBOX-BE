@@ -68,7 +68,10 @@ springdoc:
     doc-expansion: none
     tags-sorter: none
     operations-sorter: alpha
+    disable-swagger-default-url: false
   api-docs:
     enabled: true
     path: /v3/api-docs
   show-actuator: false
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json

@@ -137,7 +137,7 @@ jobs:
           terraform plan \
             -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="use_rds=false" \
+            -var="use_rds=true" \
             -out=tfplan
       
       - name: Upload Terraform Plan
@@ -189,7 +189,7 @@ jobs:
           terraform apply \
             -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="use_rds=false" \
+            -var="use_rds=true" \
             -auto-approve
       
       - name: Get Terraform Outputs
@@ -197,22 +197,30 @@ jobs:
         run: |
           echo "ec2_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
           
-          # RDS 엔드포인트 추출 (여러 방법 시도)
+          # RDS 엔드포인트 단순하게 추출
           if terraform output database_endpoint 2>/dev/null; then
-            echo "database_endpoint=$(terraform output -raw database_endpoint)" >> $GITHUB_OUTPUT
-          elif terraform output rds_endpoint 2>/dev/null; then
-            echo "database_endpoint=$(terraform output -raw rds_endpoint)" >> $GITHUB_OUTPUT
-          elif terraform output database_info 2>/dev/null; then
-            # JSON 형태인 경우
-            DB_ENDPOINT=$(terraform output -json database_info | jq -r '.endpoint // .address // .')
-            echo "database_endpoint=$DB_ENDPOINT" >> $GITHUB_OUTPUT
+            DB_ENDPOINT=$(terraform output -raw database_endpoint)
+            if [ "$DB_ENDPOINT" != "null" ] && [ -n "$DB_ENDPOINT" ]; then
+              echo "database_endpoint=$DB_ENDPOINT" >> $GITHUB_OUTPUT
+              echo "✅ RDS 엔드포인트: $DB_ENDPOINT"
+            else
+              echo "❌ RDS 엔드포인트가 null이거나 비어있음"
+              echo "🔍 Terraform outputs 전체 확인:"
+              terraform output
+              exit 1
+            fi
           else
-            echo "⚠️ RDS 엔드포인트를 찾을 수 없습니다"
+            echo "❌ database_endpoint output을 찾을 수 없음"
+            echo "🔍 사용 가능한 outputs:"
             terraform output
+            exit 1
           fi
           
-          echo "=== 모든 Terraform Outputs ==="
-          terraform output
+          echo "=== 성공적으로 추출된 정보 ==="
+          echo "EC2 IP: $(terraform output -raw ec2_public_ip)"
+          echo "DB 엔드포인트: $(terraform output -raw database_endpoint)"
+          echo "DB 이름: $(terraform output -raw database_name)"
+          echo "DB 사용자: $(terraform output -raw database_username)"
 
   # 애플리케이션 배포
   deploy-application:
@@ -290,12 +298,12 @@ jobs:
             # 기존 docker-compose-mvp.yml 다운로드
             curl -o docker-compose-mvp.yml https://raw.githubusercontent.com/team4-coding-gamja/UNBOX-BE/feat/infra/docker-compose-mvp.yml
             
-            # 환경 파일 생성 (H2 DB 사용)
+            # 환경 파일 생성 (RDS PostgreSQL 사용)
             cat > .env.mvp << 'EOF'
-            SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
-            SPRING_DATASOURCE_URL=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-            SPRING_DATASOURCE_USERNAME=sa
-            SPRING_DATASOURCE_PASSWORD=
+            SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+            SPRING_DATASOURCE_URL=jdbc:postgresql://${{ needs.deploy-infrastructure.outputs.database-endpoint }}/unboxdb
+            SPRING_DATASOURCE_USERNAME=unboxadmin
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}
             SPRING_DATA_REDIS_HOST=redis
             SPRING_DATA_REDIS_PORT=6379
             SPRING_JWT_SECRET=${{ secrets.JWT_SECRET }}
@@ -331,36 +339,66 @@ jobs:
             sudo docker exec unbox-mvp-app env | grep -E "JAVA_OPTS|SPRING_" || echo "환경변수 확인 실패"
             echo ""
             
-            for i in {1..30}; do
+            for i in {1..60}; do  # 30초 → 60초로 연장
               if curl -s http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
                 echo "✅ Application is healthy!"
                 
-                # Swagger UI 접근 테스트
-                echo "📚 === Swagger UI 접근 테스트 ==="
-                if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/swagger-ui/index.html | grep -q "200"; then
-                  echo "✅ Swagger UI 접근 가능!"
+                # 추가 대기 시간 (Swagger 초기화 완료 대기)
+                echo "⏳ Swagger 초기화 대기 중... (10초)"
+                sleep 10
+                
+                # 여러 Swagger 경로 테스트
+                echo "📚 === 다양한 Swagger 경로 테스트 ==="
+                
+                # 1. 기본 경로
+                SWAGGER_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/swagger-ui/index.html)
+                echo "🔍 /swagger-ui/index.html: $SWAGGER_STATUS"
+                
+                # 2. 대체 경로들
+                SWAGGER_STATUS2=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/swagger-ui.html)
+                echo "🔍 /swagger-ui.html: $SWAGGER_STATUS2"
+                
+                SWAGGER_STATUS3=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/swagger-ui/)
+                echo "🔍 /swagger-ui/: $SWAGGER_STATUS3"
+                
+                # 성공한 경로 확인
+                if [ "$SWAGGER_STATUS" = "200" ]; then
+                  echo "✅ Swagger UI 접근 가능! (/swagger-ui/index.html)"
+                  WORKING_SWAGGER_PATH="/swagger-ui/index.html"
+                elif [ "$SWAGGER_STATUS2" = "200" ]; then
+                  echo "✅ Swagger UI 접근 가능! (/swagger-ui.html)"
+                  WORKING_SWAGGER_PATH="/swagger-ui.html"
+                elif [ "$SWAGGER_STATUS3" = "200" ]; then
+                  echo "✅ Swagger UI 접근 가능! (/swagger-ui/)"
+                  WORKING_SWAGGER_PATH="/swagger-ui/"
                 else
-                  echo "❌ Swagger UI 접근 실패 - 응답 코드: $(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/swagger-ui/index.html)"
+                  echo "❌ 모든 Swagger 경로 접근 실패"
+                  echo "🔍 애플리케이션 로그 확인:"
+                  sudo docker logs unbox-mvp-app --tail=20
                 fi
                 
-                # API Docs 접근 테스트
-                if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/v3/api-docs | grep -q "200"; then
-                  echo "✅ API Docs 접근 가능!"
-                else
-                  echo "❌ API Docs 접근 실패 - 응답 코드: $(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/v3/api-docs)"
-                fi
+                # 네트워크 연결 테스트
+                echo "🌐 === 네트워크 연결 테스트 ==="
+                echo "🔍 8080 포트 리스닝 확인:"
+                sudo netstat -tlnp | grep :8080 || echo "8080 포트가 리스닝되지 않음"
+                
+                echo "🔍 Docker 컨테이너 포트 매핑:"
+                sudo docker port unbox-mvp-app || echo "포트 매핑 정보 없음"
+                
+                echo "🔍 방화벽 상태:"
+                sudo ufw status || echo "ufw 비활성화됨"
                 
                 break
               fi
               
-              # 5번째마다 로그 확인
-              if [ $((i % 5)) -eq 0 ]; then
-                echo "📋 === 진행 상황 로그 (시도 $i/30) ==="
-                sudo docker logs unbox-mvp-app --tail=5
+              # 10번째마다 로그 확인 (더 자주)
+              if [ $((i % 10)) -eq 0 ]; then
+                echo "📋 === 진행 상황 로그 (시도 $i/60) ==="
+                sudo docker logs unbox-mvp-app --tail=10
                 echo ""
               fi
               
-              echo "Waiting... ($i/30)"
+              echo "Waiting... ($i/60)"
               sleep 10
             done
             
@@ -441,5 +479,5 @@ jobs:
           terraform destroy \
             -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="use_rds=false" \
+            -var="use_rds=true" \
             -auto-approve

@@ -19,20 +19,22 @@ output "swagger_ui_url" {
   value       = "http://${module.compute.public_ip}:8080/swagger-ui/index.html"
 }
 
-# RDS 데이터베이스 엔드포인트
-# - use_rds=true일 때만 표시
-# - 로컬 개발 시 DB 연결 정보로 사용 가능
-output "database_info" {
-  description = "데이터베이스 연결 정보"
-  value = var.use_rds ? {
-    endpoint = module.database[0].db_endpoint
-    database = "unboxdb"
-    username = "admin"
-    note     = "비밀번호는 별도 공유"
-  } : {
-    type = "H2 인메모리 DB"
-    note = "로컬 테스트용 - 별도 설정 불필요"
-  }
+# RDS 데이터베이스 엔드포인트 (단순 문자열)
+output "database_endpoint" {
+  description = "RDS PostgreSQL endpoint"
+  value       = var.use_rds ? module.database[0].db_endpoint : null
+}
+
+# 데이터베이스 이름
+output "database_name" {
+  description = "Database name"
+  value       = "unboxdb"
+}
+
+# 데이터베이스 사용자명
+output "database_username" {
+  description = "Database username"
+  value       = "unboxadmin"
 }
 
 # 로그 확인 방법 안내 (Spring Boot Logback)

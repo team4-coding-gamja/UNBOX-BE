@@ -100,7 +100,7 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
-        if (!review.getBuyer().getId().equals(userId)) {
+        if (!review.getOrder().getBuyer().getId().equals(userId)) {
             throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
         }
 
@@ -114,7 +114,7 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
-        if (!review.getBuyer().getId().equals(userId)) {
+        if (!review.getOrder().getBuyer().getId().equals(userId)) {
             throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
         }
 

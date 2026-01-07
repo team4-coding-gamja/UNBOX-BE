@@ -2,7 +2,7 @@ name: UNBOX Complete CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop, feat/infra ]
+    branches: [ develop ]
   pull_request:
     branches: [ develop ]
     types: [ opened, synchronize, reopened ]
@@ -154,7 +154,7 @@ jobs:
   deploy-infrastructure:
     needs: [detect-changes, terraform-plan]
     if: |
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/feat/infra') ||
+      (github.ref == 'refs/heads/develop') || 
       (github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'develop')
     runs-on: ubuntu-latest
     defaults:
@@ -292,7 +292,7 @@ jobs:
             cd ~/unbox-app
             
             # 기존 docker-compose-mvp.yml 다운로드
-            curl -o docker-compose-mvp.yml https://raw.githubusercontent.com/team4-coding-gamja/UNBOX-BE/feat/infra/docker-compose-mvp.yml
+            curl -o docker-compose-mvp.yml https://raw.githubusercontent.com/team4-coding-gamja/UNBOX-BE/develop/docker-compose-mvp.yml
             
             # 환경 파일 생성
             cat > .env.mvp << 'EOF'

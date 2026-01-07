@@ -35,7 +35,9 @@ public class SellingBidService {
 
     @Transactional
     public UUID createSellingBid(Long userId, SellingBidRequestDto requestDto) {
-
+        if (requestDto.getPrice() == null || requestDto.getPrice() <= 0) {
+            throw new CustomException(ErrorCode.INVALID_BID_PRICE);
+        }
         // 1. [수정] 단순히 존재 확인(exists)만 하지 말고, 실제 객체를 조회(findByIdAndDeletedAtIsNull)합니다.
         ProductOption productOption = productOptionRepository.findByIdAndDeletedAtIsNull(requestDto.getOptionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
@@ -95,14 +97,15 @@ public class SellingBidService {
 
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId) // 이걸로 변경!
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+        validateOwner(sellingBid, userId);
 
-        // 로그인 유저와 해당 예약 유저 동일성 검사
-        if (!Objects.equals(sellingBid.getUserId(), userId)) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        // [개선] 연관된 옵션이 없는 비정상 데이터 체크
+        ProductOption option = sellingBid.getProductOption();
+        if (option == null || option.getProduct() == null) {
+            throw new CustomException(ErrorCode.INVALID_BID_STATUS); // 혹은 적절한 에러코드
         }
         // 동일하다면 sellingBid 반환 객체 생성
         SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
-        ProductOption option = sellingBid.getProductOption();
 
         // 객체 반환
         return SellingBidResponseDto.builder()

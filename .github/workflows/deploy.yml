@@ -2,20 +2,16 @@ name: UNBOX Complete CI/CD Pipeline
 
 on:
   push:
-    branches: [ develop, feat/infra ]
-  pull_request:
-    branches: [ develop, feat/infra ]
-    types: [ opened, synchronize, reopened ]
-  pull_request_review:
-    branches: [ develop ]
-    types: [ submitted ]
-  workflow_dispatch:
-    inputs:
-      destroy_infrastructure:
-        description: 'Destroy infrastructure after deployment'
-        required: false
-        default: 'false'
-        type: boolean
+    branches: [ main, develop, feat/infra ]
+    pull_request:
+      branches: [ develop ]
+    workflow_dispatch:
+      inputs:
+        destroy_infrastructure:
+          description: 'Destroy infrastructure after deployment'
+          required: false
+          default: 'false'
+          type: boolean
 
 env:
   AWS_REGION: ap-northeast-2
@@ -154,7 +150,7 @@ jobs:
   deploy-infrastructure:
     needs: [detect-changes, terraform-plan]
     if: |
-      (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/feat/infra') || 
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/feat/infra') ||
       (github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'develop')
     runs-on: ubuntu-latest
     defaults:

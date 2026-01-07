@@ -43,10 +43,6 @@ public class Review extends BaseEntity {
     @JoinColumn(name = "order_id", nullable = false, unique = true)
     private Order order;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "buyer_id", nullable = false)
-    private User buyer;
-
     public Review(Order order, String content, Integer rating, String imageUrl) {
         this.order = order;
         this.content = content;

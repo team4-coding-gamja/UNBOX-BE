@@ -48,8 +48,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         // 2) 주문 상태 검증 (거래 완료 상태인지 확인)
         if (order.getStatus() != OrderStatus.COMPLETED) {
-            // 네 ErrorCode 네이밍이 이렇다면 일단 유지
-            throw new CustomException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+            throw new CustomException(ErrorCode.ORDER_NOT_CANCELLED);
         }
 
         // 3) 리뷰 중복 작성 검증 (1주문 1리뷰)

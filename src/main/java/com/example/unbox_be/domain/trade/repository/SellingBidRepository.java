@@ -1,8 +1,6 @@
 package com.example.unbox_be.domain.trade.repository;
 
-import com.example.unbox_be.domain.trade.dto.response.ProductSizePriceResponseDto;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
-import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -35,19 +33,6 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
       and sb.deletedAt is null
 """)
     Optional<SellingBid> findWithDetailsByIdAndDeletedAtIsNull(@Param("sellingBidId") UUID sellingBidId);
-
-    @Query("SELECT new com.example.unbox_be.domain.trade.dto.response.ProductSizePriceResponseDto(" +
-            "po.option, MIN(s.price)) " +  // ✅ Enum → String 변환
-            "FROM SellingBid s " +
-            "JOIN s.productOption po " +
-            "WHERE po.product.id = :productId " +
-            "AND s.status = :status " +
-            "GROUP BY po.option " +        // ✅ SELECT 일반 필드와 동일하게
-            "ORDER BY po.option ASC")
-    List<ProductSizePriceResponseDto> findLowestPriceByProductId(
-            @Param("productId") UUID productId,
-            @Param("status") SellingStatus status
-    );
 
     @Query("""
         select sb.productOption.id, min(sb.price)

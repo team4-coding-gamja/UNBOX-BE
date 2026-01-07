@@ -27,13 +27,13 @@ resource "aws_db_instance" "postgres" {
   
   # 데이터베이스 엔진 설정
   engine                 = "postgres"            # PostgreSQL 사용
-  engine_version         = "16.1"                # PostgreSQL 16.1 버전
+  # engine_version       = "14.9"                # 버전 지정 안 함 (최신 안정 버전 자동 선택)
   instance_class         = "db.t3.micro"         # 프리티어 대상 인스턴스 타입
   
   # 데이터베이스 설정
-  db_name                = "unboxdb"             # 초기 데이터베이스 이름
-  username               = "admin"               # 마스터 사용자명
-  password               = "password123!"        # 마스터 비밀번호 (프로덕션에서는 보안 강화 필요)
+  db_name                = var.db_name           # 데이터베이스 이름
+  username               = var.db_username       # 마스터 사용자명
+  password               = var.db_password       # 마스터 비밀번호 (변수로 관리)
   
   # 네트워크 설정
   db_subnet_group_name   = aws_db_subnet_group.main.name  # 위에서 생성한 서브넷 그룹 사용

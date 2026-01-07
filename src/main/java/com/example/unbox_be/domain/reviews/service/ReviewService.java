@@ -77,7 +77,7 @@ public class ReviewService {
                 requestDto.getImageUrl()
         );
 
-        return reviewRepository.save(review).getId();
+        return reviewRepository.save(review).getReviewId();
     }
 
     /**

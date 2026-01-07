@@ -18,7 +18,7 @@ public class Review extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "review_id", updatable = false, nullable = false)
-    private UUID id;
+    private UUID reviewId;  // 필드명을 reviewId로 변경
 
     // 1주문 1리뷰 원칙
     @OneToOne(fetch = FetchType.LAZY)

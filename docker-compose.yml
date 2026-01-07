@@ -1,49 +1,38 @@
 version: '3.8'
 
 services:
-  # 1. Spring Boot App
-  app:
-    build: .
-    container_name: MVP-api-app
+  unbox-backend:
+    image: ${ECR_REGISTRY}/unbox-backend:${IMAGE_TAG}
+    container_name: unbox-backend
     ports:
       - "8080:8080"
     environment:
-      - DB_DRIVER_CLASS_NAME=${DB_DRIVER_CLASS_NAME}
-
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${DB_NAME}
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      # Redis 연결 설정 (컨테이너 이름인 'redis'로 찾아갑니다)
-      - SPRING_DATA_REDIS_HOST=redis
-      - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
-      - SPRING_PROFILES_ACTIVE=dev
-    volumes:
-      - ./logs:/app/logs
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILE}
+      - DB_HOST=${DB_HOST}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis-lock
+      - REDIS_PORT=6379
     depends_on:
-      - db
-      - redis
+      - redis-lock
+    restart: unless-stopped
+    networks:
+      - unbox-network
 
-  # 2. PostgreSQL 16.11
-  db:
-    image: postgres:16.11-alpine
-    container_name: potato-postgres
-    platform: linux/amd64
+  redis-lock:
+    image: redis:7-alpine
+    container_name: redis-lock
     ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      - "6379:6379"
+    command: redis-server --appendonly yes
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - unbox-network
 
-  # 3. Redis (최신 안정판)
-  redis:
-    image: redis:alpine
-    container_name: potato-redis
-    ports:
-      - "6379:6379" # 내 맥북에서도 Redis Desktop Manager 등으로 접속 가능
-    command: redis-server --save 60 1 --loglevel warning # 데이터 저장 설정
-    volumes:
-      - ./redis_data:/data
+volumes:
+  redis-data:
+
+networks:
+  unbox-network:
+    driver: bridge

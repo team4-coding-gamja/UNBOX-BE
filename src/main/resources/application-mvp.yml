@@ -22,6 +22,11 @@ spring:
         format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
         
+  # 초기 데이터 로딩 비활성화 (MVP 환경)
+  sql:
+    init:
+      mode: never  # data.sql 실행 안 함
+        
   # Redis 설정
   data:
     redis:

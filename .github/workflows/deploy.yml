@@ -137,7 +137,7 @@ jobs:
           terraform plan \
             -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="use_rds=true" \
+            -var="use_rds=false" \
             -out=tfplan
       
       - name: Upload Terraform Plan
@@ -189,7 +189,7 @@ jobs:
           terraform apply \
             -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="use_rds=true" \
+            -var="use_rds=false" \
             -auto-approve
       
       - name: Get Terraform Outputs
@@ -290,12 +290,12 @@ jobs:
             # 기존 docker-compose-mvp.yml 다운로드
             curl -o docker-compose-mvp.yml https://raw.githubusercontent.com/team4-coding-gamja/UNBOX-BE/feat/infra/docker-compose-mvp.yml
             
-            # 환경 파일 생성
+            # 환경 파일 생성 (H2 DB 사용)
             cat > .env.mvp << 'EOF'
-            SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
-            SPRING_DATASOURCE_URL=jdbc:postgresql://${{ needs.deploy-infrastructure.outputs.database-endpoint }}/unboxdb
-            SPRING_DATASOURCE_USERNAME=unboxadmin
-            SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}
+            SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver
+            SPRING_DATASOURCE_URL=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+            SPRING_DATASOURCE_USERNAME=sa
+            SPRING_DATASOURCE_PASSWORD=
             SPRING_DATA_REDIS_HOST=redis
             SPRING_DATA_REDIS_PORT=6379
             SPRING_JWT_SECRET=${{ secrets.JWT_SECRET }}
@@ -441,5 +441,5 @@ jobs:
           terraform destroy \
             -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="use_rds=true" \
+            -var="use_rds=false" \
             -auto-approve

@@ -30,6 +30,7 @@ public class Payment extends BaseEntity {
     private Integer amount;
 
     @Column(name = "payment_method", nullable = false)
+    @Enumerated(EnumType.STRING)
     private PaymentMethod method;
 
     @Column(name = "pg_payment_receipt_key")

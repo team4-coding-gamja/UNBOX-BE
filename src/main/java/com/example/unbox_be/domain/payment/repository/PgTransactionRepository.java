@@ -16,11 +16,11 @@ public interface PgTransactionRepository extends JpaRepository<PgTransaction, UU
     // ✅ 1. 특정 결제(paymentId)의 모든 이력 조회 (최신순)
     // 로그성 데이터라도 Soft Delete 정책을 따른다면 조건을 추가합니다.
     @Query("""
-        select pt from PgTransaction pt
-        where pt.id = :paymentId
-          and pt.deletedAt is null
-        order by pt.createdAt desc
-    """)
+    select pt from PgTransaction pt
+    where pt.payment.id = :paymentId
+      and pt.deletedAt is null
+    order by pt.createdAt desc
+""")
     List<PgTransaction> findAllByPaymentId(@Param("paymentId") UUID paymentId);
 
     // ✅ 2. PG사 승인 번호(pgPaymentKey / transactionKey)로 조회
@@ -30,12 +30,12 @@ public interface PgTransactionRepository extends JpaRepository<PgTransaction, UU
     // ✅ 3. 특정 결제의 가장 최근 성공(DONE) 트랜잭션만
     @Query("""
     select pt from PgTransaction pt
-    where pt.id = :paymentId
+    where pt.payment.id = :paymentId
       and pt.eventStatus = com.example.unbox_be.domain.payment.entity.PgTransactionStatus.DONE
       and pt.deletedAt is null
     order by pt.createdAt desc
     limit 1
-    """)
+""")
     Optional<PgTransaction> findLatestSuccessTransaction(@Param("paymentId") UUID paymentId);
 
     // ✅ 4. 결제 건당 트랜잭션 존재 여부 확인

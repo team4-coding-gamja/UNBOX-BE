@@ -141,7 +141,7 @@ public class PaymentServiceTest {
         }
 
         @Test
-        @DisplayName("5. 실패 - 주문 상태가 PENDING_PAYMENT가 아닌 경우")
+        @DisplayName("5. 실패 - 주문 상태가 PENDING_SHIPMENT가 아닌 경우")
         void createPayment_Fail_InvalidOrderStatus() throws Exception {
             // given
             Long userId = 1L;
@@ -272,7 +272,7 @@ public class PaymentServiceTest {
                     .isInstanceOf(CustomException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PAYMENT_METHOD_INVALID);
         }
-        // 왜?
+
         @Test
         @DisplayName("11. 실패 - DB 저장 중 예기치 못한 런타임 에러 발생")
         void createPayment_Fail_DatabaseRuntimeError() throws Exception {

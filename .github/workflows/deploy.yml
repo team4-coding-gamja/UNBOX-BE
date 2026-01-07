@@ -283,6 +283,7 @@ jobs:
             SPRING_DATA_REDIS_PORT=6379
             SPRING_JWT_SECRET=${{ secrets.JWT_SECRET }}
             SERVER_PORT=8080
+            JAVA_OPTS=-Xms128m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
             EOF
             
             # docker-compose-mvp.yml에서 이미지 변경
@@ -296,18 +297,43 @@ jobs:
             
             # 헬스체크 대기
             echo "Waiting for application to start..."
-            for i in {1..30}; do
+            for i in {1..60}; do
               if curl -f http://localhost:8080/actuator/health 2>/dev/null; then
                 echo "✅ Application is healthy!"
                 break
               fi
-              echo "Waiting... ($i/30)"
-              sleep 10
+              echo "Waiting... ($i/60)"
+              sleep 15
             done
             
             # 컨테이너 상태 확인
             sudo docker ps
             sudo docker-compose logs --tail=50
+            
+            # =============================================================================
+            # 메모리 사용량 체크
+            # =============================================================================
+            
+            echo "📊 === 시스템 메모리 사용량 ==="
+            free -h
+            echo ""
+            
+            echo "🐳 === Docker 컨테이너 리소스 사용량 ==="
+            sudo docker stats --no-stream
+            echo ""
+            
+            echo "☕ === JVM 메모리 정보 (5초 후 체크) ==="
+            sleep 5
+            curl -s http://localhost:8080/actuator/metrics/jvm.memory.used 2>/dev/null || echo "JVM 메트릭 아직 준비되지 않음"
+            curl -s http://localhost:8080/actuator/metrics/jvm.memory.max 2>/dev/null || echo "JVM 메트릭 아직 준비되지 않음"
+            echo ""
+            
+            echo "💾 === 디스크 사용량 ==="
+            df -h
+            echo ""
+            
+            echo "⚡ === 시스템 로드 ==="
+            uptime
 
   # 배포 완료 알림
   notify-completion:

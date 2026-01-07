@@ -22,21 +22,14 @@ public class ReviewDetailResponseDto {
     private LocalDateTime createdAt;
 
     private OrderInfo order;
-    private ProductInfo product;
-    private UserInfo user;
 
     @Getter
     @Builder
     public static class OrderInfo {
         private UUID id;
         private BigDecimal price;
-    }
-
-    @Getter
-    @Builder
-    public static class ProductInfo {
-        private UUID id;
-        private String name;
+        private UserInfo buyer;
+        private ProductOptionInfo productOption;
     }
 
     @Getter
@@ -46,5 +39,19 @@ public class ReviewDetailResponseDto {
         private String nickname;
     }
 
+    @Getter
+    @Builder
+    public static class ProductOptionInfo {
+        private UUID id;
+        private String option;
+        private ProductInfo product;
+    }
 
+    @Getter
+    @Builder
+    public static class ProductInfo {
+        private UUID id;
+        private String name;
+        private String imageUrl;
+    }
 }

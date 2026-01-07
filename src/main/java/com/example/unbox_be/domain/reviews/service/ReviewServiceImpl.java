@@ -72,8 +72,6 @@ public class ReviewServiceImpl implements ReviewService {
         // 6) Review 생성 (엔티티 내부 검증도 같이 타게)
         Review review = Review.createReview(
                 order,
-                buyer,
-                product,
                 requestDto.getContent(),
                 requestDto.getRating(),
                 requestDto.getImageUrl()

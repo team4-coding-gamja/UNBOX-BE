@@ -47,22 +47,16 @@ public class Review extends BaseEntity {
     @JoinColumn(name = "buyer_id", nullable = false)
     private User buyer;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
-
-    public Review(Order order, User buyer, Product product, String content, Integer rating, String imageUrl) {
+    public Review(Order order, String content, Integer rating, String imageUrl) {
         this.order = order;
-        this.buyer = buyer;
-        this.product = product;
         this.content = content;
         this.rating = rating;
         this.imageUrl = imageUrl;
     }
 
-    public static Review createReview(Order order, User buyer, Product product, String content, Integer rating, String imageUrl) {
-        validateCreate(order, buyer, product, content, rating, imageUrl);
-        return new Review(order, buyer, product, normalizeContent(content), rating, normalizeImageUrl(imageUrl));
+    public static Review createReview(Order order, String content, Integer rating, String imageUrl) {
+        validateCreate(order, content, rating, imageUrl);
+        return new Review(order, normalizeContent(content), rating, normalizeImageUrl(imageUrl));
     }
 
     public void update(String content, Integer rating, String imageUrl) {
@@ -84,10 +78,8 @@ public class Review extends BaseEntity {
     // Validation (Domain Rule)
     // =======================
 
-    private static void validateCreate(Order order, User buyer, Product product, String content, Integer rating, String imageUrl) {
+    private static void validateCreate(Order order, String content, Integer rating, String imageUrl) {
         requireNotNull(order, "order");
-        requireNotNull(buyer, "buyer");
-        requireNotNull(product, "product");
         validateContent(content);
         validateRating(rating);
         validateImageUrl(imageUrl);

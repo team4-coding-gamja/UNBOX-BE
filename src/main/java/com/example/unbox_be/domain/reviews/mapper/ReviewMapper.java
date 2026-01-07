@@ -2,6 +2,7 @@ package com.example.unbox_be.domain.reviews.mapper;
 
 import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.product.entity.Product;
+import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewCreateResponseDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewDetailResponseDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewUpdateResponseDto;
@@ -27,19 +28,32 @@ public interface ReviewMapper {
      * ===================== */
     ReviewUpdateResponseDto toReviewUpdateResponseDto(Review review);
 
-    // ===== 리뷰 상세 =====
+    /* =====================
+     * 리뷰 상세 응답
+     * ===================== */
     @Mapping(target = "order", source = "order")
-    @Mapping(target = "product", source = "product")
-    @Mapping(target = "user", source = "buyer")
     ReviewDetailResponseDto toReviewDetailResponseDto(Review review);
 
-    // ===== inner DTO 변환 =====
-    @SuppressWarnings("unused")
+    /* =====================
+     * Order -> OrderInfo
+     * ===================== */
+    @Mapping(target = "buyer", source = "buyer")
+    @Mapping(target = "productOption", source = "productOption")
     ReviewDetailResponseDto.OrderInfo toOrderInfo(Order order);
 
-    @SuppressWarnings("unused")
-    ReviewDetailResponseDto.ProductInfo toProductInfo(Product product);
-
-    @SuppressWarnings("unused")
+    /* =====================
+     * User -> UserInfo
+     * ===================== */
     ReviewDetailResponseDto.UserInfo toUserInfo(User user);
+
+    /* =====================
+     * ProductOption -> ProductOptionInfo
+     * ===================== */
+    @Mapping(target = "product", source = "product")
+    ReviewDetailResponseDto.ProductOptionInfo toProductOptionInfo(ProductOption productOption);
+
+    /* =====================
+     * Product -> ProductInfo
+     * ===================== */
+    ReviewDetailResponseDto.ProductInfo toProductInfo(Product product);
 }

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "장바구니 (Cart)", description = "장바구니 관련 API")
+@Tag(name = "[사용자] 장바구니 관리", description = "장바구니 관련 API")
 @RequestMapping("/api/carts")
 public interface CartApi {
 

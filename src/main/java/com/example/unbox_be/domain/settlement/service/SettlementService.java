@@ -44,7 +44,10 @@ public class SettlementService {
 
         SellingBid sellingBid = sellingBidRepository.findById(order.getSellingBidId())
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
-
+        if (order.getSeller() == null) {
+            throw new CustomException(ErrorCode.SETTLEMENT_SELLER_MISMATCH);
+            // 혹은 데이터 정합성 오류를 뜻하는 ErrorCode.INVALID_DATA_RELATION
+        }
         if (!payment.getOrderId().equals(orderId)) {
             throw new CustomException(ErrorCode.PAYMENT_SETTLEMENT_MISMATCH);
         }
@@ -75,8 +78,12 @@ public class SettlementService {
     public SettlementResponseDto confirmSettlement(UUID orderId) {
         Settlement settlement = settlementRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
-        if (settlement.getSettlementStatus() == SettlementStatus.DONE) {
-            throw new CustomException(ErrorCode.SETTLEMENT_ALREADY_DONE);
+        if (settlement.getSettlementStatus() != SettlementStatus.WAITING) {
+            // 이미 DONE이면 ALREADY_DONE, 그 외(CANCELLED 등)면 INVALID_STATUS
+            if (settlement.getSettlementStatus() == SettlementStatus.DONE) {
+                throw new CustomException(ErrorCode.SETTLEMENT_ALREADY_DONE);
+            }
+            throw new CustomException(ErrorCode.INVALID_SETTLEMENT_STATUS);
         }
         settlement.updateStatus(SettlementStatus.DONE);
         return SettlementResponseDto.from(settlement);

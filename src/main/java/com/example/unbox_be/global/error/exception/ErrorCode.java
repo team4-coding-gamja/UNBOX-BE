@@ -95,7 +95,8 @@ public enum ErrorCode {
     PAYMENT_SETTLEMENT_MISMATCH(HttpStatus.BAD_REQUEST,"결제정보와 주문정보가 다릅니다."),
     SETTLEMENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 이 결제에 대한 정산이 진행중입니다."),
     SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 주문의 정산 내용을 찾을 수 없습니다."),
-    SETTLEMENT_ALREADY_DONE(HttpStatus.BAD_REQUEST,"이미 정산이 완료된 주문입니다.");
+    SETTLEMENT_ALREADY_DONE(HttpStatus.BAD_REQUEST,"이미 정산이 완료된 주문입니다."),
+    INVALID_SETTLEMENT_STATUS(HttpStatus.BAD_REQUEST,"정산 상태를 바꿀 수 없는 상태입니다.");
     private final HttpStatus status;
     private final String message;
 }

@@ -6,6 +6,7 @@ import com.example.unbox_be.domain.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_be.domain.payment.entity.Payment;
 import com.example.unbox_be.domain.payment.entity.PaymentStatus;
 import com.example.unbox_be.domain.payment.entity.PgTransaction;
+import com.example.unbox_be.domain.payment.entity.PgTransactionStatus;
 import com.example.unbox_be.domain.payment.repository.PaymentRepository;
 import com.example.unbox_be.domain.payment.repository.PgTransactionRepository;
 import com.example.unbox_be.domain.payment.service.PaymentTransactionService;
@@ -85,7 +86,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("1. 성공 - 모든 상태 변경 및 트랜잭션 저장")
-        void success_AllProcess() throws Exception {
+        void ProcessSuccessfulPayment_success_AllProcess() throws Exception {
             // given
             Payment payment = createReadyPayment(10000);
             Order order = createMockOrder();
@@ -107,7 +108,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("2. 실패 - 결제 정보 없음")
-        void fail_PaymentNotFound() {
+        void ProcessSuccessfulPayment_fail_PaymentNotFound() {
             given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.empty());
 
             assertThatThrownBy(() -> paymentTransactionService.processSuccessfulPayment(paymentId, null, paymentKey))
@@ -117,7 +118,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("3. 실패 - 이미 완료된 결제 (멱등성)")
-        void fail_AlreadyDone() throws Exception {
+        void ProcessSuccessfulPayment_fail_AlreadyDone() throws Exception {
             Payment payment = createReadyPayment(10000);
             ReflectionTestUtils.setField(payment, "status", PaymentStatus.DONE);
             given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
@@ -129,7 +130,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("4. 실패 - 연결된 주문 정보 없음")
-        void fail_OrderNotFound() throws Exception {
+        void ProcessSuccessfulPayment_fail_OrderNotFound() throws Exception {
             Payment payment = createReadyPayment(10000);
             given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
             given(orderRepository.findByIdAndDeletedAtIsNull(orderId)).willReturn(Optional.empty());
@@ -141,7 +142,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("5. 실패 - 금액 불일치")
-        void fail_PriceMismatch() throws Exception {
+        void ProcessSuccessfulPayment_fail_PriceMismatch() throws Exception {
             Payment payment = createReadyPayment(10000);
             Order order = createMockOrder();
             TossConfirmResponse response = mock(TossConfirmResponse.class);
@@ -157,7 +158,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("6. 성공 - 카드 결제 기록 확인")
-        void success_CardMethod() throws Exception {
+        void ProcessSuccessfulPayment_success_CardMethod() throws Exception {
             Payment payment = createReadyPayment(10000);
             Order order = createMockOrder();
             TossConfirmResponse response = mock(TossConfirmResponse.class);
@@ -174,7 +175,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("7. 성공 - 계좌이체 결제 기록 확인")
-        void success_TransferMethod() throws Exception {
+        void ProcessSuccessfulPayment_success_TransferMethod() throws Exception {
             Payment payment = createReadyPayment(10000);
             Order order = createMockOrder();
             TossConfirmResponse response = mock(TossConfirmResponse.class);
@@ -191,7 +192,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("8. 실패 - 상품 상태 변경 중 예외 발생 시 롤백 확인")
-        void fail_SellingBidServiceError() throws Exception {
+        void ProcessSuccessfulPayment_fail_SellingBidServiceError() throws Exception {
             Payment payment = createReadyPayment(10000);
             Order order = createMockOrder();
             TossConfirmResponse response = mock(TossConfirmResponse.class);
@@ -209,7 +210,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("9. 성공 - PG 셀러 키 저장 확인")
-        void success_PgSellerKeySave() throws Exception {
+        void ProcessSuccessfulPayment_success_PgSellerKeySave() throws Exception {
             Payment payment = createReadyPayment(10000);
             Order order = createMockOrder();
             TossConfirmResponse response = mock(TossConfirmResponse.class);
@@ -225,7 +226,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("10. 실패 - Toss 응답이 null일 때 NPE 방지")
-        void fail_NullResponse() throws Exception {
+        void ProcessSuccessfulPayment_fail_NullResponse() throws Exception {
             Payment payment = createReadyPayment(10000);
             Order order = createMockOrder();
 
@@ -238,7 +239,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("11. 성공 - 큰 금액 변환 확인")
-        void success_LargeAmount() throws Exception {
+        void ProcessSuccessfulPayment_success_LargeAmount() throws Exception {
             Payment payment = createReadyPayment(2000000);
             Order order = createMockOrder();
             TossConfirmResponse response = mock(TossConfirmResponse.class);
@@ -254,7 +255,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("12. 성공 - rawJson 저장 확인")
-        void success_RawJsonSave() throws Exception {
+        void ProcessSuccessfulPayment_success_RawJsonSave() throws Exception {
             Payment payment = createReadyPayment(10000);
             Order order = createMockOrder();
             TossConfirmResponse response = mock(TossConfirmResponse.class);
@@ -271,7 +272,7 @@ public class PaymentTransactionServiceTest {
 
         @Test
         @DisplayName("13. 실패 - sellingBidId가 누락된 주문")
-        void fail_SellingBidIdNull() throws Exception {
+        void ProcessSuccessfulPayment_fail_SellingBidIdNull() throws Exception {
             Payment payment = createReadyPayment(10000);
             Order order = createMockEntity(Order.class, orderId);
             ReflectionTestUtils.setField(order, "sellingBidId", null);
@@ -317,6 +318,194 @@ public class PaymentTransactionServiceTest {
             paymentTransactionService.processSuccessfulPayment(paymentId, response, "FRONT_KEY_TEST");
 
             verify(pgTransactionRepository).save(argThat(t -> t.getPgPaymentKey().equals("FRONT_KEY_TEST")));
+        }
+
+        @Nested
+        @DisplayName("processFailedPayment 테스트")
+        class ProcessFailedPaymentTest {
+
+            @Test
+            @DisplayName("1. 성공 - 일반적인 결제 실패 기록 (모든 데이터 존재)")
+            void ProcessFailedPayment_success_recordNormalFailure() throws Exception {
+                Payment payment = createReadyPayment(10000);
+                TossConfirmResponse res = mock(TossConfirmResponse.class);
+                given(res.getPaymentKey()).willReturn("fail_key_123");
+                given(res.getTotalAmount()).willReturn(10000L);
+                given(res.getRawJson()).willReturn("{\"error\":\"REJECTED\"}");
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, res);
+
+                assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+                verify(pgTransactionRepository).save(argThat(t ->
+                        t.getEventStatus() == PgTransactionStatus.FAILED &&
+                                t.getPgPaymentKey().equals("fail_key_123")
+                ));
+            }
+
+            @Test
+            @DisplayName("2. 실패 - 존재하지 않는 결제 ID")
+            void ProcessFailedPayment_fail_invalidPaymentId() {
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.empty());
+
+                assertThatThrownBy(() -> paymentTransactionService.processFailedPayment(paymentId, null))
+                        .isInstanceOf(CustomException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PAYMENT_NOT_FOUND);
+            }
+
+            @Test
+            @DisplayName("3. 성공 - Toss 응답(response)이 null일 때 방어 로직 확인")
+            void ProcessFailedPayment_success_whenTossResponseIsNull() throws Exception {
+                Payment payment = createReadyPayment(10000);
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, null);
+
+                verify(pgTransactionRepository).save(argThat(t ->
+                        t.getRawPayload().equals("API Response is Null") && t.getPgPaymentKey() == null
+                ));
+            }
+
+            @Test
+            @DisplayName("4. 성공 - 응답의 paymentKey가 null일 때 처리")
+            void ProcessFailedPayment_success_whenPaymentKeyIsNull() throws Exception {
+                Payment payment = createReadyPayment(10000);
+                TossConfirmResponse res = mock(TossConfirmResponse.class);
+                given(res.getPaymentKey()).willReturn(null);
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, res);
+
+                verify(pgTransactionRepository).save(argThat(t -> t.getPgPaymentKey() == null));
+            }
+
+            @Test
+            @DisplayName("5. 성공 - 응답의 금액(totalAmount)이 null일 때 DB 금액 사용")
+            void ProcessFailedPayment_success_useDbAmountWhenResponseAmountIsNull() throws Exception {
+                Payment payment = createReadyPayment(50000);
+                TossConfirmResponse res = mock(TossConfirmResponse.class);
+                given(res.getTotalAmount()).willReturn(null);
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, res);
+
+                verify(pgTransactionRepository).save(argThat(t -> t.getEventAmount() == 50000));
+            }
+
+            @Test
+            @DisplayName("6. 성공 - 응답의 rawJson이 null일 때 기본 문자열 저장")
+            void ProcessFailedPayment_success_defaultStringWhenRawJsonIsNull() throws Exception {
+                Payment payment = createReadyPayment(10000);
+                TossConfirmResponse res = mock(TossConfirmResponse.class);
+                given(res.getRawJson()).willReturn(null);
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, res);
+
+                verify(pgTransactionRepository).save(argThat(t -> t.getRawPayload().equals("API Response is Null")));
+            }
+
+            @Test
+            @DisplayName("7. 성공 - 이미 FAILED 상태인 결제를 다시 실패 처리 (멱등성)")
+            void ProcessFailedPayment_success_idempotencyWhenAlreadyFailed() throws Exception {
+                Payment payment = createReadyPayment(10000);
+                ReflectionTestUtils.setField(payment, "status", PaymentStatus.FAILED);
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, null);
+
+                assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+                verify(pgTransactionRepository, times(1)).save(any());
+            }
+
+            @Test
+            @DisplayName("8. 성공 - READY가 아닌 다른 상태에서 실패 처리 시 상태 변경 확인")
+            void ProcessFailedPayment_success_statusChangeToFailed() throws Exception {
+                Payment payment = createReadyPayment(10000);
+                ReflectionTestUtils.setField(payment, "status", PaymentStatus.READY);
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, null);
+
+                assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+            }
+
+            @Test
+            @DisplayName("9. 실패 - 로그 저장(save) 중 DB 에러 발생 시 롤백")
+            void ProcessFailedPayment_fail_rollbackOnDatabaseError() throws Exception {
+                Payment payment = createReadyPayment(10000);
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+                given(pgTransactionRepository.save(any())).willThrow(new RuntimeException("DB Error"));
+
+                assertThatThrownBy(() -> paymentTransactionService.processFailedPayment(paymentId, null))
+                        .isInstanceOf(RuntimeException.class);
+            }
+
+            @Test
+            @DisplayName("10. 성공 - 로그의 eventType이 PAYMENT로 저장되는지 확인")
+            void ProcessFailedPayment_success_verifyEventTypeIsPayment() throws Exception {
+                Payment payment = createReadyPayment(10000);
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, null);
+
+                verify(pgTransactionRepository).save(argThat(t -> t.getEventType().equals("PAYMENT")));
+            }
+
+            @Test
+            @DisplayName("11. 성공 - eventStatus가 FAILED로 정확히 기록되는지 확인")
+            void ProcessFailedPayment_success_verifyEventStatusIsFailed() throws Exception {
+                Payment payment = createReadyPayment(10000);
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, null);
+
+                verify(pgTransactionRepository).save(argThat(t -> t.getEventStatus() == PgTransactionStatus.FAILED));
+            }
+
+            @Test
+            @DisplayName("12. 성공 - 매우 큰 결제 금액의 실패 건 처리")
+            void ProcessFailedPayment_success_handlingLargeAmount() throws Exception {
+                Payment payment = createReadyPayment(100000000);
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, null);
+
+                verify(pgTransactionRepository).save(argThat(t -> t.getEventAmount() == 100000000));
+            }
+
+            @Test
+            @DisplayName("13. 성공 - 응답 객체는 있으나 내부 필드가 모두 null인 특수 상황")
+            void ProcessFailedPayment_success_whenResponseFieldsAreNull() throws Exception {
+                Payment payment = createReadyPayment(10000);
+                TossConfirmResponse res = mock(TossConfirmResponse.class); // 모든 getter가 null 반환
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, res);
+
+                verify(pgTransactionRepository).save(any());
+                assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+            }
+
+            @Test
+            @DisplayName("14. 성공 - 결제 조회 시 삭제된 데이터 필터링 확인")
+            void ProcessFailedPayment_fail_whenPaymentIsDeleted(){
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.empty());
+
+                assertThatThrownBy(() -> paymentTransactionService.processFailedPayment(paymentId, null))
+                        .isInstanceOf(CustomException.class);
+            }
+
+            @Test
+            @DisplayName("15. 성공 - 실패 기록 후 결제 금액(amount) 보존 확인")
+            void ProcessFailedPayment_success_preserveAmountAfterFailure() throws Exception {
+                Payment payment = createReadyPayment(10000);
+                given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId)).willReturn(Optional.of(payment));
+
+                paymentTransactionService.processFailedPayment(paymentId, null);
+
+                assertThat(payment.getAmount()).isEqualTo(10000);
+            }
         }
     }
 }

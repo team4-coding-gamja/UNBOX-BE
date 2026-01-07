@@ -10,8 +10,12 @@ import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.mapper.OrderMapper;
 import com.example.unbox_be.domain.order.repository.OrderRepository;
+import com.example.unbox_be.domain.product.entity.Brand;
+import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.entity.ProductOption;
+import com.example.unbox_be.domain.settlement.service.SettlementService;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
+import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
@@ -39,7 +43,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,23 +60,32 @@ class OrderServiceImplTest {
     @Mock
     private SellingBidRepository sellingBidRepository;
     @Mock
+    private SettlementService settlementService;
+    @Mock
     private OrderMapper orderMapper;
 
-    // --- Helper Methods ---
 
     private User createUser(Long id) {
         User user = BeanUtils.instantiateClass(User.class);
         ReflectionTestUtils.setField(user, "id", id);
+        ReflectionTestUtils.setField(user, "email", "test" + id + "@test.com");
         return user;
     }
 
-    private SellingBid createSellingBid(UUID id, Long sellerId, int price) {
+    private SellingBid createSellingBid(UUID id, Long sellerId, int price, SellingStatus status) {
         SellingBid bid = BeanUtils.instantiateClass(SellingBid.class);
+        
+        Brand brand = BeanUtils.instantiateClass(Brand.class);
+        Product product = BeanUtils.instantiateClass(Product.class);
+        ReflectionTestUtils.setField(product, "brand", brand);
         ProductOption option = BeanUtils.instantiateClass(ProductOption.class);
-        ReflectionTestUtils.setField(bid, "sellingId", id);
+        ReflectionTestUtils.setField(option, "product", product);
+
+        ReflectionTestUtils.setField(bid, "id", id);
         ReflectionTestUtils.setField(bid, "userId", sellerId);
         ReflectionTestUtils.setField(bid, "productOption", option);
         ReflectionTestUtils.setField(bid, "price", price);
+        ReflectionTestUtils.setField(bid, "status", status);
         return bid;
     }
 
@@ -93,10 +105,10 @@ class OrderServiceImplTest {
         return order;
     }
 
-    // --- 1. createOrder Tests ---
+    // createOrder Tests
 
     @Test
-    @DisplayName("주문 생성 성공")
+    @DisplayName("주문 생성에 성공했을 때")
     void createOrder_Success() {
         Long buyerId = 1L;
         Long sellerId = 2L;
@@ -106,7 +118,7 @@ class OrderServiceImplTest {
 
         User buyer = createUser(buyerId);
         User seller = createUser(sellerId);
-        SellingBid sellingBid = createSellingBid(sellingBidId, sellerId, price);
+        SellingBid sellingBid = createSellingBid(sellingBidId, sellerId, price, SellingStatus.LIVE);
 
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder()
                 .sellingBidId(sellingBidId)
@@ -128,10 +140,11 @@ class OrderServiceImplTest {
         UUID result = orderService.createOrder(requestDto, buyerId);
 
         assertThat(result).isEqualTo(orderId);
+        assertThat(sellingBid.getStatus()).isEqualTo(SellingStatus.MATCHED);
     }
 
     @Test
-    @DisplayName("주문 생성 실패 - 구매자 없음")
+    @DisplayName("주문 생성에 실패했을 때 - 구매자가 없음")
     void createOrder_Fail_BuyerNotFound() {
         Long buyerId = 1L;
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().build();
@@ -144,7 +157,7 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("주문 생성 실패 - 판매 입찰글 없음")
+    @DisplayName("주문 생성에 실패했을 때 - 판매 입찰 글이 없음")
     void createOrder_Fail_BidNotFound() {
         Long buyerId = 1L;
         UUID sellingBidId = UUID.randomUUID();
@@ -160,12 +173,14 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("주문 생성 실패 - 본인 물건 구매 시도")
-    void createOrder_Fail_SelfBuy() {
+    @DisplayName("주문 생성에 실패했을 때 - 판매 상품이 이미 판매된 상태")
+    void createOrder_Fail_BidStatusInvalid() {
         Long buyerId = 1L;
+        Long sellerId = 2L;
         UUID sellingBidId = UUID.randomUUID();
+
         User buyer = createUser(buyerId);
-        SellingBid sellingBid = createSellingBid(sellingBidId, buyerId, 10000); // Seller == Buyer
+        SellingBid sellingBid = createSellingBid(sellingBidId, sellerId, 10000, SellingStatus.MATCHED);
 
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().sellingBidId(sellingBidId).build();
 
@@ -178,30 +193,48 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("주문 생성 실패 - 판매자 정보 없음 (데이터 불일치)")
+    @DisplayName("주문 생성에 실패했을 때 - 본인의 물건을 구매")
+    void createOrder_Fail_SelfBuy() {
+        Long buyerId = 1L;
+        UUID sellingBidId = UUID.randomUUID();
+        User buyer = createUser(buyerId);
+        SellingBid sellingBid = createSellingBid(sellingBidId, buyerId, 10000, SellingStatus.LIVE);
+
+        OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().sellingBidId(sellingBidId).build();
+
+        given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)).willReturn(Optional.of(sellingBid));
+
+        assertThatThrownBy(() -> orderService.createOrder(requestDto, buyerId))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ORDER_STATUS);
+    }
+
+    @Test
+    @DisplayName("주문 생성에 실패했을 때 - 판매자의 정보가 없음 (데이터 불일치)")
     void createOrder_Fail_SellerUserNotFound() {
         Long buyerId = 1L;
         Long sellerId = 2L;
         UUID sellingBidId = UUID.randomUUID();
 
         User buyer = createUser(buyerId);
-        SellingBid sellingBid = createSellingBid(sellingBidId, sellerId, 10000);
+        SellingBid sellingBid = createSellingBid(sellingBidId, sellerId, 10000, SellingStatus.LIVE);
 
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().sellingBidId(sellingBidId).build();
 
         given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
         given(sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)).willReturn(Optional.of(sellingBid));
-        given(userRepository.findByIdAndDeletedAtIsNull(sellerId)).willReturn(Optional.empty()); // Seller Not Found
+        given(userRepository.findByIdAndDeletedAtIsNull(sellerId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> orderService.createOrder(requestDto, buyerId))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
     }
 
-    // --- 2. getMyOrders Tests ---
+    // getMyOrders Tests
 
     @Test
-    @DisplayName("내 주문 조회 성공")
+    @DisplayName("내 주문 조회에 성공했을 때")
     void getMyOrders_Success() {
         Long buyerId = 1L;
         Pageable pageable = PageRequest.of(0, 10);
@@ -209,7 +242,7 @@ class OrderServiceImplTest {
         Page<Order> orderPage = new PageImpl<>(List.of(order));
 
         given(userRepository.existsById(buyerId)).willReturn(true);
-        given(orderRepository.findAllByBuyerId(buyerId, pageable)).willReturn(orderPage);
+        given(orderRepository.findAllByBuyerIdAndDeletedAtIsNull(buyerId, pageable)).willReturn(orderPage);
         given(orderMapper.toResponseDto(any(Order.class))).willReturn(OrderResponseDto.builder().build());
 
         Page<OrderResponseDto> result = orderService.getMyOrders(buyerId, pageable);
@@ -218,7 +251,7 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("내 주문 조회 실패 - 유저 없음")
+    @DisplayName("내 주문 조회에 실패했을 때 - 유저가 없음")
     void getMyOrders_Fail_UserNotFound() {
         Long buyerId = 1L;
         Pageable pageable = PageRequest.of(0, 10);
@@ -229,10 +262,10 @@ class OrderServiceImplTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
     }
 
-    // --- 3. getOrderDetail Tests ---
+    // getOrderDetail Tests
 
     @Test
-    @DisplayName("상세 조회 성공 - 구매자")
+    @DisplayName("상세 조회에 성공했을 때 - 구매자가")
     void getOrderDetail_Success_Buyer() {
         UUID orderId = UUID.randomUUID();
         Long buyerId = 1L;
@@ -246,7 +279,7 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("상세 조회 성공 - 판매자")
+    @DisplayName("상세 조회에 성공했을 때 - 판매자가")
     void getOrderDetail_Success_Seller() {
         UUID orderId = UUID.randomUUID();
         Long sellerId = 2L;
@@ -260,7 +293,7 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("상세 조회 실패 - 제3자 접근")
+    @DisplayName("상세 조회에 실패했을 때 - 제3자가 접근")
     void getOrderDetail_Fail_AccessDenied() {
         UUID orderId = UUID.randomUUID();
         Long hackerId = 999L;
@@ -274,7 +307,7 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("상세 조회 실패 - 주문 없음")
+    @DisplayName("상세 조회에 실패했을 때 - 주문이 없음")
     void getOrderDetail_Fail_NotFound() {
         UUID orderId = UUID.randomUUID();
         Long userId = 1L;
@@ -286,10 +319,10 @@ class OrderServiceImplTest {
     }
 
 
-    // --- 4. cancelOrder Tests ---
+    // cancelOrder Tests
 
     @Test
-    @DisplayName("주문 취소 성공")
+    @DisplayName("주문 취소에 성공했을 때")
     void cancelOrder_Success() {
         UUID orderId = UUID.randomUUID();
         Long buyerId = 1L;
@@ -304,7 +337,7 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("주문 취소 실패 - 판매자는 취소 불가(AccessDenied)")
+    @DisplayName("주문 취소에 실패했을 때 - 판매자는 취소 불가함")
     void cancelOrder_Fail_SellerCannotCancel() {
         UUID orderId = UUID.randomUUID();
         Long sellerId = 2L;
@@ -312,16 +345,32 @@ class OrderServiceImplTest {
 
         given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
 
-        // OrderServiceImpl.cancelOrder 로직상 buyerId와 일치하지 않으면 ACCESS_DENIED
-        assertThatThrownBy(() -> orderService.cancelOrder(orderId, sellerId))
+        Long hackerId = 999L;
+        assertThatThrownBy(() -> orderService.cancelOrder(orderId, hackerId))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
     }
 
-    // --- 5. registerTracking Tests ---
-
     @Test
-    @DisplayName("운송장 등록 성공 - 판매자")
+    @DisplayName("주문 취소에 실패했을 때 - 이미 배송된 경우")
+    void cancelOrder_Fail_AlreadyShipped() {
+        UUID orderId = UUID.randomUUID();
+        Long buyerId = 1L;
+        Order order = createOrder(orderId, createUser(buyerId), createUser(2L));
+        // Order 내부 로직: 배송중/배송완료 등 특정 상태에서는 취소 불가
+        ReflectionTestUtils.setField(order, "status", OrderStatus.SHIPPED_TO_BUYER);
+
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> orderService.cancelOrder(orderId, buyerId))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+    }
+
+    // registerTracking Tests
+
+    @Test   
+    @DisplayName("운송장 등록에 성공했을 때")
     void registerTracking_Success() {
         UUID orderId = UUID.randomUUID();
         Long sellerId = 2L;
@@ -338,7 +387,7 @@ class OrderServiceImplTest {
     }
 
     @Test
-    @DisplayName("운송장 등록 실패 - 구매자가 시도")
+    @DisplayName("운송장 등록에 실패했을 때 - 구매자가 시도")
     void registerTracking_Fail_NotSeller() {
         UUID orderId = UUID.randomUUID();
         Long buyerId = 1L;
@@ -351,34 +400,72 @@ class OrderServiceImplTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
     }
 
-    // --- 6. updateAdminStatus Tests ---
+    @Test
+    @DisplayName("운송장 등록에 실패했을 때 - 주문 상태가 올바르지 않음 (이미 배송됨 등)")
+    void registerTracking_Fail_InvalidStatus() {
+        UUID orderId = UUID.randomUUID();
+        Long sellerId = 2L;
+        Order order = createOrder(orderId, createUser(1L), createUser(sellerId));
+        ReflectionTestUtils.setField(order, "status", OrderStatus.SHIPPED_TO_CENTER); // 이미 보냄
+
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> orderService.registerTracking(orderId, "123", sellerId))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ORDER_STATUS);
+    }
+
+    // updateAdminStatus Tests
 
     @Test
-    @DisplayName("관리자 상태 변경 성공")
-    void updateAdminStatus_Success() {
+    @DisplayName("관리자 상태 변경에 성공했을 때 - 검수 합격")
+    void updateAdminStatus_Success_InspectionPassed() {
+        UUID orderId = UUID.randomUUID();
+        Long adminId = 10L;
+        Admin admin = BeanUtils.instantiateClass(Admin.class);
+        ReflectionTestUtils.setField(admin, "adminRole", AdminRole.ROLE_INSPECTOR);
+
+        Order order = createOrder(orderId, createUser(1L), createUser(2L));
+        // 전제 상태: 센터 도착
+        ReflectionTestUtils.setField(order, "status", OrderStatus.ARRIVED_AT_CENTER);
+
+        given(adminRepository.findByIdAndDeletedAtIsNull(adminId)).willReturn(Optional.of(admin));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+        given(orderMapper.toDetailResponseDto(order)).willReturn(OrderDetailResponseDto.builder().build());
+
+        orderService.updateAdminStatus(orderId, OrderStatus.INSPECTION_PASSED, null, adminId);
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.INSPECTION_PASSED);
+    }
+
+    @Test
+    @DisplayName("관리자 상태 변경에 성공했을 때 - 배송 시작 (최종 운송장)")
+    void updateAdminStatus_Success_ShippedToBuyer() {
         UUID orderId = UUID.randomUUID();
         Long adminId = 10L;
         Admin admin = BeanUtils.instantiateClass(Admin.class);
         ReflectionTestUtils.setField(admin, "adminRole", AdminRole.ROLE_MASTER);
 
         Order order = createOrder(orderId, createUser(1L), createUser(2L));
-        ReflectionTestUtils.setField(order, "status", OrderStatus.SHIPPED_TO_CENTER); // 상태 맞춰줌
+        ReflectionTestUtils.setField(order, "status", OrderStatus.INSPECTION_PASSED);
 
         given(adminRepository.findByIdAndDeletedAtIsNull(adminId)).willReturn(Optional.of(admin));
         given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
         given(orderMapper.toDetailResponseDto(order)).willReturn(OrderDetailResponseDto.builder().build());
 
-        orderService.updateAdminStatus(orderId, OrderStatus.ARRIVED_AT_CENTER, null, adminId);
+        String finalTracking = "GTX-12345";
+        orderService.updateAdminStatus(orderId, OrderStatus.SHIPPED_TO_BUYER, finalTracking, adminId);
 
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.ARRIVED_AT_CENTER);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.SHIPPED_TO_BUYER);
+        assertThat(order.getFinalTrackingNumber()).isEqualTo(finalTracking);
     }
 
     @Test
-    @DisplayName("관리자 상태 변경 실패 - 권한 부족(MANAGER)")
+    @DisplayName("관리자 상태 변경에 실패했을 때 - 권한 부족")
     void updateAdminStatus_Fail_RoleNotAllowed() {
         Long adminId = 10L;
         Admin admin = BeanUtils.instantiateClass(Admin.class);
-        ReflectionTestUtils.setField(admin, "adminRole", AdminRole.ROLE_MANAGER); // MANAGER는 권한 없음
+        ReflectionTestUtils.setField(admin, "adminRole", AdminRole.ROLE_MANAGER);
 
         given(adminRepository.findByIdAndDeletedAtIsNull(adminId)).willReturn(Optional.of(admin));
 
@@ -387,10 +474,50 @@ class OrderServiceImplTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
     }
 
-    // --- 7. confirmOrder Tests ---
+    @Test
+    @DisplayName("관리자 상태 변경에 실패했을 때 - 잘못된 상태 전이")
+    void updateAdminStatus_Fail_InvalidTransition() {
+        UUID orderId = UUID.randomUUID();
+        Long adminId = 10L;
+        Admin admin = BeanUtils.instantiateClass(Admin.class);
+        ReflectionTestUtils.setField(admin, "adminRole", AdminRole.ROLE_MASTER);
+
+        Order order = createOrder(orderId, createUser(1L), createUser(2L));
+        // 초기 상태에서 갑자기 배송 완료로 넘어갈 수 없음
+        ReflectionTestUtils.setField(order, "status", OrderStatus.PENDING_SHIPMENT);
+
+        given(adminRepository.findByIdAndDeletedAtIsNull(adminId)).willReturn(Optional.of(admin));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> orderService.updateAdminStatus(orderId, OrderStatus.DELIVERED, null, adminId))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+    }
 
     @Test
-    @DisplayName("구매 확정 성공")
+    @DisplayName("관리자 상태 변경에 실패했을 때 - 최종 운송장 누락")
+    void updateAdminStatus_Fail_TrackingNumberMissing() {
+        UUID orderId = UUID.randomUUID();
+        Long adminId = 10L;
+        Admin admin = BeanUtils.instantiateClass(Admin.class);
+        ReflectionTestUtils.setField(admin, "adminRole", AdminRole.ROLE_MASTER);
+
+        Order order = createOrder(orderId, createUser(1L), createUser(2L));
+        ReflectionTestUtils.setField(order, "status", OrderStatus.INSPECTION_PASSED);
+
+        given(adminRepository.findByIdAndDeletedAtIsNull(adminId)).willReturn(Optional.of(admin));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        // 운송장 없이 배송 시작 시도
+        assertThatThrownBy(() -> orderService.updateAdminStatus(orderId, OrderStatus.SHIPPED_TO_BUYER, null, adminId))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.TRACKING_NUMBER_REQUIRED);
+    }
+
+    // confirmOrder Tests
+
+    @Test
+    @DisplayName("구매 확정에 성공했을 때")
     void confirmOrder_Success() {
         UUID orderId = UUID.randomUUID();
         Long buyerId = 1L;
@@ -404,10 +531,11 @@ class OrderServiceImplTest {
         orderService.confirmOrder(orderId, buyerId);
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+        verify(settlementService).confirmSettlement(orderId);
     }
 
     @Test
-    @DisplayName("구매 확정 실패 - 유저 없음")
+    @DisplayName("구매 확정에 실패했을 때 - 유저가 없음")
     void confirmOrder_Fail_UserNotFound() {
         UUID orderId = UUID.randomUUID();
         Long buyerId = 1L;
@@ -417,5 +545,40 @@ class OrderServiceImplTest {
         assertThatThrownBy(() -> orderService.confirmOrder(orderId, buyerId))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("구매 확정에 실패했을 때 - 본인이 아님")
+    void confirmOrder_Fail_AccessDenied() {
+        UUID orderId = UUID.randomUUID();
+        Long buyerId = 1L;
+        Long otherUserId = 2L; // 판매자 혹은 제3자
+
+        User otherUser = createUser(otherUserId);
+        Order order = createOrder(orderId, createUser(buyerId), createUser(3L)); // Buyer=1, Seller=3
+        ReflectionTestUtils.setField(order, "status", OrderStatus.DELIVERED);
+
+        given(userRepository.findByIdAndDeletedAtIsNull(otherUserId)).willReturn(Optional.of(otherUser));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> orderService.confirmOrder(orderId, otherUserId))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("구매 확정에 실패했을 때 - 배송 완료 상태가 아님")
+    void confirmOrder_Fail_InvalidStatus() {
+        UUID orderId = UUID.randomUUID();
+        Long buyerId = 1L;
+        Order order = createOrder(orderId, createUser(buyerId), createUser(2L));
+        ReflectionTestUtils.setField(order, "status", OrderStatus.SHIPPED_TO_BUYER); // 아직 배송중
+
+        given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(order.getBuyer()));
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> orderService.confirmOrder(orderId, buyerId))
+                .isInstanceOf(CustomException.class) // CustomException(ErrorCode.INVALID_ORDER_STATUS)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ORDER_STATUS);
     }
 }

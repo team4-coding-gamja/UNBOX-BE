@@ -14,6 +14,7 @@ public class SettlementResponseDto {
     private UUID settlementId;
     private UUID orderId;
     private Integer totalAmount;
+    private Long sellerId;
     private Integer settlementAmount;
     private Integer feesAmount;
     private SettlementStatus settlementStatus;
@@ -22,6 +23,7 @@ public class SettlementResponseDto {
         return SettlementResponseDto.builder()
                 .settlementId(settlement.getId())
                 .orderId(settlement.getOrderId())
+                .sellerId(settlement.getSellerId())
                 .totalAmount(settlement.getTotalAmount())
                 .settlementAmount(settlement.getSettlementAmount())
                 .feesAmount(settlement.getFeesAmount())

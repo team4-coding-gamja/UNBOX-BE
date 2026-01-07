@@ -5,6 +5,10 @@ on:
     branches: [ main, develop, feat/infra ]
   pull_request:
     branches: [ develop ]
+    types: [ opened, synchronize, reopened ]
+  pull_request_review:
+    branches: [ develop ]
+    types: [ submitted ]
   workflow_dispatch:
     inputs:
       destroy_infrastructure:
@@ -149,7 +153,9 @@ jobs:
   # 인프라 배포
   deploy-infrastructure:
     needs: [detect-changes, terraform-plan]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/feat/infra'
+    if: |
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/feat/infra') ||
+      (github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'develop')
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -300,11 +306,6 @@ jobs:
             SERVER_PORT=8080
             JAVA_OPTS=-Xms128m -Xmx512m -XX:+UseG1GC
             EOF
-            
-            # 데이터베이스 연결 확인
-            echo "📊 === 데이터베이스 연결 테스트 ==="
-            echo "DB Endpoint: ${{ needs.deploy-infrastructure.outputs.database-endpoint }}"
-            nc -zv ${{ needs.deploy-infrastructure.outputs.database-endpoint }} 5432 || echo "⚠️ DB 연결 실패"
             
             # docker-compose-mvp.yml에서 이미지 변경 및 JVM 옵션 추가
             sed -i 's|build: .|image: ${{ env.DOCKER_IMAGE }}:latest|g' docker-compose-mvp.yml

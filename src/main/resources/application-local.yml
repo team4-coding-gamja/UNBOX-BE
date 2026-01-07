@@ -1,12 +1,12 @@
-# Local 개발 환경 설정 (H2 데이터베이스)
+# Local 개발 환경 설정 (PostgreSQL 데이터베이스)
 
 spring:
-  # H2 데이터베이스 설정
+  # PostgreSQL 데이터베이스 설정
   datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:testdb
-    username: sa
-    password: 
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/unbox_local
+    username: ${DB_USERNAME:unbox_user}
+    password: ${DB_PASSWORD:unbox_password} 
     
   # JPA 설정
   jpa:
@@ -16,13 +16,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        
-  # H2 콘솔 활성화
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-      
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
   # Redis 설정 (기본값 사용)
   data:
     redis:

@@ -6,7 +6,7 @@ spring:
     secret: ${SPRING_JWT_SECRET}
 
   datasource:
-    driver-class-name: ${DB_DRIVER_CLASS_NAME}
+    driver-class-name: ${DB_DRIVER_CLASS_NAME:org.postgresql.Driver}
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
@@ -19,12 +19,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.PostgreSQLDialect}
 
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
 
   sql:
     init:

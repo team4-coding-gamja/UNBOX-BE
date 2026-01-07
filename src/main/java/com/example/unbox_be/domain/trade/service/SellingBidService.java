@@ -104,10 +104,6 @@ public class SellingBidService {
         if (option == null || option.getProduct() == null) {
             throw new CustomException(ErrorCode.INVALID_BID_STATUS); // 혹은 적절한 에러코드
         }
-        // 로그인 유저와 해당 예약 유저 동일성 검사
-        if (!Objects.equals(sellingBid.getUserId(), userId)) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
-        }
         // 동일하다면 sellingBid 반환 객체 생성
         SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
 

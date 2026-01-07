@@ -16,7 +16,7 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   TERRAFORM_VERSION: 1.5.0
-  DOCKER_IMAGE: gahyunsong/unbox-backend-v2-v2
+  DOCKER_IMAGE: gahyunsong/unbox-backend-v2
 
 jobs:
   # 변경사항 감지
@@ -93,7 +93,7 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
       
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

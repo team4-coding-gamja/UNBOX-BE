@@ -10,6 +10,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,8 +20,7 @@ import java.util.UUID;
 @Table(name = "p_orders")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@org.hibernate.annotations.SQLDelete(sql = "UPDATE p_orders SET deleted_at = NOW() WHERE order_id = ?")
-@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at IS NULL")
 public class Order extends BaseEntity {
 
     @Id
@@ -111,6 +111,10 @@ public class Order extends BaseEntity {
         this.receiverAddress = receiverAddress;
         this.receiverZipCode = receiverZipCode;
         this.status = OrderStatus.PENDING_SHIPMENT; // 초기 상태 강제 설정
+    }
+
+    public Order(User buyer, User seller, ProductOption option, UUID sellingBidId, BigDecimal price, OrderStatus orderStatus, String receiverName, String receiverPhone, String receiverAddress, String receiverZip) {
+        super();
     }
 
     // =================================================================

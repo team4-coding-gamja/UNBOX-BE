@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Profile("!prod") // 운영(prod) 환경이 아닐 때만 동작
+@Profile({"!prod","!test"}) // 운영(prod) 환경이 아닐 때만 동작
 public class GlobalDataInitializer implements ApplicationRunner {
 
     private final AdminRepository adminRepository;

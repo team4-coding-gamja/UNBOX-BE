@@ -61,6 +61,7 @@ public enum ErrorCode {
     ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 해당 주문에 대한 리뷰를 작성했습니다."),
     NOT_REVIEW_OWNER(HttpStatus.FORBIDDEN, "본인이 작성한 리뷰만 수정/삭제할 수 있습니다."),
     INVALID_RATING(HttpStatus.BAD_REQUEST, "평점은 1점에서 5점 사이여야 합니다."),
+    ORDER_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "주문 완료 상태가 아닙니다."),
 
     // 브랜드
     BRAND_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 브랜드입니다."),

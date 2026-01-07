@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,8 +15,7 @@ import java.util.UUID;
 @Table(name = "p_brands")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@org.hibernate.annotations.SQLDelete(sql = "UPDATE p_brands SET deleted_at = NOW() WHERE brand_id = ?")
-@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at IS NULL")
 public class Brand extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

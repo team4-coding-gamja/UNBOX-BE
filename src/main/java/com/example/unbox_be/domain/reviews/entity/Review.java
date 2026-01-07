@@ -15,7 +15,6 @@ import java.util.UUID;
 @Table(name = "p_review")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SQLDelete(sql = "UPDATE p_review SET deleted_at = NOW() WHERE review_id = ?")
 @SQLRestriction("deleted_at IS NULL")
 public class Review extends BaseEntity {
 

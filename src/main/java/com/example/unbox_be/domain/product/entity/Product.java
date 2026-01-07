@@ -1,22 +1,19 @@
 package com.example.unbox_be.domain.product.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity;
-import com.example.unbox_be.domain.reviews.entity.Review;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
 @Table(name = "p_products")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@org.hibernate.annotations.SQLDelete(sql = "UPDATE p_products SET deleted_at = NOW() WHERE product_id = ?")
-@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at IS NULL")
 public class Product extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -283,8 +283,13 @@ jobs:
             SPRING_DATA_REDIS_PORT=6379
             SPRING_JWT_SECRET=${{ secrets.JWT_SECRET }}
             SERVER_PORT=8080
-            JAVA_OPTS=-Xms128m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+            JAVA_OPTS=-Xms128m -Xmx512m -XX:+UseG1GC
             EOF
+            
+            # 데이터베이스 연결 확인
+            echo "📊 === 데이터베이스 연결 테스트 ==="
+            echo "DB Endpoint: ${{ needs.deploy-infrastructure.outputs.database-endpoint }}"
+            nc -zv ${{ needs.deploy-infrastructure.outputs.database-endpoint }} 5432 || echo "⚠️ DB 연결 실패"
             
             # docker-compose-mvp.yml에서 이미지 변경 및 JVM 옵션 추가
             sed -i 's|build: .|image: ${{ env.DOCKER_IMAGE }}:latest|g' docker-compose-mvp.yml
@@ -302,6 +307,16 @@ jobs:
             # Spring Boot 로그 먼저 확인
             echo "📋 === Spring Boot 시작 로그 확인 ==="
             sudo docker logs unbox-mvp-app --tail=20
+            echo ""
+            
+            # 컨테이너 상태 확인
+            echo "🐳 === 컨테이너 상태 확인 ==="
+            sudo docker ps
+            echo ""
+            
+            # 환경변수 확인
+            echo "⚙️ === 환경변수 확인 ==="
+            sudo docker exec unbox-mvp-app env | grep -E "JAVA_OPTS|SPRING_" || echo "환경변수 확인 실패"
             echo ""
             
             for i in {1..60}; do

@@ -20,7 +20,6 @@ spring:
       hibernate:
         format_sql: true
 
-
   h2:
     console:
       enabled: true
@@ -45,3 +44,4 @@ springdoc:
     doc-expansion: none
     tags-sorter: none
     operations-sorter: alpha
+    custom-path: /css/swagger-custom.css

@@ -36,7 +36,7 @@ public class SwaggerConfig {
         return GroupedOpenApi.builder()
                 .group("2. 구매자 서비스")
                 .pathsToMatch("/api/**")
-                .pathsToExclude("/api/admin/**", "/api/test/**", "/api/products/requests/**", "/api/reviews/**")
+                .pathsToExclude("/api/admin/**", "/api/test/**", "/api/products/requests/**", "/api/reviews/**", "/api/users/**", "/api/wishlist/**", "/api/carts/**")
                 .addOpenApiCustomizer(swaggerSortCustomizer)
                 .build();
     }
@@ -46,7 +46,7 @@ public class SwaggerConfig {
         return GroupedOpenApi.builder()
                 .group("3. 판매자 서비스")
                 .pathsToMatch("/api/**")
-                .pathsToExclude("/api/admin/**", "/api/test/**", "/api/orders/**", "/api/payment/**", "/api/reviews/**", "/api/products/requests/**", "/api/products/**")
+                .pathsToExclude("/api/admin/**", "/api/test/**", "/api/orders/**", "/api/payment/**", "/api/reviews/**", "/api/products/requests/**", "/api/products/**", "/api/users/**", "/api/wishlist/**", "/api/carts/**")
                 .addOpenApiCustomizer(swaggerSortCustomizer)
                 .build();
     }
@@ -56,6 +56,7 @@ public class SwaggerConfig {
         return GroupedOpenApi.builder()
                 .group("4. 관리자 서비스")
                 .pathsToMatch("/api/admin/**")
+                .pathsToExclude("/api/test/**", "/api/admin/products/**", "/api/admin/reviews/**", "/api/admin/product-requests/**", "/api/admin/brands/**", "/api/admin/users/**", "/api/admin/bids/selling/**", "/api/admin/staff/**")
                 .addOpenApiCustomizer(swaggerSortCustomizer)
                 .build();
     }

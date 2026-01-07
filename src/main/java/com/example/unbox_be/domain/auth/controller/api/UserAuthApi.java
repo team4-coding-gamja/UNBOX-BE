@@ -101,8 +101,8 @@ public interface UserAuthApi {
                                             name = "로그인 요청 예시",
                                             value = """
                                                     {
-                                                      "email": "test@example.com",
-                                                      "password": "Password!"
+                                                      "email": "buyer1@unbox.com",
+                                                      "password": "12341234!"
                                                     }
                                                     """
                                     )

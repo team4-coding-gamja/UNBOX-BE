@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.trade.controller;
 
+import com.example.unbox_be.domain.trade.controller.api.SellingBidApi;
 import com.example.unbox_be.domain.trade.dto.request.SellingBidRequestDto;
 import com.example.unbox_be.domain.trade.dto.request.SellingBidsPriceUpdateRequestDto;
 import com.example.unbox_be.domain.trade.dto.response.SellingBidResponseDto;
@@ -23,7 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/bids/selling")
 @RequiredArgsConstructor
-public class SellingBidController {
+public class SellingBidController implements SellingBidApi {
 
     private final SellingBidService sellingBidService;
 

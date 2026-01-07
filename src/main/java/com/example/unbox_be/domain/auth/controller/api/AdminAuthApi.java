@@ -32,7 +32,7 @@ public interface AdminAuthApi {
                     ```json
                     {
                       "email": "manager@test.com",
-                      "password": "Test1234!",
+                      "password": "12341234!",
                       "nickname": "manager",
                       "phone": "010-1234-5678",
                       "adminRole": "ROLE_MANAGER"

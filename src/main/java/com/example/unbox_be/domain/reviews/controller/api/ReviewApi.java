@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@Tag(name = "리뷰 관리", description = "리뷰 생성 / 조회 / 수정 / 삭제 API")
+@Tag(name = "리뷰 관리", description = "리뷰 관리 API")
 @RequestMapping("/api/reviews")
 public interface ReviewApi {
 

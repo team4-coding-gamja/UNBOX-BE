@@ -15,7 +15,7 @@ import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "상품 요청", description = "상품 등록 요청 API")
+@Tag(name = "상품 등록 요청 관리", description = "상품 등록 요청 관리 API")
 @RequestMapping("/api/products")
 public interface ProductRequestApi {
 

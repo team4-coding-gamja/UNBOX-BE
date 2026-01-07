@@ -1,6 +1,7 @@
 package com.example.unbox_be.domain.trade.repository;
 
 import com.example.unbox_be.domain.trade.entity.SellingBid;
+import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -50,9 +51,20 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
         from SellingBid sb
         join sb.productOption po
         where po.product.id in :productIds
-          and sb.status = 'IN_PROGRESS'
+          and sb.status = 'LIVE'
           and sb.deletedAt is null
         group by po.product.id
     """)
     List<Object[]> findLowestPricesByProductIds(@Param("productIds") List<UUID> productIds);
+
+    @Query("SELECT MIN(sb.price) " +
+            "FROM SellingBid sb " +
+            "JOIN sb.productOption po " +
+            "WHERE po.product.id = :productId " +
+            "AND sb.status = :status " +
+            "AND sb.deletedAt IS NULL")
+    Integer findLowestPriceByProductId(
+            @Param("productId") UUID productId,
+            @Param("status") SellingStatus status
+    );
 }

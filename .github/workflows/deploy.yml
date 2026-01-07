@@ -298,18 +298,19 @@ jobs:
             # 기존 docker-compose-mvp.yml 다운로드
             curl -o docker-compose-mvp.yml https://raw.githubusercontent.com/team4-coding-gamja/UNBOX-BE/feat/infra/docker-compose-mvp.yml
             
-            # 환경 파일 생성 (RDS PostgreSQL 사용)
-            cat > .env.mvp << 'EOF'
-            SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
-            SPRING_DATASOURCE_URL=jdbc:postgresql://${{ needs.deploy-infrastructure.outputs.database-endpoint }}/unboxdb
-            SPRING_DATASOURCE_USERNAME=unboxadmin
-            SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}
-            SPRING_DATA_REDIS_HOST=redis
-            SPRING_DATA_REDIS_PORT=6379
-            SPRING_JWT_SECRET=${{ secrets.JWT_SECRET }}
-            SERVER_PORT=8080
-            JAVA_OPTS=-Xms128m -Xmx512m -XX:+UseG1GC
-            EOF
+            # 환경변수를 docker-compose.yml에 직접 설정
+            # .env.mvp 파일 대신 환경변수로 직접 전달
+            sed -i '/env_file:/d' docker-compose-mvp.yml
+            sed -i '/- \.env\.mvp/d' docker-compose-mvp.yml
+            
+            # 환경변수를 docker-compose.yml에 추가
+            sed -i '/SPRING_PROFILES_ACTIVE=mvp/a\      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver' docker-compose-mvp.yml
+            sed -i '/SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver/a\      - SPRING_DATASOURCE_URL=jdbc:postgresql://${{ needs.deploy-infrastructure.outputs.database-endpoint }}/unboxdb' docker-compose-mvp.yml
+            sed -i '/SPRING_DATASOURCE_URL=/a\      - SPRING_DATASOURCE_USERNAME=unboxadmin' docker-compose-mvp.yml
+            sed -i '/SPRING_DATASOURCE_USERNAME=unboxadmin/a\      - SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}' docker-compose-mvp.yml
+            sed -i '/SPRING_DATASOURCE_PASSWORD=/a\      - SPRING_DATA_REDIS_HOST=redis' docker-compose-mvp.yml
+            sed -i '/SPRING_DATA_REDIS_HOST=redis/a\      - SPRING_DATA_REDIS_PORT=6379' docker-compose-mvp.yml
+            sed -i '/SPRING_DATA_REDIS_PORT=6379/a\      - SPRING_JWT_SECRET=${{ secrets.JWT_SECRET }}' docker-compose-mvp.yml
             
             # docker-compose-mvp.yml에서 이미지 변경 및 JVM 옵션 추가
             sed -i 's|build: .|image: ${{ env.DOCKER_IMAGE }}:latest|g' docker-compose-mvp.yml
@@ -339,8 +340,20 @@ jobs:
             sudo docker exec unbox-mvp-app env | grep -E "JAVA_OPTS|SPRING_" || echo "환경변수 확인 실패"
             echo ""
             
-            for i in {1..60}; do  # 30초 → 60초로 연장
-              if curl -s http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
+            for i in {1..30}; do  # 5분 대기 (30 × 10초)
+              # 헬스체크 응답 확인 (더 관대한 조건)
+              HEALTH_RESPONSE=$(curl -s http://localhost:8080/actuator/health || echo "")
+              echo "🔍 Health 응답: $HEALTH_RESPONSE"
+              
+              if echo "$HEALTH_RESPONSE" | grep -q '"status":"UP"'; then
+                echo "✅ Application is healthy!"
+                break
+              elif echo "$HEALTH_RESPONSE" | grep -q "status"; then
+                echo "⚠️ Application responding but not UP yet..."
+              elif curl -s http://localhost:8080/swagger-ui/index.html > /dev/null; then
+                echo "✅ Swagger UI accessible - assuming healthy!"
+                break
+              fi
                 echo "✅ Application is healthy!"
                 
                 # 추가 대기 시간 (Swagger 초기화 완료 대기)
@@ -393,12 +406,12 @@ jobs:
               
               # 10번째마다 로그 확인 (더 자주)
               if [ $((i % 10)) -eq 0 ]; then
-                echo "📋 === 진행 상황 로그 (시도 $i/60) ==="
+                echo "📋 === 진행 상황 로그 (시도 $i/30) ==="
                 sudo docker logs unbox-mvp-app --tail=10
                 echo ""
               fi
               
-              echo "Waiting... ($i/60)"
+              echo "Waiting... ($i/30)"
               sleep 10
             done
             

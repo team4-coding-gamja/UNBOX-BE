@@ -1,0 +1,360 @@
+name: UNBOX Complete CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feat/infra ]
+  pull_request:
+    branches: [ develop ]
+  workflow_dispatch:
+    inputs:
+      destroy_infrastructure:
+        description: 'Destroy infrastructure after deployment'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  AWS_REGION: ap-northeast-2
+  TERRAFORM_VERSION: 1.5.0
+  DOCKER_IMAGE: gahyunsong/unbox-backend
+
+jobs:
+  # 변경사항 감지
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      terraform-changed: ${{ steps.changes.outputs.terraform }}
+      app-changed: ${{ steps.changes.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            terraform:
+              - 'terraform/**'
+            app:
+              - 'src/**'
+              - 'build.gradle'
+              - 'Dockerfile'
+              - 'docker-compose*.yml'
+
+  # Docker 이미지 빌드 & 푸시
+  build-and-push:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.app-changed == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      
+      - name: Build with Gradle
+        run: ./gradlew bootJar --no-daemon
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Terraform 계획 수립
+  terraform-plan:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.terraform-changed == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/environments/dev
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Terraform Init
+        run: terraform init
+      
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="use_rds=true" \
+            -out=tfplan
+      
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: terraform/environments/dev/tfplan
+
+  # 인프라 배포
+  deploy-infrastructure:
+    needs: [detect-changes, terraform-plan]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/feat/infra'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/environments/dev
+    outputs:
+      ec2-ip: ${{ steps.terraform-output.outputs.ec2_ip }}
+      database-endpoint: ${{ steps.terraform-output.outputs.database_endpoint }}
+      
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan
+          path: terraform/environments/dev/
+      
+      - name: Terraform Init
+        run: terraform init
+      
+      - name: Terraform Apply
+        run: |
+          terraform apply \
+            -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="use_rds=true" \
+            -auto-approve
+      
+      - name: Get Terraform Outputs
+        id: terraform-output
+        run: |
+          echo "ec2_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
+          echo "database_endpoint=$(terraform output -raw database_info | jq -r '.endpoint')" >> $GITHUB_OUTPUT
+          terraform output
+
+  # 애플리케이션 배포
+  deploy-application:
+    needs: [detect-changes, build-and-push, deploy-infrastructure]
+    if: always() && (needs.build-and-push.result == 'success' || needs.deploy-infrastructure.result == 'success')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Wait for EC2 to be ready
+        run: sleep 60
+      
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ needs.deploy-infrastructure.outputs.ec2-ip }}
+          username: ec2-user
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # =============================================================================
+            # EC2 초기 설정: 시스템 최적화 및 스왑 설정
+            # =============================================================================
+            
+            # 스왑 파일 생성 (2GB) - t2.micro 1GB RAM 보완
+            # Spring Boot + Redis + Docker 동시 실행 시 메모리 부족 방지
+            if [ ! -f /swapfile ]; then
+              echo "💾 스왑 파일 생성 중..."
+              sudo fallocate -l 2G /swapfile          # 2GB 스왑 파일 생성
+              sudo chmod 600 /swapfile                 # 보안 권한 설정
+              sudo mkswap /swapfile                    # 스왑 영역 초기화
+              sudo swapon /swapfile                    # 스왑 활성화
+              
+              # 영구 스왑 설정 (재부팅 후에도 유지)
+              echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+              
+              # 스왑 사용 최적화 설정
+              echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf      # 스왑 사용 빈도 낮춤 (RAM 우선)
+              echo 'vm.vfs_cache_pressure=50' | sudo tee -a /etc/sysctl.conf # 파일 시스템 캐시 압력 조절
+              
+              # 설정 즉시 적용
+              sudo sysctl vm.swappiness=10
+              sudo sysctl vm.vfs_cache_pressure=50
+              
+              echo "✅ 스왑 설정 완료: $(free -h | grep Swap)"
+            else
+              echo "✅ 스왑 이미 설정됨: $(free -h | grep Swap)"
+            fi
+            
+            # =============================================================================
+            # Docker 및 Docker Compose 설치 확인
+            # =============================================================================
+            
+            # Docker 설치 확인 및 설치
+            if ! command -v docker &> /dev/null; then
+              echo "🐳 Docker 설치 중..."
+              sudo apt update
+              sudo apt install -y docker.io docker-compose
+              sudo systemctl start docker
+              sudo systemctl enable docker
+              sudo usermod -aG docker ubuntu
+              echo "✅ Docker 설치 완료"
+            else
+              echo "✅ Docker 이미 설치됨: $(docker --version)"
+            fi
+            
+            # 기존 컨테이너 정리
+            sudo docker-compose down || true
+            sudo docker system prune -f || true
+            
+            # 프로젝트 디렉토리 생성 및 기존 파일 사용
+            mkdir -p ~/unbox-app
+            cd ~/unbox-app
+            
+            # 기존 docker-compose-mvp.yml 다운로드
+            curl -o docker-compose-mvp.yml https://raw.githubusercontent.com/GahyunSongDev/UNBOX-BE/main/docker-compose-mvp.yml
+            
+            # 환경 파일 생성
+            cat > .env.mvp << 'EOF'
+            SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+            SPRING_DATASOURCE_URL=jdbc:postgresql://${{ needs.deploy-infrastructure.outputs.database-endpoint }}/unboxdb
+            SPRING_DATASOURCE_USERNAME=unboxadmin
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}
+            SPRING_DATA_REDIS_HOST=redis
+            SPRING_DATA_REDIS_PORT=6379
+            SPRING_JWT_SECRET=${{ secrets.JWT_SECRET }}
+            SERVER_PORT=8080
+            EOF
+            
+            # docker-compose-mvp.yml에서 이미지 변경
+            sed -i 's|build: .|image: ${{ env.DOCKER_IMAGE }}:latest|g' docker-compose-mvp.yml
+            
+            # Docker Hub에서 최신 이미지 Pull
+            sudo docker pull ${{ env.DOCKER_IMAGE }}:latest
+            
+            # 애플리케이션 시작
+            sudo docker-compose -f docker-compose-mvp.yml up -d
+            
+            # 헬스체크 대기
+            echo "Waiting for application to start..."
+            for i in {1..30}; do
+              if curl -f http://localhost:8080/actuator/health 2>/dev/null; then
+                echo "✅ Application is healthy!"
+                break
+              fi
+              echo "Waiting... ($i/30)"
+              sleep 10
+            done
+            
+            # 컨테이너 상태 확인
+            sudo docker ps
+            sudo docker-compose logs --tail=50
+
+  # 배포 완료 알림
+  notify-completion:
+    needs: [deploy-infrastructure, deploy-application]
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deployment Status
+        run: |
+          echo "🚀 UNBOX 배포 완료!"
+          echo "📱 애플리케이션: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080"
+          echo "📚 Swagger UI: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080/swagger-ui/index.html"
+          echo "💚 Health Check: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080/actuator/health"
+          echo "🐳 Docker Image: ${{ env.DOCKER_IMAGE }}:latest"
+
+  # 인프라 정리 (테스트용)
+  cleanup-infrastructure:
+    needs: [deploy-infrastructure, deploy-application]
+    if: github.event.inputs.destroy_infrastructure == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/environments/dev
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Terraform Init
+        run: terraform init
+      
+      - name: Terraform Destroy
+        run: |
+          terraform destroy \
+            -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="use_rds=true" \
+            -auto-approve

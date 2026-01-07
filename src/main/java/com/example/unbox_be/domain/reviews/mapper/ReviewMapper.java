@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class ReviewMapper {
     public ReviewResponseDto toResponseDto(Review review) {
         return ReviewResponseDto.builder()
-                .reviewId(review.getId())
+                .reviewId(review.getReviewId())  // 변경된 필드명 사용
                 .orderId(review.getOrder().getId())
                 .userName(review.getBuyer().getNickname()) // User 엔티티 필드 확인 필요
                 .content(review.getContent())

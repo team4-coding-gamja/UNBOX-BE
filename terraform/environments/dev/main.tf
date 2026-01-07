@@ -55,6 +55,11 @@ module "database" {
   project_name      = var.project_name
   subnet_ids        = module.vpc.private_subnet_ids  # Private 서브넷에 DB 배치
   security_group_id = module.security.rds_sg_id      # RDS 전용 보안 그룹 사용
+  
+  # DB 설정 (변수로 관리)
+  db_name     = var.db_name
+  db_username = var.db_username
+  db_password = var.db_password
 }
 
 # Compute 모듈: EC2 인스턴스 및 관련 리소스
@@ -68,6 +73,12 @@ module "compute" {
   public_key        = var.public_key                # SSH 접속용 공개키
   subnet_id         = module.vpc.public_subnet_id   # Public 서브넷에 배치
   security_group_id = module.security.ec2_sg_id     # EC2 전용 보안 그룹 사용
+  
+  # 데이터베이스 정보 (user_data.sh에서 사용)
+  db_endpoint = var.use_rds ? try(module.database[0].db_endpoint, "localhost") : "localhost"
+  db_name     = var.db_name
+  db_username = var.db_username
+  db_password = var.db_password
 }
 
 # Storage 모듈: S3 버킷 (사용 안 함)

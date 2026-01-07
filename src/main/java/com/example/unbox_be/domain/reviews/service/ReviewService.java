@@ -82,7 +82,8 @@ public class ReviewService {
         reviewRepository.save(review);
         productService.addReviewData(productId, requestDto.getRating());
 
-        return review.getId();
+        return reviewRepository.save(review).getReviewId();
+
     }
 
     /**

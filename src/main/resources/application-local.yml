@@ -1,0 +1,56 @@
+# Local 개발 환경 설정 (H2 데이터베이스)
+
+spring:
+  # H2 데이터베이스 설정
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: 
+    
+  # JPA 설정
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        
+  # H2 콘솔 활성화
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      
+  # Redis 설정 (기본값 사용)
+  data:
+    redis:
+      host: redis
+      port: 6379
+      timeout: 5000
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+# JWT 설정
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationAndValidation123456789
+  access-token-expiration-ms: 3600000
+  refresh-token-expiration-ms: 604800000
+
+# 액추에이터 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health"
+  endpoint:
+    health:
+      show-details: "always"
+
+# 서버 설정
+server:
+  port: 8080

@@ -58,6 +58,8 @@ dependencies {
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
     // 롬복과 MapStruct를 같이 쓸 때 필드를 연결해주는 필수 라이브러리
+
+    // Lombok + MapStruct 호환성 (중요!)
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
     // QueryDSL

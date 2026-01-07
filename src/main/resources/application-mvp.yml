@@ -2,12 +2,9 @@
 # EC2 + RDS 구성
 
 spring:
-  profiles:
-    active: mvp
-    
   # RDS PostgreSQL 연결
   datasource:
-    driver-class-name: org.postgresql.Driver
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.postgresql.Driver}
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}

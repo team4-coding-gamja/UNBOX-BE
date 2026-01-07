@@ -111,8 +111,8 @@ public interface AdminAuthApi {
                                             name = "마스터 로그인 요청 예시",
                                             value = """
                                                     {
-                                                    "email": "master@test.com",
-                                                    "password": "Test1234!"
+                                                    "email": "master@unbox.com",
+                                                    "password": "12341234!"
                                                     }
                                                     """
                                     )

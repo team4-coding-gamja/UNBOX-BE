@@ -334,21 +334,21 @@ jobs:
             sudo docker exec unbox-mvp-app env | grep -E "JAVA_OPTS|SPRING_" || echo "환경변수 확인 실패"
             echo ""
             
-            for i in {1..60}; do
-              if curl -f http://localhost:8080/actuator/health 2>/dev/null; then
+            for i in {1..30}; do
+              if curl -s http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
                 echo "✅ Application is healthy!"
                 break
               fi
               
-              # 10번째마다 로그 확인
-              if [ $((i % 10)) -eq 0 ]; then
-                echo "📋 === 진행 상황 로그 (시도 $i/60) ==="
-                sudo docker logs unbox-mvp-app --tail=10
+              # 5번째마다 로그 확인
+              if [ $((i % 5)) -eq 0 ]; then
+                echo "📋 === 진행 상황 로그 (시도 $i/30) ==="
+                sudo docker logs unbox-mvp-app --tail=5
                 echo ""
               fi
               
-              echo "Waiting... ($i/60)"
-              sleep 15
+              echo "Waiting... ($i/30)"
+              sleep 10
             done
             
             # 컨테이너 상태 확인

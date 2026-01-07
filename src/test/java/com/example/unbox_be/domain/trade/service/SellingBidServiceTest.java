@@ -587,11 +587,11 @@ class SellingBidServiceTest {
             ReflectionTestUtils.setField(bid, "productOption", null); // 옵션 없음
 
             doReturn(Optional.of(bid)).when(sellingBidRepository).findByIdAndDeletedAtIsNull(bidId);
-            doReturn(SellingBidResponseDto.builder().build()).when(sellingBidMapper).toResponseDto(bid);
+            CustomException ex = assertThrows(CustomException.class,
+                    () -> sellingBidService.getSellingBidDetail(bidId, userId));
 
-            assertThrows(NullPointerException.class, () -> sellingBidService.getSellingBidDetail(bidId, userId));
+            assertEquals(ErrorCode.INVALID_BID_STATUS, ex.getErrorCode());
         }
-    }
 
     @Nested
     @DisplayName("시스템용 상태 변경 테스트 (updateSellingBidStatusBySystem)")
@@ -798,4 +798,5 @@ class SellingBidServiceTest {
             assertThat(result.getContent().get(0).getSize()).isEqualTo("280");
         }
     }
+}
 }

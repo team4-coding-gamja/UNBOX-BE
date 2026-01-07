@@ -97,14 +97,19 @@ public class SellingBidService {
 
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId) // 이걸로 변경!
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+        validateOwner(sellingBid, userId);
 
+        // [개선] 연관된 옵션이 없는 비정상 데이터 체크
+        ProductOption option = sellingBid.getProductOption();
+        if (option == null || option.getProduct() == null) {
+            throw new CustomException(ErrorCode.INVALID_BID_STATUS); // 혹은 적절한 에러코드
+        }
         // 로그인 유저와 해당 예약 유저 동일성 검사
         if (!Objects.equals(sellingBid.getUserId(), userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
         // 동일하다면 sellingBid 반환 객체 생성
         SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
-        ProductOption option = sellingBid.getProductOption();
 
         // 객체 반환
         return SellingBidResponseDto.builder()

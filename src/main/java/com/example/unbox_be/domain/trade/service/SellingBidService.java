@@ -35,7 +35,9 @@ public class SellingBidService {
 
     @Transactional
     public UUID createSellingBid(Long userId, SellingBidRequestDto requestDto) {
-
+        if (requestDto.getPrice() == null || requestDto.getPrice() <= 0) {
+            throw new CustomException(ErrorCode.INVALID_BID_PRICE);
+        }
         // 1. [수정] 단순히 존재 확인(exists)만 하지 말고, 실제 객체를 조회(findByIdAndDeletedAtIsNull)합니다.
         ProductOption productOption = productOptionRepository.findByIdAndDeletedAtIsNull(requestDto.getOptionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));

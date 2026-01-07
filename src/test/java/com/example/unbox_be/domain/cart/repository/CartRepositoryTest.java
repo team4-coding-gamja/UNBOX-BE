@@ -83,7 +83,7 @@ class CartRepositoryTest {
 
     // 1. 저장 및 조회
     @Test
-    @DisplayName("기본 저장 및 조회 확인")
+    @DisplayName("기본 저장과 조회 확인")
     void saveAndFind() {
         Cart cart = createCart(user, sellingBid);
         em.flush();
@@ -96,7 +96,7 @@ class CartRepositoryTest {
 
     // 2. 중복 체크: 존재함 (True)
     @Test
-    @DisplayName("중복 체크: 이미 존재하는 경우 True 반환")
+    @DisplayName("이미 해당 판매 상품이 장바구니에 존재하는 경우 True 반환")
     void exists_True() {
         createCart(user, sellingBid);
         em.flush();
@@ -108,7 +108,7 @@ class CartRepositoryTest {
 
     // 3. 중복 체크: 유저 다름 (False)
     @Test
-    @DisplayName("중복 체크: 유저가 다른 경우 False 반환")
+    @DisplayName("유저가 다른 경우(본인이 아닌 경우)에 False 반환")
     void exists_False_DifferentUser() {
         createCart(user, sellingBid);
         em.flush();
@@ -120,7 +120,7 @@ class CartRepositoryTest {
 
     // 4. 중복 체크: 입찰 다름 (False)
     @Test
-    @DisplayName("중복 체크: 입찰 정보가 다른 경우 False 반환")
+    @DisplayName("판매 입찰 정보가 다른 경우에는 False 반환")
     void exists_False_DifferentBid() {
         createCart(user, sellingBid);
         
@@ -142,7 +142,7 @@ class CartRepositoryTest {
 
     // 5. 내 장바구니 조회 (정렬)
     @Test
-    @DisplayName("내 장바구니 조회: 최신순 정렬 확인")
+    @DisplayName("장바구니 조회할 때, 최신순으로 정렬되는지 확인")
     void getMyCarts_Sorting() {
         // Old Cart (Force update created_at via Native Query)
         Cart oldCart = createCart(user, sellingBid);
@@ -174,7 +174,7 @@ class CartRepositoryTest {
     // 6. Entity Graph 확인
     // findAllByUserOrderByCreatedAtDesc 메서드에는 @EntityGraph가 걸려있어 N+1 문제가 해결되어야 함
     @Test
-    @DisplayName("내 장바구니 조회: Fetch Join으로 연관 엔티티 로딩 확인")
+    @DisplayName("장바구니 조회할 때, Fetch Join으로 연관 엔티티가 로딩되는지 확인")
     void getMyCarts_EntityGraph() {
         createCart(user, sellingBid);
         em.flush();
@@ -196,7 +196,7 @@ class CartRepositoryTest {
 
     // 7. 조회 - Deleted 로직 (findByIdAndDeletedAtIsNull)
     @Test
-    @DisplayName("단건 조회: 삭제되지 않은 건만 조회")
+    @DisplayName("삭제되지 않은 건만 조회가 되는지")
     void findById_NotDeleted() {
         Cart cart = createCart(user, sellingBid);
         
@@ -206,7 +206,7 @@ class CartRepositoryTest {
 
     // 8. 조회 - Deleted 로직 (Soft Delete 후)
     @Test
-    @DisplayName("단건 조회: Soft Delete된 건은 조회되지 않아야 함")
+    @DisplayName("Soft Delete된 건은 조회되지 않는지 확인")
     void findById_AlreadyDeleted() {
         Cart cart = createCart(user, sellingBid);
         cartRepository.delete(cart); // Triggers @SQLDelete
@@ -219,7 +219,7 @@ class CartRepositoryTest {
 
     // 9. findAllByUser - SQLRestriction 확인
     @Test
-    @DisplayName("목록 조회: @SQLRestriction에 의해 삭제된 건은 제외됨")
+    @DisplayName("장바구니 목록을 조회할 때, 삭제된 건은 제외되는지 확인")
     void findAllByUser_Restriction() {
         Cart c1 = createCart(user, sellingBid);
         
@@ -248,7 +248,7 @@ class CartRepositoryTest {
 
     // 10. findAllByUser - 아무것도 없을 때
     @Test
-    @DisplayName("목록 조회: 결과 없음")
+    @DisplayName("장바구니 목록을 조회할 경우 아무 상품도 없을 때")
     void findAllByUser_Empty() {
         List<Cart> result = cartRepository.findAllByUser(user);
         assertThat(result).isEmpty();

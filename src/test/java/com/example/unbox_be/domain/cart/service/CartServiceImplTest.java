@@ -67,7 +67,7 @@ class CartServiceImplTest {
 
    // 1. addCart: 성공
    @Test
-   @DisplayName("장바구니 담기 성공: LIVE 상태이고 본인 상품이 아니며 중복되지 않음")
+   @DisplayName("장바구니 담기 성공 !! (상품이 LIVE 상태이고 본인 상품이 아니고, 중복되지 않을 때 가능)")
    void addCart_Success() {
        Long userId = 1L;
        UUID bidId = UUID.randomUUID();
@@ -88,7 +88,7 @@ class CartServiceImplTest {
 
    // 2. addCart: 실패 - 상태가 LIVE가 아님
    @Test
-   @DisplayName("장바구니 담기 실패: 상품 상태가 LIVE가 아님 (MATCHED)")
+   @DisplayName("상품 상태가 LIVE가 아니고 체결 중(MATCHED)일 때는 실패해야 함")
    void addCart_Fail_NotLive() {
        Long userId = 1L;
        UUID bidId = UUID.randomUUID();
@@ -108,7 +108,7 @@ class CartServiceImplTest {
 
    // 3. addCart: 실패 - 본인 상품
    @Test
-   @DisplayName("장바구니 담기 실패: 본인이 등록한 상품")
+   @DisplayName("본인이 등록한 상품이 장바구니에 담기는 행동은 실패 !")
    void addCart_Fail_OwnBid() {
        Long userId = 1L;
        UUID bidId = UUID.randomUUID();
@@ -128,7 +128,7 @@ class CartServiceImplTest {
 
    // 4. addCart: 실패 - 이미 장바구니에 존재
    @Test
-   @DisplayName("장바구니 담기 실패: 이미 담겨있는 상품")
+   @DisplayName("이미 담겨있는 상품은 장바구니 담기 실패")
    void addCart_Fail_Duplicate() {
        Long userId = 1L;
        UUID bidId = UUID.randomUUID();
@@ -149,7 +149,7 @@ class CartServiceImplTest {
 
    // 5. getMyCarts: 조회 성공 및 매핑 검증
    @Test
-   @DisplayName("장바구니 조회: DTO 매핑 확인")
+   @DisplayName("장바구니 조회를 성공했을 때(DTO 매핑 잘 되었는지 검증)")
    void getMyCarts_Success() {
        Long userId = 1L;
        User user = createMockUser(userId);
@@ -197,7 +197,7 @@ class CartServiceImplTest {
 
    // 6. getMyCarts: 빈 목록
    @Test
-   @DisplayName("장바구니 조회: 목록이 비었을 때")
+   @DisplayName("목록이 비었을 때")
    void getMyCarts_Empty() {
        Long userId = 1L;
        User user = createMockUser(userId);
@@ -210,7 +210,7 @@ class CartServiceImplTest {
 
    // 7. deleteCart: 성공
    @Test
-   @DisplayName("장바구니 삭제: 본인 소유 정상 삭제")
+   @DisplayName("본인이 담아놓은 장바구니 상품을 정상적으로 삭제할 때")
    void deleteCart_Success() {
        Long userId = 1L;
        Long cartId = 100L;
@@ -230,7 +230,7 @@ class CartServiceImplTest {
 
    // 8. deleteCart: 실패 - 존재하지 않음
    @Test
-   @DisplayName("장바구니 삭제 실패: 존재하지 않거나 이미 삭제됨")
+   @DisplayName("존재하지 않거나 이미 삭제되었을 때")
    void deleteCart_Fail_NotFound() {
        Long userId = 1L;
        Long cartId = 999L;
@@ -244,7 +244,7 @@ class CartServiceImplTest {
 
    // 9. deleteCart: 실패 - 소유자 불일치
    @Test
-   @DisplayName("장바구니 삭제 실패: 본인의 장바구니가 아님")
+   @DisplayName("본인의 장바구니가 아닐 때 (userId가 불일치할 때)")
    void deleteCart_Fail_NotOwner() {
        Long userId = 1L;
        Long otherUserId = 2L;
@@ -264,7 +264,7 @@ class CartServiceImplTest {
 
    // 10. deleteAllCarts: 성공
    @Test
-   @DisplayName("장바구니 전체 삭제: 모든 항목에 대해 Soft Delete 호출 확인")
+   @DisplayName("모든 장바구니 항목에 대해 Soft Delete이 호출되는지 확인하여 전체 삭제되는지")
    void deleteAllCarts_Success() {
        Long userId = 1L;
        User user = createMockUser(userId);
@@ -283,7 +283,7 @@ class CartServiceImplTest {
 
    // 11. deleteAllCarts: 빈 목록일 때
    @Test
-   @DisplayName("장바구니 전체 삭제: 삭제할 항목이 없을 때도 에러 없이 통과")
+   @DisplayName("삭제할 항목이 없을 때 전체 삭제")
    void deleteAllCarts_Empty() {
        Long userId = 1L;
        User user = createMockUser(userId);
@@ -297,7 +297,7 @@ class CartServiceImplTest {
 
    // 12. Exception Propagate: UserService
    @Test
-   @DisplayName("장바구니 담기: 유저 조회 실패 시 예외 전파")
+   @DisplayName("유저 조회 실패 시 예외 코드 넘겨주기")
    void addCart_UserNotFound() {
        Long userId = 99L;
        CartRequestDto req = new CartRequestDto();

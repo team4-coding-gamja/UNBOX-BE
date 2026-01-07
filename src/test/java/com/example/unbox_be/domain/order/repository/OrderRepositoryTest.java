@@ -105,7 +105,7 @@ class OrderRepositoryTest {
     }
 
     @Test
-    @DisplayName("Soft Delete 동작 확인 - delete() 호출 시 deleted_at 업데이트 및 조회 불가")
+    @DisplayName("Soft Delete 동작이 잘 되는지 확인")
     void softDeleteCheck() {
         // given
         User managedBuyer = em.merge(buyer);
@@ -134,7 +134,7 @@ class OrderRepositoryTest {
     }
 
     @Test
-    @DisplayName("구매자 ID로 주문 목록 조회 (@EntityGraph 동작 확인)")
+    @DisplayName("구매자 ID로 주문 목록 조회 (다른 엔티티에서도 잘 가져와지는지 확인)")
     void findAllByBuyerIdAndDeletedAtIsNull() {
         // given
         User managedBuyer = em.merge(buyer);
@@ -159,7 +159,7 @@ class OrderRepositoryTest {
     }
 
     @Test
-    @DisplayName("주문 상세 조회 (@EntityGraph 동작 확인 - Seller, Buyer 포함)")
+    @DisplayName("주문 상세 조회 (Seller, Buyer 포함해서 가져올 때)")
     void findWithDetailsById() {
         // given
         User managedBuyer = em.merge(buyer);

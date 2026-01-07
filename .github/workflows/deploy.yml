@@ -334,6 +334,22 @@ jobs:
             for i in {1..30}; do
               if curl -s http://localhost:8080/actuator/health | grep -q '"status":"UP"'; then
                 echo "✅ Application is healthy!"
+                
+                # Swagger UI 접근 테스트
+                echo "📚 === Swagger UI 접근 테스트 ==="
+                if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/swagger-ui/index.html | grep -q "200"; then
+                  echo "✅ Swagger UI 접근 가능!"
+                else
+                  echo "❌ Swagger UI 접근 실패 - 응답 코드: $(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/swagger-ui/index.html)"
+                fi
+                
+                # API Docs 접근 테스트
+                if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/v3/api-docs | grep -q "200"; then
+                  echo "✅ API Docs 접근 가능!"
+                else
+                  echo "❌ API Docs 접근 실패 - 응답 코드: $(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/v3/api-docs)"
+                fi
+                
                 break
               fi
               
@@ -389,7 +405,8 @@ jobs:
           echo "🚀 UNBOX 배포 완료!"
           echo "📱 애플리케이션: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080"
           echo "📚 Swagger UI: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080/swagger-ui/index.html"
-          echo "💚 Health Check: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080/actuator/health"
+          echo "�  API Docs: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080/v3/api-docs"
+          echo "� Health Cmheck: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080/actuator/health"
           echo "🐳 Docker Image: ${{ env.DOCKER_IMAGE }}:latest"
 
   # 인프라 정리 (테스트용)

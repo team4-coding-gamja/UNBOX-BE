@@ -62,7 +62,7 @@ class ReviewRepositoryTest {
     }
 
     private Product 상품생성(Brand brand, int n) {
-        Category category = Category.values()[0];
+        Category category = Category.SHOES;
         return Product.createProduct(
                 "product" + n,
                 "model-" + n,

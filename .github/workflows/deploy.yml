@@ -286,8 +286,9 @@ jobs:
             JAVA_OPTS=-Xms128m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
             EOF
             
-            # docker-compose-mvp.yml에서 이미지 변경
+            # docker-compose-mvp.yml에서 이미지 변경 및 JVM 옵션 추가
             sed -i 's|build: .|image: ${{ env.DOCKER_IMAGE }}:latest|g' docker-compose-mvp.yml
+            sed -i '/SPRING_PROFILES_ACTIVE=mvp/a\      - JAVA_OPTS=-Xms128m -Xmx512m -XX:+UseG1GC' docker-compose-mvp.yml
             
             # Docker Hub에서 최신 이미지 Pull
             sudo docker pull ${{ env.DOCKER_IMAGE }}:latest
@@ -297,11 +298,25 @@ jobs:
             
             # 헬스체크 대기
             echo "Waiting for application to start..."
+            
+            # Spring Boot 로그 먼저 확인
+            echo "📋 === Spring Boot 시작 로그 확인 ==="
+            sudo docker logs unbox-mvp-app --tail=20
+            echo ""
+            
             for i in {1..60}; do
               if curl -f http://localhost:8080/actuator/health 2>/dev/null; then
                 echo "✅ Application is healthy!"
                 break
               fi
+              
+              # 10번째마다 로그 확인
+              if [ $((i % 10)) -eq 0 ]; then
+                echo "📋 === 진행 상황 로그 (시도 $i/60) ==="
+                sudo docker logs unbox-mvp-app --tail=10
+                echo ""
+              fi
+              
               echo "Waiting... ($i/60)"
               sleep 15
             done

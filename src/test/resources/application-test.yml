@@ -17,6 +17,12 @@ spring:
       hibernate:
         format_sql: true
 
+  sql:
+    init:
+      mode: never
+    flyway:
+      enabled: false
+
 jwt:
   secret: 5Z+j99jYMA+kKsdq0zjEVSQsAeLEUTyzsdGZ5pas5eQ=
   access-token-validity-ms: 10000

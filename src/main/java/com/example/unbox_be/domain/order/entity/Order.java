@@ -113,6 +113,10 @@ public class Order extends BaseEntity {
         this.status = OrderStatus.PENDING_SHIPMENT; // 초기 상태 강제 설정
     }
 
+    public Order(User buyer, User seller, ProductOption option, UUID sellingBidId, BigDecimal price, OrderStatus orderStatus, String receiverName, String receiverPhone, String receiverAddress, String receiverZip) {
+        super();
+    }
+
     // =================================================================
     // Business Logic (도메인 로직 캡슐화)
     // =================================================================

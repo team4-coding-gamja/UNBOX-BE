@@ -3,8 +3,7 @@ package com.example.unbox_be.domain.reviews.service;
 import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.repository.OrderRepository;
-import com.example.unbox_be.domain.product.entity.Product;
-import com.example.unbox_be.domain.product.service.ProductService;
+import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.reviews.dto.request.ReviewCreateRequestDto;
 import com.example.unbox_be.domain.reviews.dto.request.ReviewUpdateRequestDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewCreateResponseDto;
@@ -63,8 +62,8 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         // 5) 주문에서 상품 추출 (헬퍼 없이 바로)
-        Product product = order.getProductOption().getProduct();
-        if (product == null) {
+        ProductOption productOption = order.getProductOption();
+        if (productOption == null || productOption.getProduct() == null) {
             throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
         }
 
@@ -90,7 +89,6 @@ public class ReviewServiceImpl implements ReviewService {
                 .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
         return reviewMapper.toReviewDetailResponseDto(review);
-
     }
 
     // ✅ 리뷰 수정

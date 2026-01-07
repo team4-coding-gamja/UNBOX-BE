@@ -72,16 +72,30 @@ public enum ErrorCode {
     INVALID_ORDER_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태 변경입니다."),
 
 
-    //위시리스트
+    // 위시리스트
     WISHLIST_ALREADY_EXISTS(HttpStatus.BAD_REQUEST,"이미 찜 목록에 존재하는 상품입니다."),
     WISHLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "찜 목록에서 찾을 수 없습니다."),
 
-    //결제
+    // 장바구니 (Cart)
+    CART_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 장바구니에 담긴 상품입니다."),
+    CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "장바구니 항목을 찾을 수 없습니다."),
+    CANNOT_ADD_MY_OWN_BID(HttpStatus.BAD_REQUEST, "본인이 판매중인 상품은 장바구니에 담을 수 없습니다."),
+    BID_NOT_AVAILABLE_FOR_CART(HttpStatus.BAD_REQUEST, "판매 중이 아닌 상품은 장바구니에 담을 수 없습니다."),
+    NOT_CART_OWNER(HttpStatus.FORBIDDEN, "본인의 장바구니 항목만 삭제할 수 있습니다."),
+
+    // 결제
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"결제 정보를 찾을 수 없습니다."),
     PAYMENT_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 결제가 진행중인 주문입니다."),
     NOT_SELF_ORDER_PAYMENT(HttpStatus.FORBIDDEN, "본인의 구매 주문만 결제할 수 있습니다."),
     PG_PROCESSED_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 완료된 결제 내용입니다."),
-    NOT_SELF_PG_TRANSACTION(HttpStatus.FORBIDDEN, "본인의 PG결제만 진행할 수 있습니다.");
+    NOT_SELF_PG_TRANSACTION(HttpStatus.FORBIDDEN, "본인의 PG결제만 진행할 수 있습니다."),
+
+    //정산
+    SETTLEMENT_SELLER_MISMATCH(HttpStatus.BAD_REQUEST,"알맞은 정산 대상이 아닙니다."),
+    PAYMENT_SETTLEMENT_MISMATCH(HttpStatus.BAD_REQUEST,"결제정보와 주문정보가 다릅니다."),
+    SETTLEMENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 이 결제에 대한 정산이 진행중입니다."),
+    SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 주문의 정산 내용을 찾을 수 없습니다."),
+    SETTLEMENT_ALREADY_DONE(HttpStatus.BAD_REQUEST,"이미 정산이 완료된 주문입니다.");
     private final HttpStatus status;
     private final String message;
 }

@@ -17,7 +17,6 @@ public class OrderSearchCondition {
     private OrderStatus status;
     private String productName;
     private String brandName;
-    private String buyerName;
     
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;

@@ -6,11 +6,16 @@ import com.example.unbox_be.domain.admin.order.service.AdminOrderService;
 import com.example.unbox_be.domain.order.dto.request.OrderStatusUpdateRequestDto;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
+import com.example.unbox_be.global.pagination.PageSizeLimiter;
 import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -25,39 +30,27 @@ public class AdminOrderController implements AdminOrderApi {
     @Override
     @GetMapping
     public CustomApiResponse<Page<OrderResponseDto>> getAdminOrders(
-            OrderSearchCondition condition,
-            Pageable pageable,
-            CustomUserDetails userDetails
-    ) {
-        Page<OrderResponseDto> response = orderAdminService.getAdminOrders(condition, pageable);
+            @ModelAttribute OrderSearchCondition condition,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Pageable limited = PageSizeLimiter.limit(pageable);
+        Page<OrderResponseDto> response = orderAdminService.getAdminOrders(condition, limited);
         return CustomApiResponse.success(response);
     }
 
     @Override
     @GetMapping("{orderId}")
     public CustomApiResponse<OrderDetailResponseDto> getAdminOrderDetail(
-            UUID orderId,
-            CustomUserDetails userDetails
-    ) {
-        Long adminId = userDetails.getAdminId();
-        OrderDetailResponseDto response = orderAdminService.getAdminOrderDetail(orderId, adminId);
+            @PathVariable UUID orderId) {
+        OrderDetailResponseDto response = orderAdminService.getAdminOrderDetail(orderId);
         return CustomApiResponse.success(response);
     }
 
     @Override
     @PatchMapping("/{orderId}/status")
     public CustomApiResponse<OrderDetailResponseDto> updateOrderStatus(
-            UUID orderId,
-            OrderStatusUpdateRequestDto requestDto,
-            CustomUserDetails userDetails
-    ) {
-        Long adminId = userDetails.getAdminId();
-        OrderDetailResponseDto response = orderAdminService.updateAdminStatus(
-                orderId,
-                requestDto.getStatus(),
-                requestDto.getTrackingNumber(),
-                adminId
-        );
+            @PathVariable UUID orderId,
+            @RequestBody @Valid OrderStatusUpdateRequestDto requestDto) {
+        OrderDetailResponseDto response = orderAdminService.updateAdminStatus(orderId, requestDto);
         return CustomApiResponse.success(response);
     }
 }

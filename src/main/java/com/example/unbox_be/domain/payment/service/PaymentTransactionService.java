@@ -50,11 +50,10 @@ public class PaymentTransactionService {
         }
 
         payment.completePayment(response.getPaymentKey());
-        // 2) 상품 상태 변경 (HOLD -> MATCHED)
-        sellingBidService.updateSellingBidStatus(
-                order.getSellingBidId(), // 이제 정상 작동합니다!
+        // 상품 상태 변경 (HOLD -> MATCHED)
+        sellingBidService.updateSellingBidStatusBySystem(
+                order.getSellingBidId(),
                 SellingStatus.MATCHED,
-                null,
                 "SYSTEM"
         );
 

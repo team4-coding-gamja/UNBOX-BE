@@ -3,6 +3,7 @@ package com.example.unbox_be.domain.reviews.service;
 import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.repository.OrderRepository;
+import com.example.unbox_be.domain.product.service.ProductService;
 import com.example.unbox_be.domain.reviews.dto.ReviewRequestDto;
 import com.example.unbox_be.domain.reviews.dto.ReviewResponseDto;
 import com.example.unbox_be.domain.reviews.dto.ReviewUpdateDto;
@@ -28,6 +29,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final OrderRepository orderRepository;
     private final ReviewMapper reviewMapper;
+    private final ProductService productService;
 
     /**
      * [리뷰 생성]
@@ -77,7 +79,10 @@ public class ReviewService {
                 requestDto.getImageUrl()
         );
 
-        return reviewRepository.save(review).getReviewId();
+        reviewRepository.save(review);
+        productService.addReviewData(productId, requestDto.getRating());
+
+        return review.getId();
     }
 
     /**
@@ -100,9 +105,14 @@ public class ReviewService {
         if (!review.getBuyer().getId().equals(userId)) {
             throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
         }
-
+        Integer oldScore = review.getRating();
         // 수정 시에도 평점 범위 검증이 필요할 경우 추가 가능
+        if (dto.getRating() < 1 || dto.getRating() > 5) {
+            throw new CustomException(ErrorCode.INVALID_RATING);
+        }
+
         review.update(dto.getContent(), dto.getRating(), dto.getImageUrl());
+        productService.updateReviewData(review.getProductId(), oldScore, dto.getRating());
     }
 
     /**
@@ -116,7 +126,7 @@ public class ReviewService {
         if (!review.getBuyer().getId().equals(userId)) {
             throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
         }
-
+        productService.deleteReviewData(review.getProductId(), review.getRating());
         review.softDelete(String.valueOf(userId));
     }
 

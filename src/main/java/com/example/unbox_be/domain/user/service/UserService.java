@@ -12,4 +12,7 @@ public interface UserService {
     UserMeUpdateResponseDto updateUserMe(Long userId, UserMeUpdateRequestDto requestDto);
     // ✅ 회원 탈퇴
     void deleteUserMe(Long userId);
+
+    // [Internal System] 엔티티 조회
+    com.example.unbox_be.domain.user.entity.User findUser(Long userId);
 }

@@ -19,6 +19,8 @@ import java.util.UUID;
 @Table(name = "p_orders")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE p_orders SET deleted_at = NOW() WHERE order_id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
 public class Order extends BaseEntity {
 
     @Id

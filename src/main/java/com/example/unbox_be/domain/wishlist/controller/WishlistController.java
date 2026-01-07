@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/wishlist")
+@RequestMapping("/api/wishlist")
 @RequiredArgsConstructor
 public class WishlistController {
 

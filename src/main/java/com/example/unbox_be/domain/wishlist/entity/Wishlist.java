@@ -8,7 +8,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
 
 import java.util.UUID;
 
@@ -16,6 +15,8 @@ import java.util.UUID;
 @Table(name = "p_wishlists")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA를 위한 기본 생성자
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE p_wishlists SET deleted_at = NOW() WHERE wishlist_id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
 public class Wishlist extends BaseEntity {
 
     @Id

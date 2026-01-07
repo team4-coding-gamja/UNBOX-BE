@@ -19,4 +19,10 @@ public interface ProductService {
     List<ProductOptionListResponseDto> getProductOptions(UUID productId);
 
     List<BrandListResponseDto> getAllBrands();
+
+    void addReviewData(UUID productId, int score);
+
+    void deleteReviewData(UUID productId, int score);
+
+    void updateReviewData(UUID productId, int oldScore, int newScore);
 }

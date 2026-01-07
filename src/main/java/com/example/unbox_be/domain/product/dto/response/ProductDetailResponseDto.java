@@ -24,4 +24,7 @@ public class ProductDetailResponseDto {
     private String brandName;
 
     private Integer lowestPrice;
+
+    private Integer reviewCount;
+    private Double averageRating;
 }

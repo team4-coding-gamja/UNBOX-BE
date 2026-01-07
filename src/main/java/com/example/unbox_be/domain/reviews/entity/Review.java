@@ -13,6 +13,8 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE p_review SET deleted_at = NOW() WHERE review_id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
 public class Review extends BaseEntity {
 
     @Id

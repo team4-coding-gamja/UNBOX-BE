@@ -17,6 +17,7 @@ import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
 import com.example.unbox_be.domain.trade.service.TradeService;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -98,7 +99,7 @@ public class ProductServiceImpl implements  ProductService {
                 .map(option ->
                         productMapper.toProductOptionListDto(
                                 option,
-                                lowestPriceMap.get(option.getId())
+                                lowestPriceMap.getOrDefault(option.getId(), 0)
                         )
                 )
                 .toList();
@@ -111,5 +112,29 @@ public class ProductServiceImpl implements  ProductService {
         return brands.stream()
                 .map(brandMapper::toBrandListDto)
                 .toList();
+    }
+
+    @Transactional
+    public void addReviewData(UUID productId, int score){
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+        product.addReviewData(score);
+    }
+
+    @Transactional
+    public void deleteReviewData(UUID productId, int score){
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+        product.deleteReviewData(score);
+    }
+
+    @Transactional
+    public void updateReviewData(UUID productId, int oldScore, int newScore) {
+        if (oldScore == newScore) return;
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        product.updateReviewData(oldScore, newScore);
     }
 }

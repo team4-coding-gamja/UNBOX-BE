@@ -3,15 +3,15 @@ name: UNBOX Complete CI/CD Pipeline
 on:
   push:
     branches: [ main, develop, feat/infra ]
-    pull_request:
-      branches: [ develop ]
-    workflow_dispatch:
-      inputs:
-        destroy_infrastructure:
-          description: 'Destroy infrastructure after deployment'
-          required: false
-          default: 'false'
-          type: boolean
+  pull_request:
+    branches: [ develop ]
+  workflow_dispatch:
+    inputs:
+      destroy_infrastructure:
+        description: 'Destroy infrastructure after deployment'
+        required: false
+        default: false
+        type: boolean
 
 env:
   AWS_REGION: ap-northeast-2
@@ -75,7 +75,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew bootJar --no-daemon
       
-      - name: Set up Docker Buildx
+      - name: Set up Docker Builds
         uses: docker/setup-buildx-action@v3
       
       - name: Login to Docker Hub
@@ -249,7 +249,7 @@ jobs:
             # Spring Boot + Redis + Docker 동시 실행 시 메모리 부족 방지
             if [ ! -f /swapfile ]; then
               echo "💾 스왑 파일 생성 중..."
-              sudo fallocate -l 2G /swapfile          # 2GB 스왑 파일 생성
+              sudo allocate -l 2G /swapfile          # 2GB 스왑 파일 생성
               sudo chmod 600 /swapfile                 # 보안 권한 설정
               sudo mkswap /swapfile                    # 스왑 영역 초기화
               sudo swapon /swapfile                    # 스왑 활성화
@@ -438,7 +438,7 @@ jobs:
           echo "📱 애플리케이션: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080"
           echo "📚 Swagger UI: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080/swagger-ui/index.html"
           echo "�  API Docs: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080/v3/api-docs"
-          echo "� Health Cmheck: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080/actuator/health"
+          echo "� Health Check: http://${{ needs.deploy-infrastructure.outputs.ec2-ip }}:8080/actuator/health"
           echo "🐳 Docker Image: ${{ env.DOCKER_IMAGE }}:latest"
 
   # 인프라 정리 (테스트용)

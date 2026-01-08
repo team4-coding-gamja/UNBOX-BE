@@ -26,10 +26,11 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
     // ✅ 4. PG 영수증 키(pgPaymentReceiptKey)로 조회
     // 토스페이먼츠의 paymentKey 등이 이 필드에 저장되므로 취소/조회 시 사용됩니다.
-    @Query("select p from Payment p where p.pgPaymentReceiptKey = :receiptKey and p.deletedAt is null")
-    Optional<Payment> findByPgPaymentReceiptKeyAndDeletedAtIsNull(@Param("receiptKey") String receiptKey);
+    @Query("select p from Payment p where p.pgPaymentKey = :receiptKey and p.deletedAt is null")
+    Optional<Payment> findByPgPaymentKeyAndDeletedAtIsNull(@Param("receiptKey") String receiptKey);
 
     // ✅ 5. 특정 상태의 결제 내역 확인 (필요 시)
     @Query("select p from Payment p where p.orderId = :orderId and p.status = 'DONE' and p.deletedAt is null")
     Optional<Payment> findDonePaymentByOrderId(@Param("orderId") UUID orderId);
+
 }

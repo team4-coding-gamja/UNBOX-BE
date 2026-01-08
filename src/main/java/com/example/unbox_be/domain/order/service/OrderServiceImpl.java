@@ -68,7 +68,7 @@ public class OrderServiceImpl implements OrderService {
         User seller = getUserByIdOrThrow(sellingBid.getUserId());
 
         // 5. 가격 타입 변환 (Integer -> BigDecimal)
-        BigDecimal price = BigDecimal.valueOf(sellingBid.getPrice());
+        BigDecimal price = sellingBid.getPrice();
 
         // 6. Order 생성
         Order order = Order.builder()

@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Getter
@@ -22,5 +23,5 @@ public class SellingBidRequestDto {
 
     @NotNull(message = "Price 값 없음.")
     @Positive(message = "가격은 0보다 커야함")
-    private Integer price;
+    private BigDecimal price;
 }

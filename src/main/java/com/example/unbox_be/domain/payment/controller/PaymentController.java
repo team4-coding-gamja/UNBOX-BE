@@ -4,6 +4,7 @@ import com.example.unbox_be.domain.payment.controller.api.PaymentApi;
 import com.example.unbox_be.domain.payment.dto.request.PaymentConfirmRequestDto;
 import com.example.unbox_be.domain.payment.dto.request.PaymentCreateRequestDto;
 import com.example.unbox_be.domain.payment.dto.response.PaymentReadyResponseDto;
+import com.example.unbox_be.domain.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_be.domain.payment.service.PaymentService;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +30,7 @@ public class PaymentController implements PaymentApi {
      * 주문서 페이지에서 결제하기 버튼을 누를 때 호출됩니다.
      */
     @Override
+    @PostMapping("/ready")
     public ResponseEntity<PaymentReadyResponseDto> createPayment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid PaymentCreateRequestDto request
@@ -38,8 +40,6 @@ public class PaymentController implements PaymentApi {
                 request.orderId(),
                 request.method()
         );
-
-        // [수정] body에 UUID가 아닌 response 객체 전체를 담아서 보냄
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -48,15 +48,16 @@ public class PaymentController implements PaymentApi {
      * 가짜 결제 성공 후 이 API를 호출하면 p_payment와 p_pg_transaction이 업데이트됩니다.
      */
     @Override
-    public ResponseEntity<Void> confirmPayment(
+    @PostMapping("/confirm")
+    public ResponseEntity<TossConfirmResponse> confirmPayment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid PaymentConfirmRequestDto request
     ) {
-        paymentService.confirmPayment(
+        TossConfirmResponse response = paymentService.confirmPayment(
                 userDetails.getUserId(),
                 request.paymentId(),
                 request.paymentKey()
         );
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(response);
     }
 }

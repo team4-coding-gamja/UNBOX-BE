@@ -87,7 +87,7 @@ class SellingBidServiceTest {
             // given
             SellingBidRequestDto requestDto = SellingBidRequestDto.builder()
                     .optionId(optionId)
-                    .price(150000)
+                    .price(BigDecimal.valueOf(150000))
                     .build();
             ProductOption option = createMockEntity(ProductOption.class, optionId);
             SellingBid bid = createMockEntity(SellingBid.class, bidId);
@@ -110,7 +110,7 @@ class SellingBidServiceTest {
             // given
             SellingBidRequestDto requestDto = SellingBidRequestDto.builder()
                     .optionId(optionId)
-                    .price(150000)
+                    .price(BigDecimal.valueOf(150000))
                     .build();
             doReturn(Optional.empty()).when(productOptionRepository).findByIdAndDeletedAtIsNull(optionId);
 
@@ -127,7 +127,7 @@ class SellingBidServiceTest {
             // findByIdAndDeletedAtIsNull 쿼리 자체가 null을 반환하도록 설정
             SellingBidRequestDto requestDto = SellingBidRequestDto.builder()
                     .optionId(optionId)
-                    .price(150000)
+                    .price(BigDecimal.valueOf(150000))
                     .build();
             doReturn(Optional.empty()).when(productOptionRepository).findByIdAndDeletedAtIsNull(optionId);
 
@@ -141,7 +141,7 @@ class SellingBidServiceTest {
             // given
             SellingBidRequestDto requestDto = SellingBidRequestDto.builder()
                     .optionId(optionId)
-                    .price(150000)
+                    .price(BigDecimal.valueOf(150000))
                     .build();
             ProductOption option = createMockEntity(ProductOption.class, optionId);
             SellingBid bid = createMockEntity(SellingBid.class, bidId);
@@ -170,7 +170,7 @@ class SellingBidServiceTest {
             // 빌더 패턴을 사용하여 0원인 요청 생성
             SellingBidRequestDto requestDto = SellingBidRequestDto.builder()
                     .optionId(optionId)
-                    .price(0)
+                    .price(BigDecimal.valueOf(0))
                     .build();
 
             // 🔴 [삭제] 이 부분은 서비스 로직 상단에서 가격 체크에 걸려 실행되지 않으므로 삭제해야 합니다.
@@ -189,7 +189,7 @@ class SellingBidServiceTest {
             // given
             SellingBidRequestDto requestDto = SellingBidRequestDto.builder()
                     .optionId(optionId)
-                    .price(200000)
+                    .price(BigDecimal.valueOf(200000))
                     .build();
             ProductOption option = createMockEntity(ProductOption.class, optionId);
             SellingBid bid = createMockEntity(SellingBid.class, bidId);
@@ -213,7 +213,7 @@ class SellingBidServiceTest {
             // given
             SellingBidRequestDto requestDto = SellingBidRequestDto.builder()
                     .optionId(optionId)
-                    .price(100000)
+                    .price(BigDecimal.valueOf(100000))
                     .build();
             ProductOption option = createMockEntity(ProductOption.class, optionId);
 
@@ -354,7 +354,7 @@ class SellingBidServiceTest {
             SellingBid bid = spy(createMockEntity(SellingBid.class, bidId));
             ReflectionTestUtils.setField(bid, "userId", userId);
             ReflectionTestUtils.setField(bid, "status", SellingStatus.LIVE);
-            Integer newPrice = 200000;
+            BigDecimal newPrice = BigDecimal.valueOf(200000);
 
             doReturn(Optional.of(bid)).when(sellingBidRepository).findByIdAndDeletedAtIsNull(bidId);
 
@@ -373,7 +373,7 @@ class SellingBidServiceTest {
 
             // when & then
             CustomException ex = assertThrows(CustomException.class,
-                    () -> sellingBidService.updateSellingBidPrice(bidId, 200000, userId, "user@test.com"));
+                    () -> sellingBidService.updateSellingBidPrice(bidId, BigDecimal.valueOf(200000), userId, "user@test.com"));
             assertEquals(ErrorCode.BID_NOT_FOUND, ex.getErrorCode());
         }
 
@@ -388,7 +388,7 @@ class SellingBidServiceTest {
 
             // when & then
             CustomException ex = assertThrows(CustomException.class,
-                    () -> sellingBidService.updateSellingBidPrice(bidId, 200000, userId, "user@test.com"));
+                    () -> sellingBidService.updateSellingBidPrice(bidId, BigDecimal.valueOf(200000), userId, "user@test.com"));
             assertEquals(ErrorCode.ACCESS_DENIED, ex.getErrorCode());
         }
 
@@ -402,7 +402,7 @@ class SellingBidServiceTest {
 
             // when & then
             CustomException ex = assertThrows(CustomException.class,
-                    () -> sellingBidService.updateSellingBidPrice(bidId, 0, userId, "user@test.com"));
+                    () -> sellingBidService.updateSellingBidPrice(bidId, BigDecimal.valueOf(0), userId, "user@test.com"));
             assertEquals(ErrorCode.INVALID_BID_PRICE, ex.getErrorCode());
         }
 
@@ -432,7 +432,7 @@ class SellingBidServiceTest {
 
             // when & then
             CustomException ex = assertThrows(CustomException.class,
-                    () -> sellingBidService.updateSellingBidPrice(bidId, 200000, userId, "user@test.com"));
+                    () -> sellingBidService.updateSellingBidPrice(bidId, BigDecimal.valueOf(200000), userId, "user@test.com"));
             assertEquals(ErrorCode.INVALID_ORDER_STATUS, ex.getErrorCode());
         }
 
@@ -443,16 +443,16 @@ class SellingBidServiceTest {
             SellingBid bid = createMockEntity(SellingBid.class, bidId);
             ReflectionTestUtils.setField(bid, "userId", userId);
             ReflectionTestUtils.setField(bid, "status", SellingStatus.LIVE);
-            ReflectionTestUtils.setField(bid, "price", 100000); // 기존가
+            ReflectionTestUtils.setField(bid, "price", BigDecimal.valueOf(100000));
 
             doReturn(Optional.of(bid)).when(sellingBidRepository).findByIdAndDeletedAtIsNull(bidId);
 
             // when
-            sellingBidService.updateSellingBidPrice(bidId, 300000, userId, "user@test.com");
+            sellingBidService.updateSellingBidPrice(bidId, BigDecimal.valueOf(300000), userId, "user@test.com");
 
             // then
             // 엔티티의 updatePrice가 내부 필드를 바꾸는지 리플렉션으로 검증
-            assertEquals(300000, ReflectionTestUtils.getField(bid, "price"));
+            assertEquals(BigDecimal.valueOf(300000), ReflectionTestUtils.getField(bid, "price"));
         }
     }
 

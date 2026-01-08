@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -44,6 +45,8 @@ public class PaymentServiceTest {
     @Mock private OrderRepository orderRepository;
     @Mock private PaymentTransactionService paymentTransactionService;
     @Mock private SettlementService settlementService;
+    @Mock private Payment payment;
+    @Mock private Order order;
 
     private <T> T createMockEntity(Class<T> clazz, Object id) throws Exception {
         Constructor<T> constructor = clazz.getDeclaredConstructor();
@@ -330,7 +333,7 @@ public class PaymentServiceTest {
 
             // then
             assertThat(result).isNotNull();
-            verify(paymentRepository).save(argThat(p -> p.getAmount().equals(largePrice.intValue())));
+            verify(paymentRepository).save(argThat(p -> p.getAmount().equals(largePrice)));
         }
         @Test
         @DisplayName("14. 실패 - 이미 배송 중(SHIPPING)인 주문에 대해 결제 생성 시도")
@@ -379,7 +382,7 @@ public class PaymentServiceTest {
         private final UUID paymentId = UUID.randomUUID();
         private final UUID orderId = UUID.randomUUID();
         private final String paymentKey = "toss_key_12345";
-        private final int amount = 10000;
+        private final BigDecimal amount = BigDecimal.valueOf(10000);
 
         // 매 테스트마다 반복되는 기본 세팅 (성공 케이스 기준)
         private void setupBasicMocks(OrderStatus orderStatus, PaymentStatus paymentStatus) throws Exception {
@@ -387,7 +390,7 @@ public class PaymentServiceTest {
             Order order = createMockEntity(Order.class, orderId);
             ReflectionTestUtils.setField(order, "buyer", buyer);
             ReflectionTestUtils.setField(order, "status", orderStatus);
-            ReflectionTestUtils.setField(order, "price", BigDecimal.valueOf(amount));
+            ReflectionTestUtils.setField(order, "price", amount);
 
             Payment payment = createMockEntity(Payment.class, paymentId);
             ReflectionTestUtils.setField(payment, "orderId", orderId);
@@ -404,15 +407,21 @@ public class PaymentServiceTest {
         @Test
         @DisplayName("1. 성공 - 모든 조건이 완벽할 때 결제 승인 성공")
         void confirmPayment_Success_AllFine() throws Exception{
+            // 1. Given
             setupBasicMocks(OrderStatus.PENDING_SHIPMENT, PaymentStatus.READY);
-            TossConfirmResponse mockResponse = mock(TossConfirmResponse.class);
-            given(mockResponse.isSuccess()).willReturn(true);
-            given(mockResponse.getPaymentKey()).willReturn(paymentKey);
-            given(tossApiService.confirm(anyString(), anyInt())).willReturn(mockResponse);
 
+            TossConfirmResponse mockResponse = mock(TossConfirmResponse.class);
+            lenient().when(mockResponse.isSuccess()).thenReturn(true);
+
+            // TossApiService.confirm이 호출될 때 mockResponse를 반환하도록 확실히 고정
+            // any(BigDecimal.class)를 명시하거나, any()를 사용합니다.
+            given(tossApiService.confirm(anyString(), any(BigDecimal.class))).willReturn(mockResponse);
+
+            // 2. When
             paymentService.confirmPayment(userId, paymentId, paymentKey);
 
-            verify(paymentTransactionService).processSuccessfulPayment(eq(paymentId), any(), eq(paymentKey));
+            // 3. Then
+            verify(paymentTransactionService).processSuccessfulPayment(eq(paymentId), any(TossConfirmResponse.class));
             verify(settlementService).createSettlement(eq(paymentId), eq(orderId));
         }
 
@@ -453,9 +462,11 @@ public class PaymentServiceTest {
             setupBasicMocks(OrderStatus.PENDING_SHIPMENT, PaymentStatus.READY);
             TossConfirmResponse failResponse = mock(TossConfirmResponse.class);
             given(failResponse.isSuccess()).willReturn(false); // 승인 실패
-            given(tossApiService.confirm(anyString(), anyInt())).willReturn(failResponse);
+            given(tossApiService.confirm(anyString(), any())).willReturn(failResponse);
 
-            paymentService.confirmPayment(userId, paymentId, paymentKey);
+            assertThrows(CustomException.class, () -> {
+                paymentService.confirmPayment(userId, paymentId, paymentKey);
+            });
 
             verify(paymentTransactionService).processFailedPayment(eq(paymentId), any());
             verify(settlementService, never()).createSettlement(any(), any());
@@ -465,7 +476,7 @@ public class PaymentServiceTest {
         @DisplayName("6. 실패 - Toss API 호출 중 타임아웃/네트워크 에러")
         void confirmPayment_Fail_TossNetworkError() throws Exception{
             setupBasicMocks(OrderStatus.PENDING_SHIPMENT, PaymentStatus.READY);
-            given(tossApiService.confirm(anyString(), anyInt())).willThrow(new RuntimeException("Network Timeout"));
+            given(tossApiService.confirm(anyString(), any())).willThrow(new RuntimeException("Network Timeout"));
 
             assertThatThrownBy(() -> paymentService.confirmPayment(userId, paymentId, paymentKey))
                     .isInstanceOf(RuntimeException.class);
@@ -473,20 +484,34 @@ public class PaymentServiceTest {
 
         @Test
         @DisplayName("7. 실패 - 승인 성공 후 내부 로직 에러 시 Toss 자동 취소")
-        void confirmPayment_Fail_RollbackWithCancel() throws Exception{
+        void confirmPayment_Fail_RollbackWithCancel() throws Exception {
+            // 1. 기초 Mock 설정 (상태값 세팅)
             setupBasicMocks(OrderStatus.PENDING_SHIPMENT, PaymentStatus.READY);
+
+            // 2. 금액 설정 (BigDecimal로 통일)
+            BigDecimal amount = new BigDecimal("10000");
+            lenient().when(payment.getAmount()).thenReturn(amount);
+            lenient().when(order.getPrice()).thenReturn(amount);
+
+            // 3. Toss 응답 Mock 설정
             TossConfirmResponse mockResponse = mock(TossConfirmResponse.class);
-            given(mockResponse.isSuccess()).willReturn(true);
-            given(mockResponse.getPaymentKey()).willReturn(paymentKey);
-            given(tossApiService.confirm(anyString(), anyInt())).willReturn(mockResponse);
+            lenient().when(mockResponse.isSuccess()).thenReturn(true);
+            lenient().when(mockResponse.getPaymentKey()).thenReturn(paymentKey);
+            // Toss 응답 객체 내의 금액도 BigDecimal로 비교될 수 있으므로 설정 (타입에 따라 Long/BigDecimal 선택)
+            lenient().when(mockResponse.getTotalAmount()).thenReturn(BigDecimal.valueOf(10000));
 
-            // 정산 생성 시 에러 강제 발생
-            doThrow(new RuntimeException("DB Error")).when(settlementService).createSettlement(any(), any());
+            // 4. Toss API 호출 결과 설정
+            given(tossApiService.confirm(anyString(), any())).willReturn(mockResponse);
 
+            // 5. 내부 로직 에러 강제 발생 (정산 생성 시 실패 유도)
+            doThrow(new RuntimeException("DB Error"))
+                    .when(settlementService).createSettlement(any(), any());
+
+            // 6. 실행 및 검증
             assertThatThrownBy(() -> paymentService.confirmPayment(userId, paymentId, paymentKey))
                     .isInstanceOf(RuntimeException.class);
 
-            // 보상 트랜잭션(취소)이 호출되었는지 검증
+            // 7. 보상 트랜잭션(취소)이 호출되었는지 확인
             verify(tossApiService).cancel(eq(paymentKey), anyString());
         }
 
@@ -520,7 +545,7 @@ public class PaymentServiceTest {
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PAYMENT_ALREADY_EXISTS);
 
             // 승인 API가 호출되지 않아야 함
-            verify(tossApiService, never()).confirm(anyString(), anyInt());
+            verify(tossApiService, never()).confirm(anyString(), any());
         }
 
         @Test
@@ -531,14 +556,14 @@ public class PaymentServiceTest {
             ReflectionTestUtils.setField(payment, "method", PaymentMethod.CARD);
 
             TossConfirmResponse mockResponse = mock(TossConfirmResponse.class);
-            given(mockResponse.isSuccess()).willReturn(true);
-            given(mockResponse.getPaymentKey()).willReturn(paymentKey);
-            given(tossApiService.confirm(anyString(), anyInt())).willReturn(mockResponse);
+            lenient().when(mockResponse.isSuccess()).thenReturn(true);
+            lenient().when(mockResponse.getPaymentKey()).thenReturn(paymentKey);
+            given(tossApiService.confirm(anyString(), any())).willReturn(mockResponse);
 
             paymentService.confirmPayment(userId, paymentId, paymentKey);
 
             assertThat(payment.getMethod()).isEqualTo(PaymentMethod.CARD);
-            verify(paymentTransactionService).processSuccessfulPayment(any(), any(), any());
+            verify(paymentTransactionService).processSuccessfulPayment(any(), any());
         }
     }
 }

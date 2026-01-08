@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -166,7 +167,7 @@ class CartServiceImplTest {
        given(cart.getSellingBid()).willReturn(bid);
 
        given(bid.getId()).willReturn(UUID.randomUUID());
-       given(bid.getPrice()).willReturn(150000); // Integer
+       given(bid.getPrice()).willReturn(BigDecimal.valueOf(150000)); // Integer
        given(bid.getStatus()).willReturn(SellingStatus.LIVE);
        given(bid.getProductOption()).willReturn(option);
 

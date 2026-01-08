@@ -93,7 +93,7 @@ class SettlementServiceTest {
 
             Payment payment = createMockEntity(Payment.class, paymentId);
             ReflectionTestUtils.setField(payment, "orderId", orderId);
-            ReflectionTestUtils.setField(payment, "amount", 100000);
+            ReflectionTestUtils.setField(payment, "amount", BigDecimal.valueOf(100000));
 
             SellingBid bid = createMockEntity(SellingBid.class, bidId);
             ReflectionTestUtils.setField(bid, "userId", sellerId);
@@ -108,8 +108,8 @@ class SettlementServiceTest {
             SettlementResponseDto result = settlementService.createSettlement(paymentId, orderId);
 
             // then
-            assertEquals(3000, result.getFeesAmount());
-            assertEquals(97000, result.getSettlementAmount());
+            assertThat(result.getFeesAmount()).isEqualByComparingTo(BigDecimal.valueOf(3000));
+            assertThat(result.getSettlementAmount()).isEqualByComparingTo(BigDecimal.valueOf(97000));
             assertEquals(SettlementStatus.WAITING, result.getSettlementStatus());
         }
 
@@ -117,25 +117,25 @@ class SettlementServiceTest {
         @DisplayName("성공 - 수수료 반올림 검증 (1235원 * 3% = 37.05원 -> 37원)")
         void CreateSettlement_success_RoundingTest() throws Exception {
             // given
-            setupBasicSuccessMocks(1235);
+            setupBasicSuccessMocks(BigDecimal.valueOf(1235));
             when(settlementRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             // when
             SettlementResponseDto result = settlementService.createSettlement(paymentId, orderId);
 
             // then
-            assertEquals(37, result.getFeesAmount());
+            assertEquals(BigDecimal.valueOf(37), result.getFeesAmount());
         }
 
         @Test
         @DisplayName("성공 - 결제 금액이 0원일 때 정산 금액 0원 확인")
         void CreateSettlement_success_ZeroAmount() throws Exception {
-            setupBasicSuccessMocks(0);
+            setupBasicSuccessMocks(BigDecimal.valueOf(0));
             when(settlementRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             SettlementResponseDto result = settlementService.createSettlement(paymentId, orderId);
 
-            assertEquals(0, result.getSettlementAmount());
+            assertEquals(BigDecimal.valueOf(0), result.getSettlementAmount());
         }
 
 
@@ -151,7 +151,7 @@ class SettlementServiceTest {
         @Test
         @DisplayName("실패 - 결제 정보와 주문 ID가 불일치 (데이터 오염 차단)")
         void CreateSettlement_fail_PaymentOrderIdMismatch() throws Exception {
-            setupBasicSuccessMocks(100000);
+            setupBasicSuccessMocks(BigDecimal.valueOf(100000));
             Payment payment = (Payment) paymentRepository.findById(paymentId).get();
             ReflectionTestUtils.setField(payment, "orderId", UUID.randomUUID());
 
@@ -162,7 +162,7 @@ class SettlementServiceTest {
         @Test
         @DisplayName("실패 - 판매자와 입찰 소유자가 불일치 (보안 검증)")
         void CreateSettlement_fail_SellerUserMismatch() throws Exception {
-            setupBasicSuccessMocks(100000);
+            setupBasicSuccessMocks(BigDecimal.valueOf(100000));
             // 입찰 데이터의 소유자를 다른 사람(999L)으로 변경
             SellingBid bid = (SellingBid) sellingBidRepository.findById(bidId).get();
             ReflectionTestUtils.setField(bid, "userId", 999L);
@@ -238,7 +238,7 @@ class SettlementServiceTest {
         }
 
         /** 성공 시나리오용 공통 Mock 설정 헬퍼 */
-        private void setupBasicSuccessMocks(Integer amount) throws Exception {
+        private void setupBasicSuccessMocks(BigDecimal amount) throws Exception {
             User seller = createMockEntity(User.class, sellerId);
             Order order = createMockEntity(Order.class, orderId);
             ReflectionTestUtils.setField(order, "seller", seller);
@@ -322,7 +322,7 @@ class SettlementServiceTest {
         @DisplayName("성공 - 확정 후에도 정산 금액 등 기존 정보가 변하지 않는지 확인")
         void ConfirmSettlement_success_MaintainData() throws Exception {
             // given
-            Integer originalAmount = 97000;
+            BigDecimal originalAmount = BigDecimal.valueOf(97000);
             Settlement settlement = Settlement.builder()
                     .orderId(orderId)
                     .settlementAmount(originalAmount)
@@ -380,7 +380,7 @@ class SettlementServiceTest {
             Settlement settlement = Settlement.builder()
                     .orderId(orderId)
                     .sellerId(sellerId)
-                    .settlementAmount(97000)
+                    .settlementAmount(BigDecimal.valueOf(97000))
                     .settlementStatus(SettlementStatus.WAITING)
                     .build();
             doReturn(Optional.of(settlement)).when(settlementRepository).findByOrderId(orderId);
@@ -391,7 +391,7 @@ class SettlementServiceTest {
             // then
             assertAll(
                     () -> assertEquals(sellerId, response.getSellerId()),
-                    () -> assertEquals(97000, response.getSettlementAmount()),
+                    () -> assertEquals(BigDecimal.valueOf(97000), response.getSettlementAmount()),
                     () -> assertEquals(SettlementStatus.DONE, response.getSettlementStatus())
             );
         }

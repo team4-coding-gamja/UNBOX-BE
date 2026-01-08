@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -27,14 +28,17 @@ public class Payment extends BaseEntity {
     private UUID orderId;
 
     @Column(name = "payment_amount", nullable = false)
-    private Integer amount;
+    private BigDecimal amount;
 
     @Column(name = "payment_method", nullable = false)
     @Enumerated(EnumType.STRING)
     private PaymentMethod method;
 
-    @Column(name = "pg_payment_receipt_key")
-    private String pgPaymentReceiptKey;
+    @Column(name = "pg_payment_key")
+    private String pgPaymentKey;
+
+    @Column(name = "pg_approve_no")
+    private String pgApproveNo;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -46,14 +50,15 @@ public class Payment extends BaseEntity {
     @Version
     private Long version;
 
-    public void completePayment(String pgPaymentKey) {
+    public void completePayment(String pgPaymentKey, String pgApproveNo) {
         if (this.status == PaymentStatus.DONE) {
             throw new IllegalStateException("이미 완료된 결제입니다.");
         }
         if (this.status == PaymentStatus.CANCELED) {
             throw new IllegalStateException("취소된 결제는 완료 처리할 수 없습니다.");
         }
-        this.pgPaymentReceiptKey = pgPaymentKey;
+        this.pgPaymentKey = pgPaymentKey;
+        this.pgApproveNo = pgApproveNo;
         this.status = PaymentStatus.DONE;
         this.capturedAt = LocalDateTime.now();
     }

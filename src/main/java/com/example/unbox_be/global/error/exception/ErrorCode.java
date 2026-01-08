@@ -61,6 +61,7 @@ public enum ErrorCode {
     ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 해당 주문에 대한 리뷰를 작성했습니다."),
     NOT_REVIEW_OWNER(HttpStatus.FORBIDDEN, "본인이 작성한 리뷰만 수정/삭제할 수 있습니다."),
     INVALID_RATING(HttpStatus.BAD_REQUEST, "평점은 1점에서 5점 사이여야 합니다."),
+    ORDER_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "주문 완료 상태가 아닙니다."),
 
     // 브랜드
     BRAND_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 브랜드입니다."),
@@ -90,6 +91,7 @@ public enum ErrorCode {
     PG_PROCESSED_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 완료된 결제 내용입니다."),
     NOT_SELF_PG_TRANSACTION(HttpStatus.FORBIDDEN, "본인의 PG결제만 진행할 수 있습니다."),
     PAYMENT_METHOD_INVALID(HttpStatus.BAD_REQUEST,"잘못된 결제 수단입니다."),
+    PAYMENT_CONFIRM_FAILED(HttpStatus.BAD_REQUEST,"결제에 실패하였습니다."),
     //정산
     SETTLEMENT_SELLER_MISMATCH(HttpStatus.BAD_REQUEST,"알맞은 정산 대상이 아닙니다."),
     PAYMENT_SETTLEMENT_MISMATCH(HttpStatus.BAD_REQUEST,"결제정보와 주문정보가 다릅니다."),

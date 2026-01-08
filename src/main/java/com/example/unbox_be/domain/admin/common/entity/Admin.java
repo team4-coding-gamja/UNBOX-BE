@@ -3,11 +3,13 @@ package com.example.unbox_be.domain.admin.common.entity;
 import com.example.unbox_be.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "p_admin")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLRestriction("deleted_at IS NULL")
 public class Admin extends BaseEntity {
 
     @Id

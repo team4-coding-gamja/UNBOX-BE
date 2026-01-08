@@ -58,8 +58,6 @@ dependencies {
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
     // 롬복과 MapStruct를 같이 쓸 때 필드를 연결해주는 필수 라이브러리
-
-    // Lombok + MapStruct 호환성 (중요!)
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
     // QueryDSL
@@ -84,6 +82,10 @@ dependencies {
 
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // OPEN AI
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     // AWS
     implementation 'software.amazon.awssdk:s3:2.20.26'

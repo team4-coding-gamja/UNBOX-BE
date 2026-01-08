@@ -17,13 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Profile("!prod") // 운영(prod) 환경이 아닐 때만 동작
+@Profile({"!prod","!test"}) // 운영(prod) 환경이 아닐 때만 동작
 public class GlobalDataInitializer implements ApplicationRunner {
 
     private final AdminRepository adminRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
 
     @Override
     @Transactional
@@ -54,7 +53,7 @@ public class GlobalDataInitializer implements ApplicationRunner {
                 "user1",
                 "010-9999-8888"
         );
-        
+
         // Buyers
         initUserIfNotExists("buyer1@unbox.com", "buyer1", "010-1000-0001");
         initUserIfNotExists("buyer2@unbox.com", "buyer2", "010-1000-0002");
@@ -64,7 +63,6 @@ public class GlobalDataInitializer implements ApplicationRunner {
         initUserIfNotExists("seller1@unbox.com", "seller1", "010-2000-0001");
         initUserIfNotExists("seller2@unbox.com", "seller2", "010-2000-0002");
         initUserIfNotExists("seller3@unbox.com", "seller3", "010-2000-0003");
-
     }
 
     private void initAdminIfNotExists(

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -24,7 +25,7 @@ public class CartResponseDto {
     @AllArgsConstructor
     public static class SellingBidInfo {
         private UUID id;
-        private Integer price;
+        private BigDecimal price;
         private SellingStatus status;
         private String size;
         private ProductInfo product;

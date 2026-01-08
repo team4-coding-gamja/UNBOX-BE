@@ -4,7 +4,9 @@ import com.example.unbox_be.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -12,10 +14,9 @@ import java.util.UUID;
 @Table(name = "p_settlements")
 @Getter
 @Builder
-@AllArgsConstructor // 모든 필드를 인자로 받는 생성자 (빌더가 내부적으로 사용)
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@org.hibernate.annotations.SQLDelete(sql = "UPDATE p_settlements SET deleted_at = NOW() WHERE settlements_id = ?")
-@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
+@SQLRestriction("deleted_at IS NULL")
 public class Settlement extends BaseEntity {
     @Id
     @Column(name = "settlements_id")
@@ -32,13 +33,13 @@ public class Settlement extends BaseEntity {
     private UUID paymentId;
 
     @Column(name = "total_amount", nullable = false)
-    private Integer totalAmount;
+    private BigDecimal totalAmount;
 
     @Column(name = "settlement_amount", nullable = false)
-    private Integer settlementAmount;
+    private BigDecimal settlementAmount;
 
     @Column(name = "fees_amount", nullable = false)
-    private Integer feesAmount;
+    private BigDecimal feesAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status",nullable = false)

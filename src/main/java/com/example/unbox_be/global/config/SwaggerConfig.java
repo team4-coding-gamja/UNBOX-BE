@@ -32,11 +32,21 @@ public class SwaggerConfig {
     }
 
     @Bean
-    public GroupedOpenApi userApi(OpenApiCustomizer swaggerSortCustomizer) {
+    public GroupedOpenApi buyerApi(OpenApiCustomizer swaggerSortCustomizer) {
         return GroupedOpenApi.builder()
-                .group("2. 사용자 서비스")
+                .group("2. 구매자 서비스")
                 .pathsToMatch("/api/**")
-                .pathsToExclude("/api/admin/**", "/api/test/**")
+                .pathsToExclude("/api/admin/**", "/api/test/**", "/api/products/requests/**", "/api/reviews/**", "/api/users/**", "/api/wishlist/**", "/api/carts/**")
+                .addOpenApiCustomizer(swaggerSortCustomizer)
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi sellerApi(OpenApiCustomizer swaggerSortCustomizer) {
+        return GroupedOpenApi.builder()
+                .group("3. 판매자 서비스")
+                .pathsToMatch("/api/**")
+                .pathsToExclude("/api/admin/**", "/api/test/**", "/api/orders/**", "/api/payment/**", "/api/reviews/**", "/api/products/requests/**", "/api/products/**", "/api/users/**", "/api/wishlist/**", "/api/carts/**")
                 .addOpenApiCustomizer(swaggerSortCustomizer)
                 .build();
     }
@@ -44,8 +54,9 @@ public class SwaggerConfig {
     @Bean
     public GroupedOpenApi adminApi(OpenApiCustomizer swaggerSortCustomizer) {
         return GroupedOpenApi.builder()
-                .group("3. 관리자 서비스")
+                .group("4. 관리자 서비스")
                 .pathsToMatch("/api/admin/**")
+                .pathsToExclude("/api/test/**", "/api/admin/products/**", "/api/admin/reviews/**", "/api/admin/product-requests/**", "/api/admin/brands/**", "/api/admin/users/**", "/api/admin/bids/selling/**", "/api/admin/staff/**")
                 .addOpenApiCustomizer(swaggerSortCustomizer)
                 .build();
     }
@@ -95,25 +106,29 @@ public class SwaggerConfig {
 
         // ===== USER =====
         tagMap.put("사용자 인증", "[사용자] 인증 관리");
-        tagMap.put("회원 관리", "[사용자] 회원 관리");
-        tagMap.put("상품", "[사용자] 상품 관리");
-        tagMap.put("wishlist-controller", "[사용자] 찜 관리");
-        tagMap.put("selling-bid-controller", "[사용자] 판매입찰 관리");
-        tagMap.put("[사용자] 장바구니 관리", "[사용자] 장바구니 관리");
+        tagMap.put("상품 등록 요청 관리", "[사용자] 상품 등록 요청 관리");
+        tagMap.put("상품 관리", "[사용자] 상품 관리");
+        tagMap.put("판매입찰 관리", "[사용자] 판매입찰 관리");
         tagMap.put("주문 관리", "[사용자] 주문 관리");
-        tagMap.put("Payment API", "[사용자] 결제 관리");
+        tagMap.put("결제 관리", "[사용자] 결제 관리");
         tagMap.put("리뷰 관리", "[사용자] 리뷰 관리");
-        tagMap.put("상품 요청", "[사용자] 상품 등록 요청 관리");
+
+        tagMap.put("회원 관리", "[사용자] 회원 관리");
+        tagMap.put("위시리스트 관리", "[사용자] 위시리스트(찜) 관리");
+        tagMap.put("장바구니 관리", "[사용자] 장바구니 관리");
 
         // ===== ADMIN =====
         tagMap.put("[관리자] 인증 관리", "[관리자] 인증 관리");
-        tagMap.put("[관리자] 스태프 관리", "[관리자] 스태프 관리");
-        tagMap.put("[관리자] 사용자 관리", "[관리자] 사용자 관리");
+        tagMap.put("[관리자] 상품 등록 요청 관리", "[관리자] 상품 등록 요청 관리");
         tagMap.put("[관리자] 브랜드 관리", "[관리자] 브랜드 관리");
         tagMap.put("[관리자] 상품 관리", "[관리자] 상품 관리");
         tagMap.put("[관리자] 상품 옵션 관리", "[관리자] 상품 옵션 관리");
         tagMap.put("[관리자] 주문 관리", "[관리자] 주문 관리");
-        tagMap.put("[관리자] 상품 등록 요청 관리", "[관리자] 상품 등록 요청 관리");
+
+        tagMap.put("[관리자] 판매입찰 관리", "[관리자] 판매입찰 관리");
+        tagMap.put("[관리자] 스태프 관리", "[관리자] 스태프 관리");
+        tagMap.put("[관리자] 사용자 관리", "[관리자] 사용자 관리");
+
 
         return openApi -> {
 

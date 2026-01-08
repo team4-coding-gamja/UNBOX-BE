@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -44,6 +45,14 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
     List<Object[]> findLowestPriceByOptionIds(List<UUID> optionIds);
 
     Optional<SellingBid> findByIdAndDeletedAtIsNull(UUID sellingId);
+
+    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = {"productOption", "productOption.product"})
+    @org.springframework.data.jpa.repository.QueryHints({
+            @jakarta.persistence.QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000")
+    })
+    @Query("select sb from SellingBid sb where sb.id = :sellingId and sb.deletedAt is null")
+    Optional<SellingBid> findByIdAndDeletedAtIsNullForUpdate(@Param("sellingId") UUID sellingId);
 
     // ✅ 상품 ID 목록에 해당하는 최저가 조회 (상품별 최저가)
     @Query("""

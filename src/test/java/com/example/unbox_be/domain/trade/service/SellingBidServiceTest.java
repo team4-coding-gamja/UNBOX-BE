@@ -592,6 +592,40 @@ class SellingBidServiceTest {
 
             assertEquals(ErrorCode.INVALID_BID_STATUS, ex.getErrorCode());
         }
+        @Test
+        @DisplayName("상세 조회 실패 - 옵션은 존재하나 연관된 상품 정보가 없는 경우")
+        void getDetail_fail_productIsNullInOption() throws Exception {
+            // given
+            ProductOption option = createMockEntity(ProductOption.class, UUID.randomUUID());
+            ReflectionTestUtils.setField(option, "product", null); // 🚩 의도적인 데이터 결함
+
+            SellingBid bid = createMockEntity(SellingBid.class, bidId);
+            ReflectionTestUtils.setField(bid, "userId", userId);
+            ReflectionTestUtils.setField(bid, "productOption", option);
+
+            doReturn(Optional.of(bid)).when(sellingBidRepository).findByIdAndDeletedAtIsNull(bidId);
+
+            // when & then
+            CustomException ex = assertThrows(CustomException.class,
+                    () -> sellingBidService.getSellingBidDetail(bidId, userId));
+            assertEquals(ErrorCode.INVALID_BID_STATUS, ex.getErrorCode());
+        }
+        @Test
+        @DisplayName("상태 변경 성공 - 이메일이 null로 전달되어도 예외 없이 진행된다")
+        void cancelBid_success_emailIsNull() throws Exception {
+            // given
+            SellingBid bid = spy(createMockEntity(SellingBid.class, bidId));
+            ReflectionTestUtils.setField(bid, "userId", userId);
+            ReflectionTestUtils.setField(bid, "status", SellingStatus.LIVE);
+
+            doReturn(Optional.of(bid)).when(sellingBidRepository).findByIdAndDeletedAtIsNull(bidId);
+
+            // when
+            assertDoesNotThrow(() -> sellingBidService.cancelSellingBid(bidId, userId, null));
+
+            // then
+            verify(bid, never()).updateModifiedBy(any()); // 🚩 이메일이 없으므로 호출 안 됨을 확인
+        }
 
     @Nested
     @DisplayName("시스템용 상태 변경 테스트 (updateSellingBidStatusBySystem)")
@@ -696,6 +730,37 @@ class SellingBidServiceTest {
             // when & then
             assertDoesNotThrow(() ->
                     sellingBidService.updateSellingBidStatusBySystem(bidId, SellingStatus.LIVE, "SYSTEM"));
+        }
+        @Test
+        @DisplayName("가격 수정 실패 - 가격이 null인 경우")
+        void updatePrice_fail_priceIsNull_explicit() throws Exception{
+            // given
+            SellingBid bid = createMockEntity(SellingBid.class, bidId);
+            ReflectionTestUtils.setField(bid, "userId", userId);
+            doReturn(Optional.of(bid)).when(sellingBidRepository).findByIdAndDeletedAtIsNull(bidId);
+
+            // when & then
+            assertThrows(CustomException.class, () ->
+                    sellingBidService.updateSellingBidPrice(bidId, null, userId, "email"));
+        }
+        @Test
+        @DisplayName("상태 변경 실패 - 유저 ID가 없는 경우 Access Denied")
+        void updateStatus_fail_userIdNull() {
+            assertThrows(CustomException.class, () ->
+                    sellingBidService.updateSellingBidStatus(bidId, SellingStatus.CANCELLED, null, "email"));
+        }
+        @Test
+        @DisplayName("시스템 상태 변경 - 이메일이 null인 경우 수정자 기록을 건너뛴다")
+        void updateStatusBySystem_success_emailNull() throws Exception {
+            SellingBid bid = spy(createMockEntity(SellingBid.class, bidId));
+            ReflectionTestUtils.setField(bid, "status", SellingStatus.LIVE);
+            doReturn(Optional.of(bid)).when(sellingBidRepository).findByIdAndDeletedAtIsNull(bidId);
+
+            // when
+            sellingBidService.updateSellingBidStatusBySystem(bidId, SellingStatus.MATCHED, null);
+
+            // then
+            verify(bid, never()).updateModifiedBy(anyString());
         }
     }
 

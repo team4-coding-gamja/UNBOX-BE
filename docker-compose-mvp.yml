@@ -1,7 +1,7 @@
 # AWS MVP 배포용 Docker Compose
 # EC2 + RDS 구성 (Spring Boot + Redis)
 
-version: '3.8'
+#version: '3.8'
 
 services:
   # Spring Boot 애플리케이션

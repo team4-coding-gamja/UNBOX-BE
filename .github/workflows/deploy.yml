@@ -288,7 +288,7 @@ jobs:
             fi
             
             # 기존 컨테이너 정리
-            sudo docker-compose down || true
+            sudo docker-compose -f docker-compose-mvp.yml down
             sudo docker system prune -f || true
             
             # 프로젝트 디렉토리 생성 및 기존 파일 사용

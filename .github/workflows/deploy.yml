@@ -425,7 +425,7 @@ jobs:
             echo "⚡ === 시스템 로드 ==="
             uptime
 
-  # 배포 완료 알림
+  # 배포 완료 알림!
   notify-completion:
     needs: [deploy-infrastructure, deploy-application]
     if: always()

@@ -54,4 +54,6 @@ public class ProductController implements ProductApi {
     public CustomApiResponse<List<BrandListResponseDto>> getAllBrands() {
         return CustomApiResponse.success(productService.getAllBrands());
     }
+
+    // ✅ 상품별 리뷰 목록 조회
 }

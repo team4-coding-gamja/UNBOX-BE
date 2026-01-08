@@ -60,12 +60,12 @@ public class PaymentTransactionService {
         // 3) PG 트랜잭션 로그 저장
         PgTransaction transaction = PgTransaction.builder()
                 .payment(payment)
-                .pgPaymentKey(response.getPaymentKey())
+                .pgPaymentKey(response.getPaymentKey()!= null ? response.getPaymentKey() : "UNKNOWN")
                 .eventStatus(PgTransactionStatus.DONE)
                 .eventType("PAYMENT")
-                .pgApproveNo(response.getApproveNo())
+                .pgApproveNo(response.getApproveNo()!= null ? response.getApproveNo() : "UNKNOWN")
                 .rawPayload(response.getRawJson()) // 전체 응답값 저장
-                .eventAmount(response.getTotalAmount())
+                .eventAmount(response.getTotalAmount()!= null ? response.getTotalAmount() : payment.getAmount())
                 .pgProvider(response.getMethod())
                 .pgSellerKey(pgSellerKey)
                 .build();

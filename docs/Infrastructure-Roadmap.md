@@ -720,44 +720,30 @@ public class OrderQueryService {
 ## 🎯 마이그레이션 전략
 
 ### 1차 고도화 마이그레이션
-1. **준비 단계** (1주)
+1. **준비 단계** 
    - 모니터링 도구 설치
    - 백업 및 롤백 계획 수립
    
-2. **점진적 적용** (2주)
+2. **점진적 적용** 
    - Multi-AZ RDS 전환
    - ALB 도입 및 트래픽 분산
    - SSL 인증서 적용
    
-3. **검증 및 최적화** (1주)
+3. **검증 및 최적화** 
    - 성능 테스트
    - 모니터링 대시보드 구축
 
 ### 2차 고도화 마이그레이션
-1. **서비스 분석** (2주)
+1. **서비스 분석**
    - 도메인 경계 식별
    - 데이터 의존성 분석
    
-2. **Strangler Fig 패턴** (8주)
+2. **Strangler Fig 패턴** 
    - 새로운 마이크로서비스 개발
    - 점진적 트래픽 이전
    - 레거시 코드 제거
    
-3. **데이터 파이프라인** (4주)
+3. **데이터 파이프라인** 
    - Kafka 클러스터 구축
    - 실시간 스트리밍 구현
    - 분석 대시보드 구축
-
----
-
-## 📚 참고 자료
-- [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
-- [Microservices Patterns](https://microservices.io/patterns/)
-- [Kubernetes Best Practices](https://kubernetes.io/docs/concepts/configuration/overview/)
-- [Apache Kafka Documentation](https://kafka.apache.org/documentation/)
-
----
-**작성자**: 인프라팀  
-**작성일**: 2026-01-07  
-**검토자**: 아키텍처팀  
-**승인일**: 2026-01-07

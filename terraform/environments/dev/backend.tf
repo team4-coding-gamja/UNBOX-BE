@@ -5,7 +5,7 @@
 
 terraform {
   backend "s3" {
-    bucket         = "unbox-terraform-state-coding-potato"
+    bucket         = "unbox-terraform-state-bucket"
     key            = "dev/terraform.tfstate"
     region         = "ap-northeast-2"
     encrypt        = true

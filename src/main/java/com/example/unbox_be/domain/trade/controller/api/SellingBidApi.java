@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.trade.controller.api;
 
+import com.example.unbox_be.domain.auth.dto.request.UserLoginRequestDto;
 import com.example.unbox_be.domain.trade.dto.request.SellingBidRequestDto;
 import com.example.unbox_be.domain.trade.dto.request.SellingBidsPriceUpdateRequestDto;
 import com.example.unbox_be.domain.trade.dto.response.SellingBidResponseDto;
@@ -7,6 +8,7 @@ import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +31,35 @@ public interface SellingBidApi {
     @Operation(
             summary = "판매 입찰 생성",
             description = "로그인한 사용자가 판매 입찰을 생성합니다."
+    )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    schema = @Schema(implementation = SellingBidRequestDto.class),
+                    examples = {
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "판매 입찰(10000원)",
+                                    value = """
+                                                    {
+                                                      "userId": 5,
+                                                      "optionId": "aaaa0000-0000-0000-0000-000000000001",
+                                                      "price": 10000
+                                                    }
+                                                    """
+                            ),
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "판매 입찰(5000원)",
+                                    value = """
+                                                    {
+                                                      "userId": 5,
+                                                      "optionId": "aaaa0000-0000-0000-0000-000000000001",
+                                                      "price": 5000
+                                                    }
+                                                    """
+                            )
+
+                    }
+            )
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "판매 입찰 생성 성공"),

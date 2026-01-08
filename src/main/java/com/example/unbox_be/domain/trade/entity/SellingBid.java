@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -40,7 +41,7 @@ public class SellingBid extends BaseEntity {
     private ProductOption productOption;
 
     @Column(name = "price", nullable = false)
-    private Integer price;
+    private BigDecimal price;
 
     @Builder.Default // 중요: 빌더 사용 시에도 LIVE가 기본값으로 들어가도록 설정
     @Enumerated(EnumType.STRING)
@@ -49,7 +50,7 @@ public class SellingBid extends BaseEntity {
 
     private LocalDateTime deadline;
 
-    public void updatePrice(Integer newPrice, Long userId, String email) {
+    public void updatePrice(BigDecimal newPrice, Long userId, String email) {
         // 본인 확인: 요청한 유저 ID와 입찰 생성자 ID 비교
         if (!this.userId.equals(userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);

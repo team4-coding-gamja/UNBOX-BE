@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -32,13 +33,13 @@ public class Settlement extends BaseEntity {
     private UUID paymentId;
 
     @Column(name = "total_amount", nullable = false)
-    private Integer totalAmount;
+    private BigDecimal totalAmount;
 
     @Column(name = "settlement_amount", nullable = false)
-    private Integer settlementAmount;
+    private BigDecimal settlementAmount;
 
     @Column(name = "fees_amount", nullable = false)
-    private Integer feesAmount;
+    private BigDecimal feesAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status",nullable = false)

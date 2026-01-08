@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -63,7 +64,7 @@ class CartRepositoryTest {
         sellingBid = SellingBid.builder()
                 .userId(otherUser.getId())
                 .productOption(option)
-                .price(100000)
+                .price(BigDecimal.valueOf(100000))
                 .status(SellingStatus.LIVE)
                 .deadline(LocalDateTime.now().plusDays(7))
                 .build();
@@ -128,7 +129,7 @@ class CartRepositoryTest {
         SellingBid anotherBid = SellingBid.builder()
                 .userId(otherUser.getId())
                 .productOption(sellingBid.getProductOption())
-                .price(200000)
+                .price(BigDecimal.valueOf(200000))
                 .status(SellingStatus.LIVE)
                 .deadline(LocalDateTime.now())
                 .build();
@@ -156,7 +157,7 @@ class CartRepositoryTest {
         SellingBid newBid = SellingBid.builder()
                 .userId(otherUser.getId())
                 .productOption(sellingBid.getProductOption())
-                .price(120000)
+                .price(BigDecimal.valueOf(120000))
                 .status(SellingStatus.LIVE)
                 .deadline(LocalDateTime.now())
                 .build();
@@ -227,7 +228,7 @@ class CartRepositoryTest {
         SellingBid newBid = SellingBid.builder()
                 .userId(otherUser.getId())
                 .productOption(sellingBid.getProductOption())
-                .price(200000)
+                .price(BigDecimal.valueOf(200000))
                 .status(SellingStatus.LIVE)
                 .deadline(LocalDateTime.now())
                 .build();

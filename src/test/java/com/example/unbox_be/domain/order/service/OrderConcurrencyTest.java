@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -86,7 +87,7 @@ public class OrderConcurrencyTest {
         SellingBid sellingBid = sellingBidRepository.save(SellingBid.builder()
                 .userId(seller.getId())
                 .productOption(option)
-                .price(100000)
+                .price(BigDecimal.valueOf(100000))
                 .deadline(LocalDateTime.now().plusDays(7))
                 .build());
         this.sellingBidId = sellingBid.getId();

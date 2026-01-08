@@ -14,6 +14,7 @@ import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,28 +52,32 @@ public class PaymentService {
                 throw new CustomException(ErrorCode.PAYMENT_ALREADY_EXISTS);
             }
             if (payment.getStatus() == PaymentStatus.READY) {
-                String mockPaymentKey = "mock_key_" + UUID.randomUUID().toString().substring(0, 8);
-                return new PaymentReadyResponseDto(payment.getId(), mockPaymentKey);
+                return new PaymentReadyResponseDto(
+                        payment.getId(),
+                        order.getId(),
+                        payment.getAmount() // order.getPrice() 대신 저장된 금액 사용 권장
+                );
             }
         }
 
         // 결제 생성
         Payment payment = Payment.builder()
                 .orderId(order.getId())
-                .amount(order.getPrice().intValue())
+                .amount(order.getPrice())
                 .method(method)
                 .status(PaymentStatus.READY)
                 .build();
         Payment savedPayment = paymentRepository.save(payment);
 
-        // [테스트용] 가짜 키 생성
-        String mockPaymentKey = "mock_key_" + UUID.randomUUID().toString().substring(0, 8);
-
         // ID와 가짜 키를 함께 반환
-        return new PaymentReadyResponseDto(savedPayment.getId(), mockPaymentKey);
+        return new PaymentReadyResponseDto(
+                savedPayment.getId(),
+                order.getId(),
+                order.getPrice()
+        );
     }
 
-    public void confirmPayment(Long userId, UUID paymentId, String paymentKeyFromFront) {
+    public TossConfirmResponse confirmPayment(Long userId, UUID paymentId, String paymentKeyFromFront) {
         // PG사 승인 API 호출
         Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
@@ -81,24 +86,26 @@ public class PaymentService {
         }
         Order order = getAndValidateOrder(payment.getOrderId(), userId);
 
-        Integer amount = payment.getAmount();
-        TossConfirmResponse response = tossApiService.confirm(paymentKeyFromFront, amount);
+        BigDecimal amount = payment.getAmount();
+        String finalPaymentKey = (paymentKeyFromFront == null || paymentKeyFromFront.isBlank())
+                ? "mock_key_" + UUID.randomUUID().toString().substring(0, 8)
+                : paymentKeyFromFront;
+        TossConfirmResponse response = tossApiService.confirm(finalPaymentKey, amount);
 
         if (response.isSuccess()) {
-            String confirmedReceiptKey = response.getPaymentKey();
             try {
-
-                // [수정 포인트 2] 이후 트랜잭션 기록 저장 및 추가 비즈니스 로직 처리
-                paymentTransactionService.processSuccessfulPayment(paymentId, response, paymentKeyFromFront);
+                paymentTransactionService.processSuccessfulPayment(paymentId, response);
                 settlementService.createSettlement(paymentId, order.getId());
+                return response;
             } catch (Exception e) {
-                log.error("결제 승인 후 서버 내부 처리 중 에러 발생 - 자동 취소 시도: {}", confirmedReceiptKey);
-                tossApiService.cancel(confirmedReceiptKey, "서버 내부 오류로 인한 자동 취소");
+                log.error("결제 승인 후 서버 내부 처리 중 에러 발생 - 자동 취소 시도: {}", finalPaymentKey);
+                tossApiService.cancel(finalPaymentKey, "서버 내부 오류로 인한 자동 취소");
                 throw e;
             }
         } else {
             // 실패 시 처리 (로그 저장 등)
             paymentTransactionService.processFailedPayment(paymentId, response);
+            throw new CustomException(ErrorCode.PAYMENT_CONFIRM_FAILED);
         }
     }
 

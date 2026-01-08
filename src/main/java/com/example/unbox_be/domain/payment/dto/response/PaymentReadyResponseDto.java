@@ -6,5 +6,5 @@ import java.util.UUID;
 public record PaymentReadyResponseDto(
         UUID paymentId,
         UUID orderId,
-        BigDecimal Price
+        BigDecimal price
 ) {}

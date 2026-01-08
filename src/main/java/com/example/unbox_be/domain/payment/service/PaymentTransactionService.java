@@ -45,7 +45,7 @@ public class PaymentTransactionService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
         // 결제 가격 맞는지 한번 더 확인
-        if (!payment.getAmount().equals(response.getTotalAmount())) {
+        if (payment.getAmount().compareTo(response.getTotalAmount()) != 0) {
             throw new CustomException(ErrorCode.PRICE_MISMATCH);
         }
 

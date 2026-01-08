@@ -25,60 +25,80 @@ repositories {
 }
 
 dependencies {
-    // Spring Boot Starters
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+// ---------------------------------------------------------
+// Spring Boot Starters (Web, Security, JPA, Validation, Redis, Actuator)
+// ---------------------------------------------------------
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator' // 두 번째 파일에서 추가됨
 
-    // Database
+// WebFlux (For OpenAI or Async logic)
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+// ---------------------------------------------------------
+// Database (PostgreSQL, H2)
+// ---------------------------------------------------------
     runtimeOnly 'org.postgresql:postgresql'
-    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.h2database:h2' // 로컬 실행용
 
-    // Lombok
+// ---------------------------------------------------------
+// Tools & Utilities (Lombok, MapStruct, Logging)
+// ---------------------------------------------------------
+// Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    // MapStruct
+// MapStruct
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-    
-    // Lombok + MapStruct 호환성 (중요!)
+
+// Lombok + MapStruct Binding (필수)
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
-    // Logging
+// Logging (Logstash)
     implementation 'net.logstash.logback:logstash-logback-encoder:9.0'
 
-    // QueryDSL
+// ---------------------------------------------------------
+// QueryDSL
+// ---------------------------------------------------------
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
 
-    // OPEN AI
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-
-    // Swagger
+// ---------------------------------------------------------
+// API Docs (Swagger/SpringDoc)
+// ---------------------------------------------------------
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
-    // JWT
+// ---------------------------------------------------------
+// Security (JWT)
+// ---------------------------------------------------------
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
 
-    // Test
-    testImplementation 'com.h2database:h2'
+// ---------------------------------------------------------
+// Test
+// ---------------------------------------------------------
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'com.h2database:h2' // 테스트용
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+
 }
 
 tasks.named('test') {
     useJUnitPlatform()
 }
 
+// ---------------------------------------------------------
+// QueryDSL Build Options
+// ---------------------------------------------------------
 def querydslDir = "$buildDir/generated/querydsl"
 
 sourceSets {

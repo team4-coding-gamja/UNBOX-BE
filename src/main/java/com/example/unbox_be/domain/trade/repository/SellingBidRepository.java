@@ -47,6 +47,7 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
     Optional<SellingBid> findByIdAndDeletedAtIsNull(UUID sellingId);
 
     @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = {"productOption", "productOption.product"})
     @org.springframework.data.jpa.repository.QueryHints({
             @jakarta.persistence.QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000")
     })

@@ -249,7 +249,7 @@ jobs:
             # Spring Boot + Redis + Docker 동시 실행 시 메모리 부족 방지
             if [ ! -f /swapfile ]; then
               echo "💾 스왑 파일 생성 중..."
-              sudo allocate -l 2G /swapfile          # 2GB 스왑 파일 생성
+              sudo fallocate -l 2G /swapfile          # 2GB 스왑 파일 생성
               sudo chmod 600 /swapfile                 # 보안 권한 설정
               sudo mkswap /swapfile                    # 스왑 영역 초기화
               sudo swapon /swapfile                    # 스왑 활성화

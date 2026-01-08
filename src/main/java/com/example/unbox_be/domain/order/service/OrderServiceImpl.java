@@ -48,7 +48,8 @@ public class OrderServiceImpl implements OrderService {
 
         // 2. 판매 입찰 글(SellingBid) 조회
         // SellingBid ID는 UUID이므로 DTO도 UUID여야 함
-        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(requestDto.getSellingBidId())
+        // 2. 판매 입찰 글(SellingBid) 조회 (비관적 락 적용)
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(requestDto.getSellingBidId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
         if (sellingBid.getStatus() == SellingStatus.MATCHED || sellingBid.getStatus() == SellingStatus.HOLD) {
@@ -67,7 +68,7 @@ public class OrderServiceImpl implements OrderService {
         User seller = getUserByIdOrThrow(sellingBid.getUserId());
 
         // 5. 가격 타입 변환 (Integer -> BigDecimal)
-        BigDecimal price = BigDecimal.valueOf(sellingBid.getPrice());
+        BigDecimal price = sellingBid.getPrice();
 
         // 6. Order 생성
         Order order = Order.builder()

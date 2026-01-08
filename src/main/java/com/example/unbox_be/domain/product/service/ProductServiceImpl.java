@@ -13,8 +13,8 @@ import com.example.unbox_be.domain.product.mapper.ProductMapper;
 import com.example.unbox_be.domain.product.repository.BrandRepository;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.product.repository.ProductRepository;
+import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
-import com.example.unbox_be.domain.trade.service.TradeService;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-public class ProductServiceImpl implements  ProductService {
+public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
@@ -38,7 +38,6 @@ public class ProductServiceImpl implements  ProductService {
     private final ProductMapper productMapper;
     private final BrandMapper brandMapper;
     private final SellingBidRepository sellingBidRepository;
-    private final TradeService tradeService;
 
     // ✅ 상품 목록 조회 (검색 + 페이징)
     public Page<ProductListResponseDto> getProducts(UUID brandId, String category, String keyword, Pageable pageable) {
@@ -75,8 +74,10 @@ public class ProductServiceImpl implements  ProductService {
         Product product = productRepository.findByIdAndDeletedAtIsNullWithBrand(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        return productMapper.toProductDetailDto(product, null);
-    }
+        Integer lowestPrice = sellingBidRepository.findLowestPriceByProductId(productId, SellingStatus.LIVE);
+
+        // 조회된 최저가가 없으면 0(또는 null) 처리
+        return productMapper.toProductDetailDto(product, lowestPrice != null ? lowestPrice : 0);    }
 
     // ✅ 상품 옵션별 최저가 조회
     @Override

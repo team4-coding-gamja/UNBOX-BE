@@ -1,8 +1,10 @@
 package com.example.unbox_be.domain.payment.controller;
 
+import com.example.unbox_be.domain.payment.controller.api.PaymentApi;
 import com.example.unbox_be.domain.payment.dto.request.PaymentConfirmRequestDto;
 import com.example.unbox_be.domain.payment.dto.request.PaymentCreateRequestDto;
 import com.example.unbox_be.domain.payment.dto.response.PaymentReadyResponseDto;
+import com.example.unbox_be.domain.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_be.domain.payment.service.PaymentService;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,8 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/payment")
 @RequiredArgsConstructor
-@Tag(name = "Payment API", description = "결제 및 PG 트랜잭션 관리 API")
-public class PaymentController {
+public class PaymentController implements PaymentApi {
 
     private final PaymentService paymentService;
 
@@ -28,6 +29,7 @@ public class PaymentController {
      * 1. 결제 초기 레코드 생성
      * 주문서 페이지에서 결제하기 버튼을 누를 때 호출됩니다.
      */
+    @Override
     @PostMapping("/ready")
     public ResponseEntity<PaymentReadyResponseDto> createPayment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -38,8 +40,6 @@ public class PaymentController {
                 request.orderId(),
                 request.method()
         );
-
-        // [수정] body에 UUID가 아닌 response 객체 전체를 담아서 보냄
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -47,16 +47,17 @@ public class PaymentController {
      * 2. 결제 승인 처리 (Mock)
      * 가짜 결제 성공 후 이 API를 호출하면 p_payment와 p_pg_transaction이 업데이트됩니다.
      */
+    @Override
     @PostMapping("/confirm")
-    public ResponseEntity<Void> confirmPayment(
+    public ResponseEntity<TossConfirmResponse> confirmPayment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid PaymentConfirmRequestDto request
     ) {
-        paymentService.confirmPayment(
+        TossConfirmResponse response = paymentService.confirmPayment(
                 userDetails.getUserId(),
                 request.paymentId(),
                 request.paymentKey()
         );
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(response);
     }
 }

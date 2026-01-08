@@ -1,6 +1,5 @@
 package com.example.unbox_be.domain.trade.repository;
 
-import com.example.unbox_be.domain.trade.dto.response.ProductSizePriceResponseDto;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import org.springframework.data.repository.query.Param;
@@ -8,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -36,19 +36,6 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
 """)
     Optional<SellingBid> findWithDetailsByIdAndDeletedAtIsNull(@Param("sellingBidId") UUID sellingBidId);
 
-    @Query("SELECT new com.example.unbox_be.domain.trade.dto.response.ProductSizePriceResponseDto(" +
-            "po.option, MIN(s.price)) " +  // ✅ Enum → String 변환
-            "FROM SellingBid s " +
-            "JOIN s.productOption po " +
-            "WHERE po.product.id = :productId " +
-            "AND s.status = :status " +
-            "GROUP BY po.option " +        // ✅ SELECT 일반 필드와 동일하게
-            "ORDER BY po.option ASC")
-    List<ProductSizePriceResponseDto> findLowestPriceByProductId(
-            @Param("productId") UUID productId,
-            @Param("status") SellingStatus status
-    );
-
     @Query("""
         select sb.productOption.id, min(sb.price)
         from SellingBid sb
@@ -59,15 +46,34 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
 
     Optional<SellingBid> findByIdAndDeletedAtIsNull(UUID sellingId);
 
+    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = {"productOption", "productOption.product"})
+    @org.springframework.data.jpa.repository.QueryHints({
+            @jakarta.persistence.QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000")
+    })
+    @Query("select sb from SellingBid sb where sb.id = :sellingId and sb.deletedAt is null")
+    Optional<SellingBid> findByIdAndDeletedAtIsNullForUpdate(@Param("sellingId") UUID sellingId);
+
     // ✅ 상품 ID 목록에 해당하는 최저가 조회 (상품별 최저가)
     @Query("""
         select po.product.id, min(sb.price)
         from SellingBid sb
         join sb.productOption po
         where po.product.id in :productIds
-          and sb.status = 'IN_PROGRESS'
+          and sb.status = 'LIVE'
           and sb.deletedAt is null
         group by po.product.id
     """)
     List<Object[]> findLowestPricesByProductIds(@Param("productIds") List<UUID> productIds);
+
+    @Query("SELECT MIN(sb.price) " +
+            "FROM SellingBid sb " +
+            "JOIN sb.productOption po " +
+            "WHERE po.product.id = :productId " +
+            "AND sb.status = :status " +
+            "AND sb.deletedAt IS NULL")
+    Integer findLowestPriceByProductId(
+            @Param("productId") UUID productId,
+            @Param("status") SellingStatus status
+    );
 }

@@ -8,13 +8,13 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
 @Table(name = "p_cart")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@org.hibernate.annotations.SQLDelete(sql = "UPDATE p_cart SET deleted_at = NOW() WHERE id = ?")
-@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL") // 조회 시 자동으로 deleted_at IS NULL 조건 추가
+@SQLRestriction("deleted_at IS NULL")
 public class Cart extends BaseEntity {
 
     @Id

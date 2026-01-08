@@ -27,7 +27,7 @@ public class AdminOrderController implements AdminOrderApi {
 
     private final AdminOrderService orderAdminService;
 
-    @Override
+    // ✅ 주문 목록 조회
     @GetMapping
     public CustomApiResponse<Page<OrderResponseDto>> getAdminOrders(
             @ModelAttribute OrderSearchCondition condition,
@@ -37,6 +37,7 @@ public class AdminOrderController implements AdminOrderApi {
         return CustomApiResponse.success(response);
     }
 
+    // ✅ 주문 상세 조회
     @Override
     @GetMapping("{orderId}")
     public CustomApiResponse<OrderDetailResponseDto> getAdminOrderDetail(
@@ -45,6 +46,7 @@ public class AdminOrderController implements AdminOrderApi {
         return CustomApiResponse.success(response);
     }
 
+    // ✅ 주문 상태 변경
     @Override
     @PatchMapping("/{orderId}/status")
     public CustomApiResponse<OrderDetailResponseDto> updateOrderStatus(

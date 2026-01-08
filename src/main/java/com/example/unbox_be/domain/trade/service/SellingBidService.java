@@ -19,6 +19,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -35,7 +36,9 @@ public class SellingBidService {
 
     @Transactional
     public UUID createSellingBid(Long userId, SellingBidRequestDto requestDto) {
-
+        if (requestDto.getPrice() == null || requestDto.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CustomException(ErrorCode.INVALID_BID_PRICE);
+        }
         // 1. [수정] 단순히 존재 확인(exists)만 하지 말고, 실제 객체를 조회(findByIdAndDeletedAtIsNull)합니다.
         ProductOption productOption = productOptionRepository.findByIdAndDeletedAtIsNull(requestDto.getOptionId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
@@ -68,7 +71,7 @@ public class SellingBidService {
     }
 
     @Transactional
-    public void updateSellingBidPrice(UUID sellingId, Integer newPrice, Long userId, String email) {
+    public void updateSellingBidPrice(UUID sellingId, BigDecimal newPrice, Long userId, String email) {
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
         // 로그인 유저와 해당 예약 유저 동일성 검사
@@ -77,7 +80,7 @@ public class SellingBidService {
         }
 
         // 입력 가격 유효성 검사
-        if (newPrice == null || newPrice <= 0) {
+        if (newPrice == null || newPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new CustomException(ErrorCode.INVALID_BID_PRICE);
         }
         // 해당 예약 상태 검사
@@ -95,14 +98,15 @@ public class SellingBidService {
 
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId) // 이걸로 변경!
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+        validateOwner(sellingBid, userId);
 
-        // 로그인 유저와 해당 예약 유저 동일성 검사
-        if (!Objects.equals(sellingBid.getUserId(), userId)) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        // [개선] 연관된 옵션이 없는 비정상 데이터 체크
+        ProductOption option = sellingBid.getProductOption();
+        if (option == null || option.getProduct() == null) {
+            throw new CustomException(ErrorCode.INVALID_BID_STATUS); // 혹은 적절한 에러코드
         }
         // 동일하다면 sellingBid 반환 객체 생성
         SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
-        ProductOption option = sellingBid.getProductOption();
 
         // 객체 반환
         return SellingBidResponseDto.builder()

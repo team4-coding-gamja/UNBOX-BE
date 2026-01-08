@@ -1,6 +1,6 @@
 package com.example.unbox_be.domain.wishlist.controller;
 
-import com.example.unbox_be.domain.user.entity.User;
+import com.example.unbox_be.domain.wishlist.controller.api.WishlistApi;
 import com.example.unbox_be.domain.wishlist.dto.request.WishlistRequestDTO;
 import com.example.unbox_be.domain.wishlist.dto.response.WishlistResponseDTO;
 import com.example.unbox_be.domain.wishlist.service.WishlistService;
@@ -20,7 +20,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/wishlist")
 @RequiredArgsConstructor
-public class WishlistController {
+public class WishlistController implements WishlistApi {
 
     private final WishlistService wishlistService;
 

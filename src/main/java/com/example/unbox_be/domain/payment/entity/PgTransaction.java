@@ -4,16 +4,19 @@ import com.example.unbox_be.domain.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
 @Table(name = "p_pg_transaction")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor
+@SQLRestriction("deleted_at IS NULL")
 public class PgTransaction extends BaseEntity {
 
     @Id
@@ -29,6 +32,9 @@ public class PgTransaction extends BaseEntity {
     @Column(name = "pg_payment_key")
     private String pgPaymentKey; // PG사에서 발급한 거래 고유 키
 
+    @Column(name = "pg_approve_no")
+    private String pgApproveNo;
+
     @Column(name = "pg_provider")
     private String pgProvider;   // 결제 제공자 (예: TOSS, KAKAO)
 
@@ -40,7 +46,7 @@ public class PgTransaction extends BaseEntity {
     private PgTransactionStatus eventStatus;  // DONE, READY, FAIL 등
 
     @Column(name = "event_amount")
-    private Integer eventAmount;
+    private BigDecimal eventAmount;
 
     // JSON 타입의 로그 저장
     @JdbcTypeCode(SqlTypes.JSON)

@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.UUID;
 
-@Tag(name = "[관리자] 판매 입찰 관리", description = "관리자용 판매 입찰 관리 API")
+@Tag(name = "[관리자] 판매입찰 관리", description = "관리자용 판매입찰 관리 API")
 @RequestMapping("/api/admin/bids/selling")
 public interface AdminSellingBidApi {
 

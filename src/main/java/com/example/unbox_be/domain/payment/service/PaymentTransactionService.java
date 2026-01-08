@@ -32,7 +32,7 @@ public class PaymentTransactionService {
     private String pgSellerKey;
 
     @Transactional
-    public void processSuccessfulPayment(UUID paymentId, TossConfirmResponse response, String paymentKeyFromFront) {
+    public void processSuccessfulPayment(UUID paymentId, TossConfirmResponse response){
         Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
@@ -45,11 +45,11 @@ public class PaymentTransactionService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
         // 결제 가격 맞는지 한번 더 확인
-        if (!payment.getAmount().equals(response.getTotalAmount().intValue())) {
+        if (payment.getAmount().compareTo(response.getTotalAmount()) != 0) {
             throw new CustomException(ErrorCode.PRICE_MISMATCH);
         }
 
-        payment.completePayment(response.getPaymentKey());
+        payment.completePayment(response.getPaymentKey(), response.getApproveNo());
         // 상품 상태 변경 (HOLD -> MATCHED)
         sellingBidService.updateSellingBidStatusBySystem(
                 order.getSellingBidId(),
@@ -60,11 +60,12 @@ public class PaymentTransactionService {
         // 3) PG 트랜잭션 로그 저장
         PgTransaction transaction = PgTransaction.builder()
                 .payment(payment)
-                .pgPaymentKey(paymentKeyFromFront)
+                .pgPaymentKey(response.getPaymentKey()!= null ? response.getPaymentKey() : "UNKNOWN")
                 .eventStatus(PgTransactionStatus.DONE)
                 .eventType("PAYMENT")
+                .pgApproveNo(response.getApproveNo()!= null ? response.getApproveNo() : "UNKNOWN")
                 .rawPayload(response.getRawJson()) // 전체 응답값 저장
-                .eventAmount(response.getTotalAmount().intValue())
+                .eventAmount(response.getTotalAmount()!= null ? response.getTotalAmount() : payment.getAmount())
                 .pgProvider(response.getMethod())
                 .pgSellerKey(pgSellerKey)
                 .build();
@@ -86,9 +87,13 @@ public class PaymentTransactionService {
                 .pgPaymentKey(response != null ? response.getPaymentKey() : null)
                 .eventStatus(PgTransactionStatus.FAILED) // 실패 상태로 저장
                 .eventType("PAYMENT")
-                .rawPayload(response != null ? response.getRawJson() : "API Response is Null")
+                .rawPayload(
+                (response != null && response.getRawJson() != null)
+                        ? response.getRawJson()
+                        : "API Response is Null"
+        )
                 .eventAmount(response != null && response.getTotalAmount() != null
-                        ? response.getTotalAmount().intValue() : payment.getAmount())
+                        ? response.getTotalAmount() : payment.getAmount())
 
                 .build();
 

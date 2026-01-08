@@ -247,7 +247,7 @@ class ProductServiceImplTest {
 
             given(productRepository.findByIdAndDeletedAtIsNullWithBrand(productId))
                     .willReturn(Optional.of(product));
-            given(productMapper.toProductDetailDto(product, null))
+            given(productMapper.toProductDetailDto(product, 0))
                     .willReturn(responseDto);
 
             // when

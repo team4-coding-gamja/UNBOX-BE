@@ -48,11 +48,18 @@ dependencies {
     // Lombok + MapStruct 호환성 (중요!)
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
+    // Logging
+    implementation 'net.logstash.logback:logstash-logback-encoder:9.0'
+
     // QueryDSL
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+
+    // OPEN AI
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     // Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'

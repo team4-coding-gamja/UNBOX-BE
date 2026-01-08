@@ -8,6 +8,7 @@ import com.example.unbox_be.domain.reviews.dto.request.ReviewCreateRequestDto;
 import com.example.unbox_be.domain.reviews.dto.request.ReviewUpdateRequestDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewCreateResponseDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewDetailResponseDto;
+import com.example.unbox_be.domain.reviews.dto.response.ReviewListResponseDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewUpdateResponseDto;
 import com.example.unbox_be.domain.reviews.entity.Review;
 import com.example.unbox_be.domain.reviews.mapper.ReviewMapper;
@@ -16,6 +17,8 @@ import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,15 +75,13 @@ public class ReviewServiceImpl implements ReviewService {
                 order,
                 requestDto.getContent(),
                 requestDto.getRating(),
-                requestDto.getImageUrl()
-        );
+                requestDto.getImageUrl());
 
         // 7) 저장
         Review savedReview = reviewRepository.save(review);
 
         return reviewMapper.toReviewCreateResponseDto(savedReview);
     }
-
 
     // ✅ 리뷰 조회
     @Transactional(readOnly = true)
@@ -116,5 +117,14 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         review.softDelete(deletedBy);
+    }
+
+    // ✅ 상품별 리뷰 목록 조회
+    @Transactional(readOnly = true)
+    @Override
+    public Page<ReviewListResponseDto> getReviewsByProduct(UUID productId, Pageable pageable) {
+        Page<Review> reviews = reviewRepository.findAllByOrderProductOptionProductIdAndDeletedAtIsNull(productId,
+                pageable);
+        return reviews.map(reviewMapper::toReviewListResponseDto);
     }
 }

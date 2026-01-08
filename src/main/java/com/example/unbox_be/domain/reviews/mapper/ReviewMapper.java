@@ -1,35 +1,59 @@
 package com.example.unbox_be.domain.reviews.mapper;
 
+import com.example.unbox_be.domain.order.entity.Order;
+import com.example.unbox_be.domain.product.entity.Product;
+import com.example.unbox_be.domain.product.entity.ProductOption;
+import com.example.unbox_be.domain.reviews.dto.response.ReviewCreateResponseDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewDetailResponseDto;
+import com.example.unbox_be.domain.reviews.dto.response.ReviewUpdateResponseDto;
 import com.example.unbox_be.domain.reviews.entity.Review;
-import org.springframework.stereotype.Component;
+import com.example.unbox_be.domain.user.entity.User;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-@Component
-public class ReviewMapper {
-    public ReviewDetailResponseDto toResponseDto(Review review) {
-        return ReviewDetailResponseDto.builder()
-                .id(review.getReviewId())  // 변경된 필드명 사용
-                .content(review.getContent())
-                .rating(review.getRating())
-                .imageUrl(review.getImageUrl())
-                .createdAt(review.getCreatedAt())
-                .order(ReviewDetailResponseDto.OrderInfo.builder()
-                        .id(review.getOrder().getId())
-                        .price(review.getOrder().getPrice())
-                        .buyer(ReviewDetailResponseDto.UserInfo.builder()
-                                .id(review.getBuyer().getId())
-                                .nickname(review.getBuyer().getNickname())
-                                .build())
-                        .productOption(ReviewDetailResponseDto.ProductOptionInfo.builder()
-                                .id(review.getOrder().getProductOption().getId())
-                                .option(review.getOrder().getProductOption().getOption())
-                                .product(ReviewDetailResponseDto.ProductInfo.builder()
-                                        .id(review.getOrder().getProductOption().getProduct().getId())
-                                        .name(review.getOrder().getProductOption().getProduct().getName())
-                                        .imageUrl(review.getOrder().getProductOption().getProduct().getImageUrl())
-                                        .build())
-                                .build())
-                        .build())
-                .build();
-    }
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.ERROR
+)
+public interface ReviewMapper {
+
+    /* =====================
+     * 리뷰 생성 응답
+     * ===================== */
+    ReviewCreateResponseDto toReviewCreateResponseDto(Review review);
+
+    /* =====================
+     * 리뷰 수정 응답
+     * ===================== */
+    ReviewUpdateResponseDto toReviewUpdateResponseDto(Review review);
+
+    /* =====================
+     * 리뷰 상세 응답
+     * ===================== */
+    @Mapping(target = "order", source = "order")
+    ReviewDetailResponseDto toReviewDetailResponseDto(Review review);
+
+    /* =====================
+     * Order -> OrderInfo
+     * ===================== */
+    @Mapping(target = "buyer", source = "buyer")
+    @Mapping(target = "productOption", source = "productOption")
+    ReviewDetailResponseDto.OrderInfo toOrderInfo(Order order);
+
+    /* =====================
+     * User -> UserInfo
+     * ===================== */
+    ReviewDetailResponseDto.UserInfo toUserInfo(User user);
+
+    /* =====================
+     * ProductOption -> ProductOptionInfo
+     * ===================== */
+    @Mapping(target = "product", source = "product")
+    ReviewDetailResponseDto.ProductOptionInfo toProductOptionInfo(ProductOption productOption);
+
+    /* =====================
+     * Product -> ProductInfo
+     * ===================== */
+    ReviewDetailResponseDto.ProductInfo toProductInfo(Product product);
 }

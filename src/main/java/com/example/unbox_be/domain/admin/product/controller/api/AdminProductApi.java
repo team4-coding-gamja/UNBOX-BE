@@ -60,7 +60,7 @@ public interface AdminProductApi {
     })
     @PostMapping
     CustomApiResponse<AdminProductCreateResponseDto> createProduct(
-            @Parameter(hidden = true)
+        //     @Parameter(hidden = true)
             @RequestBody @Valid AdminProductCreateRequestDto requestDto
     );
 

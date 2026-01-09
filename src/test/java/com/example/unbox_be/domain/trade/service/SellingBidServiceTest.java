@@ -762,6 +762,31 @@ class SellingBidServiceTest {
             // then
             verify(bid, never()).updateModifiedBy(anyString());
         }
+        @Test
+        @DisplayName("성공 - 유저 ID가 존재할 때 상태 변경 로직으로 진입한다")
+        void updateSellingBidStatus_success_entry() throws Exception {
+            // given
+            UUID sellingId = UUID.randomUUID();
+            Long validUserId = 1L; // 🚩 null이 아닌 값 전달 (False 브랜치 활성화)
+            SellingStatus newStatus = SellingStatus.CANCELLED;
+            String email = "test@test.com";
+
+            SellingBid bid = spy(createMockEntity(SellingBid.class, sellingId));
+            ReflectionTestUtils.setField(bid, "userId", validUserId);
+            ReflectionTestUtils.setField(bid, "status", SellingStatus.LIVE);
+
+            // findSellingBid() 내부에서 사용하는 레포지토리 모킹
+            doReturn(Optional.of(bid)).when(sellingBidRepository).findByIdAndDeletedAtIsNull(sellingId);
+
+            // when
+            // 이 호출이 일어날 때 userId가 null이 아니므로 if문을 통과(False 브랜치)하게 됨
+            assertDoesNotThrow(() ->
+                    sellingBidService.updateSellingBidStatus(sellingId, newStatus, validUserId, email)
+            );
+
+            // then
+            verify(sellingBidRepository).findByIdAndDeletedAtIsNull(sellingId);
+        }
     }
 
     @Nested
@@ -863,5 +888,18 @@ class SellingBidServiceTest {
             assertThat(result.getContent().get(0).getSize()).isEqualTo("280");
         }
     }
-}
+        @Test
+        @DisplayName("성공 - LIVE 상태인 입찰을 MATCHED 상태로 변경할 때는 예외가 발생하지 않는다")
+        void validateTransition_false_reach() {
+            // given
+            SellingStatus current = SellingStatus.LIVE;
+            SellingStatus next = SellingStatus.MATCHED; // 🚩 핵심: LIVE가 아닌 상태 전달 (False 브랜치)
+
+            // when & then
+            // validateTransition이 private이라면 이를 호출하는 public 메서드(예: updateSellingBidStatusBySystem)를 호출
+            assertDoesNotThrow(() ->
+                    sellingBidService.updateSellingBidStatusBySystem(bidId, next, "SYSTEM")
+            );
+        }
+    }
 }

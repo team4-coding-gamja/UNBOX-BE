@@ -379,4 +379,37 @@ class AdminBrandServiceImplTest {
         // then
         verify(brand).softDelete("admin@test.com");
     }
+
+    @Test
+    void 브랜드수정_이름이_공백으로만_이루어져있다면_이름을_수정하지_않는다() {
+        // given
+        UUID brandId = UUID.randomUUID();
+
+        // @Size(min=1)은 통과하지만 trim().isEmpty()는 true가 되는 케이스
+        AdminBrandUpdateRequestDto dto = AdminBrandUpdateRequestDto.builder()
+                .name("   ")
+                .logoUrl("http://new-logo.com")
+                .build();
+
+        Brand brand = mock(Brand.class);
+        when(brandRepository.findByIdAndDeletedAtIsNull(brandId)).thenReturn(Optional.of(brand));
+
+        AdminBrandUpdateResponseDto response = mock(AdminBrandUpdateResponseDto.class);
+        when(adminBrandMapper.toAdminBrandUpdateResponseDto(brand)).thenReturn(response);
+
+        // when
+        AdminBrandUpdateResponseDto result = adminBrandService.updateBrand(brandId, dto);
+
+        // then
+        assertThat(result).isSameAs(response);
+
+        // 1. 이름 중복 검사를 수행하지 않아야 함 (False 브랜치 통과 확인)
+        verify(brandRepository, never()).existsByNameAndIdNotAndDeletedAtIsNull(anyString(), any());
+
+        // 2. 브랜드 객체의 이름 업데이트 메소드가 호출되지 않아야 함
+        verify(brand, never()).updateName(anyString());
+
+        // 3. 로고 수정은 정상적으로 수행되어야 함
+        verify(brand).updateLogoUrl("http://new-logo.com");
+    }
 }

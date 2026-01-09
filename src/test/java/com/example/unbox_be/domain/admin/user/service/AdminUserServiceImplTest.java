@@ -1,12 +1,13 @@
 package com.example.unbox_be.domain.admin.user.service;
 
-import com.example.unbox_be.domain.admin.user.dto.request.AdminUserUpdateRequestDto;
-import com.example.unbox_be.domain.admin.user.dto.response.AdminUserDetailResponseDto;
-import com.example.unbox_be.domain.admin.user.dto.response.AdminUserListResponseDto;
-import com.example.unbox_be.domain.admin.user.dto.response.AdminUserUpdateResponseDto;
-import com.example.unbox_be.domain.admin.user.mapper.AdminUserMapper;
+import com.example.unbox_be.domain.user.dto.request.AdminUserUpdateRequestDto;
+import com.example.unbox_be.domain.user.dto.response.AdminUserDetailResponseDto;
+import com.example.unbox_be.domain.user.dto.response.AdminUserListResponseDto;
+import com.example.unbox_be.domain.user.dto.response.AdminUserUpdateResponseDto;
+import com.example.unbox_be.domain.user.mapper.AdminUserMapper;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
+import com.example.unbox_be.domain.user.service.AdminUserServiceImpl;
 import com.example.unbox_be.global.error.exception.CustomException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

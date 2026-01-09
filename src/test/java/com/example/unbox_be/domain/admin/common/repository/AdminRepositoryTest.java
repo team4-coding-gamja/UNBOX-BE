@@ -1,7 +1,8 @@
 package com.example.unbox_be.domain.admin.common.repository;
 
-import com.example.unbox_be.domain.admin.common.entity.Admin;
-import com.example.unbox_be.domain.admin.common.entity.AdminRole;
+import com.example.unbox_be.domain.admin.entity.Admin;
+import com.example.unbox_be.domain.admin.entity.AdminRole;
+import com.example.unbox_be.domain.admin.repository.AdminRepository;
 import com.example.unbox_be.global.config.JpaAuditingConfig;
 import com.example.unbox_be.global.config.TestQueryDslConfig;
 import jakarta.persistence.EntityManager;

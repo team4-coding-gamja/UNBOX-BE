@@ -1,7 +1,7 @@
 package com.example.unbox_be.global.security.auth;
 
-import com.example.unbox_be.domain.admin.common.entity.Admin;
-import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
+import com.example.unbox_be.domain.admin.entity.Admin;
+import com.example.unbox_be.domain.admin.repository.AdminRepository;
 import com.example.unbox_be.domain.user.repository.UserRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.global.error.exception.CustomException;

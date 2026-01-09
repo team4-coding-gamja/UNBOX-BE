@@ -1,8 +1,8 @@
 package com.example.unbox_be.domain.auth.service;
 
-import com.example.unbox_be.domain.admin.common.entity.Admin;
-import com.example.unbox_be.domain.admin.common.entity.AdminRole;
-import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
+import com.example.unbox_be.domain.admin.entity.Admin;
+import com.example.unbox_be.domain.admin.entity.AdminRole;
+import com.example.unbox_be.domain.admin.repository.AdminRepository;
 import com.example.unbox_be.domain.auth.dto.request.AdminSignupRequestDto;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import static com.example.unbox_be.domain.admin.common.entity.AdminRole.ROLE_MANAGER;
+import static com.example.unbox_be.domain.admin.entity.AdminRole.ROLE_MANAGER;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;

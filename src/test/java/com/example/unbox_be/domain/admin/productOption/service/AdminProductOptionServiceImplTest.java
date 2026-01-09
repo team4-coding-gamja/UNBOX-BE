@@ -1,13 +1,14 @@
 package com.example.unbox_be.domain.admin.productOption.service;
 
-import com.example.unbox_be.domain.admin.productOption.dto.request.AdminProductOptionCreateRequestDto;
-import com.example.unbox_be.domain.admin.productOption.dto.response.AdminProductOptionCreateResponseDto;
-import com.example.unbox_be.domain.admin.productOption.dto.response.AdminProductOptionListResponseDto;
-import com.example.unbox_be.domain.admin.productOption.mapper.AdminProductOptionMapper;
+import com.example.unbox_be.domain.product.dto.request.AdminProductOptionCreateRequestDto;
+import com.example.unbox_be.domain.product.dto.response.AdminProductOptionCreateResponseDto;
+import com.example.unbox_be.domain.product.dto.response.AdminProductOptionListResponseDto;
+import com.example.unbox_be.domain.product.mapper.AdminProductOptionMapper;
 import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.product.repository.ProductRepository;
+import com.example.unbox_be.domain.product.service.AdminProductOptionServiceImpl;
 import com.example.unbox_be.global.error.exception.CustomException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

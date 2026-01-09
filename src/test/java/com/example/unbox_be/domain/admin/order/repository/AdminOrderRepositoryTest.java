@@ -1,8 +1,9 @@
 package com.example.unbox_be.domain.admin.order.repository;
 
-import com.example.unbox_be.domain.admin.order.dto.OrderSearchCondition;
+import com.example.unbox_be.domain.order.dto.OrderSearchCondition;
 import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
+import com.example.unbox_be.domain.order.repository.AdminOrderRepository;
 import com.example.unbox_be.domain.product.entity.Brand;
 import com.example.unbox_be.domain.product.entity.Category;
 import com.example.unbox_be.domain.product.entity.Product;

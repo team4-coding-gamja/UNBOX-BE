@@ -1,14 +1,15 @@
 package com.example.unbox_be.domain.admin.brand.service;
 
-import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandCreateRequestDto;
-import com.example.unbox_be.domain.admin.brand.dto.request.AdminBrandUpdateRequestDto;
-import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandCreateResponseDto;
-import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandDetailResponseDto;
-import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandListResponseDto;
-import com.example.unbox_be.domain.admin.brand.dto.response.AdminBrandUpdateResponseDto;
-import com.example.unbox_be.domain.admin.brand.mapper.AdminBrandMapper;
+import com.example.unbox_be.domain.product.dto.request.AdminBrandCreateRequestDto;
+import com.example.unbox_be.domain.product.dto.request.AdminBrandUpdateRequestDto;
+import com.example.unbox_be.domain.product.dto.response.AdminBrandCreateResponseDto;
+import com.example.unbox_be.domain.product.dto.response.AdminBrandDetailResponseDto;
+import com.example.unbox_be.domain.product.dto.response.AdminBrandListResponseDto;
+import com.example.unbox_be.domain.product.dto.response.AdminBrandUpdateResponseDto;
+import com.example.unbox_be.domain.product.mapper.AdminBrandMapper;
 import com.example.unbox_be.domain.product.entity.Brand;
 import com.example.unbox_be.domain.product.repository.BrandRepository;
+import com.example.unbox_be.domain.product.service.AdminBrandServiceImpl;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,8 @@ class AdminBrandServiceImplTest {
 
     @Mock BrandRepository brandRepository;
     @Mock AdminBrandMapper adminBrandMapper;
-    @InjectMocks AdminBrandServiceImpl adminBrandService;
+    @InjectMocks
+    AdminBrandServiceImpl adminBrandService;
 
     // =========================
     // ✅ 브랜드 목록 조회 getBrands

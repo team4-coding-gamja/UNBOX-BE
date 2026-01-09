@@ -1,17 +1,16 @@
 package com.example.unbox_be.domain.auth.service;
 
-import com.example.unbox_be.domain.admin.common.entity.Admin;
-import com.example.unbox_be.domain.admin.common.entity.AdminRole;
+import com.example.unbox_be.domain.admin.entity.Admin;
+import com.example.unbox_be.domain.admin.entity.AdminRole;
 import com.example.unbox_be.domain.auth.dto.response.AdminSignupResponseDto;
 import com.example.unbox_be.domain.auth.dto.request.AdminSignupRequestDto;
-import com.example.unbox_be.domain.admin.common.repository.AdminRepository;
+import com.example.unbox_be.domain.admin.repository.AdminRepository;
 import com.example.unbox_be.domain.auth.mapper.AuthMapper;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

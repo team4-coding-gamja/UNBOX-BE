@@ -1,13 +1,14 @@
 package com.example.unbox_be.domain.admin.trade.service;
 
-import com.example.unbox_be.domain.admin.trade.dto.request.SellingBidSearchCondition;
-import com.example.unbox_be.domain.admin.trade.dto.response.AdminSellingBidListResponseDto;
-import com.example.unbox_be.domain.admin.trade.repository.AdminSellingBidRepository;
+import com.example.unbox_be.domain.trade.dto.request.SellingBidSearchCondition;
+import com.example.unbox_be.domain.trade.dto.response.AdminSellingBidListResponseDto;
+import com.example.unbox_be.domain.trade.repository.AdminSellingBidRepository;
 import com.example.unbox_be.domain.product.entity.Brand;
 import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
+import com.example.unbox_be.domain.trade.service.AdminSellingBidServiceImpl;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;

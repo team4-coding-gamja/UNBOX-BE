@@ -1,17 +1,18 @@
 package com.example.unbox_be.domain.admin.product.service;
 
-import com.example.unbox_be.domain.admin.product.dto.request.AdminProductCreateRequestDto;
-import com.example.unbox_be.domain.admin.product.dto.request.AdminProductUpdateRequestDto;
-import com.example.unbox_be.domain.admin.product.dto.request.ProductSearchCondition;
-import com.example.unbox_be.domain.admin.product.dto.response.AdminProductCreateResponseDto;
-import com.example.unbox_be.domain.admin.product.dto.response.AdminProductListResponseDto;
-import com.example.unbox_be.domain.admin.product.dto.response.AdminProductUpdateResponseDto;
-import com.example.unbox_be.domain.admin.product.mapper.AdminProductMapper;
+import com.example.unbox_be.domain.product.dto.request.AdminProductCreateRequestDto;
+import com.example.unbox_be.domain.product.dto.request.AdminProductUpdateRequestDto;
+import com.example.unbox_be.domain.product.dto.request.ProductSearchCondition;
+import com.example.unbox_be.domain.product.dto.response.AdminProductCreateResponseDto;
+import com.example.unbox_be.domain.product.dto.response.AdminProductListResponseDto;
+import com.example.unbox_be.domain.product.dto.response.AdminProductUpdateResponseDto;
+import com.example.unbox_be.domain.product.mapper.AdminProductMapper;
 import com.example.unbox_be.domain.product.entity.Brand;
 import com.example.unbox_be.domain.product.entity.Category;
 import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.repository.BrandRepository;
 import com.example.unbox_be.domain.product.repository.ProductRepository;
+import com.example.unbox_be.domain.product.service.AdminProductServiceImpl;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import org.junit.jupiter.api.*;
@@ -33,7 +34,8 @@ class AdminProductServiceImplTest {
     @Mock BrandRepository brandRepository;
     @Mock AdminProductMapper adminProductMapper;
 
-    @InjectMocks AdminProductServiceImpl adminProductService;
+    @InjectMocks
+    AdminProductServiceImpl adminProductService;
 
     @AfterEach
     void tearDown() {

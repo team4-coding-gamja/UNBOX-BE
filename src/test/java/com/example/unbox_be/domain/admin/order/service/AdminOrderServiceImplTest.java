@@ -1,13 +1,14 @@
 package com.example.unbox_be.domain.admin.order.service;
 
-import com.example.unbox_be.domain.admin.order.dto.OrderSearchCondition;
-import com.example.unbox_be.domain.admin.order.repository.AdminOrderRepository;
+import com.example.unbox_be.domain.order.dto.OrderSearchCondition;
+import com.example.unbox_be.domain.order.repository.AdminOrderRepository;
 import com.example.unbox_be.domain.order.dto.request.OrderStatusUpdateRequestDto;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
 import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.mapper.OrderMapper;
+import com.example.unbox_be.domain.order.service.AdminOrderServiceImpl;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;

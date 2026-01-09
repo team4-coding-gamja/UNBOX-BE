@@ -1,12 +1,13 @@
 package com.example.unbox_be.domain.admin.trade.repository;
 
-import com.example.unbox_be.domain.admin.trade.dto.request.SellingBidSearchCondition;
+import com.example.unbox_be.domain.trade.dto.request.SellingBidSearchCondition;
 import com.example.unbox_be.domain.product.entity.Brand;
 import com.example.unbox_be.domain.product.entity.Category;
 import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
+import com.example.unbox_be.domain.trade.repository.AdminSellingBidRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.global.config.JpaAuditingConfig;
 import com.example.unbox_be.global.config.TestQueryDslConfig;

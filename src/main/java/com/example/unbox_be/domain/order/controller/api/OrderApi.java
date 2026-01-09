@@ -1,6 +1,7 @@
 package com.example.unbox_be.domain.order.controller.api;
 
 import com.example.unbox_be.domain.order.dto.request.OrderCreateRequestDto;
+import com.example.unbox_be.domain.order.dto.request.OrderStatusUpdateRequestDto;
 import com.example.unbox_be.domain.order.dto.request.OrderTrackingRequestDto;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
@@ -8,6 +9,8 @@ import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
@@ -27,6 +30,26 @@ public interface OrderApi {
     @Operation(summary = "주문 생성", description = "구매자가 상품을 주문합니다.")
     @PostMapping
     ResponseEntity<CustomApiResponse<UUID>> createOrder(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = OrderCreateRequestDto.class),
+                            examples = {
+                                    @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                            name = "주문 생성 예시",
+                                            value = """
+                                            {
+                                              "sellingBidId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                              "receiverName": "홍길동",
+                                              "receiverPhone": "010-1234-5678",
+                                              "receiverAddress": "서울시 강남구 테헤란로 123",
+                                              "receiverZipCode": "12345"
+                                            }
+                                            """
+                                    )
+                            }
+                    )
+            )
             @Valid @RequestBody OrderCreateRequestDto requestDto,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     );
@@ -56,6 +79,22 @@ public interface OrderApi {
     @PatchMapping("/{orderId}/tracking")
     ResponseEntity<CustomApiResponse<OrderDetailResponseDto>> registerTracking(
             @PathVariable UUID orderId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = OrderTrackingRequestDto.class),
+                            examples = {
+                                    @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                            name = "판매자 운송장 등록",
+                                            value = """
+                                            {
+                                              "trackingNumber": "S-TRACK-123456"
+                                            }
+                                            """
+                                    )
+                            }
+                    )
+            )
             @Valid @RequestBody OrderTrackingRequestDto requestDto,
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     );

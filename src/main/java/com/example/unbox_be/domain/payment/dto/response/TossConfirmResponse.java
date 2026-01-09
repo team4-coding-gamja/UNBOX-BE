@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Builder
 @Getter
 @NoArgsConstructor
@@ -12,10 +14,11 @@ import lombok.NoArgsConstructor;
 public class TossConfirmResponse {
     private String paymentKey;
     private String orderId;
-    private Long totalAmount;
+    private BigDecimal totalAmount;
     private String method;
     private String status;
     private String requestedAt;
+    private String approveNo;
     private String approvedAt;
     private String rawJson;
 

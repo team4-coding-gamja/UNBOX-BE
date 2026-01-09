@@ -91,6 +91,7 @@ public enum ErrorCode {
     PG_PROCESSED_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 완료된 결제 내용입니다."),
     NOT_SELF_PG_TRANSACTION(HttpStatus.FORBIDDEN, "본인의 PG결제만 진행할 수 있습니다."),
     PAYMENT_METHOD_INVALID(HttpStatus.BAD_REQUEST,"잘못된 결제 수단입니다."),
+    PAYMENT_CONFIRM_FAILED(HttpStatus.BAD_REQUEST,"결제에 실패하였습니다."),
     //정산
     SETTLEMENT_SELLER_MISMATCH(HttpStatus.BAD_REQUEST,"알맞은 정산 대상이 아닙니다."),
     PAYMENT_SETTLEMENT_MISMATCH(HttpStatus.BAD_REQUEST,"결제정보와 주문정보가 다릅니다."),

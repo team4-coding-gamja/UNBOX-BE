@@ -72,7 +72,7 @@ class OrderServiceImplTest {
         return user;
     }
 
-    private SellingBid createSellingBid(UUID id, Long sellerId, int price, SellingStatus status) {
+    private SellingBid createSellingBid(UUID id, Long sellerId, BigDecimal price, SellingStatus status) {
         SellingBid bid = BeanUtils.instantiateClass(SellingBid.class);
         
         Brand brand = BeanUtils.instantiateClass(Brand.class);
@@ -114,7 +114,7 @@ class OrderServiceImplTest {
         Long sellerId = 2L;
         UUID sellingBidId = UUID.randomUUID();
         UUID orderId = UUID.randomUUID();
-        int price = 150000;
+        BigDecimal price = BigDecimal.valueOf(150000);
 
         User buyer = createUser(buyerId);
         User seller = createUser(sellerId);
@@ -129,7 +129,8 @@ class OrderServiceImplTest {
                 .build();
 
         given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
-        given(sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)).willReturn(Optional.of(sellingBid));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(any(UUID.class)))
+                .willReturn(Optional.of(sellingBid));
         given(userRepository.findByIdAndDeletedAtIsNull(sellerId)).willReturn(Optional.of(seller));
         given(orderRepository.save(any(Order.class))).willAnswer(inv -> {
             Order o = inv.getArgument(0);
@@ -165,7 +166,6 @@ class OrderServiceImplTest {
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().sellingBidId(sellingBidId).build();
 
         given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
-        given(sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> orderService.createOrder(requestDto, buyerId))
                 .isInstanceOf(CustomException.class)
@@ -180,12 +180,13 @@ class OrderServiceImplTest {
         UUID sellingBidId = UUID.randomUUID();
 
         User buyer = createUser(buyerId);
-        SellingBid sellingBid = createSellingBid(sellingBidId, sellerId, 10000, SellingStatus.MATCHED);
+        SellingBid sellingBid = createSellingBid(sellingBidId, sellerId, BigDecimal.valueOf(10000), SellingStatus.MATCHED);
 
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().sellingBidId(sellingBidId).build();
 
         given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
-        given(sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)).willReturn(Optional.of(sellingBid));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(any(UUID.class)))
+                .willReturn(Optional.of(sellingBid));
 
         assertThatThrownBy(() -> orderService.createOrder(requestDto, buyerId))
                 .isInstanceOf(CustomException.class)
@@ -198,12 +199,13 @@ class OrderServiceImplTest {
         Long buyerId = 1L;
         UUID sellingBidId = UUID.randomUUID();
         User buyer = createUser(buyerId);
-        SellingBid sellingBid = createSellingBid(sellingBidId, buyerId, 10000, SellingStatus.LIVE);
+        SellingBid sellingBid = createSellingBid(sellingBidId, buyerId, BigDecimal.valueOf(10000), SellingStatus.LIVE);
 
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().sellingBidId(sellingBidId).build();
 
         given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
-        given(sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)).willReturn(Optional.of(sellingBid));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(any(UUID.class)))
+                .willReturn(Optional.of(sellingBid));
 
         assertThatThrownBy(() -> orderService.createOrder(requestDto, buyerId))
                 .isInstanceOf(CustomException.class)
@@ -218,12 +220,13 @@ class OrderServiceImplTest {
         UUID sellingBidId = UUID.randomUUID();
 
         User buyer = createUser(buyerId);
-        SellingBid sellingBid = createSellingBid(sellingBidId, sellerId, 10000, SellingStatus.LIVE);
+        SellingBid sellingBid = createSellingBid(sellingBidId, sellerId, BigDecimal.valueOf(10000), SellingStatus.LIVE);
 
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder().sellingBidId(sellingBidId).build();
 
         given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
-        given(sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)).willReturn(Optional.of(sellingBid));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(any(UUID.class)))
+                .willReturn(Optional.of(sellingBid));
         given(userRepository.findByIdAndDeletedAtIsNull(sellerId)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> orderService.createOrder(requestDto, buyerId))

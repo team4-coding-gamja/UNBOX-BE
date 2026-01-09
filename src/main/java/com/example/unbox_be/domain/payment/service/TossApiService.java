@@ -4,20 +4,22 @@ import com.example.unbox_be.domain.payment.dto.response.TossConfirmResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Slf4j
 @Service
 public class TossApiService {
 
-    public TossConfirmResponse confirm(String paymentKey, Integer amount) {
+    public TossConfirmResponse confirm(String paymentKey, BigDecimal amount) {
         String confirmedKey = paymentKey + "_CONFIRMED_" + UUID.randomUUID().toString().substring(0, 4);
         return TossConfirmResponse.builder()
-                .paymentKey(confirmedKey)
+                .paymentKey(paymentKey)
                 .status("DONE") // 성공 테스트용
                 .orderId("test-order-id")
+                .approveNo(confirmedKey)
                 .method("TOSS")
-                .totalAmount(Long.valueOf(amount))
+                .totalAmount(amount)
                 .rawJson("{\"status\":\"DONE\"}")
                 .build();
     }

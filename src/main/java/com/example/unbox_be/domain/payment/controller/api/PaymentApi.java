@@ -3,6 +3,7 @@ package com.example.unbox_be.domain.payment.controller.api;
 import com.example.unbox_be.domain.payment.dto.request.PaymentConfirmRequestDto;
 import com.example.unbox_be.domain.payment.dto.request.PaymentCreateRequestDto;
 import com.example.unbox_be.domain.payment.dto.response.PaymentReadyResponseDto;
+import com.example.unbox_be.domain.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,7 +42,7 @@ public interface PaymentApi {
             @ApiResponse(responseCode = "401", description = "인증 실패", content = @Content),
             @ApiResponse(responseCode = "403", description = "권한 없음", content = @Content)
     })
-    @PostMapping
+    @PostMapping("/ready")
     ResponseEntity<PaymentReadyResponseDto> createPayment(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -66,7 +67,7 @@ public interface PaymentApi {
             @ApiResponse(responseCode = "404", description = "결제 정보를 찾을 수 없음", content = @Content)
     })
     @PostMapping("/confirm")
-    ResponseEntity<Void> confirmPayment(
+    ResponseEntity<TossConfirmResponse> confirmPayment(
             @Parameter(hidden = true)
             @AuthenticationPrincipal CustomUserDetails userDetails,
 

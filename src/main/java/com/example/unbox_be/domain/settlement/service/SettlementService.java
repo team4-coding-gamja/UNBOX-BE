@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
@@ -56,9 +57,11 @@ public class SettlementService {
             throw new CustomException(ErrorCode.SETTLEMENT_SELLER_MISMATCH);
         }
 
-        Integer totalAmount = payment.getAmount();
-        Integer fees = (int) Math.round(totalAmount * FEE_RATE);
-        Integer settlementAmount = totalAmount - fees;
+        BigDecimal totalAmount = payment.getAmount();
+        BigDecimal fees = totalAmount.multiply(BigDecimal.valueOf(FEE_RATE))
+                .setScale(0, java.math.RoundingMode.HALF_UP);
+
+        BigDecimal settlementAmount = totalAmount.subtract(fees);
 
         Settlement settlement = Settlement.builder()
                 .orderId(orderId)

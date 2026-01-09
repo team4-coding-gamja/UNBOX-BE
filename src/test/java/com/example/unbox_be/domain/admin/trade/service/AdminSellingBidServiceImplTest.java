@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -48,7 +49,7 @@ class AdminSellingBidServiceImplTest {
     private SellingBid createMockBid(SellingStatus status, boolean fullData) {
         SellingBid bid = mock(SellingBid.class);
         given(bid.getId()).willReturn(UUID.randomUUID());
-        given(bid.getPrice()).willReturn(100000); // Integer
+        given(bid.getPrice()).willReturn(BigDecimal.valueOf(100000)); // Integer
         given(bid.getStatus()).willReturn(status);
         given(bid.getCreatedAt()).willReturn(LocalDateTime.now());
         given(bid.getDeadline()).willReturn(LocalDateTime.now().plusDays(7));
@@ -191,12 +192,12 @@ class AdminSellingBidServiceImplTest {
     @DisplayName("매핑: 가격이 0원일 때 정상 매핑")
     void mapping_ZeroPrice() {
         SellingBid bid = createMockBid(SellingStatus.LIVE, true);
-        given(bid.getPrice()).willReturn(0);
+        given(bid.getPrice()).willReturn(BigDecimal.valueOf(0));
         given(repository.findAdminSellingBids(any(), any())).willReturn(new PageImpl<>(List.of(bid)));
 
         Page<AdminSellingBidListResponseDto> result = service.getSellingBids(new SellingBidSearchCondition(), PageRequest.of(0, 10));
         
-        assertThat(result.getContent().get(0).getPrice()).isEqualTo(0);
+        assertThat(result.getContent().get(0).getPrice()).isEqualTo(BigDecimal.ZERO);
     }
 
     // 11. 날짜 정보 검증

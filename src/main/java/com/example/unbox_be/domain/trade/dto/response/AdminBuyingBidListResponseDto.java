@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ public class AdminBuyingBidListResponseDto {
     private String productName;
     private String brandName;
     private String size;
-    private Integer price;
+    private BigDecimal price;
     private BuyingStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime deadline;

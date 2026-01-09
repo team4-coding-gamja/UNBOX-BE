@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -68,7 +69,7 @@ class AdminSellingBidRepositoryTest {
         return SellingBid.builder()
                 .userId(seller.getId())
                 .productOption(option)
-                .price(100000)
+                .price(BigDecimal.valueOf(100000))
                 .status(status)
                 .deadline(LocalDateTime.now().plusDays(7))
                 .build();

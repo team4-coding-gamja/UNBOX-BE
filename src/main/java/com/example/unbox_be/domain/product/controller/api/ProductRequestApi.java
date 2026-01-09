@@ -1,5 +1,6 @@
 package com.example.unbox_be.domain.product.controller.api;
 
+import com.example.unbox_be.domain.auth.dto.request.UserLoginRequestDto;
 import com.example.unbox_be.domain.product.dto.request.ProductRequestRequestDto;
 import com.example.unbox_be.domain.product.dto.response.ProductRequestResponseDto;
 import com.example.unbox_be.global.response.CustomApiResponse;
@@ -26,6 +27,24 @@ public interface ProductRequestApi {
                     - 로그인 필요(JWT)
                     - 요청 DTO는 name, brandName만 받습니다. (ID는 서버에서 생성)
                     """
+    )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    schema = @Schema(implementation = ProductRequestRequestDto.class),
+                    examples = {
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "퓨마 스피드캣 등록 요청",
+                                    value = """
+                                                    {
+                                                      "name": "puma",
+                                                      "brandName": "speedcat"
+                                                    }
+                                                    """
+                            )
+
+                    }
+            )
     )
     @ApiResponses({
             @ApiResponse(

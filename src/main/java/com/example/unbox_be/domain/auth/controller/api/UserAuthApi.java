@@ -35,6 +35,37 @@ public interface UserAuthApi {
                             "}\n" +
                             "```"
     )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    schema = @Schema(implementation = UserSignupRequestDto.class),
+                    examples = {
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "구매자 1 회원가입",
+                                    value = """
+                                                    {
+                                                      "email": "buyer1@unbox.com",
+                                                      "password": "12341234!",
+                                                      "nickname": "buyer1",
+                                                      "phone": "010-1234-5678"
+                                                    }
+                                                    """
+                            ),
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "판매자 1 회원가입",
+                                    value = """
+                                                    {
+                                                      "email": "seller1@unbox.com",
+                                                      "password": "12341234!",
+                                                      "nickname": "seller1",
+                                                      "phone": "010-2345-6781"
+                                                    }
+                                                    """
+                            )
+
+                    }
+            )
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -98,14 +129,24 @@ public interface UserAuthApi {
                             schema = @Schema(implementation = UserLoginRequestDto.class),
                             examples = {
                                     @io.swagger.v3.oas.annotations.media.ExampleObject(
-                                            name = "로그인 요청 예시",
+                                            name = "구매자 1 로그인",
                                             value = """
                                                     {
                                                       "email": "buyer1@unbox.com",
                                                       "password": "12341234!"
                                                     }
                                                     """
+                                    ),
+                                    @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                            name = "판매자 1 로그인",
+                                            value = """
+                                                    {
+                                                      "email": "seller1@unbox.com",
+                                                      "password": "12341234!"
+                                                    }
+                                                    """
                                     )
+
                             }
                     )
             )
@@ -188,3 +229,4 @@ public interface UserAuthApi {
             @Parameter(hidden = true) HttpServletResponse response
     );
 }
+

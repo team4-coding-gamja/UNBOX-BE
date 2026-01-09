@@ -1,6 +1,7 @@
 package com.example.unbox_be.domain.admin.order.controller.api;
 
 import com.example.unbox_be.domain.admin.order.dto.OrderSearchCondition;
+import com.example.unbox_be.domain.auth.dto.request.UserLoginRequestDto;
 import com.example.unbox_be.domain.order.dto.request.OrderStatusUpdateRequestDto;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
@@ -69,6 +70,72 @@ public interface AdminOrderApi {
                     - 상태가 SHIPPED_TO_BUYER 인 경우 운송장 번호(trackingNumber)가 필수입니다.
                     - 상태 전이 규칙은 Order 도메인 로직에서 검증됩니다.
                     """
+    )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @Content(
+                    schema = @Schema(implementation = OrderStatusUpdateRequestDto.class),
+                    examples = {
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "1. 센터로 이동중 (SHIPPED_TO_CENTER)",
+                                    value = """
+                                            {
+                                              "status": "SHIPPED_TO_CENTER"
+                                            }
+                                            """
+                            ),
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "2. 센터 도착 (ARRIVED_AT_CENTER)",
+                                    value = """
+                                            {
+                                              "status": "ARRIVED_AT_CENTER"
+                                            }
+                                            """
+                            ),
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "3. 검수 중 (IN_INSPECTION)",
+                                    value = """
+                                            {
+                                              "status": "IN_INSPECTION"
+                                            }
+                                            """
+                            ),
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "4. 검수 합격 ✅ (INSPECTION_PASSED)",
+                                    value = """
+                                            {
+                                              "status": "INSPECTION_PASSED"
+                                            }
+                                            """
+                            ),
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "5. 구매자 발송 (SHIPPED_TO_BUYER)",
+                                    description = "구매자에게 발송 시 운송장 번호 필수",
+                                    value = """
+                                            {
+                                              "status": "SHIPPED_TO_BUYER",
+                                              "trackingNumber": "1234567890"
+                                            }
+                                            """
+                            ),
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "6. 배송 완료 (DELIVERED)",
+                                    value = """
+                                            {
+                                              "status": "DELIVERED"
+                                            }
+                                            """
+                            ),
+                            @io.swagger.v3.oas.annotations.media.ExampleObject(
+                                    name = "예외. 검수 불합격 \uD83D\uDEAB (INSPECTION_FAILED)",
+                                    value = """
+                                            {
+                                              "status": "INSPECTION_FAILED"
+                                            }
+                                            """
+                            )
+                    }
+            )
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "상태 변경 성공",

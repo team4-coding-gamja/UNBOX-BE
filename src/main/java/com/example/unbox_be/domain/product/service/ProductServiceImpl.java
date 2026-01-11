@@ -59,7 +59,7 @@ public class ProductServiceImpl implements ProductService {
                 sellingBidRepository.findLowestPricesByProductIds(productIds).stream()
                         .collect(Collectors.toMap(
                                 row -> (UUID) row[0],
-                                row -> row[1] == null ? null : ((Number) row[1]).intValue()
+                                row -> row[1] == null ? 0 : ((Number) row[1]).intValue()
                         ));
 
         return products.map(p ->

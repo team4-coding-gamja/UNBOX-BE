@@ -271,6 +271,46 @@ class ProductServiceImplTest {
                     .isInstanceOf(CustomException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PRODUCT_NOT_FOUND);
         }
+        @Test
+        @DisplayName("상품 상세 조회 - 최저가 입찰이 없으면 0을 반환하는 브랜치를 탄다")
+        void getProductDetail_NoPrice_Branch() {
+            // given
+            Product product = createMockProduct();
+            given(productRepository.findByIdAndDeletedAtIsNullWithBrand(any())).willReturn(Optional.of(product));
+
+            // 🚩 lowestPrice != null ? ... : 0 에서 null 브랜치 강제 발생
+            given(sellingBidRepository.findLowestPriceByProductId(any(), any())).willReturn(null);
+
+            // when
+            productService.getProductDetail(product.getId());
+
+            // then
+            verify(productMapper).toProductDetailDto(product, 0);
+        }
+        @Test
+        @DisplayName("상품 목록 조회 - 입찰 없는 상품이 섞여있어도 브랜치를 통과해야 한다")
+        void getProducts_Success_WithMixedPrices() {
+            // given
+            Product product1 = createMockProduct();
+            Product product2 = createMockProduct();
+            Page<Product> productPage = new PageImpl<>(List.of(product1, product2));
+
+            given(productRepository.findByFiltersAndDeletedAtIsNull(any(), any(), any(), any()))
+                    .willReturn(productPage);
+
+            List<Object[]> priceData = new ArrayList<>();
+            priceData.add(new Object[]{product1.getId(), 150000}); // 정상가
+            priceData.add(new Object[]{product2.getId(), null});   // 🚩 row[1] == null 브랜치 통과!
+
+            given(sellingBidRepository.findLowestPricesByProductIds(anyList())).willReturn(priceData);
+
+            // when
+            productService.getProducts(null, null, null, PageRequest.of(0, 10));
+
+            // then
+            verify(productMapper).toProductListResponseDto(eq(product1), eq(150000));
+            verify(productMapper).toProductListResponseDto(eq(product2), eq(0)); // getOrDefault(..., 0) 브랜치 통과
+        }
     }
 
     @Nested
@@ -395,4 +435,27 @@ class ProductServiceImplTest {
             verify(productOptionRepository, never()).findAllByProductIdAndDeletedAtIsNull(any());
         }
     }
+    @Test
+    @DisplayName("단건 상품에 대해 최저가 입찰이 없는 경우 0원을 반환해야 함")
+    void getProductDetail_Success_NoLowestPrice() {
+        // given
+        Product product = createMockProduct();
+        UUID productId = product.getId();
+
+        given(productRepository.findByIdAndDeletedAtIsNullWithBrand(productId))
+                .willReturn(Optional.of(product));
+        // 🚩 최저가 조회 결과가 null인 상황 시뮬레이션
+        given(sellingBidRepository.findLowestPriceByProductId(eq(productId), any()))
+                .willReturn(null);
+
+        // then: Mapper에 0이 전달되는지 확인
+        productService.getProductDetail(productId);
+        verify(productMapper).toProductDetailDto(product, 0);
+    }
+
+
+
+
+
+
 }

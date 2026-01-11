@@ -625,4 +625,58 @@ class OrderServiceImplTest {
                 .isInstanceOf(CustomException.class) // CustomException(ErrorCode.INVALID_ORDER_STATUS)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ORDER_STATUS);
     }
+    @Test
+    @DisplayName("판매 상품이 선점된 상태(HOLD)라 주문 생성에 실패했을 때")
+    void createOrder_Fail_BidStatusHold() {
+        // 1. Given: 필요한 데이터 준비
+        Long buyerId = 1L;
+        Long sellerId = 2L;
+        UUID sellingBidId = UUID.randomUUID();
+
+        User buyer = createUser(buyerId);
+
+        // 핵심: 상태를 SellingStatus.HOLD로 설정하여 실제 객체 생성
+        SellingBid sellingBid = createSellingBid(sellingBidId, sellerId, BigDecimal.valueOf(10000), SellingStatus.HOLD);
+
+        OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder()
+                .sellingBidId(sellingBidId)
+                .build();
+
+        // Mock 환경 설정
+        given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
+        given(sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(sellingBidId))
+                .willReturn(Optional.of(sellingBid));
+
+        // 2. When & Then: HOLD 상태일 때 예외가 발생하는지 검증
+        assertThatThrownBy(() -> orderService.createOrder(requestDto, buyerId))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_ORDER_STATUS);
+    }
+
+    @Test
+    @DisplayName("판매자가 주문을 취소했을 때 성공한다")
+    void cancelOrder_Success_Seller() {
+        // given
+        UUID orderId = UUID.randomUUID();
+        Long buyerId = 1L;
+        Long sellerId = 2L;
+
+        // 판매자 본인이 요청하는 상황
+        User buyer = createUser(buyerId);
+        User seller = createUser(sellerId);
+        Order order = createOrder(orderId, buyer, seller);
+
+        // 초기 상태 설정 (취소 가능한 상태)
+        ReflectionTestUtils.setField(order, "status", OrderStatus.PENDING_SHIPMENT);
+
+        given(orderRepository.findWithDetailsById(orderId)).willReturn(Optional.of(order));
+        given(orderMapper.toDetailResponseDto(order)).willReturn(OrderDetailResponseDto.builder().build());
+
+        // when
+        orderService.cancelOrder(orderId, sellerId); // userId로 sellerId 전달
+
+        // then
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        verify(orderMapper).toDetailResponseDto(order);
+    }
 }

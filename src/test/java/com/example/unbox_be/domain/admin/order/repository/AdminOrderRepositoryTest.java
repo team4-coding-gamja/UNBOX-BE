@@ -217,4 +217,38 @@ class AdminOrderRepositoryTest {
         assertThat(result.getContent()).hasSize(1);
         // order2인지 확인 (ID 비교 등, DB 재조회라 ID 모르면 검증 어려우나 size로 1개 확인됨)
     }
+    @Test
+    @DisplayName("관리자 주문 검색 - 시작일만 있을 때 (이후 조회)")
+    void searchByOnlyStartDate() {
+        // given
+        Order order = createOrder(buyer, seller, productAirForce, OrderStatus.PENDING_SHIPMENT);
+        adminOrderRepository.save(order);
+        em.flush(); em.clear();
+
+        // when
+        OrderSearchCondition condition = new OrderSearchCondition();
+        condition.setStartDate(LocalDate.now()); // 오늘부터 조회
+
+        Page<Order> result = adminOrderRepository.findAdminOrders(condition, PageRequest.of(0, 10));
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+    }
+    @Test
+    @DisplayName("관리자 주문 검색 - 종료일만 있을 때 (이전 조회)")
+    void searchByOnlyEndDate() {
+        // given
+        Order order = createOrder(buyer, seller, productAirForce, OrderStatus.PENDING_SHIPMENT);
+        adminOrderRepository.save(order);
+        em.flush(); em.clear();
+
+        // when
+        OrderSearchCondition condition = new OrderSearchCondition();
+        condition.setEndDate(LocalDate.now()); // 오늘까지 조회
+
+        Page<Order> result = adminOrderRepository.findAdminOrders(condition, PageRequest.of(0, 10));
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+    }
 }

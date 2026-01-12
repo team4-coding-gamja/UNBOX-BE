@@ -1,8 +1,6 @@
 package com.example.unbox_be.domain.reviews.service;
 
 import com.example.unbox_be.domain.order.entity.OrderStatus;
-import com.example.unbox_be.domain.order.repository.OrderRepository;
-import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.reviews.dto.request.ReviewCreateRequestDto;
 import com.example.unbox_be.domain.reviews.dto.request.ReviewUpdateRequestDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewCreateResponseDto;
@@ -11,89 +9,159 @@ import com.example.unbox_be.domain.reviews.dto.response.ReviewUpdateResponseDto;
 import com.example.unbox_be.domain.reviews.entity.Review;
 import com.example.unbox_be.domain.reviews.mapper.ReviewMapper;
 import com.example.unbox_be.domain.reviews.repository.ReviewRepository;
-import com.example.unbox_be.domain.user.entity.User;
+import com.example.unbox_be.global.client.order.OrderClient;
+import com.example.unbox_be.global.client.order.dto.OrderForReviewInfoResponse;
+import com.example.unbox_be.global.client.product.ProductClient;
+import com.example.unbox_be.global.client.product.dto.ProductOptionInfoResponse;
+import com.example.unbox_be.global.client.user.UserClient;
+import com.example.unbox_be.global.client.user.dto.UserForReviewInfoResponse;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
-@AllArgsConstructor
-public class ReviewServiceImpl implements ReviewService {
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class ReviewServiceImpl {
 
     private final ReviewRepository reviewRepository;
-    private final OrderRepository orderRepository;
     private final ReviewMapper reviewMapper;
 
-    /**
-     * [리뷰 생성]
-     * 비즈니스 규칙:
-     * 1. 주문 상태가 반드시 'COMPLETED'여야 함.
-     * 2. 주문 1개당 리뷰는 오직 1개만 작성 가능 (1:1 관계).
-     * 3. 주문한 구매자 본인만 리뷰 작성 가능.
-     * 4. 평점은 반드시 1점 ~ 5점 사이여야 함.
-     */
+    private final OrderClient orderClient;
+    private final UserClient userClient;
+    private final ProductClient productClient;
+
     // ✅ 리뷰 생성
     @Transactional
     public ReviewCreateResponseDto createReview(Long userId, ReviewCreateRequestDto requestDto) {
 
-        // 1) 주문 조회
-        Order order = orderRepository.findByIdAndDeletedAtIsNull(requestDto.getOrderId())
-                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        UUID orderId = requestDto.getOrderId();
 
-        // 2) 주문 상태 검증 (거래 완료 상태인지 확인)
-        if (order.getStatus() != OrderStatus.COMPLETED) {
+        // 1) 주문 정보 조회
+        OrderForReviewInfoResponse orderInfo = orderClient.getOrderInfo(orderId);
+        if (orderInfo == null) throw new CustomException(ErrorCode.ORDER_NOT_FOUND);
+
+        // 2) 주문 상태 검증
+        if (orderInfo.getStatus() != OrderStatus.COMPLETED) {
             throw new CustomException(ErrorCode.ORDER_NOT_COMPLETED);
         }
 
-        // 3) 리뷰 중복 작성 검증 (1주문 1리뷰)
-        if (reviewRepository.existsByOrderIdAndDeletedAtIsNull(requestDto.getOrderId())) {
+        // 3) 중복 리뷰 체크
+        if (reviewRepository.existsByOrderIdAndDeletedAtIsNull(orderId)) {
             throw new CustomException(ErrorCode.ALREADY_REVIEWED);
         }
 
-        // 4) 작성 권한 검증 (로그인 유저가 실제 구매자인지)
-        User buyer = order.getBuyer();
-        if (buyer == null || !buyer.getId().equals(userId)) {
+        // 4) 구매자 검증
+        if (!orderInfo.getBuyerId().equals(userId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 5) 주문에서 상품 추출 (Order 내 스냅샷/ID 존재 여부로 대체 가능 - nullable=false이므로 생략 가능)
-        // Order에 productId, productOptionId가 @Column(nullable=false)로 보장됨.
+        // 5) 필요한 외부 정보 조회 (로컬 변수로 분리)
+        UserForReviewInfoResponse buyerInfo = userClient.getUserInfo(orderInfo.getBuyerId());
+        ProductOptionInfoResponse optionInfo = productClient.getProductOption(orderInfo.getProductOptionId());
 
-        // 6) Review 생성 (엔티티 내부 검증도 같이 타게)
+        // 6) 스냅샷 값 추출 (가독성/안정성 ↑)
+        BigDecimal price = orderInfo.getPrice();
+        Long buyerId = orderInfo.getBuyerId();
+        String buyerNickname = buyerInfo.getNickname();
+
+        UUID productId = optionInfo.getProductId();
+        String productName = optionInfo.getProductName();
+        String productImageUrl = optionInfo.getImageUrl();
+
+        UUID productOptionId = optionInfo.getProductOptionId();
+        String productOptionName = optionInfo.getOptionName();
+
+        // 7) Review 생성 (스냅샷 포함)
         Review review = Review.createReview(
-                order,
+                orderId,
                 requestDto.getContent(),
                 requestDto.getRating(),
-                requestDto.getImageUrl()
+                requestDto.getImageUrl(),
+                price,
+                buyerId,
+                buyerNickname,
+                productId,
+                productName,
+                productImageUrl,
+                productOptionId,
+                productOptionName
         );
 
-        // 7) 저장
-        Review savedReview = reviewRepository.save(review);
-
-        return reviewMapper.toReviewCreateResponseDto(savedReview);
+        reviewRepository.save(review);
+        return reviewMapper.toReviewCreateResponseDto(review);
     }
 
+    // ✅ 리뷰 상세 조회 (클라이언트 호출로 조립)
+    public ReviewDetailResponseDto getReview(Long userId, UUID reviewId) {
 
-    // ✅ 리뷰 조회
-    @Transactional(readOnly = true)
-    public ReviewDetailResponseDto getReview(UUID reviewId) {
         Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
-        return reviewMapper.toReviewDetailResponseDto(review);
+        OrderForReviewInfoResponse orderInfo = orderClient.getOrderInfo(review.getOrderId());
+        if (orderInfo == null) {
+            throw new CustomException(ErrorCode.ORDER_NOT_FOUND);
+        }
+
+        // (선택) 권한 체크가 필요하면 여기서
+        // if (!orderInfo.getBuyerId().equals(userId)) throw ...
+
+        UserForReviewInfoResponse buyerInfo = userClient.getUserInfo(orderInfo.getBuyerId());
+        ProductOptionInfoResponse optionInfo = productClient.getProductOption(orderInfo.getProductOptionId());
+
+        // ✅ ReviewDetailResponseDto 조립
+        ReviewDetailResponseDto.UserInfo buyer = ReviewDetailResponseDto.UserInfo.builder()
+                .id(buyerInfo.getId())
+                .nickname(buyerInfo.getNickname())
+                .build();
+
+        ReviewDetailResponseDto.ProductInfo product = ReviewDetailResponseDto.ProductInfo.builder()
+                .id(optionInfo.getProductId())
+                .name(optionInfo.getProductName())
+                .imageUrl(optionInfo.getImageUrl())
+                .build();
+
+        ReviewDetailResponseDto.ProductOptionInfo productOption = ReviewDetailResponseDto.ProductOptionInfo.builder()
+                .id(optionInfo.getProductOptionId())
+                .option(optionInfo.getOptionName())
+                .product(product)
+                .build();
+
+        ReviewDetailResponseDto.OrderInfo order = ReviewDetailResponseDto.OrderInfo.builder()
+                .id(orderInfo.getId())
+                .price(orderInfo.getPrice())
+                .buyer(buyer)
+                .productOption(productOption)
+                .build();
+
+        return ReviewDetailResponseDto.builder()
+                .id(review.getId())
+                .content(review.getContent())
+                .rating(review.getRating())
+                .imageUrl(review.getImageUrl())
+                .createdAt(review.getCreatedAt())
+                .order(order)
+                .build();
     }
 
     // ✅ 리뷰 수정
     @Transactional
     public ReviewUpdateResponseDto updateReview(Long userId, UUID reviewId, ReviewUpdateRequestDto requestDto) {
+
         Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
-        if (!review.getOrder().getBuyer().getId().equals(userId)) {
+        // 소유자 검증: Review는 orderId만 있으므로 orderClient로 검증
+        OrderForReviewInfoResponse orderInfo = orderClient.getOrderInfo(review.getOrderId());
+        if (orderInfo == null) {
+            throw new CustomException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        if (!orderInfo.getBuyerId().equals(userId)) {
             throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
         }
 
@@ -104,10 +172,15 @@ public class ReviewServiceImpl implements ReviewService {
     // ✅ 리뷰 삭제
     @Transactional
     public void deleteReview(Long userId, UUID reviewId, String deletedBy) {
+
         Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
-        if (!review.getOrder().getBuyer().getId().equals(userId)) {
+        OrderForReviewInfoResponse orderInfo = orderClient.getOrderInfo(review.getOrderId());
+        if (orderInfo == null) {
+            throw new CustomException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        if (!orderInfo.getBuyerId().equals(userId)) {
             throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
         }
 

@@ -28,58 +28,21 @@ public class Order extends BaseEntity {
     @Column(name = "order_id", columnDefinition = "uuid")
     private UUID id;
 
+    // --- 연관관계 필드 ---
     @Column(name = "selling_bid_id", nullable = false)
     private UUID sellingBidId;
 
-    // --- 연관 관계 ---
+    @Column(name = "buyer_id", nullable = false)
+    private Long buyerId;
 
-    /*
-     * [MSA 전환 시 리팩토링 포인트]
-     * 현재: JPA 객체 참조 (@ManyToOne) -> 다른 도메인(User)과 강한 결합(Hard Coupling) 발생
-     * 미래(MSA): User 도메인이 분리되면 DB Join 불가능.
-     * 수정 가이드:
-     * 1. User 객체 대신 `Long buyerId` 필드로 변경 (ID 참조)
-     * 2. 사용자 정보가 필요할 땐 UserClient(Feign)를 통해 조회하거나,
-     * 주문 시점에 필요한 정보(이름/연락처 등)를 Order 테이블에 스냅샷으로 저장해야 함.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "buyer_id", nullable = false)
-    private User buyer;
+    @Column(name = "seller_id", nullable = false)
+    private Long sellerId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seller_id", nullable = false)
-    private User seller;
-
-    /*
-     * [MSA 전환 시 리팩토링 포인트]
-     * 현재: Product 도메인과 강한 결합.
-     * 미래(MSA): Product 도메인 분리 시 참조 불가.
-     * 수정:
-     * 1. `UUID productOptionId` 필드로 변경.
-     * 2. 주문 생성 시점의 상품 데이터(상품명, 옵션명, 가격 등)를 OrderItem 혹은 Order 내부에
-     * 별도 컬럼(Snapshot)으로 반드시 저장해야 함. (상품 가격 변동 시 주문 이력 보호 목적)
-     */
     @Column(name = "product_option_id", nullable = false)
     private UUID productOptionId;
 
     @Column(name = "product_id", nullable = false)
     private UUID productId;
-
-    // --- 상품 스냅샷 (Snapshot) ---
-    @Column(name = "product_name", nullable = false)
-    private String productName;
-
-    @Column(name = "model_number", nullable = false)
-    private String modelNumber;
-
-    @Column(name = "option_name", nullable = false)
-    private String optionName;
-
-    @Column(name = "image_url")
-    private String imageUrl;
-
-    @Column(name = "brand_name", nullable = false)
-    private String brandName;
 
     // --- 주문 정보 ---
     @Column(nullable = false)
@@ -115,14 +78,30 @@ public class Order extends BaseEntity {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    // --- 상품 스냅샷 (Snapshot) ---
+    @Column(name = "product_name", nullable = false)
+    private String productName;
+
+    @Column(name = "model_number", nullable = false)
+    private String modelNumber;
+
+    @Column(name = "option_name", nullable = false)
+    private String optionName;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "brand_name", nullable = false)
+    private String brandName;
+
     // 생성자 레벨 Builder
     @Builder
-    public Order(UUID sellingBidId, User buyer, User seller, UUID productOptionId, UUID productId,
+    public Order(UUID sellingBidId, Long buyerId, Long sellerId, UUID productOptionId, UUID productId,
                  String productName, String modelNumber, String optionName, String imageUrl, String brandName,
                  BigDecimal price, String receiverName, String receiverPhone, String receiverAddress, String receiverZipCode) {
         this.sellingBidId = sellingBidId;
-        this.buyer = buyer;
-        this.seller = seller;
+        this.buyerId = buyerId;
+        this.sellerId = sellerId;
         this.productOptionId = productOptionId;
         this.productId = productId;
         this.productName = productName;
@@ -205,7 +184,7 @@ public class Order extends BaseEntity {
      * 구매 확정
      */
     public void confirm(User requestUser) {
-        if (!this.buyer.getId().equals(requestUser.getId())) {
+        if (!this.buyerId.equals(requestUser.getId())) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 

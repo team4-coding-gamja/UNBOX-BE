@@ -21,17 +21,16 @@ public class Cart extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "selling_bid_id", nullable = false)
     private SellingBid sellingBid;
 
     @Builder
-    public Cart(User user, SellingBid sellingBid) {
-        this.user = user;
+    public Cart(Long userId, SellingBid sellingBid) {
+        this.userId = userId;
         this.sellingBid = sellingBid;
     }
 }

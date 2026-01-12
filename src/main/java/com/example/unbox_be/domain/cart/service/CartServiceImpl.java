@@ -48,7 +48,7 @@ public class CartServiceImpl implements CartService {
         }
 
         Cart cart = Cart.builder()
-                .user(user)
+                .userId(userId)
                 .sellingBid(sellingBid)
                 .build();
 

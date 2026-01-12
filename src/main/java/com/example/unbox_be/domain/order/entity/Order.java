@@ -54,14 +54,32 @@ public class Order extends BaseEntity {
      * [MSA 전환 시 리팩토링 포인트]
      * 현재: Product 도메인과 강한 결합.
      * 미래(MSA): Product 도메인 분리 시 참조 불가.
-     * 수정 가이드:
+     * 수정:
      * 1. `UUID productOptionId` 필드로 변경.
      * 2. 주문 생성 시점의 상품 데이터(상품명, 옵션명, 가격 등)를 OrderItem 혹은 Order 내부에
      * 별도 컬럼(Snapshot)으로 반드시 저장해야 함. (상품 가격 변동 시 주문 이력 보호 목적)
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "option_id", nullable = false)
-    private ProductOption productOption;
+    @Column(name = "product_option_id", nullable = false)
+    private UUID productOptionId;
+
+    @Column(name = "product_id", nullable = false)
+    private UUID productId;
+
+    // --- 상품 스냅샷 (Snapshot) ---
+    @Column(name = "product_name", nullable = false)
+    private String productName;
+
+    @Column(name = "model_number", nullable = false)
+    private String modelNumber;
+
+    @Column(name = "option_name", nullable = false)
+    private String optionName;
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "brand_name", nullable = false)
+    private String brandName;
 
     // --- 주문 정보 ---
     @Column(nullable = false)
@@ -99,12 +117,19 @@ public class Order extends BaseEntity {
 
     // 생성자 레벨 Builder
     @Builder
-    public Order(UUID sellingBidId, User buyer, User seller, ProductOption productOption, BigDecimal price,
-                 String receiverName, String receiverPhone, String receiverAddress, String receiverZipCode) {
+    public Order(UUID sellingBidId, User buyer, User seller, UUID productOptionId, UUID productId,
+                 String productName, String modelNumber, String optionName, String imageUrl, String brandName,
+                 BigDecimal price, String receiverName, String receiverPhone, String receiverAddress, String receiverZipCode) {
         this.sellingBidId = sellingBidId;
         this.buyer = buyer;
         this.seller = seller;
-        this.productOption = productOption;
+        this.productOptionId = productOptionId;
+        this.productId = productId;
+        this.productName = productName;
+        this.modelNumber = modelNumber;
+        this.optionName = optionName;
+        this.imageUrl = imageUrl;
+        this.brandName = brandName;
         this.price = price;
         this.receiverName = receiverName;
         this.receiverPhone = receiverPhone;

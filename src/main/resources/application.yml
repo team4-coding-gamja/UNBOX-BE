@@ -25,10 +25,10 @@ spring:
       enabled: true
       path: /h2-console
 
-  sql:
-    init:
-      mode: always
-      data-locations: classpath:data.sql
+#  sql:
+#    init:
+#      mode: always
+#      data-locations: classpath:data.sql
 
   data:
     redis:

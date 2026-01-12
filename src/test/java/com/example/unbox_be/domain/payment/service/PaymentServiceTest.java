@@ -406,7 +406,7 @@ public class PaymentServiceTest {
 
         @Test
         @DisplayName("1. 성공 - 모든 조건이 완벽할 때 결제 승인 성공")
-        void confirmPayment_Success_AllFine() throws Exception{
+        void confirmPayment_Success_AllFine() throws Exception {
             // 1. Given
             setupBasicMocks(OrderStatus.PENDING_SHIPMENT, PaymentStatus.READY);
 
@@ -437,7 +437,7 @@ public class PaymentServiceTest {
 
         @Test
         @DisplayName("3. 실패 - 주문자와 승인 요청 유저 불일치")
-        void confirmPayment_Fail_UserMismatch() throws Exception{
+        void confirmPayment_Fail_UserMismatch() throws Exception {
             setupBasicMocks(OrderStatus.PENDING_SHIPMENT, PaymentStatus.READY);
             Long otherUserId = 999L; // 다른 유저
 
@@ -448,7 +448,7 @@ public class PaymentServiceTest {
 
         @Test
         @DisplayName("4. 실패 - 주문 상태가 PENDING_SHIPMENT가 아님")
-        void confirmPayment_Fail_InvalidOrderStatus() throws Exception{
+        void confirmPayment_Fail_InvalidOrderStatus() throws Exception {
             setupBasicMocks(OrderStatus.COMPLETED, PaymentStatus.READY); // 이미 완료된 주문
 
             assertThatThrownBy(() -> paymentService.confirmPayment(userId, paymentId, paymentKey))
@@ -458,7 +458,7 @@ public class PaymentServiceTest {
 
         @Test
         @DisplayName("5. 실패 - Toss API 승인 실패 (잔액 부족 등)")
-        void confirmPayment_Fail_TossLogicError() throws Exception{
+        void confirmPayment_Fail_TossLogicError() throws Exception {
             setupBasicMocks(OrderStatus.PENDING_SHIPMENT, PaymentStatus.READY);
             TossConfirmResponse failResponse = mock(TossConfirmResponse.class);
             given(failResponse.isSuccess()).willReturn(false); // 승인 실패
@@ -474,7 +474,7 @@ public class PaymentServiceTest {
 
         @Test
         @DisplayName("6. 실패 - Toss API 호출 중 타임아웃/네트워크 에러")
-        void confirmPayment_Fail_TossNetworkError() throws Exception{
+        void confirmPayment_Fail_TossNetworkError() throws Exception {
             setupBasicMocks(OrderStatus.PENDING_SHIPMENT, PaymentStatus.READY);
             given(tossApiService.confirm(anyString(), any())).willThrow(new RuntimeException("Network Timeout"));
 
@@ -517,7 +517,7 @@ public class PaymentServiceTest {
 
         @Test
         @DisplayName("8. 실패 - 주문 금액 정보가 누락된 데이터")
-        void confirmPayment_Fail_PriceNull() throws Exception{
+        void confirmPayment_Fail_PriceNull() throws Exception {
             User buyer = createMockEntity(User.class, userId);
             Order order = createMockEntity(Order.class, orderId);
             ReflectionTestUtils.setField(order, "buyer", buyer);
@@ -536,7 +536,7 @@ public class PaymentServiceTest {
 
         @Test
         @DisplayName("9. 실패 - 이미 완료된 결제건에 대한 중복 승인 시도 방지 (멱등성)")
-        void confirmPayment_Fail_AlreadyDonePayment() throws Exception{
+        void confirmPayment_Fail_AlreadyDonePayment() throws Exception {
             setupBasicMocks(OrderStatus.PENDING_SHIPMENT, PaymentStatus.DONE);
 
             // when & then: 에러가 발생하는지 확인
@@ -550,7 +550,7 @@ public class PaymentServiceTest {
 
         @Test
         @DisplayName("10. 성공 - 결제 수단별(CARD) 승인 기록 확인")
-        void confirmPayment_Success_WithPaymentMethod() throws Exception{
+        void confirmPayment_Success_WithPaymentMethod() throws Exception {
             setupBasicMocks(OrderStatus.PENDING_SHIPMENT, PaymentStatus.READY);
             Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId).get();
             ReflectionTestUtils.setField(payment, "method", PaymentMethod.CARD);
@@ -564,6 +564,45 @@ public class PaymentServiceTest {
 
             assertThat(payment.getMethod()).isEqualTo(PaymentMethod.CARD);
             verify(paymentTransactionService).processSuccessfulPayment(any(), any());
+        }
+
+        @Test
+        @DisplayName("낙관적 락 충돌 대응: DB 저장 시 버전 충돌이 발생하면 외부 결제를 취소해야 한다")
+        void confirmPayment_Fail_OptimisticLockConflict() throws Exception {
+            // 1. given: Mock이 아닌 "실제 객체" 생성 (본인 확인 통과용)
+            User mockBuyer = createMockEntity(User.class, 1L);
+            Order realOrder = createMockEntity(Order.class, orderId); // setupBasicMocks의 order 변수 대신 지역변수 사용 권장
+
+            ReflectionTestUtils.setField(realOrder, "buyer", mockBuyer);
+            ReflectionTestUtils.setField(realOrder, "price", BigDecimal.valueOf(10000));
+            ReflectionTestUtils.setField(realOrder, "status", OrderStatus.PENDING_SHIPMENT);
+
+            Payment realPayment = createMockEntity(Payment.class, paymentId);
+            ReflectionTestUtils.setField(realPayment, "orderId", orderId);
+            ReflectionTestUtils.setField(realPayment, "amount", BigDecimal.valueOf(10000));
+            ReflectionTestUtils.setField(realPayment, "status", PaymentStatus.READY);
+
+            // Stubbing: DB 조회 시 우리가 만든 실제 객체들을 반환하도록 설정
+            given(paymentRepository.findByIdAndDeletedAtIsNull(paymentId))
+                    .willReturn(Optional.of(realPayment));
+            given(orderRepository.findByIdAndDeletedAtIsNull(any()))
+                    .willReturn(Optional.of(realOrder));
+
+            // Toss API: 승인 성공 응답 세팅
+            TossConfirmResponse mockResponse = mock(TossConfirmResponse.class);
+            given(mockResponse.isSuccess()).willReturn(true);
+            given(tossApiService.confirm(anyString(), any())).willReturn(mockResponse);
+
+            // 🚩 낙관적 락 예외 강제 발생 설정
+            doThrow(new org.springframework.orm.ObjectOptimisticLockingFailureException(Payment.class, paymentId))
+                    .when(paymentTransactionService).processSuccessfulPayment(eq(paymentId), any());
+
+            // 2. when & then: 1L(userId)로 요청하여 본인 확인 통과 시키기
+            assertThatThrownBy(() -> paymentService.confirmPayment(1L, paymentId, paymentKey))
+                    .isInstanceOf(org.springframework.orm.ObjectOptimisticLockingFailureException.class);
+
+            // 3. 검증: 락 충돌 시 cancel이 호출되었는가?
+            verify(tossApiService, times(1)).cancel(eq(paymentKey), anyString());
         }
     }
 }

@@ -1,7 +1,6 @@
 package com.example.unbox_be.domain.order.controller.api;
 
 import com.example.unbox_be.domain.order.dto.request.OrderCreateRequestDto;
-import com.example.unbox_be.domain.order.dto.request.OrderStatusUpdateRequestDto;
 import com.example.unbox_be.domain.order.dto.request.OrderTrackingRequestDto;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;

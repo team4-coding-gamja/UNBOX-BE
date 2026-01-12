@@ -16,6 +16,8 @@ import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
+import com.example.unbox_be.global.client.product.ProductClient;
+import com.example.unbox_be.global.client.product.dto.ProductOptionInfoResponse;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +39,7 @@ public class OrderServiceImpl implements OrderService {
     private final AdminRepository adminRepository;
     private final SellingBidRepository sellingBidRepository;
     private final SettlementService settlementService;
+    private final ProductClient productClient;
 
     private final OrderMapper orderMapper;
 
@@ -70,12 +73,24 @@ public class OrderServiceImpl implements OrderService {
         // 5. 가격 타입 변환 (Integer -> BigDecimal)
         BigDecimal price = sellingBid.getPrice();
 
-        // 6. Order 생성
+        // 6. 상품 정보 조회 (ProductClient 사용)
+        // SellingBid가 ProductOption을 가지고 있지만, Decoupling을 위해 Client 사용 (가정)
+        // 또는 SellingBid가 나중에 ProductOptionId만 가지게 될 것을 대비
+        UUID productOptionId = sellingBid.getProductOption().getId();
+        ProductOptionInfoResponse productInfo = productClient.getProductOption(productOptionId);
+
+        // 7. Order 생성
         Order order = Order.builder()
                 .sellingBidId(sellingBid.getId())
                 .buyer(buyer)
                 .seller(seller)          // 위에서 조회한 User 객체 주입
-                .productOption(sellingBid.getProductOption())
+                .productOptionId(productInfo.getProductOptionId())
+                .productId(productInfo.getProductId())
+                .productName(productInfo.getProductName())
+                .modelNumber(productInfo.getModelNumber())
+                .optionName(productInfo.getOptionName())
+                .imageUrl(productInfo.getImageUrl())
+                .brandName(productInfo.getBrandName())
                 .price(price)            // 변환된 BigDecimal 주입
                 .receiverName(requestDto.getReceiverName())
                 .receiverPhone(requestDto.getReceiverPhone())
@@ -83,7 +98,7 @@ public class OrderServiceImpl implements OrderService {
                 .receiverZipCode(requestDto.getReceiverZipCode())
                 .build();
 
-        // 7. 판매 입찰 상태 변경 (판매 완료 처리)
+        // 8. 판매 입찰 상태 변경 (판매 완료 처리)
         // SellingBid 엔티티에 updateStatus 메서드가 있으므로 활용
         sellingBid.updateStatus(SellingStatus.MATCHED);
 

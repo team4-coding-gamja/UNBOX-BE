@@ -1,9 +1,8 @@
 package com.example.unbox_be.domain.reviews.service;
 
-import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.repository.OrderRepository;
-import com.example.unbox_be.domain.product.entity.ProductOption;
+import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.reviews.dto.request.ReviewCreateRequestDto;
 import com.example.unbox_be.domain.reviews.dto.request.ReviewUpdateRequestDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewCreateResponseDto;
@@ -61,11 +60,8 @@ public class ReviewServiceImpl implements ReviewService {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 5) 주문에서 상품 추출 (헬퍼 없이 바로)
-        ProductOption productOption = order.getProductOption();
-        if (productOption == null || productOption.getProduct() == null) {
-            throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
-        }
+        // 5) 주문에서 상품 추출 (Order 내 스냅샷/ID 존재 여부로 대체 가능 - nullable=false이므로 생략 가능)
+        // Order에 productId, productOptionId가 @Column(nullable=false)로 보장됨.
 
         // 6) Review 생성 (엔티티 내부 검증도 같이 타게)
         Review review = Review.createReview(

@@ -15,9 +15,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 import static com.example.unbox_be.domain.order.entity.QOrder.order;
-import static com.example.unbox_be.domain.product.entity.QBrand.brand;
-import static com.example.unbox_be.domain.product.entity.QProduct.product;
-import static com.example.unbox_be.domain.product.entity.QProductOption.productOption;
 
 @Repository
 @RequiredArgsConstructor
@@ -30,9 +27,7 @@ public class AdminOrderRepositoryCustomImpl implements AdminOrderRepositoryCusto
         List<Order> content = queryFactory
                 .selectFrom(order)
                 .leftJoin(order.buyer).fetchJoin()
-                .leftJoin(order.productOption, productOption).fetchJoin()
-                .leftJoin(productOption.product, product).fetchJoin()
-                .leftJoin(product.brand, brand).fetchJoin()
+                .leftJoin(order.seller).fetchJoin() // seller도 같이 fetchJoin 하는 것이 좋음 (상세 정보용)
                 .where(
                         statusEq(condition.getStatus()),
                         productNameContains(condition.getProductName()),
@@ -62,11 +57,11 @@ public class AdminOrderRepositoryCustomImpl implements AdminOrderRepositoryCusto
     }
 
     private BooleanExpression productNameContains(String productName) {
-        return productName != null ? product.name.containsIgnoreCase(productName) : null;
+        return productName != null ? order.productName.containsIgnoreCase(productName) : null;
     }
 
     private BooleanExpression brandNameContains(String brandName) {
-        return brandName != null ? brand.name.containsIgnoreCase(brandName) : null;
+        return brandName != null ? order.brandName.containsIgnoreCase(brandName) : null;
     }
 
     private BooleanExpression periodBetween(java.time.LocalDate startDate, java.time.LocalDate endDate) {

@@ -1,8 +1,6 @@
 package com.example.unbox_be.domain.reviews.mapper;
 
 import com.example.unbox_be.domain.order.entity.Order;
-import com.example.unbox_be.domain.product.entity.Product;
-import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewCreateResponseDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewDetailResponseDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewUpdateResponseDto;
@@ -38,7 +36,7 @@ public interface ReviewMapper {
      * Order -> OrderInfo
      * ===================== */
     @Mapping(target = "buyer", source = "buyer")
-    @Mapping(target = "productOption", source = "productOption")
+    @Mapping(target = "productOption", source = ".") // calls toProductOptionInfo(Order)
     ReviewDetailResponseDto.OrderInfo toOrderInfo(Order order);
 
     /* =====================
@@ -47,13 +45,18 @@ public interface ReviewMapper {
     ReviewDetailResponseDto.UserInfo toUserInfo(User user);
 
     /* =====================
-     * ProductOption -> ProductOptionInfo
+     * Order (Snapshot) -> ProductOptionInfo
      * ===================== */
-    @Mapping(target = "product", source = "product")
-    ReviewDetailResponseDto.ProductOptionInfo toProductOptionInfo(ProductOption productOption);
+    @Mapping(target = "id", source = "productOptionId")
+    @Mapping(target = "option", source = "optionName")
+    @Mapping(target = "product", source = ".") // calls toProductInfo(Order)
+    ReviewDetailResponseDto.ProductOptionInfo toProductOptionInfo(Order order);
 
     /* =====================
-     * Product -> ProductInfo
+     * Order (Snapshot) -> ProductInfo
      * ===================== */
-    ReviewDetailResponseDto.ProductInfo toProductInfo(Product product);
+    @Mapping(target = "id", source = "productId")
+    @Mapping(target = "name", source = "productName")
+    @Mapping(target = "imageUrl", source = "imageUrl")
+    ReviewDetailResponseDto.ProductInfo toProductInfo(Order order);
 }

@@ -2,11 +2,8 @@ package com.example.unbox_be.domain.reviews.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity;
 import com.example.unbox_be.domain.order.entity.Order;
-import com.example.unbox_be.domain.product.entity.Product;
-import com.example.unbox_be.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.util.UUID;

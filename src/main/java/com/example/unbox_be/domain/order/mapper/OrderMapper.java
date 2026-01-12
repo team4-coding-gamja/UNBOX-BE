@@ -3,8 +3,6 @@ package com.example.unbox_be.domain.order.mapper;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
 import com.example.unbox_be.domain.order.entity.Order;
-import com.example.unbox_be.domain.product.entity.Product;
-import com.example.unbox_be.domain.product.entity.ProductOption;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -23,10 +21,10 @@ public interface OrderMapper {
      * - target: DTO의 필드명
      */
     @Mapping(source = "id", target = "orderId")
-    @Mapping(source = "productOption.product.brand.name", target = "brandName")
-    @Mapping(source = "productOption.product.name", target = "productName")
-    @Mapping(source = "productOption.option", target = "size")
-    @Mapping(source = "productOption.product.imageUrl", target = "imageUrl")
+    @Mapping(source = "brandName", target = "brandName")
+    @Mapping(source = "productName", target = "productName")
+    @Mapping(source = "optionName", target = "size")
+    @Mapping(source = "imageUrl", target = "imageUrl")
     OrderResponseDto toResponseDto(Order order);
 
     /**
@@ -34,22 +32,22 @@ public interface OrderMapper {
      * - 내부 객체(product, productOption)는 아래 정의된 메서드를 자동으로 찾아 사용함
      */
     @Mapping(source = "id", target = "orderId")
-    @Mapping(source = "productOption", target = "productOption") // 아래 toProductOptionInfo 호출됨
-    @Mapping(source = "productOption.product", target = "product") // 아래 toProductInfo 호출됨
+    @Mapping(source = ".", target = "productOption") // 아래 toProductOptionInfo 호출됨
+    @Mapping(source = ".", target = "product") // 아래 toProductInfo 호출됨
     OrderDetailResponseDto toDetailResponseDto(Order order);
 
     // --- Nested DTO 매핑 메서드 ---
 
-    // ProductOption -> OrderDetailResponseDto.ProductOptionInfo
-    @Mapping(source = "id", target = "id")
-    @Mapping(source = "option", target = "size")
-    OrderDetailResponseDto.ProductOptionInfo toProductOptionInfo(ProductOption productOption);
+    // Order -> OrderDetailResponseDto.ProductOptionInfo
+    @Mapping(source = "productOptionId", target = "id")
+    @Mapping(source = "optionName", target = "size")
+    OrderDetailResponseDto.ProductOptionInfo toProductOptionInfo(Order order);
 
-    // Product -> OrderDetailResponseDto.ProductInfo
-    @Mapping(source = "id", target = "id")
-    @Mapping(source = "brand.name", target = "brandName")
-    @Mapping(source = "name", target = "name")
+    // Order -> OrderDetailResponseDto.ProductInfo
+    @Mapping(source = "productId", target = "id")
+    @Mapping(source = "brandName", target = "brandName")
+    @Mapping(source = "productName", target = "name")
     @Mapping(source = "modelNumber", target = "modelNumber")
     @Mapping(source = "imageUrl", target = "imageUrl")
-    OrderDetailResponseDto.ProductInfo toProductInfo(Product product);
+    OrderDetailResponseDto.ProductInfo toProductInfo(Order order);
 }

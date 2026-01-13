@@ -33,4 +33,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // ✅ 단건 조회 - 삭제 제외
     Optional<User> findByIdAndDeletedAtIsNull(Long id);
+
+    boolean existsByIdAndDeletedAtIsNull(Long id);
 }

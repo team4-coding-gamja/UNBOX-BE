@@ -16,8 +16,10 @@ import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
+import com.example.unbox_be.global.client.order.dto.OrderForReviewInfoResponse;
 import com.example.unbox_be.global.client.product.ProductClient;
 import com.example.unbox_be.global.client.product.dto.ProductOptionInfoResponse;
+import com.example.unbox_be.global.client.user.UserClient;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +42,7 @@ public class OrderServiceImpl implements OrderService {
     private final SellingBidRepository sellingBidRepository;
     private final SettlementService settlementService;
     private final ProductClient productClient;
-
+    private final UserClient userClient;
     private final OrderMapper orderMapper;
 
     @Override
@@ -78,12 +80,14 @@ public class OrderServiceImpl implements OrderService {
         // 또는 SellingBid가 나중에 ProductOptionId만 가지게 될 것을 대비
         UUID productOptionId = sellingBid.getProductOption().getId();
         ProductOptionInfoResponse productInfo = productClient.getProductOption(productOptionId);
+        Long sellerId = seller.getId();
+
 
         // 7. Order 생성
         Order order = Order.builder()
                 .sellingBidId(sellingBid.getId())
-                .buyer(buyer)
-                .seller(seller)          // 위에서 조회한 User 객체 주입
+                .buyerId(buyerId)
+                .sellerId(sellerId)
                 .productOptionId(productInfo.getProductOptionId())
                 .productId(productInfo.getProductId())
                 .productName(productInfo.getProductName())
@@ -111,7 +115,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Page<OrderResponseDto> getMyOrders(Long buyerId, Pageable pageable) {
         // ID 검증 (존재하는 유저인지)
-        if (!userRepository.existsById(buyerId)) {
+        if (!userClient.existsUser(buyerId)) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         }
 
@@ -141,9 +145,12 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderDetailResponseDto cancelOrder(UUID orderId, Long userId) {
         Order order = getOrderWithDetailsOrThrow(orderId);
+        User buyer = getUserByIdOrThrow(order.getBuyerId());
+        User seller = getUserByIdOrThrow(order.getSellerId());
 
-        boolean isBuyer = order.getBuyer().getId().equals(userId);
-        boolean isSeller = order.getSeller().getId().equals(userId);
+
+        boolean isBuyer = buyer.getId().equals(userId);
+        boolean isSeller = seller.getId().equals(userId);
 
         if (!isBuyer && !isSeller) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
@@ -162,9 +169,10 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderDetailResponseDto registerTracking(UUID orderId, String trackingNumber, Long sellerId) {
         Order order = getOrderWithDetailsOrThrow(orderId);
+        User seller = getUserByIdOrThrow(order.getSellerId());
 
         // 1. 판매자 본인 확인
-        if (!order.getSeller().getId().equals(sellerId)) {
+        if (seller.getId().equals(sellerId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
@@ -214,7 +222,13 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDetailResponseDto(order);
     }
 
+    @Transactional
+    public OrderForReviewInfoResponse getOrderForReview(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
+        return OrderForReviewInfoResponse.from(order);
+    }
 
     // --- Private Helper Methods ---
 
@@ -229,8 +243,8 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private void validateOrderReadAccess(Order order, Long userId) {
-        boolean isBuyer = order.getBuyer().getId().equals(userId);
-        boolean isSeller = order.getSeller().getId().equals(userId);
+        boolean isBuyer = order.getBuyerId().equals(userId);
+        boolean isSeller = order.getSellerId().equals(userId);
 
         if (!isBuyer && !isSeller) {
             // 관리자 로직이 별도로 없다면 예외 처리

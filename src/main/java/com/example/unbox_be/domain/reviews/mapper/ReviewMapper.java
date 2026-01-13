@@ -1,64 +1,93 @@
 package com.example.unbox_be.domain.reviews.mapper;
 
-import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewCreateResponseDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewDetailResponseDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewUpdateResponseDto;
 import com.example.unbox_be.domain.reviews.entity.Review;
-import com.example.unbox_be.domain.user.entity.User;
-import com.example.unbox_be.global.client.order.dto.OrderForReviewInfoResponse;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.ReportingPolicy;
+import org.springframework.stereotype.Component;
 
-@Mapper(
-        componentModel = "spring",
-        unmappedTargetPolicy = ReportingPolicy.ERROR
-)
-public interface ReviewMapper {
+@Component
+public class ReviewMapper {
 
-    /* =====================
-     * 리뷰 생성 응답
-     * ===================== */
-    ReviewCreateResponseDto toReviewCreateResponseDto(Review review);
+    /**
+     * 리뷰 생성 응답 DTO 변환
+     */
+    public ReviewCreateResponseDto toReviewCreateResponseDto(Review review) {
+        return ReviewCreateResponseDto.builder()
+                .id(review.getId())
+                .content(review.getContent())
+                .rating(review.getRating())
+                .imageUrl(review.getImageUrl())
+                .build();
+    }
 
-    /* =====================
-     * 리뷰 수정 응답
-     * ===================== */
-    ReviewUpdateResponseDto toReviewUpdateResponseDto(Review review);
+    /**
+     * 리뷰 수정 응답 DTO 변환
+     */
+    public ReviewUpdateResponseDto toReviewUpdateResponseDto(Review review) {
+        return ReviewUpdateResponseDto.builder()
+                .id(review.getId())
+                .content(review.getContent())
+                .rating(review.getRating())
+                .imageUrl(review.getImageUrl())
+                .build();
+    }
 
-    /* =====================
-     * 리뷰 상세 응답
-     * ===================== */
-    @Mapping(target = "order", source = "orderInfo")
-    ReviewDetailResponseDto toReviewDetailResponseDto(Review review);
+    /**
+     * 리뷰 상세 응답 DTO 변환 (스냅샷 데이터 포함)
+     */
+    public ReviewDetailResponseDto toReviewDetailResponseDto(Review review) {
+        return ReviewDetailResponseDto.builder()
+                .id(review.getId())
+                .content(review.getContent())
+                .rating(review.getRating())
+                .imageUrl(review.getImageUrl())
+                .createdAt(review.getCreatedAt())
+                .order(buildOrderInfo(review))
+                .build();
+    }
 
-    /* =====================
-     * Order -> OrderInfo
-     * ===================== */
-    @Mapping(target = "orderId", source = "orderId")
-    @Mapping(target = "buyerId", source = "buyerId")
-    @Mapping(target = "status", source = "status")
-    ReviewDetailResponseDto.OrderInfo toOrderInfo(OrderForReviewInfoResponse orderInfo);
+    /**
+     * Review 스냅샷 -> OrderInfo 변환
+     */
+    private ReviewDetailResponseDto.OrderInfo buildOrderInfo(Review review) {
+        return ReviewDetailResponseDto.OrderInfo.builder()
+                .id(review.getOrderId())
+                .price(review.getOrderPrice())
+                .buyer(buildBuyerInfo(review))
+                .productOption(buildProductOptionInfo(review))
+                .build();
+    }
 
-    /* =====================
-     * User -> UserInfo
-     * ===================== */
-    ReviewDetailResponseDto.UserInfo toUserInfo(User user);
+    /**
+     * Review 스냅샷 -> UserInfo (구매자) 변환
+     */
+    private ReviewDetailResponseDto.UserInfo buildBuyerInfo(Review review) {
+        return ReviewDetailResponseDto.UserInfo.builder()
+                .id(review.getBuyerId())
+                .nickname(review.getBuyerNickname())
+                .build();
+    }
 
-    /* =====================
-     * Order (Snapshot) -> ProductOptionInfo
-     * ===================== */
-    @Mapping(target = "id", source = "productOptionId")
-    @Mapping(target = "option", source = "optionName")
-    @Mapping(target = "product", source = ".") // calls toProductInfo(Order)
-    ReviewDetailResponseDto.ProductOptionInfo toProductOptionInfo(Order order);
+    /**
+     * Review 스냅샷 -> ProductOptionInfo 변환
+     */
+    private ReviewDetailResponseDto.ProductOptionInfo buildProductOptionInfo(Review review) {
+        return ReviewDetailResponseDto.ProductOptionInfo.builder()
+                .id(review.getProductOptionId())
+                .option(review.getProductOptionName())
+                .product(buildProductInfo(review))
+                .build();
+    }
 
-    /* =====================
-     * Order (Snapshot) -> ProductInfo
-     * ===================== */
-    @Mapping(target = "id", source = "productId")
-    @Mapping(target = "name", source = "productName")
-    @Mapping(target = "imageUrl", source = "imageUrl")
-    ReviewDetailResponseDto.ProductInfo toProductInfo(Order order);
+    /**
+     * Review 스냅샷 -> ProductInfo 변환
+     */
+    private ReviewDetailResponseDto.ProductInfo buildProductInfo(Review review) {
+        return ReviewDetailResponseDto.ProductInfo.builder()
+                .id(review.getProductId())
+                .name(review.getProductName())
+                .imageUrl(review.getProductImageUrl())
+                .build();
+    }
 }

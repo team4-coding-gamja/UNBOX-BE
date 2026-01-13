@@ -6,6 +6,7 @@ import com.example.unbox_be.domain.user.dto.request.UserMeUpdateRequestDto;
 import com.example.unbox_be.domain.user.dto.response.UserMeUpdateResponseDto;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.mapper.UserMapper;
+import com.example.unbox_be.global.client.user.dto.UserForReviewInfoResponse;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -51,10 +52,23 @@ public class UserServiceImpl implements UserService {
         user.softDelete(userId.toString());
     }
 
-    @Override
     @Transactional(readOnly = true)
     public User findUser(Long userId) {
         return userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    // ✅ 회원 조회 (리뷰용)
+    @Transactional(readOnly = true)
+    public UserForReviewInfoResponse getUserForReview(Long id) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        return UserForReviewInfoResponse.from(user);
+    }
+
+    // ✅ 내부 통신용 메서드
+    public boolean existsUser(Long userId) {
+        return userRepository.existsByIdAndDeletedAtIsNull(userId);
     }
 }

@@ -5,6 +5,7 @@ import com.example.unbox_be.domain.user.dto.request.UserMeUpdateRequestDto;
 import com.example.unbox_be.domain.user.dto.response.UserMeResponseDto;
 import com.example.unbox_be.domain.user.dto.response.UserMeUpdateResponseDto;
 import com.example.unbox_be.domain.user.service.UserService;
+import com.example.unbox_be.global.client.user.dto.UserForReviewInfoResponse;
 import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;

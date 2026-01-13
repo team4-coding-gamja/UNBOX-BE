@@ -4,6 +4,7 @@ import com.example.unbox_be.domain.order.dto.request.OrderCreateRequestDto;
 import com.example.unbox_be.domain.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.domain.order.dto.response.OrderResponseDto;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
+import com.example.unbox_be.global.client.order.dto.OrderForReviewInfoResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -69,4 +70,6 @@ public interface OrderService {
      * @return 확정된 주문 정보
      */
     OrderDetailResponseDto confirmOrder(UUID orderId, Long userId);
+
+    OrderForReviewInfoResponse getOrderForReview(UUID id);
 }

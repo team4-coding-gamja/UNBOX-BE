@@ -6,21 +6,29 @@ import com.example.unbox_be.domain.product.dto.request.ProductSearchCondition;
 import com.example.unbox_be.domain.product.dto.response.AdminProductCreateResponseDto;
 import com.example.unbox_be.domain.product.dto.response.AdminProductListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.AdminProductUpdateResponseDto;
+import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.product.mapper.AdminProductMapper;
 import com.example.unbox_be.domain.product.entity.Brand;
 import com.example.unbox_be.domain.product.entity.Category;
 import com.example.unbox_be.domain.product.entity.Product;
 import com.example.unbox_be.domain.product.repository.BrandRepository;
+import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.product.repository.ProductRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
+import com.example.unbox_be.global.event.product.ProductDeletedEvent;
+import com.example.unbox_be.global.event.product.ProductOptionDeletedEvent;
 import lombok.AllArgsConstructor;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -29,7 +37,9 @@ public class AdminProductServiceImpl implements AdminProductService {
 
         private final ProductRepository productRepository;
         private final BrandRepository brandRepository;
+        private final ProductOptionRepository productOptionRepository;
         private final AdminProductMapper adminProductMapper;
+        private final ApplicationEventPublisher eventPublisher; // 이벤트 발행기
 
         // ✅ 상품 목록 조회
         @Override
@@ -99,6 +109,14 @@ public class AdminProductServiceImpl implements AdminProductService {
                 Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
                                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
+                List<UUID> deletedOptionIds = productOptionRepository.findAllByProductIdAndDeletedAtIsNull(productId)
+                        .stream()
+                        .map(ProductOption::getId)
+                        .toList();
+
                 product.softDelete(deletedBy);
+
+                // 상품 삭제 이벤트 발행
+                eventPublisher.publishEvent(new ProductDeletedEvent(productId, deletedOptionIds));
         }
 }

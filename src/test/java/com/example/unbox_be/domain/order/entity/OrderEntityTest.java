@@ -28,7 +28,13 @@ class OrderEntityTest {
                 .sellingBidId(UUID.randomUUID())
                 .buyer(buyer)
                 .seller(seller)
-                .productOption(BeanUtils.instantiateClass(ProductOption.class))
+                .productOptionId(UUID.randomUUID()) // Mock ID
+                .productId(UUID.randomUUID())       // Mock ID
+                .productName("Product Name")        // Snapshot
+                .modelNumber("Model-123")           // Snapshot
+                .optionName("Option-1")             // Snapshot
+                .imageUrl("http://image.url")       // Snapshot
+                .brandName("Brand Name")            // Snapshot
                 .price(BigDecimal.valueOf(10000))
                 .receiverName("name")
                 .receiverPhone("phone")

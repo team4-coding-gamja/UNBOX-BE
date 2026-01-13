@@ -21,6 +21,7 @@ import com.example.unbox_be.global.client.product.dto.ProductOptionForOrderInfoR
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -46,44 +48,53 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public UUID createOrder(OrderCreateRequestDto requestDto, Long buyerId) {
-        // 1. 구매자 조회
+        // 1. 구매자 조회 (Entity 필요)
         User buyer = getUserByIdOrThrow(buyerId);
 
-        // 2. 판매 입찰 글(SellingBid) 조회
-        // SellingBid ID는 UUID이므로 DTO도 UUID여야 함
-        // 2. 판매 입찰 글(SellingBid) 조회 (비관적 락 적용)
+        // 2. 락 없이 먼저 조회하여 Product 정보 확보 (외부 통신 지연 시 DB 락 점유 방지)
+        SellingBid tempBid = sellingBidRepository.findByIdAndDeletedAtIsNull(requestDto.getSellingBidId())
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+
+        if (tempBid.getProductOption() == null) {
+            throw new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND); 
+        }
+        UUID productOptionId = tempBid.getProductOption().getId(); // NPE Guarded
+
+        // 3. 상품 정보 조회 (ProductClient 사용) - 외부 통신
+        ProductOptionForOrderInfoResponse productInfo;
+        try {
+             productInfo = productClient.getProductForOrder(productOptionId);
+        } catch (CustomException e) {
+            throw e; // 이미 래핑된 예외는 그대로 전파
+        } catch (Exception e) {
+            log.error("ProductClient 호출 실패: productOptionId={}", productOptionId, e);
+            throw new CustomException(ErrorCode.EXTERNAL_API_ERROR); 
+        }
+
+        // 4. 판매 입찰 글(SellingBid) 재조회 (비관적 락 적용) - 이제 락 구간 진입
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(requestDto.getSellingBidId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
 
         if (sellingBid.getStatus() == SellingStatus.MATCHED || sellingBid.getStatus() == SellingStatus.HOLD) {
-            // ErrorCode.ALREADY_SOLD_PRODUCT 가 없다면 PRODUCT_NOT_FOUND 혹은 별도 에러코드 사용
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        // 3. 본인 판매글 구매 방지
-        // sellingBid.getUserId()는 Long 타입이므로 바로 비교 가능
+        // 5. 본인 판매글 구매 방지
         if (sellingBid.getUserId().equals(buyerId)) {
-            // "자신의 판매글은 구매할 수 없습니다"
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        // 4. 판매자 정보 조회 (SellingBid에는 ID만 있으므로 조회 필요)
+        // 6. 판매자 정보 조회 (Entity 필요)
         User seller = getUserByIdOrThrow(sellingBid.getUserId());
 
-        // 5. 가격 타입 변환 (Integer -> BigDecimal)
+        // 7. 가격 타입 변환 (Integer -> BigDecimal)
         BigDecimal price = sellingBid.getPrice();
-
-        // 6. 상품 정보 조회 (ProductClient 사용)
-        // SellingBid가 ProductOption을 가지고 있지만, Decoupling을 위해 Client 사용 (가정)
-        // 또는 SellingBid가 나중에 ProductOptionId만 가지게 될 것을 대비
-        UUID productOptionId = sellingBid.getProductOption().getId();
-        ProductOptionForOrderInfoResponse productInfo = productClient.getProductForOrder(productOptionId);
-
-        // 7. Order 생성
+        
+        // 8. Order 생성
         Order order = Order.builder()
                 .sellingBidId(sellingBid.getId())
-                .buyer(buyer)
-                .seller(seller)          // 위에서 조회한 User 객체 주입
+                .buyer(buyer)            // Entity 주입
+                .seller(seller)          // Entity 주입
                 .productOptionId(productInfo.getId())
                 .productId(productInfo.getProductId())
                 .productName(productInfo.getProductName())
@@ -91,15 +102,14 @@ public class OrderServiceImpl implements OrderService {
                 .optionName(productInfo.getOptionName())
                 .imageUrl(productInfo.getImageUrl())
                 .brandName(productInfo.getBrandName())
-                .price(price)            // 변환된 BigDecimal 주입
+                .price(price)
                 .receiverName(requestDto.getReceiverName())
                 .receiverPhone(requestDto.getReceiverPhone())
                 .receiverAddress(requestDto.getReceiverAddress())
                 .receiverZipCode(requestDto.getReceiverZipCode())
                 .build();
 
-        // 8. 판매 입찰 상태 변경 (판매 완료 처리)
-        // SellingBid 엔티티에 updateStatus 메서드가 있으므로 활용
+        // 9. 판매 입찰 상태 변경 (판매 완료 처리)
         sellingBid.updateStatus(SellingStatus.MATCHED);
 
         return orderRepository.save(order).getId();
@@ -110,14 +120,12 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     public Page<OrderResponseDto> getMyOrders(Long buyerId, Pageable pageable) {
-        // ID 검증 (존재하는 유저인지)
         if (!userRepository.existsById(buyerId)) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         }
 
-        // Repository에서 EntityGraph 등을 활용해 조회
         return orderRepository.findAllByBuyerIdAndDeletedAtIsNull(buyerId, pageable)
-                .map(orderMapper::toResponseDto); // Static Method Reference
+                .map(orderMapper::toResponseDto);
     }
 
     /**
@@ -126,13 +134,9 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDetailResponseDto getOrderDetail(UUID orderId, Long userId) {
         Order order = getOrderWithDetailsOrThrow(orderId);
-        // MVP: 관리자 로직 제외하고 본인(구매자/판매자)만 조회 가능하도록 유지
         validateOrderReadAccess(order, userId);
         return orderMapper.toDetailResponseDto(order);
     }
-
-    // API 명세와 구현체 메서드 시그니처 일치를 위해 String 버전이 혹시 남아있다면 제거하거나 오버로딩 해야함.
-    // 여기서는 Controller가 String을 넘기던 것을 Long으로 수정했다고 가정하고 Long만 구현함.
 
     /**
      * 주문 취소 (판매자/구매자 공용)
@@ -149,9 +153,7 @@ public class OrderServiceImpl implements OrderService {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 도메인 로직 호출 (Entity 내부에서 상태별 취소 가능 여부 검증)
         order.cancel();
-
         return orderMapper.toDetailResponseDto(order);
     }
 
@@ -163,39 +165,29 @@ public class OrderServiceImpl implements OrderService {
     public OrderDetailResponseDto registerTracking(UUID orderId, String trackingNumber, Long sellerId) {
         Order order = getOrderWithDetailsOrThrow(orderId);
 
-        // 1. 판매자 본인 확인
         if (!order.getSeller().getId().equals(sellerId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 2. 도메인 로직 호출
         order.registerTracking(trackingNumber);
-
         return orderMapper.toDetailResponseDto(order);
     }
 
     /**
      * 관리자/검수자 주문 상태 변경
-     * - 메서드 이름 불일치 문제 해결: updateAdminStatus
      */
     @Override
     @Transactional
     public OrderDetailResponseDto updateAdminStatus(UUID orderId, OrderStatus newStatus, String finalTrackingNumber, Long adminId) {
-        // 1. 관리자 조회
         Admin admin = adminRepository.findByIdAndDeletedAtIsNull(adminId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
 
-        // 2. 권한 검증 (MASTER, INSPECTOR만 가능)
         if (admin.getAdminRole() != AdminRole.ROLE_MASTER && admin.getAdminRole() != AdminRole.ROLE_INSPECTOR) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 3. 주문 조회
         Order order = getOrderWithDetailsOrThrow(orderId);
-
-        // 4. 도메인 로직 호출 (Entity 내부에서 상태 전이 검증 수행)
         order.updateAdminStatus(newStatus, finalTrackingNumber);
-
         return orderMapper.toDetailResponseDto(order);
     }
 
@@ -208,13 +200,11 @@ public class OrderServiceImpl implements OrderService {
         User user = getUserByIdOrThrow(userId);
         Order order = getOrderWithDetailsOrThrow(orderId);
 
-        // 도메인 로직 호출 (Entity 내부에서 구매자 ID 일치 여부 및 상태 검증)
-        order.confirm(user);
+        order.confirm(user); 
+        
         settlementService.confirmSettlement(orderId);
         return orderMapper.toDetailResponseDto(order);
     }
-
-
 
     // --- Private Helper Methods ---
 
@@ -233,8 +223,6 @@ public class OrderServiceImpl implements OrderService {
         boolean isSeller = order.getSeller().getId().equals(userId);
 
         if (!isBuyer && !isSeller) {
-            // 관리자 로직이 별도로 없다면 예외 처리
-            // 실제 서비스에선 관리자(Admin) 호출인 경우 패스하는 로직이 필요할 수 있음
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
     }

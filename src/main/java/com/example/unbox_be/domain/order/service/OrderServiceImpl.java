@@ -21,6 +21,7 @@ import com.example.unbox_be.global.client.product.dto.ProductOptionForOrderInfoR
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -51,10 +53,10 @@ public class OrderServiceImpl implements OrderService {
 
         // 2. 락 없이 먼저 조회하여 Product 정보 확보 (외부 통신 지연 시 DB 락 점유 방지)
         SellingBid tempBid = sellingBidRepository.findByIdAndDeletedAtIsNull(requestDto.getSellingBidId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
 
         if (tempBid.getProductOption() == null) {
-            throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND); 
+            throw new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND); 
         }
         UUID productOptionId = tempBid.getProductOption().getId(); // NPE Guarded
 
@@ -62,14 +64,16 @@ public class OrderServiceImpl implements OrderService {
         ProductOptionForOrderInfoResponse productInfo;
         try {
              productInfo = productClient.getProductForOrder(productOptionId);
+        } catch (CustomException e) {
+            throw e; // 이미 래핑된 예외는 그대로 전파
         } catch (Exception e) {
-            // 외부 서비스 에러 등을 적절히 래핑
-            throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND); // 혹은 EXTERNAL_API_ERROR
+            log.error("ProductClient 호출 실패: productOptionId={}", productOptionId, e);
+            throw new CustomException(ErrorCode.EXTERNAL_API_ERROR); 
         }
 
         // 4. 판매 입찰 글(SellingBid) 재조회 (비관적 락 적용) - 이제 락 구간 진입
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(requestDto.getSellingBidId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
 
         if (sellingBid.getStatus() == SellingStatus.MATCHED || sellingBid.getStatus() == SellingStatus.HOLD) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
@@ -193,10 +197,9 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderDetailResponseDto confirmOrder(UUID orderId, Long userId) {
-        User user = getUserByIdOrThrow(userId); // confirm 메서드가 User를 받을 수도 있으니 체크
+        User user = getUserByIdOrThrow(userId);
         Order order = getOrderWithDetailsOrThrow(orderId);
 
-        // Order.confirm 시그니처가 User인지 Long인지 확인 필요. 
         order.confirm(user); 
         
         settlementService.confirmSettlement(orderId);

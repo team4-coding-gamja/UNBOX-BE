@@ -45,10 +45,12 @@ public class SettlementService {
 
         SellingBid sellingBid = sellingBidRepository.findById(order.getSellingBidId())
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+        
+        // seller 검증
         if (order.getSeller() == null) {
             throw new CustomException(ErrorCode.SETTLEMENT_SELLER_MISMATCH);
-            // 혹은 데이터 정합성 오류를 뜻하는 ErrorCode.INVALID_DATA_RELATION
         }
+        
         if (!payment.getOrderId().equals(orderId)) {
             throw new CustomException(ErrorCode.PAYMENT_SETTLEMENT_MISMATCH);
         }

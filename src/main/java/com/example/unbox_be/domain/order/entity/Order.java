@@ -1,7 +1,6 @@
 package com.example.unbox_be.domain.order.entity;
 
 import com.example.unbox_be.domain.common.BaseEntity;
-import com.example.unbox_be.domain.product.entity.ProductOption;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
@@ -31,17 +30,8 @@ public class Order extends BaseEntity {
     @Column(name = "selling_bid_id", nullable = false)
     private UUID sellingBidId;
 
-    // --- 연관 관계 ---
+    // --- 연관 관계 (User는 유지, Product는 ID로 분리) ---
 
-    /*
-     * [MSA 전환 시 리팩토링 포인트]
-     * 현재: JPA 객체 참조 (@ManyToOne) -> 다른 도메인(User)과 강한 결합(Hard Coupling) 발생
-     * 미래(MSA): User 도메인이 분리되면 DB Join 불가능.
-     * 수정 가이드:
-     * 1. User 객체 대신 `Long buyerId` 필드로 변경 (ID 참조)
-     * 2. 사용자 정보가 필요할 땐 UserClient(Feign)를 통해 조회하거나,
-     * 주문 시점에 필요한 정보(이름/연락처 등)를 Order 테이블에 스냅샷으로 저장해야 함.
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "buyer_id", nullable = false)
     private User buyer;
@@ -50,15 +40,6 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "seller_id", nullable = false)
     private User seller;
 
-    /*
-     * [MSA 전환 시 리팩토링 포인트]
-     * 현재: Product 도메인과 강한 결합.
-     * 미래(MSA): Product 도메인 분리 시 참조 불가.
-     * 수정:
-     * 1. `UUID productOptionId` 필드로 변경.
-     * 2. 주문 생성 시점의 상품 데이터(상품명, 옵션명, 가격 등)를 OrderItem 혹은 Order 내부에
-     * 별도 컬럼(Snapshot)으로 반드시 저장해야 함. (상품 가격 변동 시 주문 이력 보호 목적)
-     */
     @Column(name = "product_option_id", nullable = false)
     private UUID productOptionId;
 
@@ -136,10 +117,6 @@ public class Order extends BaseEntity {
         this.receiverAddress = receiverAddress;
         this.receiverZipCode = receiverZipCode;
         this.status = OrderStatus.PENDING_SHIPMENT; // 초기 상태 강제 설정
-    }
-
-    public Order(User buyer, User seller, ProductOption option, UUID sellingBidId, BigDecimal price, OrderStatus orderStatus, String receiverName, String receiverPhone, String receiverAddress, String receiverZip) {
-        super();
     }
 
     // =================================================================

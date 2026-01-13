@@ -19,6 +19,8 @@ import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
+import com.example.unbox_be.global.client.product.ProductClient;
+import com.example.unbox_be.global.client.product.dto.ProductOptionForOrderInfoResponse;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
@@ -62,6 +64,8 @@ class OrderServiceImplTest {
     @Mock
     private SettlementService settlementService;
     @Mock
+    private ProductClient productClient;
+    @Mock
     private OrderMapper orderMapper;
 
 
@@ -74,16 +78,18 @@ class OrderServiceImplTest {
 
     private SellingBid createSellingBid(UUID id, Long sellerId, BigDecimal price, SellingStatus status) {
         SellingBid bid = BeanUtils.instantiateClass(SellingBid.class);
-        
+
         Brand brand = BeanUtils.instantiateClass(Brand.class);
         Product product = BeanUtils.instantiateClass(Product.class);
         ReflectionTestUtils.setField(product, "brand", brand);
         ProductOption option = BeanUtils.instantiateClass(ProductOption.class);
         ReflectionTestUtils.setField(option, "product", product);
+        // Important: Assign an ID to the mock ProductOption so getId() works
+        ReflectionTestUtils.setField(option, "id", UUID.randomUUID()); 
 
         ReflectionTestUtils.setField(bid, "id", id);
         ReflectionTestUtils.setField(bid, "userId", sellerId);
-        ReflectionTestUtils.setField(bid, "productOption", option);
+        ReflectionTestUtils.setField(bid, "productOption", option); // SellingBid still references ProductOption entity
         ReflectionTestUtils.setField(bid, "price", price);
         ReflectionTestUtils.setField(bid, "status", status);
         return bid;
@@ -94,7 +100,13 @@ class OrderServiceImplTest {
                 .sellingBidId(UUID.randomUUID())
                 .buyer(buyer)
                 .seller(seller)
-                .productOption(BeanUtils.instantiateClass(ProductOption.class))
+                .productOptionId(UUID.randomUUID())
+                .productId(UUID.randomUUID())
+                .productName("Product")
+                .modelNumber("Model")
+                .optionName("Option")
+                .imageUrl("http://img")
+                .brandName("Brand")
                 .price(BigDecimal.valueOf(100000))
                 .receiverName("name")
                 .receiverPhone("phone")
@@ -119,6 +131,7 @@ class OrderServiceImplTest {
         User buyer = createUser(buyerId);
         User seller = createUser(sellerId);
         SellingBid sellingBid = createSellingBid(sellingBidId, sellerId, price, SellingStatus.LIVE);
+        UUID productOptionId = sellingBid.getProductOption().getId();
 
         OrderCreateRequestDto requestDto = OrderCreateRequestDto.builder()
                 .sellingBidId(sellingBidId)
@@ -128,10 +141,23 @@ class OrderServiceImplTest {
                 .receiverZipCode("12345")
                 .build();
 
+        ProductOptionForOrderInfoResponse productInfo = ProductOptionForOrderInfoResponse.builder()
+                .id(productOptionId)
+                .productId(UUID.randomUUID())
+                .brandId(UUID.randomUUID())
+                .brandName("Brand")
+                .productName("Product")
+                .modelNumber("Model")
+                .optionName("Option")
+                .imageUrl("http://img")
+                .build();
+
         given(userRepository.findByIdAndDeletedAtIsNull(buyerId)).willReturn(Optional.of(buyer));
         given(sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(any(UUID.class)))
                 .willReturn(Optional.of(sellingBid));
         given(userRepository.findByIdAndDeletedAtIsNull(sellerId)).willReturn(Optional.of(seller));
+        given(productClient.getProductForOrder(productOptionId)).willReturn(productInfo); // Mock client call
+        
         given(orderRepository.save(any(Order.class))).willAnswer(inv -> {
             Order o = inv.getArgument(0);
             ReflectionTestUtils.setField(o, "id", orderId);
@@ -372,7 +398,7 @@ class OrderServiceImplTest {
 
     // registerTracking Tests
 
-    @Test   
+    @Test
     @DisplayName("운송장 등록에 성공했을 때")
     void registerTracking_Success() {
         UUID orderId = UUID.randomUUID();

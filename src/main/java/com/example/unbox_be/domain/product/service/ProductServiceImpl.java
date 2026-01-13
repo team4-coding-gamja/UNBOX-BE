@@ -44,7 +44,6 @@ public class ProductServiceImpl implements ProductService {
         // ✅ 상품 목록 조회 (검색 + 페이징)
         public Page<ProductListResponseDto> getProducts(UUID brandId, String category, String keyword,
                         Pageable pageable) {
-                Category parsedCategory = Category.fromNullable(category);
 
                 // 1) category 문자열 -> Category Enum 변환 (null/빈값이면 필터 미적용)
                 Category categoryEnum = Category.fromNullable(category);

@@ -14,13 +14,14 @@ import java.util.UUID;
 @Getter
 @Builder
 public class ProductOptionForReviewInfoResponse {
-
     private UUID id; // ProductOption ID
+    private String optionName;
+
     private UUID productId;
     private String productName;
     private String modelNumber;
-    private String optionName;
     private String imageUrl;
+
     private UUID brandId;
     private String brandName;
 

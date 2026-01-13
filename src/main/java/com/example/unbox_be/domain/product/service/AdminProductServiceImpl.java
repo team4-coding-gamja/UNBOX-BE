@@ -27,79 +27,78 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AdminProductServiceImpl implements AdminProductService {
 
-    private final ProductRepository productRepository;
-    private final BrandRepository brandRepository;
-    private final AdminProductMapper adminProductMapper;
+        private final ProductRepository productRepository;
+        private final BrandRepository brandRepository;
+        private final AdminProductMapper adminProductMapper;
 
-    // ✅ 상품 목록 조회
-    @Override
-    @Transactional(readOnly = true)
-    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
-    public Page<AdminProductListResponseDto> getProducts(ProductSearchCondition condition, Pageable pageable) {
+        // ✅ 상품 목록 조회
+        @Override
+        @Transactional(readOnly = true)
+        @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+        public Page<AdminProductListResponseDto> getProducts(ProductSearchCondition condition, Pageable pageable) {
 
-        UUID brandId = condition.getBrandId();
-        String category = condition.getCategory();
-        String keyword = condition.getKeyword();
+                UUID brandId = condition.getBrandId();
+                String category = condition.getCategory();
+                String keyword = condition.getKeyword();
 
-        Category categoryEnum = Category.fromNullable(category);
+                Category categoryEnum = Category.fromNullable(category);
 
-        Page<Product> products =
-                productRepository.findByFiltersAndDeletedAtIsNull(brandId, categoryEnum, keyword, pageable);
+                Page<Product> products = productRepository.findByFiltersAndDeletedAtIsNull(brandId, categoryEnum,
+                                keyword, pageable);
 
-        return products.map(adminProductMapper::toAdminProductListResponseDto);
-    }
-
-    // ✅ 상품 등록
-    @Override
-    @Transactional
-    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
-    public AdminProductCreateResponseDto createProduct(AdminProductCreateRequestDto requestDto) {
-        Brand brand = brandRepository.findByIdAndDeletedAtIsNull(requestDto.getBrandId())
-                .orElseThrow(() -> new CustomException(ErrorCode.BRAND_NOT_FOUND));
-
-        Product product = Product.createProduct(
-                requestDto.getName(),
-                requestDto.getModelNumber(),
-                requestDto.getCategory(),
-                requestDto.getImageUrl(),
-                brand
-        );
-        Product savedProduct = productRepository.save(product);
-        return adminProductMapper.toAdminProductCreateResponseDto(savedProduct);
-    }
-
-    // ✅ 상품 수정
-    @Override
-    @Transactional
-    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
-    public AdminProductUpdateResponseDto updateProduct(UUID productId, AdminProductUpdateRequestDto requestDto) {
-
-        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-
-        if (requestDto.getModelNumber() != null &&
-                productRepository.existsByModelNumberAndIdNotAndDeletedAtIsNull(requestDto.getModelNumber(), productId)) {
-            throw new CustomException(ErrorCode.PRODUCT_MODEL_NUMBER_ALREADY_EXISTS);
+                return products.map(adminProductMapper::toAdminProductListResponseDto);
         }
 
-        product.update(
-                requestDto.getName(),
-                requestDto.getModelNumber(),
-                requestDto.getCategory(),
-                requestDto.getImageUrl()
-        );
+        // ✅ 상품 등록
+        @Override
+        @Transactional
+        @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+        public AdminProductCreateResponseDto createProduct(AdminProductCreateRequestDto requestDto) {
+                Brand brand = brandRepository.findByIdAndDeletedAtIsNull(requestDto.getBrandId())
+                                .orElseThrow(() -> new CustomException(ErrorCode.BRAND_NOT_FOUND));
 
-        return adminProductMapper.toAdminProductUpdateResponseDto(product);
-    }
+                Product product = Product.createProduct(
+                                requestDto.getName(),
+                                requestDto.getModelNumber(),
+                                requestDto.getCategory(),
+                                requestDto.getImageUrl(),
+                                brand);
+                Product savedProduct = productRepository.save(product);
+                return adminProductMapper.toAdminProductCreateResponseDto(savedProduct);
+        }
 
-    // ✅ 상품 삭제
-    @Override
-    @Transactional
-    @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
-    public void deleteProduct(UUID productId, String deletedBy) {
-        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+        // ✅ 상품 수정
+        @Override
+        @Transactional
+        @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+        public AdminProductUpdateResponseDto updateProduct(UUID productId, AdminProductUpdateRequestDto requestDto) {
 
-        product.softDelete(deletedBy);
-    }
+                Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+                if (requestDto.getModelNumber() != null &&
+                                productRepository.existsByModelNumberAndIdNotAndDeletedAtIsNull(
+                                                requestDto.getModelNumber(), productId)) {
+                        throw new CustomException(ErrorCode.PRODUCT_MODEL_NUMBER_ALREADY_EXISTS);
+                }
+
+                product.update(
+                                requestDto.getName(),
+                                requestDto.getModelNumber(),
+                                requestDto.getCategory(),
+                                requestDto.getImageUrl());
+
+                return adminProductMapper.toAdminProductUpdateResponseDto(product);
+        }
+
+        // ✅ 상품 삭제
+        @Override
+        @Transactional
+        @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
+        public void deleteProduct(UUID productId, String deletedBy) {
+                Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
+                                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+                product.softDelete(deletedBy);
+        }
 }

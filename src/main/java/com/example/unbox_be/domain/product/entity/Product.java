@@ -39,11 +39,13 @@ public class Product extends BaseEntity {
     @Column(columnDefinition = "integer default 0", nullable = false)
     private int totalScore = 0;
 
+    // 같은 도메인 내부이므로 연관관계 유지
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id", nullable = false)
     private Brand brand;
 
-    private Product(String name, String modelNumber, Category category, String imageUrl, Brand brand, int reviewCount, int totalScore) {
+    private Product(String name, String modelNumber, Category category, String imageUrl, Brand brand, int reviewCount,
+            int totalScore) {
         this.name = name;
         this.modelNumber = modelNumber;
         this.category = category;
@@ -52,8 +54,10 @@ public class Product extends BaseEntity {
         this.reviewCount = reviewCount;
         this.totalScore = totalScore;
     }
+
     // 생성 메서드
-    public static Product createProduct(String name, String modelNumber, Category category, String imageUrl, Brand brand) {
+    public static Product createProduct(String name, String modelNumber, Category category, String imageUrl,
+            Brand brand) {
         validateName(name);
         validateCategory(category);
         validateBrand(brand);
@@ -115,6 +119,7 @@ public class Product extends BaseEntity {
         this.reviewCount++;
         this.totalScore += rating;
     }
+
     public void deleteReviewData(int rating) {
         if (rating < 1 || rating > 5) {
             throw new IllegalArgumentException("평점은 1~5 사이여야 합니다.");
@@ -124,8 +129,10 @@ public class Product extends BaseEntity {
         }
         this.reviewCount--;
         this.totalScore -= rating;
-        if (this.totalScore < 0) this.totalScore = 0;
+        if (this.totalScore < 0)
+            this.totalScore = 0;
     }
+
     public void updateReviewData(int oldRating, int newRating) {
         if (oldRating < 1 || oldRating > 5) {
             throw new IllegalArgumentException("이전 평점은 1에서 5 사이여야 합니다.");
@@ -135,6 +142,7 @@ public class Product extends BaseEntity {
         }
         this.totalScore -= oldRating;
         this.totalScore += newRating;
-        if (this.totalScore < 0) this.totalScore = 0;
+        if (this.totalScore < 0)
+            this.totalScore = 0;
     }
 }

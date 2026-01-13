@@ -1,9 +1,18 @@
 package com.example.unbox_be.global.client.product;
 
-import com.example.unbox_be.global.client.product.dto.ProductOptionInfoResponse;
+import com.example.unbox_be.global.client.product.dto.ProductOptionForReviewInfoResponse;
+import com.example.unbox_be.global.client.product.dto.ProductOptionForOrderInfoResponse;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
 import java.util.UUID;
 
+// @FeignClient(name = "product-service")
 public interface ProductClient {
-    // 상품 옵션 존재 여부 확인 및 정보 조회
-    ProductOptionInfoResponse getProductOption(UUID productOptionId);
+
+    @GetMapping("/internal/products/{id}/for-order")
+    ProductOptionForOrderInfoResponse getProductForOrder(@PathVariable UUID id);
+
+    @GetMapping("/internal/products/{id}/for-review")
+    ProductOptionForReviewInfoResponse getProductForReview(@PathVariable UUID id);
 }

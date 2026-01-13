@@ -17,7 +17,7 @@ import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
 import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.domain.user.repository.UserRepository;
 import com.example.unbox_be.global.client.product.ProductClient;
-import com.example.unbox_be.global.client.product.dto.ProductOptionInfoResponse;
+import com.example.unbox_be.global.client.product.dto.ProductOptionForOrderInfoResponse;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -77,14 +77,14 @@ public class OrderServiceImpl implements OrderService {
         // SellingBid가 ProductOption을 가지고 있지만, Decoupling을 위해 Client 사용 (가정)
         // 또는 SellingBid가 나중에 ProductOptionId만 가지게 될 것을 대비
         UUID productOptionId = sellingBid.getProductOption().getId();
-        ProductOptionInfoResponse productInfo = productClient.getProductOption(productOptionId);
+        ProductOptionForOrderInfoResponse productInfo = productClient.getProductForOrder(productOptionId);
 
         // 7. Order 생성
         Order order = Order.builder()
                 .sellingBidId(sellingBid.getId())
                 .buyer(buyer)
                 .seller(seller)          // 위에서 조회한 User 객체 주입
-                .productOptionId(productInfo.getProductOptionId())
+                .productOptionId(productInfo.getId())
                 .productId(productInfo.getProductId())
                 .productName(productInfo.getProductName())
                 .modelNumber(productInfo.getModelNumber())

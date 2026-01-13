@@ -1,0 +1,29 @@
+package com.example.unbox_be.domain.product.controller;
+
+import com.example.unbox_be.domain.product.service.ProductService;
+import com.example.unbox_be.global.client.product.dto.ProductOptionForReviewInfoResponse;
+import com.example.unbox_be.global.response.CustomApiResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/internal/products")
+@RequiredArgsConstructor
+public class ProductInternalController {
+
+    private final ProductService productService;
+
+    @GetMapping("/options/{id}/for-order")
+    public CustomApiResponse<com.example.unbox_be.global.client.product.dto.ProductOptionForOrderInfoResponse> getProductOptionForOrder(
+            @PathVariable UUID id) {
+        return CustomApiResponse.success(productService.getProductOptionForOrder(id));
+    }
+
+    @GetMapping("/options/{id}/for-review")
+    public CustomApiResponse<ProductOptionForReviewInfoResponse> getProductForReview(
+            @PathVariable UUID id) {
+        return CustomApiResponse.success(productService.getProductOptionForReview(id));
+    }
+}

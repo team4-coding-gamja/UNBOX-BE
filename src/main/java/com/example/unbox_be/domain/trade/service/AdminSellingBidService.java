@@ -5,6 +5,7 @@ import com.example.unbox_be.domain.trade.dto.response.AdminSellingBidListRespons
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface AdminSellingBidService {
@@ -13,4 +14,8 @@ public interface AdminSellingBidService {
 
     // 판매 입찰 삭제
     void deleteSellingBid(UUID sellingId, String deletedBy);
+
+    void deleteSellingBidsByOptionIds(List<UUID> optionIds);
+
+    void deleteSellingBidByOptionId(UUID optionId);
 }

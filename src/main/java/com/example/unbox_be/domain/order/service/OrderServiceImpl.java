@@ -49,7 +49,25 @@ public class OrderServiceImpl implements OrderService {
         // 1. 구매자 조회 (Entity 필요)
         User buyer = getUserByIdOrThrow(buyerId);
 
-        // 2. 판매 입찰 글(SellingBid) 조회 (비관적 락 적용)
+        // 2. 락 없이 먼저 조회하여 Product 정보 확보 (외부 통신 지연 시 DB 락 점유 방지)
+        SellingBid tempBid = sellingBidRepository.findByIdAndDeletedAtIsNull(requestDto.getSellingBidId())
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        if (tempBid.getProductOption() == null) {
+            throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND); 
+        }
+        UUID productOptionId = tempBid.getProductOption().getId(); // NPE Guarded
+
+        // 3. 상품 정보 조회 (ProductClient 사용) - 외부 통신
+        ProductOptionForOrderInfoResponse productInfo;
+        try {
+             productInfo = productClient.getProductForOrder(productOptionId);
+        } catch (Exception e) {
+            // 외부 서비스 에러 등을 적절히 래핑
+            throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND); // 혹은 EXTERNAL_API_ERROR
+        }
+
+        // 4. 판매 입찰 글(SellingBid) 재조회 (비관적 락 적용) - 이제 락 구간 진입
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(requestDto.getSellingBidId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
@@ -57,23 +75,18 @@ public class OrderServiceImpl implements OrderService {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        // 3. 본인 판매글 구매 방지
+        // 5. 본인 판매글 구매 방지
         if (sellingBid.getUserId().equals(buyerId)) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        // 4. 판매자 정보 조회 (Entity 필요)
+        // 6. 판매자 정보 조회 (Entity 필요)
         User seller = getUserByIdOrThrow(sellingBid.getUserId());
 
-        // 5. 가격 타입 변환 (Integer -> BigDecimal)
+        // 7. 가격 타입 변환 (Integer -> BigDecimal)
         BigDecimal price = sellingBid.getPrice();
-
-        // 6. 상품 정보 조회 (ProductClient 사용)
-        // SellingBid -> ProductOption (Relation) -> ID
-        UUID productOptionId = sellingBid.getProductOption().getId(); // SellingBid는 아직 ProductOption 참조 중 (User 요청대로 유지)
-        ProductOptionForOrderInfoResponse productInfo = productClient.getProductForOrder(productOptionId);
-
-        // 7. Order 생성
+        
+        // 8. Order 생성
         Order order = Order.builder()
                 .sellingBidId(sellingBid.getId())
                 .buyer(buyer)            // Entity 주입
@@ -92,7 +105,7 @@ public class OrderServiceImpl implements OrderService {
                 .receiverZipCode(requestDto.getReceiverZipCode())
                 .build();
 
-        // 8. 판매 입찰 상태 변경 (판매 완료 처리)
+        // 9. 판매 입찰 상태 변경 (판매 완료 처리)
         sellingBid.updateStatus(SellingStatus.MATCHED);
 
         return orderRepository.save(order).getId();
@@ -184,7 +197,6 @@ public class OrderServiceImpl implements OrderService {
         Order order = getOrderWithDetailsOrThrow(orderId);
 
         // Order.confirm 시그니처가 User인지 Long인지 확인 필요. 
-        // 아까 Order.java 복구할 때 User requestUser로 복구했음.
         order.confirm(user); 
         
         settlementService.confirmSettlement(orderId);
@@ -199,7 +211,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private Order getOrderWithDetailsOrThrow(UUID orderId) {
-        // AdminOrderRepository.findWithDetailsById 는 Buyer/Seller 패치조인함
         return orderRepository.findWithDetailsById(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
     }

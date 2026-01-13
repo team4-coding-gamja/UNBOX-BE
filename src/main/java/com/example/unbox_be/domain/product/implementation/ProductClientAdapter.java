@@ -22,7 +22,7 @@ public class ProductClientAdapter implements ProductClient {
     // ✅ 상품 옵션 조회 (주문용)
     @Override
     public ProductOptionForOrderInfoResponse getProductForOrder(UUID productOptionId) {
-        ProductOption productOption = productOptionRepository.findById(productOptionId)
+        ProductOption productOption = productOptionRepository.findByIdAndDeletedAtIsNull(productOptionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND));
 
         return ProductOptionForOrderInfoResponse.from(productOption);

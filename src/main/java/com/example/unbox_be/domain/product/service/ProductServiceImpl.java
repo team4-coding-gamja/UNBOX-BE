@@ -146,7 +146,7 @@ public class ProductServiceImpl implements ProductService {
         @Transactional(readOnly = true)
         public Page<ReviewListResponseDto> getReviewsByProduct(UUID productId, Pageable pageable) {
                 // 상품 존재 여부 확인
-                if (!productRepository.existsById(productId)) {
+                if (!productRepository.existsByIdAndDeletedAtIsNull(productId)) {
                         throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
                 }
 

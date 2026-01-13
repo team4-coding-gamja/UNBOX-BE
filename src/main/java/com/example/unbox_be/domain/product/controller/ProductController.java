@@ -6,12 +6,15 @@ import com.example.unbox_be.domain.product.dto.response.ProductDetailResponseDto
 import com.example.unbox_be.domain.product.dto.response.ProductListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductOptionListResponseDto;
 import com.example.unbox_be.domain.product.service.ProductService;
-import com.example.unbox_be.global.client.product.dto.ProductOptionForReviewInfoResponse;
+import com.example.unbox_be.domain.reviews.dto.response.ReviewListResponseDto;
+import com.example.unbox_be.global.pagination.PageSizeLimiter;
 import com.example.unbox_be.global.response.CustomApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -54,5 +57,15 @@ public class ProductController implements ProductApi {
     @GetMapping("/brands")
     public CustomApiResponse<List<BrandListResponseDto>> getAllBrands() {
         return CustomApiResponse.success(productService.getAllBrands());
+    }
+
+    // ✅ 상품별 리뷰 조회
+    @GetMapping("/{productId}/reviews")
+    public CustomApiResponse<Page<ReviewListResponseDto>> getReviewsByProduct(
+            @PathVariable UUID productId,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Pageable limited = PageSizeLimiter.limit(pageable);
+        Page<ReviewListResponseDto> result = productService.getReviewsByProduct(productId, limited);
+        return CustomApiResponse.success(result);
     }
 }

@@ -4,7 +4,7 @@ import com.example.unbox_be.domain.product.dto.response.BrandListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductDetailResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductOptionListResponseDto;
-import com.example.unbox_be.global.client.product.dto.ProductOptionForReviewInfoResponse;
+import com.example.unbox_be.domain.reviews.dto.response.ReviewListResponseDto;
 import com.example.unbox_be.global.client.product.dto.ProductOptionForOrderInfoResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,11 +28,11 @@ public interface ProductService {
 
     void updateReviewData(UUID productId, int oldScore, int newScore);
 
+    Page<ReviewListResponseDto> getReviewsByProduct(UUID productId, Pageable pageable);
+
     // ===========================
     // MSA 준비: 다른 서비스용 API
     // ===========================
 
     ProductOptionForOrderInfoResponse getProductOptionForOrder(UUID productOptionId);
-
-    ProductOptionForReviewInfoResponse getProductOptionForReview(UUID productOptionId);
 }

@@ -25,11 +25,13 @@ public class ProductOptionForOrderInfoResponse {
         Product product = productOption.getProduct();
         return ProductOptionForOrderInfoResponse.builder()
                 .id(productOption.getId())
+                .optionName(productOption.getOption())
+
                 .productId(product.getId())
                 .productName(product.getName())
                 .modelNumber(product.getModelNumber())
-                .optionName(productOption.getOption())
                 .imageUrl(product.getImageUrl())
+
                 .brandId(product.getBrand().getId())
                 .brandName(product.getBrand().getName())
                 .build();

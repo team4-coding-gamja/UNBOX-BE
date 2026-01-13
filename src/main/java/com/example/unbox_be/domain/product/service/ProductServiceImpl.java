@@ -13,9 +13,12 @@ import com.example.unbox_be.domain.product.mapper.ProductMapper;
 import com.example.unbox_be.domain.product.repository.BrandRepository;
 import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.product.repository.ProductRepository;
+import com.example.unbox_be.domain.reviews.dto.response.ReviewListResponseDto;
+import com.example.unbox_be.domain.reviews.entity.Review;
+import com.example.unbox_be.domain.reviews.mapper.ReviewMapper;
+import com.example.unbox_be.domain.reviews.repository.ReviewRepository;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
-import com.example.unbox_be.global.client.product.dto.ProductOptionForReviewInfoResponse;
 import com.example.unbox_be.global.client.product.dto.ProductOptionForOrderInfoResponse;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
@@ -40,6 +43,8 @@ public class ProductServiceImpl implements ProductService {
         private final ProductMapper productMapper;
         private final BrandMapper brandMapper;
         private final SellingBidRepository sellingBidRepository;
+        private final ReviewRepository reviewRepository;
+        private final ReviewMapper reviewMapper;
 
         // ✅ 상품 목록 조회 (검색 + 페이징)
         public Page<ProductListResponseDto> getProducts(UUID brandId, String category, String keyword,
@@ -136,6 +141,20 @@ public class ProductServiceImpl implements ProductService {
                 product.updateReviewData(oldScore, newScore);
         }
 
+        // ✅ 상품별 리뷰 조회
+        @Override
+        @Transactional(readOnly = true)
+        public Page<ReviewListResponseDto> getReviewsByProduct(UUID productId, Pageable pageable) {
+                // 상품 존재 여부 확인
+                if (!productRepository.existsByIdAndDeletedAtIsNull(productId)) {
+                        throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
+                }
+
+                // 리뷰 조회 및 DTO 변환
+                Page<Review> reviews = reviewRepository.findAllByOrderProductIdAndDeletedAtIsNull(productId, pageable);
+                return reviews.map(reviewMapper::toReviewListResponseDto);
+        }
+
         // ===========================
         // MSA 준비: 다른 서비스용 API
         // ===========================
@@ -148,15 +167,5 @@ public class ProductServiceImpl implements ProductService {
                                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND));
 
                 return ProductOptionForOrderInfoResponse.from(productOption);
-        }
-
-        // ✅ 상품 조회 (리뷰용)
-        @Override
-        @Transactional(readOnly = true)
-        public ProductOptionForReviewInfoResponse getProductOptionForReview(UUID productOptionId) {
-            ProductOption productOption = productOptionRepository.findByIdAndDeletedAtIsNull(productOptionId)
-                                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND));
-
-                return ProductOptionForReviewInfoResponse.from(productOption);
         }
 }

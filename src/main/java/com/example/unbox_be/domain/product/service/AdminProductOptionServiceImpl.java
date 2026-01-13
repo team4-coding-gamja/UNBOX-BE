@@ -10,7 +10,9 @@ import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
 import com.example.unbox_be.domain.product.repository.ProductRepository;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
+import com.example.unbox_be.global.event.product.ProductOptionDeletedEvent;
 import lombok.AllArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +28,7 @@ public class AdminProductOptionServiceImpl implements AdminProductOptionService 
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
     private final AdminProductOptionMapper adminProductMapper;
+    private final ApplicationEventPublisher eventPublisher; // 이벤트 발행기
 
     // ✅ 상품 옵션 목록 조회
     @Override
@@ -73,5 +76,8 @@ public class AdminProductOptionServiceImpl implements AdminProductOptionService 
         }
 
         option.softDelete(deletedBy);
+
+        eventPublisher.publishEvent(new ProductOptionDeletedEvent(optionId));
+
     }
 }

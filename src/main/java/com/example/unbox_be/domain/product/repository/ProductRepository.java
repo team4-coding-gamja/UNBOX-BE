@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -67,5 +68,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     // ✅ 모델번호 중복 체크(본인 제외) - 삭제 제외
     boolean existsByModelNumberAndIdNotAndDeletedAtIsNull(String modelNumber, UUID id);
 
+    //브랜드 ID로 삭제되지 않은 상품 '리스트' 조회 (페이징 아님)
+    List<Product> findAllByBrandIdAndDeletedAtIsNull(UUID brandId);
     boolean existsByIdAndDeletedAtIsNull(UUID id);
 }

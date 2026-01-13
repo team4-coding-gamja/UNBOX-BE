@@ -6,6 +6,7 @@ import com.example.unbox_be.domain.product.dto.response.ProductDetailResponseDto
 import com.example.unbox_be.domain.product.dto.response.ProductListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductOptionListResponseDto;
 import com.example.unbox_be.domain.product.service.ProductService;
+import com.example.unbox_be.global.client.product.dto.ProductOptionForReviewInfoResponse;
 import com.example.unbox_be.global.response.CustomApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -54,6 +55,4 @@ public class ProductController implements ProductApi {
     public CustomApiResponse<List<BrandListResponseDto>> getAllBrands() {
         return CustomApiResponse.success(productService.getAllBrands());
     }
-
-    // ✅ 상품별 리뷰 목록 조회
 }

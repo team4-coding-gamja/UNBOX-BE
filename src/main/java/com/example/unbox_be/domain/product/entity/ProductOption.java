@@ -23,6 +23,7 @@ public class ProductOption extends BaseEntity {
     @Column(nullable = false)
     private String option;
 
+    // 같은 도메인 내부이므로 연관관계 유지
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;

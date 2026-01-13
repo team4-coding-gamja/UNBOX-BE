@@ -10,7 +10,6 @@ import com.example.unbox_be.domain.user.entity.User;
 import com.example.unbox_be.global.config.JpaAuditingConfig;
 import com.example.unbox_be.global.config.TestQueryDslConfig;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,6 +43,8 @@ class OrderRepositoryTest {
     private User buyer;
     private User seller;
     private ProductOption productOption;
+    private Product product; // Added to access fields for snapshot
+    private Brand brand;     // Added to access fields for snapshot
 
     @BeforeEach
     void setUp() {
@@ -54,10 +55,10 @@ class OrderRepositoryTest {
         em.persist(seller);
 
         // 2. Product 관련 생성
-        Brand brand = Brand.createBrand("Nike", "http://logo.url");
+        brand = Brand.createBrand("Nike", "http://logo.url");
         em.persist(brand);
 
-        Product product = Product.createProduct("Air Force", "model-1", Category.SHOES, "http://img.url", brand);
+        product = Product.createProduct("Air Force", "model-1", Category.SHOES, "http://img.url", brand);
         em.persist(product);
 
         productOption = ProductOption.createProductOption(product, "270");
@@ -68,11 +69,22 @@ class OrderRepositoryTest {
     }
 
     private Order createOrder(User buyer, User seller, ProductOption option) {
+        // Retrieve Product/Brand info from the option for snapshotting
+        // Note: In real service, this comes from ProductClient. Here we just use the entity data.
+        // Since em.clear() was called, we might need to re-fetch if lazy loading, 
+        // but since we pass managedOption or we just use IDs, let's just use the fields.
+        
         return Order.builder()
                 .sellingBidId(UUID.randomUUID())
                 .buyer(buyer)
                 .seller(seller)
-                .productOption(option)
+                .productOptionId(option.getId())
+                .productId(option.getProduct().getId()) // Assuming accessible or just use mock ID for test
+                .productName("Air Force")     // Snapshot
+                .modelNumber("model-1")       // Snapshot
+                .optionName("270")            // Snapshot
+                .imageUrl("http://img.url")   // Snapshot
+                .brandName("Nike")            // Snapshot
                 .price(BigDecimal.valueOf(150000))
                 .receiverName("홍길동")
                 .receiverPhone("010-1234-5678")
@@ -85,7 +97,6 @@ class OrderRepositoryTest {
     @DisplayName("주문 저장 및 조회")
     void saveAndFind() {
         // given
-        // 영속성 컨텍스트가 초기화되었으므로 merge 필요
         User managedBuyer = em.merge(buyer);
         User managedSeller = em.merge(seller);
         ProductOption managedOption = em.merge(productOption);
@@ -102,6 +113,8 @@ class OrderRepositoryTest {
         assertThat(foundOrder).isPresent();
         assertThat(foundOrder.get().getId()).isEqualTo(savedOrder.getId());
         assertThat(foundOrder.get().getStatus()).isEqualTo(OrderStatus.PENDING_SHIPMENT);
+        // Verify snapshot field
+        assertThat(foundOrder.get().getProductName()).isEqualTo("Air Force");
     }
 
     @Test
@@ -134,7 +147,7 @@ class OrderRepositoryTest {
     }
 
     @Test
-    @DisplayName("구매자 ID로 주문 목록 조회 (다른 엔티티에서도 잘 가져와지는지 확인)")
+    @DisplayName("구매자 ID로 주문 목록 조회")
     void findAllByBuyerIdAndDeletedAtIsNull() {
         // given
         User managedBuyer = em.merge(buyer);
@@ -152,10 +165,10 @@ class OrderRepositoryTest {
         // then
         assertThat(result.getContent()).hasSize(2);
         
-        // EntityGraph 확인: Lazy Loading 없이 ProductOption 등이 로딩되었는지
+        // [Refactored] No direct relation to ProductOption anymore, so no need to check isLoaded(productOption)
+        // Instead, we can check if snapshot data is there.
         Order firstOrder = result.getContent().get(0);
-        assertThat(em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(firstOrder.getProductOption())).isTrue();
-        assertThat(em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(firstOrder.getProductOption().getProduct())).isTrue();
+        assertThat(firstOrder.getProductName()).isEqualTo("Air Force");
     }
 
     @Test
@@ -179,8 +192,8 @@ class OrderRepositoryTest {
         Order o = foundOrder.get();
         
         // EntityGraph 확인
+        // [Refactored] Order -> ProductOption relation removed from EntityGraph. Only Buyer/Seller remain.
         assertThat(em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(o.getBuyer())).isTrue();
         assertThat(em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(o.getSeller())).isTrue();
-        assertThat(em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(o.getProductOption())).isTrue();
     }
 }

@@ -70,29 +70,27 @@ class AdminOrderRepositoryTest {
     }
 
     private Order createOrder(User buyer, User seller, Product product, OrderStatus status) {
+        // ProductOption은 Order에 직접 연관관계를 맺지 않으므로 생성만 하고 ID 사용 (혹은 ID만 임의 생성)
         ProductOption option = ProductOption.createProductOption(product, "270");
-        em.persist(option); // Option은 매번 생성 (Cascade 설정 없다고 가정)
+        em.persist(option); 
 
         Order order = Order.builder()
                 .sellingBidId(UUID.randomUUID())
                 .buyer(buyer)
                 .seller(seller)
-                .productOption(option)
+                .productOptionId(option.getId())
+                .productId(product.getId())
+                .productName(product.getName())      // Snapshot
+                .modelNumber(product.getModelNumber()) // Snapshot
+                .optionName("270")                   // Snapshot
+                .imageUrl(product.getImageUrl())     // Snapshot
+                .brandName(product.getBrand().getName()) // Snapshot
                 .price(BigDecimal.valueOf(100000))
                 .receiverName("receiver")
                 .receiverPhone("010-0000-0000")
                 .receiverAddress("Seoul")
                 .receiverZipCode("12345")
                 .build();
-        
-        // 상태 변경 (Reflection 없이 Setter없다면 로직상 처음에 PENDING_SHIPMENT임. 여기선 테스트를 위해 상태별로 생성 필요하면 변경)
-        // Order 생성 시점엔 PENDING_SHIPMENT. 
-        // 만약 다른 상태 테스트하려면 reflection 사용하거나 상태 변경 메서드 호출 (여기선 상태 변경 메서드가 있다고 가정하거나 Reflection 사용)
-        // 편의상 Reflection 없이 생성 후 상태 변경 메서드 호출 or 별도 로직. 
-        // 하지만 Order 객체는 Setter가 없으므로 updateAdminStatus 등을 써야 함.
-        // 테스트 편의를 위해 일단 생성 후, em.flush() 후에 다시 조회해서 값을 바꿀 수는 없으니...
-        // 아, Order 엔티티에 상태 변경 메서드가 있다면 그걸 씁니다.
-        // 여기선 간단하게 테스트용으로 생성 후 Reflection으로 상태 강제 주입하겠습니다. (테스트 목적)
         
         org.springframework.test.util.ReflectionTestUtils.setField(order, "status", status);
         return order;
@@ -117,6 +115,8 @@ class AdminOrderRepositoryTest {
 
         // then
         assertThat(result.getContent()).hasSize(2);
+        // 검증: findWithDetailsById 가 아니라 QueryDSL로 조회하므로 buyer/seller fetchJoin 확인은 간접적으로
+        assertThat(result.getContent().get(0).getBuyer()).isNotNull();
     }
 
     @Test
@@ -160,7 +160,8 @@ class AdminOrderRepositoryTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getProductOption().getProduct().getName()).isEqualTo("Air Force");
+        // Snapshot 필드 검증
+        assertThat(result.getContent().get(0).getProductName()).isEqualTo("Air Force");
     }
 
     @Test
@@ -182,7 +183,8 @@ class AdminOrderRepositoryTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getProductOption().getProduct().getBrand().getName()).isEqualTo("Nike");
+        // Snapshot 필드 검증
+        assertThat(result.getContent().get(0).getBrandName()).isEqualTo("Nike");
     }
 
     @Test

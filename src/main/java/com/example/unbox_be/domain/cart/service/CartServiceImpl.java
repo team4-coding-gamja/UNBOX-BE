@@ -106,10 +106,12 @@ public class CartServiceImpl implements CartService {
                 .price(bid.getPrice())
                 .sellingStatus(bid.getStatus())
 
+                .productOptionId(bid.getProductOptionId())
                 .productOptionName(cart.getProductOptionName())
 
                 .productName(cart.getProductName())
-                .imageUrl(cart.getImageUrl())
+                .modelNumber(cart.getModelName())
+                .productImageUrl(cart.getProductImageUrl())
                 .build();
     }
 }

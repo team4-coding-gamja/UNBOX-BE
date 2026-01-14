@@ -31,6 +31,7 @@ public class ProductOptionForSellingBidInfoResponse {
                 .productId(product.getId())
                 .productName(product.getName())
                 .modelNumber(product.getModelNumber())
+                .productImageUrl(product.getProductImageUrl())
 
                 .brandId(brand.getId())
                 .brandName(brand.getName())

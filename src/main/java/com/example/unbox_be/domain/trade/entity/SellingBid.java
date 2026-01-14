@@ -18,7 +18,7 @@ import java.util.UUID;
         name = "p_selling_bids",
         indexes = {
                 // [핵심] 1.사이즈별 -> 2.판매중인것 -> 3.가격낮은순
-                @Index(name = "idx_selling_option_status_price", columnList = "option_id, status, price")
+                @Index(name = "idx_selling_option_status_price", columnList = "product_option_id, status, price")
         })
 @Getter
 @Builder

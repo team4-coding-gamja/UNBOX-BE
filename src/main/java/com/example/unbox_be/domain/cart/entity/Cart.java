@@ -33,18 +33,18 @@ public class Cart extends BaseEntity {
 
     // --- 상품, 상품옵션 스냅샷 ---
     private String productName;
-    private String imageUrl;
+    private String productImageUrl;
     private String modelName;
     private String productOptionName;
 
 
     @Builder
-    public Cart(User user, SellingBid sellingBid,  String productName, String productOptionName, String imageUrl, String modelName) {
+    public Cart(User user, SellingBid sellingBid,  String productName, String productOptionName, String productImageUrl, String modelName) {
             this.user = user;
             this.sellingBid = sellingBid;
             this.productName = productName;
             this.productOptionName = productOptionName;
-            this.imageUrl = imageUrl;
+            this.productImageUrl = productImageUrl;
             this.modelName = modelName;
     }
 }

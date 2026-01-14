@@ -25,8 +25,7 @@ public class CartListResponseDto {
     private UUID productOptionId;
     private String productOptionName;
 
-    private UUID productId;
     private String productName;
     private String modelNumber;
-    private String imageUrl;
+    private String productImageUrl;
 }

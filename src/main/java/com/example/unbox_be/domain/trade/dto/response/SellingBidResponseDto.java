@@ -1,5 +1,7 @@
 package com.example.unbox_be.domain.trade.dto.response;
 
+import com.example.unbox_be.domain.product.entity.ProductOption;
+import com.example.unbox_be.domain.reviews.dto.response.ReviewDetailResponseDto;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,16 +24,9 @@ public class SellingBidResponseDto {
     private LocalDateTime createdAt;
 
     // 연관된 상품 정보
-    private ProductInfo product;
-    private String size;
+    private String productName;
+    private String modelNumber;
+    private String imageUrl;
 
-    @Getter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ProductInfo {
-        private UUID id;
-        private String name;
-        private String imageUrl;
-    }
+    private String productOptionName;
 }

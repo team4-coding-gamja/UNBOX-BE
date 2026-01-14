@@ -18,7 +18,7 @@ public class AdminProductListResponseDto {
     private String name;
     private String modelNumber;
     private Category category;
-    private String imageUrl;
+    private String productproductImageUrl;
 
     private UUID brandId;
     private String brandName;

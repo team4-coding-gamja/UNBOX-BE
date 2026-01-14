@@ -15,10 +15,10 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.example.unbox_be.domain.trade.entity.QSellingBid.sellingBid;
 import static com.example.unbox_be.domain.product.entity.QBrand.brand;
 import static com.example.unbox_be.domain.product.entity.QProduct.product;
 import static com.example.unbox_be.domain.product.entity.QProductOption.productOption;
+import static com.example.unbox_be.domain.trade.entity.QSellingBid.sellingBid;
 
 @Repository
 @RequiredArgsConstructor
@@ -28,10 +28,11 @@ public class AdminSellingBidRepositoryCustomImpl implements AdminSellingBidRepos
 
     @Override
     public Page<SellingBid> findAdminSellingBids(SellingBidSearchCondition condition, Pageable pageable) {
-        
+
         List<SellingBid> content = queryFactory
                 .selectFrom(sellingBid)
-                .leftJoin(sellingBid.productOption, productOption).fetchJoin()
+                // ✅ 연관관계(productOption) 제거 → FK(productOptionId) 기반 ON 조인
+                .leftJoin(productOption).on(productOption.id.eq(sellingBid.productOptionId)).fetchJoin()
                 .leftJoin(productOption.product, product).fetchJoin()
                 .leftJoin(product.brand, brand).fetchJoin()
                 .where(
@@ -45,10 +46,11 @@ public class AdminSellingBidRepositoryCustomImpl implements AdminSellingBidRepos
                 .orderBy(sellingBid.createdAt.desc())
                 .fetch();
 
+        // countQuery는 fetchJoin ❌ (성능/중복 row 위험)
         JPAQuery<Long> countQuery = queryFactory
                 .select(sellingBid.count())
                 .from(sellingBid)
-                .leftJoin(sellingBid.productOption, productOption)
+                .leftJoin(productOption).on(productOption.id.eq(sellingBid.productOptionId))
                 .leftJoin(productOption.product, product)
                 .leftJoin(product.brand, brand)
                 .where(
@@ -74,11 +76,13 @@ public class AdminSellingBidRepositoryCustomImpl implements AdminSellingBidRepos
     }
 
     private BooleanExpression periodBetween(LocalDate startDate, LocalDate endDate) {
-        if (startDate == null && endDate == null) {
-            return null;
-        }
+        if (startDate == null && endDate == null) return null;
+
         if (startDate != null && endDate != null) {
-            return sellingBid.createdAt.between(startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
+            return sellingBid.createdAt.between(
+                    startDate.atStartOfDay(),
+                    endDate.plusDays(1).atStartOfDay()
+            );
         }
         if (startDate != null) {
             return sellingBid.createdAt.goe(startDate.atStartOfDay());

@@ -31,9 +31,10 @@ public interface ReviewMapper {
     /*
      * =====================
      * 리뷰 상세 응답
+     * Review.order(Order) -> ReviewDetailResponseDto.order(OrderInfo)
      * =====================
      */
-    @Mapping(target = "order", source = "order")
+    @Mapping(target = "order", source = "order") // Order -> OrderInfo 자동 호출
     ReviewDetailResponseDto toReviewDetailResponseDto(Review review);
 
     /*
@@ -42,7 +43,8 @@ public interface ReviewMapper {
      * =====================
      */
     @Mapping(target = "buyerNickname", source = "order.buyer.nickname")
-    @Mapping(target = "productOptionName", source = "order.optionName")
+    @Mapping(target = "productOptionName", source = "order.productOptionName")
+    @Mapping(target = "createdAt", source = "createdAt")
     ReviewListResponseDto toReviewListResponseDto(Review review);
 
     /*
@@ -50,8 +52,8 @@ public interface ReviewMapper {
      * Order -> OrderInfo
      * =====================
      */
-    @Mapping(target = "buyer", source = "buyer")
-    @Mapping(target = "productOption", source = ".") // calls toProductOptionInfo(Order)
+    @Mapping(target = "buyer", source = "buyer") // User -> UserInfo 자동 호출
+    @Mapping(target = "productOption", source = ".") // Order -> ProductOptionInfo 자동 호출
     ReviewDetailResponseDto.OrderInfo toOrderInfo(Order order);
 
     /*
@@ -64,20 +66,22 @@ public interface ReviewMapper {
     /*
      * =====================
      * Order (Snapshot) -> ProductOptionInfo
+     * DTO: id, productOptionName, product
      * =====================
      */
     @Mapping(target = "id", source = "productOptionId")
-    @Mapping(target = "option", source = "optionName")
-    @Mapping(target = "product", source = ".") // calls toProductInfo(Order)
+    @Mapping(target = "productOptionName", source = "productOptionName")
+    @Mapping(target = "product", source = ".") // Order -> ProductInfo 자동 호출
     ReviewDetailResponseDto.ProductOptionInfo toProductOptionInfo(Order order);
 
     /*
      * =====================
      * Order (Snapshot) -> ProductInfo
+     * DTO: id, name, productImageUrl
      * =====================
      */
     @Mapping(target = "id", source = "productId")
     @Mapping(target = "name", source = "productName")
-    @Mapping(target = "imageUrl", source = "imageUrl")
+    @Mapping(target = "productImageUrl", source = "productImageUrl")
     ReviewDetailResponseDto.ProductInfo toProductInfo(Order order);
 }

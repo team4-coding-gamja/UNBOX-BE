@@ -29,7 +29,7 @@ public class WishlistResponseDTO {
                 .productId(product.getId())
                 .productName(product.getName())
                 .optionName(option.getOption())
-                .imageUrl(product.getImageUrl()) // 이미지 필드가 있다면 추가
+                .imageUrl(product.getProductImageUrl()) // 이미지 필드가 있다면 추가
                 .build();
     }
 }

@@ -53,11 +53,11 @@ public class Order extends BaseEntity {
     @Column(name = "model_number", nullable = false)
     private String modelNumber;
 
-    @Column(name = "option_name", nullable = false)
-    private String optionName;
+    @Column(name = "product_option_name", nullable = false)
+    private String productOptionName;
 
     @Column(name = "image_url")
-    private String imageUrl;
+    private String productImageUrl;
 
     @Column(name = "brand_name", nullable = false)
     private String brandName;
@@ -99,7 +99,7 @@ public class Order extends BaseEntity {
     // 생성자 레벨 Builder
     @Builder
     public Order(UUID sellingBidId, User buyer, User seller, UUID productOptionId, UUID productId,
-                 String productName, String modelNumber, String optionName, String imageUrl, String brandName,
+                 String productName, String modelNumber, String productOptionName, String productImageUrl, String brandName,
                  BigDecimal price, String receiverName, String receiverPhone, String receiverAddress, String receiverZipCode) {
         this.sellingBidId = sellingBidId;
         this.buyer = buyer;
@@ -108,8 +108,8 @@ public class Order extends BaseEntity {
         this.productId = productId;
         this.productName = productName;
         this.modelNumber = modelNumber;
-        this.optionName = optionName;
-        this.imageUrl = imageUrl;
+        this.productOptionName = productOptionName;
+        this.productImageUrl = productImageUrl;
         this.brandName = brandName;
         this.price = price;
         this.receiverName = receiverName;

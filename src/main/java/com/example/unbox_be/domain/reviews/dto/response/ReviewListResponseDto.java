@@ -17,7 +17,7 @@ public class ReviewListResponseDto {
     private UUID id;
     private String content;
     private Integer rating;
-    private String imageUrl;
+    private String reviewImageUrl;
     private LocalDateTime createdAt;
     private String buyerNickname;
     private String productOptionName;

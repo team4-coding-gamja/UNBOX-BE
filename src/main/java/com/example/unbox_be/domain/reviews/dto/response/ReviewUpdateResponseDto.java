@@ -17,5 +17,5 @@ public class ReviewUpdateResponseDto {
     private UUID id;
     private String content;
     private Integer rating;
-    private String imageUrl;
+    private String reviewImageUrl;
 }

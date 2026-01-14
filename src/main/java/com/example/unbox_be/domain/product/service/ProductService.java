@@ -6,6 +6,7 @@ import com.example.unbox_be.domain.product.dto.response.ProductListResponseDto;
 import com.example.unbox_be.domain.product.dto.response.ProductOptionListResponseDto;
 import com.example.unbox_be.domain.reviews.dto.response.ReviewListResponseDto;
 import com.example.unbox_be.global.client.product.dto.ProductOptionForOrderInfoResponse;
+import com.example.unbox_be.global.client.product.dto.ProductOptionForSellingBidInfoResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -35,4 +36,6 @@ public interface ProductService {
     // ===========================
 
     ProductOptionForOrderInfoResponse getProductOptionForOrder(UUID productOptionId);
+
+    ProductOptionForSellingBidInfoResponse getProductOptionForSellingBid(UUID productOptionId);
 }

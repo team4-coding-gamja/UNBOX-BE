@@ -18,7 +18,7 @@ public class ReviewDetailResponseDto {
     private UUID id;
     private String content;
     private Integer rating;
-    private String imageUrl;
+    private String reviewImageUrl;
     private LocalDateTime createdAt;
 
     private OrderInfo order;
@@ -43,7 +43,7 @@ public class ReviewDetailResponseDto {
     @Builder
     public static class ProductOptionInfo {
         private UUID id;
-        private String option;
+        private String productOptionName;
         private ProductInfo product;
     }
 
@@ -52,6 +52,6 @@ public class ReviewDetailResponseDto {
     public static class ProductInfo {
         private UUID id;
         private String name;
-        private String imageUrl;
+        private String productImageUrl;
     }
 }

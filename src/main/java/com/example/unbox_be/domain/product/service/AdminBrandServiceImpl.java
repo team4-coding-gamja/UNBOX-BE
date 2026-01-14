@@ -150,4 +150,5 @@ public class AdminBrandServiceImpl implements AdminBrandService {
         if (!deletedProductIds.isEmpty() || !deletedOptionIds.isEmpty()) {
             eventPublisher.publishEvent(new BrandDeletedEvent(brandId, deletedProductIds, deletedOptionIds));
         }
+    }
 }

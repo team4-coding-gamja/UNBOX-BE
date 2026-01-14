@@ -1,6 +1,7 @@
 package com.example.unbox_be.domain.order.dto.response;
 
 import com.example.unbox_be.domain.order.entity.OrderStatus;
+import com.example.unbox_be.domain.product.entity.ProductOption;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,13 +32,9 @@ public class OrderDetailResponseDto {
     private String receiverZipCode;
     private String trackingNumber;  // 운송장 번호
 
-    // 3. 상품 옵션 정보 (Nested Structure)
-    private ProductOptionInfo productOption;
+    private ProductOptionInfo productOptionInfo;
+    private ProductInfo productInfo;
 
-    // 4. 상품 상세 정보 (Nested Structure)
-    private ProductInfo product;
-
-    // --- 내부 클래스 (Nested DTO) ---
 
     @Getter
     @Builder
@@ -45,7 +42,7 @@ public class OrderDetailResponseDto {
     @AllArgsConstructor
     public static class ProductOptionInfo {
         private UUID id;     // 옵션 ID
-        private String size; // 옵션명 (예: 270)
+        private String productOptionName; // 옵션명 (예: 270)
     }
 
     @Getter
@@ -55,8 +52,8 @@ public class OrderDetailResponseDto {
     public static class ProductInfo {
         private UUID id;          // 상품 ID
         private String brandName; // 브랜드명
-        private String name;      // 상품명
+        private String productName;      // 상품명
         private String modelNumber;
-        private String imageUrl;
+        private String productImageUrl;
     }
 }

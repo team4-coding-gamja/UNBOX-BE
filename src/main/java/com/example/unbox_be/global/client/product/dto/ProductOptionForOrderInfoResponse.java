@@ -10,13 +10,13 @@ import java.util.UUID;
 @Getter
 @Builder
 public class ProductOptionForOrderInfoResponse {
-    private UUID id; // ProductOption ID
-    private String optionName;
+    private UUID id;
+    private String productOptionName;
 
     private UUID productId;
     private String productName;
     private String modelNumber;
-    private String imageUrl;
+    private String productImageUrl;
 
     private UUID brandId;
     private String brandName;
@@ -25,12 +25,12 @@ public class ProductOptionForOrderInfoResponse {
         Product product = productOption.getProduct();
         return ProductOptionForOrderInfoResponse.builder()
                 .id(productOption.getId())
-                .optionName(productOption.getOption())
+                .productOptionName(productOption.getOption())
 
                 .productId(product.getId())
                 .productName(product.getName())
                 .modelNumber(product.getModelNumber())
-                .imageUrl(product.getImageUrl())
+                .productImageUrl(product.getProductImageUrl())
 
                 .brandId(product.getBrand().getId())
                 .brandName(product.getBrand().getName())

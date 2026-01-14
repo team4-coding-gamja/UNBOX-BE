@@ -11,6 +11,6 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CartRequestDto {
+public class CartCreateRequestDto {
     private UUID sellingBidId;
 }

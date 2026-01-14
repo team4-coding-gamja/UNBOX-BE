@@ -16,5 +16,5 @@ public class AdminProductUpdateResponseDto {
     private String name;
     private String modelNumber;
     private Category category;
-    private String imageUrl;
+    private String productImageUrl;
 }

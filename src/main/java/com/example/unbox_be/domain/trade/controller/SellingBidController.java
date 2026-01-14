@@ -1,10 +1,15 @@
 package com.example.unbox_be.domain.trade.controller;
 
 import com.example.unbox_be.domain.trade.controller.api.SellingBidApi;
-import com.example.unbox_be.domain.trade.dto.request.SellingBidRequestDto;
+import com.example.unbox_be.domain.trade.dto.request.SellingBidCreateRequestDto;
 import com.example.unbox_be.domain.trade.dto.request.SellingBidsPriceUpdateRequestDto;
-import com.example.unbox_be.domain.trade.dto.response.SellingBidResponseDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidCreateResponseDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidDetailResponseDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidListResponseDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidsPriceUpdateResponseDto;
 import com.example.unbox_be.domain.trade.service.SellingBidService;
+import com.example.unbox_be.global.pagination.PageSizeLimiter;
+import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +18,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -28,52 +30,53 @@ public class SellingBidController implements SellingBidApi {
 
     private final SellingBidService sellingBidService;
 
-    //판매 주문 /api/bids/selling
+    // ✅ 판매 입찰 생성
     @PostMapping
-    public ResponseEntity<UUID> createSellingBid(@Valid @RequestBody SellingBidRequestDto requestDto, @AuthenticationPrincipal CustomUserDetails userDetails) {
-        UUID savedId = sellingBidService.createSellingBid(userDetails.getUserId(), requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedId);
+    public CustomApiResponse<SellingBidCreateResponseDto> createSellingBid(
+            @Valid @RequestBody SellingBidCreateRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        SellingBidCreateResponseDto response = sellingBidService.createSellingBid(userDetails.getUserId(), requestDto);
+        return CustomApiResponse.success(response);
     }
 
+    // ✅ 판매 입찰 취소
     @DeleteMapping("/{sellingId}")
-    public ResponseEntity<Void> cancelSellingBid(
+    public CustomApiResponse<Void> cancelSellingBid(
             @PathVariable UUID sellingId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        sellingBidService.cancelSellingBid(sellingId, userDetails.getUserId(), userDetails.getUsername());
-        return ResponseEntity.noContent().build();
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        String deleteBy = userDetails.getUsername();
+        sellingBidService.cancelSellingBid(sellingId, userDetails.getUserId(), deleteBy);
+        return CustomApiResponse.successWithNoData();
     }
 
+    // ✅ 판매 입찰 가격 수정
     @PatchMapping("/{sellingId}/price")
-    public ResponseEntity<Void> updatePrice(
+    public CustomApiResponse<SellingBidsPriceUpdateResponseDto> updatePrice(
             @PathVariable UUID sellingId,
             @Valid @RequestBody SellingBidsPriceUpdateRequestDto requestDto,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        // [변경] email 대신 userId 전달
-        sellingBidService.updateSellingBidPrice(sellingId, requestDto.getNewPrice(), userDetails.getUserId(), userDetails.getUsername());
-        return ResponseEntity.ok().build();
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        SellingBidsPriceUpdateResponseDto response = sellingBidService.updateSellingBidPrice(sellingId, requestDto, userDetails.getUserId());
+        return CustomApiResponse.success(response);
     }
 
+    // ✅ 판매 입찰 단건 조회
     @GetMapping("/{sellingId}")
-    public ResponseEntity<SellingBidResponseDto> getSellingBidDetail(
+    public CustomApiResponse<SellingBidDetailResponseDto> getSellingBidDetail(
             @PathVariable UUID sellingId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        // [변경] userId 전달
-        return ResponseEntity.ok(sellingBidService.getSellingBidDetail(sellingId, userDetails.getUserId()));
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        SellingBidDetailResponseDto response = sellingBidService.getSellingBidDetail(sellingId,
+                userDetails.getUserId());
+        return CustomApiResponse.success(response);
     }
 
+    // ✅ 내 판매 입찰 목록 조회
     @GetMapping("/my")
-    public ResponseEntity<Slice<SellingBidResponseDto>> getMySellingBids(
+    public CustomApiResponse<Slice<SellingBidListResponseDto>> getMySellingBids(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @ParameterObject @PageableDefault(
-                    size = 3,
-                    sort = "createdAt",
-                    direction = Sort.Direction.DESC
-            ) Pageable pageable
-    ) {
-        // [변경] userId 전달
-        return ResponseEntity.ok(sellingBidService.getMySellingBids(userDetails.getUserId(), pageable));
+            @ParameterObject @PageableDefault(size = 3, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Pageable limited = PageSizeLimiter.limit(pageable);
+        Slice<SellingBidListResponseDto> response = sellingBidService.getMySellingBids(userDetails.getUserId(),
+                limited);
+        return CustomApiResponse.success(response);
     }
 }

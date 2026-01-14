@@ -1,9 +1,11 @@
 package com.example.unbox_be.domain.trade.service;
 
+import com.example.unbox_be.domain.product.implementation.ProductClientAdapter;
 import com.example.unbox_be.domain.trade.dto.request.SellingBidSearchCondition;
 import com.example.unbox_be.domain.trade.dto.response.AdminSellingBidListResponseDto;
 import com.example.unbox_be.domain.trade.repository.AdminSellingBidRepository;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
+import com.example.unbox_be.global.client.product.dto.ProductOptionForSellingBidInfoResponse;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -20,24 +22,37 @@ import java.util.UUID;
 public class AdminSellingBidServiceImpl implements AdminSellingBidService {
 
     private final AdminSellingBidRepository sellingBidRepository;
+    private final ProductClientAdapter productClientAdapter;
 
     @Override
     @Transactional(readOnly = true)
     public Page<AdminSellingBidListResponseDto> getSellingBids(SellingBidSearchCondition condition, Pageable pageable) {
-        // Repository 조회 (검색 조건 적용)
+
         Page<SellingBid> sellingBids = sellingBidRepository.findAdminSellingBids(condition, pageable);
 
-        // DTO 변환 및 반환
-        return sellingBids.map(bid -> AdminSellingBidListResponseDto.builder()
-                .id(bid.getId())
-                .productName(bid.getProductOption() != null ? bid.getProductOption().getProduct().getName() : "Unknown Product")
-                .brandName(bid.getProductOption() != null ? bid.getProductOption().getProduct().getBrand().getName() : "Unknown Brand")
-                .size(bid.getProductOption() != null ? bid.getProductOption().getOption() : "Unknown Size")
-                .price(bid.getPrice())
-                .status(bid.getStatus())
-                .createdAt(bid.getCreatedAt())
-                .deadline(bid.getDeadline())
-                .build());
+        return sellingBids.map(bid -> {
+            // ✅ Product 서비스로부터 상세 정보 조회
+            ProductOptionForSellingBidInfoResponse productInfo = productClientAdapter.getProductOptionForSellingBid(bid.getProductOptionId());
+
+            // ✅ 설계하신 AdminSellingBidListResponseDto 구조에 맞게 매핑
+            return AdminSellingBidListResponseDto.builder()
+                    .id(bid.getId())
+                    .status(bid.getStatus())
+                    .price(bid.getPrice())
+                    .deadline(bid.getDeadline())
+                    .createdAt(bid.getCreatedAt())
+                    .sellerId(bid.getSellerId())
+                    // 상품 옵션 정보
+                    .productOptionId(bid.getProductOptionId())
+                    .productOptionName(productInfo.getProductOptionName())
+                    // 상품 정보
+                    .productId(productInfo.getProductId())
+                    .productName(productInfo.getProductName())
+                    // 브랜드 정보
+                    .brandId(productInfo.getBrandId())
+                    .brandName(productInfo.getBrandName())
+                    .build();
+        });
     }
 
     @Override

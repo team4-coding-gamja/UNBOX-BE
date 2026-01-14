@@ -10,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.math.BigDecimal;
+
 @Entity
 @Getter
 @Table(name = "p_cart")
@@ -29,9 +31,20 @@ public class Cart extends BaseEntity {
     @JoinColumn(name = "selling_bid_id", nullable = false)
     private SellingBid sellingBid;
 
+    // --- 상품, 상품옵션 스냅샷 ---
+    private String productName;
+    private String imageUrl;
+    private String modelName;
+    private String productOptionName;
+
+
     @Builder
-    public Cart(User user, SellingBid sellingBid) {
-        this.user = user;
-        this.sellingBid = sellingBid;
+    public Cart(User user, SellingBid sellingBid,  String productName, String productOptionName, String imageUrl, String modelName) {
+            this.user = user;
+            this.sellingBid = sellingBid;
+            this.productName = productName;
+            this.productOptionName = productOptionName;
+            this.imageUrl = imageUrl;
+            this.modelName = modelName;
     }
 }

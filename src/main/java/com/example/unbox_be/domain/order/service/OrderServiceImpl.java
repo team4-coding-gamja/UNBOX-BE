@@ -10,6 +10,7 @@ import com.example.unbox_be.domain.order.entity.Order;
 import com.example.unbox_be.domain.order.entity.OrderStatus;
 import com.example.unbox_be.domain.order.mapper.OrderMapper;
 import com.example.unbox_be.domain.order.repository.OrderRepository;
+import com.example.unbox_be.domain.product.implementation.ProductClientAdapter;
 import com.example.unbox_be.domain.settlement.service.SettlementService;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -41,76 +43,59 @@ public class OrderServiceImpl implements OrderService {
     private final AdminRepository adminRepository;
     private final SellingBidRepository sellingBidRepository;
     private final SettlementService settlementService;
-    private final ProductClient productClient;
+    private final ProductClientAdapter productClientAdapter;
 
     private final OrderMapper orderMapper;
 
     @Override
     @Transactional
     public UUID createOrder(OrderCreateRequestDto requestDto, Long buyerId) {
-        // 1. 구매자 조회 (Entity 필요)
         User buyer = getUserByIdOrThrow(buyerId);
 
-        // 2. 락 없이 먼저 조회하여 Product 정보 확보 (외부 통신 지연 시 DB 락 점유 방지)
-        SellingBid tempBid = sellingBidRepository.findByIdAndDeletedAtIsNull(requestDto.getSellingBidId())
+        // 1) sellingBid 먼저 조회 (락 없음) - 스냅샷이 bid에 있으면 여기서 해결 가능
+        SellingBid bid = sellingBidRepository.findByIdAndDeletedAtIsNull(requestDto.getSellingBidId())
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
 
-        if (tempBid.getProductOption() == null) {
-            throw new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND); 
+        if (Objects.equals(bid.getSellerId(), buyerId)) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
-        UUID productOptionId = tempBid.getProductOption().getId(); // NPE Guarded
-
-        // 3. 상품 정보 조회 (ProductClient 사용) - 외부 통신
-        ProductOptionForOrderInfoResponse productInfo;
-        try {
-             productInfo = productClient.getProductForOrder(productOptionId);
-        } catch (CustomException e) {
-            throw e; // 이미 래핑된 예외는 그대로 전파
-        } catch (Exception e) {
-            log.error("ProductClient 호출 실패: productOptionId={}", productOptionId, e);
-            throw new CustomException(ErrorCode.EXTERNAL_API_ERROR); 
+        if (bid.getProductOptionId() == null) {
+            throw new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
         }
 
-        // 4. 판매 입찰 글(SellingBid) 재조회 (비관적 락 적용) - 이제 락 구간 진입
-        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(requestDto.getSellingBidId())
-                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+        // 2) 외부 조회(스냅샷 채우기) - 락 없음
+        ProductOptionForOrderInfoResponse productInfo = productClientAdapter.getProductForOrder(bid.getProductOptionId());
 
-        if (sellingBid.getStatus() == SellingStatus.MATCHED || sellingBid.getStatus() == SellingStatus.HOLD) {
+        // 3) DB에서 원샷으로 "LIVE -> MATCHED" 선점 시도 (동시성 핵심)
+        int updated = sellingBidRepository.updateStatusIfMatch(
+                bid.getId(), SellingStatus.LIVE, SellingStatus.MATCHED
+        );
+        if (updated == 0) {
+            // 이미 누가 매칭했거나 상태가 바뀜
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        // 5. 본인 판매글 구매 방지
-        if (sellingBid.getUserId().equals(buyerId)) {
-            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
-        }
+        // 4) 판매자 조회 (필요하면)
+        User seller = getUserByIdOrThrow(bid.getSellerId());
 
-        // 6. 판매자 정보 조회 (Entity 필요)
-        User seller = getUserByIdOrThrow(sellingBid.getUserId());
-
-        // 7. 가격 타입 변환 (Integer -> BigDecimal)
-        BigDecimal price = sellingBid.getPrice();
-        
-        // 8. Order 생성
+        // 5) Order 생성 (스냅샷 저장)
         Order order = Order.builder()
-                .sellingBidId(sellingBid.getId())
-                .buyer(buyer)            // Entity 주입
-                .seller(seller)          // Entity 주입
+                .sellingBidId(bid.getId())
+                .buyer(buyer)
+                .seller(seller)
                 .productOptionId(productInfo.getId())
                 .productId(productInfo.getProductId())
                 .productName(productInfo.getProductName())
                 .modelNumber(productInfo.getModelNumber())
-                .optionName(productInfo.getOptionName())
-                .imageUrl(productInfo.getImageUrl())
+                .productOptionName(productInfo.getProductOptionName())
+                .productImageUrl(productInfo.getProductImageUrl())
                 .brandName(productInfo.getBrandName())
-                .price(price)
+                .price(bid.getPrice())
                 .receiverName(requestDto.getReceiverName())
                 .receiverPhone(requestDto.getReceiverPhone())
                 .receiverAddress(requestDto.getReceiverAddress())
                 .receiverZipCode(requestDto.getReceiverZipCode())
                 .build();
-
-        // 9. 판매 입찰 상태 변경 (판매 완료 처리)
-        sellingBid.updateStatus(SellingStatus.MATCHED);
 
         return orderRepository.save(order).getId();
     }

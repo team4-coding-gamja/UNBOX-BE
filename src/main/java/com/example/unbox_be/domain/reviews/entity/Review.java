@@ -31,19 +31,19 @@ public class Review extends BaseEntity {
     @Column(nullable = false)
     private Integer rating;
 
-    @Column(name = "image_url")
-    private String imageUrl;
+    @Column(name = "review_Image_url")
+    private String reviewImageUrl;
 
     // 1주문 1리뷰 원칙
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false, unique = true)
     private Order order;
 
-    public Review(Order order, String content, Integer rating, String imageUrl) {
+    public Review(Order order, String content, Integer rating, String reviewImageUrl) {
         this.order = order;
         this.content = content;
         this.rating = rating;
-        this.imageUrl = imageUrl;
+        this.reviewImageUrl = reviewImageUrl;
     }
 
     public static Review createReview(Order order, String content, Integer rating, String imageUrl) {
@@ -51,8 +51,8 @@ public class Review extends BaseEntity {
         return new Review(order, normalizeContent(content), rating, normalizeImageUrl(imageUrl));
     }
 
-    public void update(String content, Integer rating, String imageUrl) {
-        validatePatchUpdate(content, rating, imageUrl);
+    public void update(String content, Integer rating, String reviewImageUrl) {
+        validatePatchUpdate(content, rating, reviewImageUrl);
 
         if (content != null) {
             this.content = normalizeContent(content);
@@ -60,9 +60,9 @@ public class Review extends BaseEntity {
         if (rating != null) {
             this.rating = rating;
         }
-        if (imageUrl != null) {
-            String normalized = normalizeImageUrl(imageUrl);
-            this.imageUrl = normalized;
+        if (reviewImageUrl != null) {
+            String normalized = normalizeImageUrl(reviewImageUrl);
+            this.reviewImageUrl = normalized;
         }
     }
 

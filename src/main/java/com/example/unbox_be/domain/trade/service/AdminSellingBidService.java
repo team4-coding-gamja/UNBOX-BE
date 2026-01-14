@@ -2,6 +2,7 @@ package com.example.unbox_be.domain.trade.service;
 
 import com.example.unbox_be.domain.trade.dto.request.SellingBidSearchCondition;
 import com.example.unbox_be.domain.trade.dto.response.AdminSellingBidListResponseDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidListResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

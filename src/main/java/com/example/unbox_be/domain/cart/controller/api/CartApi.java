@@ -1,11 +1,10 @@
 package com.example.unbox_be.domain.cart.controller.api;
 
-import com.example.unbox_be.domain.cart.dto.request.CartRequestDto;
-import com.example.unbox_be.domain.cart.dto.response.CartResponseDto;
+import com.example.unbox_be.domain.cart.dto.request.CartCreateRequestDto;
+import com.example.unbox_be.domain.cart.dto.response.CartListResponseDto;
 import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -17,27 +16,23 @@ import java.util.List;
 public interface CartApi {
 
     @Operation(summary = "장바구니 담기", description = "판매 중인 상품을 장바구니에 담습니다.")
-    @PostMapping
     CustomApiResponse<Void> addCart(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody CartRequestDto requestDto
+            @RequestBody CartCreateRequestDto requestDto
     );
 
     @Operation(summary = "내 장바구니 목록 조회", description = "장바구니 목록을 조회합니다.")
-    @GetMapping
-    CustomApiResponse<List<CartResponseDto>> getMyCarts(
+    CustomApiResponse<List<CartListResponseDto>> getMyCarts(
             @AuthenticationPrincipal CustomUserDetails userDetails
     );
 
     @Operation(summary = "장바구니 항목 삭제 (단건)", description = "장바구니의 특정 항목을 비웁니다. (구매나 삭제 등으로)")
-    @DeleteMapping("/{cartId}")
     CustomApiResponse<Void> deleteCart(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long cartId
     );
 
     @Operation(summary = "장바구니 비우기 (전체 삭제)", description = "장바구니의 모든 항목을 비웁니다.")
-    @DeleteMapping
     CustomApiResponse<Void> deleteAllCarts(
             @AuthenticationPrincipal CustomUserDetails userDetails
     );

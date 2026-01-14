@@ -16,7 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class OrderResponseDto {
     // 1. 주문 기본 정보
-    private UUID orderId;
+    private UUID id;
     private BigDecimal price;
     private OrderStatus status;
     private LocalDateTime createdAt;

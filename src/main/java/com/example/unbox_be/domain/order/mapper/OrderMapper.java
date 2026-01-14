@@ -10,44 +10,42 @@ import org.mapstruct.ReportingPolicy;
 /**
  * MapStruct Mapper
  * - componentModel = "spring": 스프링 빈으로 등록 (@Component 불필요)
- * - unmappedTargetPolicy = IGNORE: 매핑되지 않은 필드가 있어도 에러 무시 (필요 시 WARN/ERROR 변경)
+ * - unmappedTargetPolicy = ERROR: 매핑 누락을 컴파일 단계에서 잡기 (권장)
  */
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.ERROR
+)
 public interface OrderMapper {
 
     /**
-     * 목록 조회용 DTO 변환
-     * - source: Entity의 경로 (점.으로 깊은 접근 가능)
-     * - target: DTO의 필드명
+     * 주문 목록 응답 DTO 변환
      */
-    @Mapping(source = "id", target = "orderId")
-    @Mapping(source = "brandName", target = "brandName")
-    @Mapping(source = "productName", target = "productName")
-    @Mapping(source = "optionName", target = "size")
-    @Mapping(source = "imageUrl", target = "imageUrl")
+    @Mapping(source = "id", target = "id")
+    @Mapping(source = "productOptionName", target = "size")
+    @Mapping(source = "productImageUrl", target = "imageUrl")
     OrderResponseDto toResponseDto(Order order);
 
-    /**
-     * 상세 조회용 DTO 변환 (Nested DTO 매핑)
-     * - 내부 객체(product, productOption)는 아래 정의된 메서드를 자동으로 찾아 사용함
-     */
+    /* =========================
+     * 주문 상세 응답 DTO 변환
+     * - source="." 는 Order 전체를 의미
+     * - 아래 toProductOptionInfo / toProductInfo 메서드가 자동으로 선택되어 중첩 객체 생성
+     * ========================= */
     @Mapping(source = "id", target = "orderId")
-    @Mapping(source = ".", target = "productOption") // 아래 toProductOptionInfo 호출됨
-    @Mapping(source = ".", target = "product") // 아래 toProductInfo 호출됨
+    @Mapping(source = ".", target = "productOptionInfo")
+    @Mapping(source = ".", target = "productInfo")
     OrderDetailResponseDto toDetailResponseDto(Order order);
-
-    // --- Nested DTO 매핑 메서드 ---
 
     // Order -> OrderDetailResponseDto.ProductOptionInfo
     @Mapping(source = "productOptionId", target = "id")
-    @Mapping(source = "optionName", target = "size")
+    @Mapping(source = "productOptionName", target = "productOptionName")
     OrderDetailResponseDto.ProductOptionInfo toProductOptionInfo(Order order);
 
     // Order -> OrderDetailResponseDto.ProductInfo
     @Mapping(source = "productId", target = "id")
     @Mapping(source = "brandName", target = "brandName")
-    @Mapping(source = "productName", target = "name")
+    @Mapping(source = "productName", target = "productName")
     @Mapping(source = "modelNumber", target = "modelNumber")
-    @Mapping(source = "imageUrl", target = "imageUrl")
+    @Mapping(source = "productImageUrl", target = "productImageUrl")
     OrderDetailResponseDto.ProductInfo toProductInfo(Order order);
 }

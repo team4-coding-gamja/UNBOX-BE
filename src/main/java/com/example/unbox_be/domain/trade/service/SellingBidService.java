@@ -1,206 +1,57 @@
 package com.example.unbox_be.domain.trade.service;
 
-import com.example.unbox_be.domain.product.entity.ProductOption;
-import com.example.unbox_be.domain.product.repository.ProductOptionRepository;
-import com.example.unbox_be.domain.trade.dto.request.SellingBidRequestDto;
-import com.example.unbox_be.domain.trade.dto.request.UpdateSellingStatusRequestDto;
-import com.example.unbox_be.domain.trade.dto.response.SellingBidResponseDto;
+import com.example.unbox_be.domain.trade.dto.request.SellingBidCreateRequestDto;
+import com.example.unbox_be.domain.trade.dto.request.SellingBidsPriceUpdateRequestDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidCreateResponseDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidDetailResponseDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidListResponseDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidsPriceUpdateResponseDto;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
 import com.example.unbox_be.domain.trade.entity.SellingStatus;
-import com.example.unbox_be.domain.trade.repository.SellingBidRepository;
-import com.example.unbox_be.domain.user.entity.User;
-import com.example.unbox_be.domain.user.repository.UserRepository;
-import com.example.unbox_be.global.error.exception.CustomException;
-import com.example.unbox_be.global.error.exception.ErrorCode;
-import com.example.unbox_be.domain.trade.mapper.SellingBidMapper;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.UUID;
 
-@Service
-@RequiredArgsConstructor
-public class SellingBidService {
+public interface SellingBidService {
 
-    private final UserRepository userRepository;
-    private final ProductOptionRepository productOptionRepository;
-    private final SellingBidRepository sellingBidRepository;
-    private final SellingBidMapper sellingBidMapper;
+    /**
+     * 판매 입찰 생성
+     */
+    SellingBidCreateResponseDto createSellingBid(Long sellerId, SellingBidCreateRequestDto requestDto);
 
-    @Transactional
-    public UUID createSellingBid(Long userId, SellingBidRequestDto requestDto) {
-        if (requestDto.getPrice() == null || requestDto.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CustomException(ErrorCode.INVALID_BID_PRICE);
-        }
-        // 1. [수정] 단순히 존재 확인(exists)만 하지 말고, 실제 객체를 조회(findByIdAndDeletedAtIsNull)합니다.
-        ProductOption productOption = productOptionRepository.findByIdAndDeletedAtIsNull(requestDto.getOptionId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-        // 30일 뒤 00시로 deadline 설정
-        LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();
+    /**
+     * 판매 입찰 취소
+     */
+    void cancelSellingBid(UUID sellingId, Long userId, String deletedBy);
 
-        // 실제 주문 생성
-        SellingBid sellingBid = sellingBidMapper.toEntity(requestDto, userId, deadline, productOption);
-        // 생성된 주문 저장
-        SellingBid savedBid = sellingBidRepository.save(sellingBid);
-        return savedBid.getId();
-    }
+    /**
+     * 판매 입찰 가격 수정
+     */
+    SellingBidsPriceUpdateResponseDto updateSellingBidPrice(UUID sellingId, SellingBidsPriceUpdateRequestDto requestDto, Long userId
+    );
+    /**
+     * 판매 입찰 단건 조회
+     */
+    SellingBidDetailResponseDto getSellingBidDetail(UUID sellingId, Long userId);
 
-    @Transactional
-    public void cancelSellingBid(UUID sellingId, Long userId, String email) {
-        // 입찰 조회
-        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
-                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+    /**
+     * 내 판매 입찰 목록 조회
+     */
+    Slice<SellingBidListResponseDto> getMySellingBids(Long userId, Pageable pageable);
 
-        // 본인 확인 (DB 조회 없이 ID 비교만 수행)
-        if (!Objects.equals(sellingBid.getUserId(), userId)) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
-        }
-        // 판매 예약 주문 LIVE 상태 확인
-        if (sellingBid.getStatus() != SellingStatus.LIVE) {
-            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
-        }
+    /**
+     * 판매 입찰 상태 변경 (유저용)
+     */
+    void updateSellingBidStatus(UUID sellingId, SellingStatus newStatus, Long userId, String email);
 
-        processUpdate(sellingBid, SellingStatus.CANCELLED, email);
-    }
+    /**
+     * 판매 입찰 상태 변경 (시스템용)
+     */
+    void updateSellingBidStatusBySystem(UUID sellingId, SellingStatus newStatus, String email);
 
-    @Transactional
-    public void updateSellingBidPrice(UUID sellingId, BigDecimal newPrice, Long userId, String email) {
-        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
-                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
-        // 로그인 유저와 해당 예약 유저 동일성 검사
-        if (!Objects.equals(sellingBid.getUserId(), userId)) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
-        }
-
-        // 입력 가격 유효성 검사
-        if (newPrice == null || newPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CustomException(ErrorCode.INVALID_BID_PRICE);
-        }
-        // 해당 예약 상태 검사
-        if (sellingBid.getStatus() != SellingStatus.LIVE) {
-            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
-        }
-
-        // 업데이트
-        sellingBid.updatePrice(newPrice, userId, email);
-    }
-
-    @Transactional(readOnly = true)
-    public SellingBidResponseDto getSellingBidDetail(UUID sellingId, Long userId) {
-        // User 조회 삭제
-
-        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId) // 이걸로 변경!
-                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
-        validateOwner(sellingBid, userId);
-
-        // [개선] 연관된 옵션이 없는 비정상 데이터 체크
-        ProductOption option = sellingBid.getProductOption();
-        if (option == null || option.getProduct() == null) {
-            throw new CustomException(ErrorCode.INVALID_BID_STATUS); // 혹은 적절한 에러코드
-        }
-        // 동일하다면 sellingBid 반환 객체 생성
-        SellingBidResponseDto response = sellingBidMapper.toResponseDto(sellingBid);
-
-        // 객체 반환
-        return SellingBidResponseDto.builder()
-                .id(response.getId())
-                .status(response.getStatus())
-                .price(response.getPrice())
-                .deadline(response.getDeadline())
-                .size(option.getOption())
-                .product(SellingBidResponseDto.ProductInfo.builder()
-                        .id(option.getProduct().getId())
-                        .name(option.getProduct().getName())
-                        .imageUrl(option.getProduct().getImageUrl())
-                        .build())
-                .build();
-    }
-
-    @Transactional(readOnly = true)
-    public Slice<SellingBidResponseDto> getMySellingBids(Long userId, Pageable pageable) {
-        // 유저 정보 가져옴
-        Slice<SellingBid> bidSlice = sellingBidRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
-
-        // 3. 변환 (동일)
-        return bidSlice.map(bid -> {
-            SellingBidResponseDto dto = sellingBidMapper.toResponseDto(bid);
-
-            ProductOption option= bid.getProductOption();
-            if (option == null) {
-                return dto;
-            }
-            return dto.toBuilder()
-                    .size(option.getOption())
-                    .product(SellingBidResponseDto.ProductInfo.builder()
-                            .id(option.getProduct().getId())
-                            .name(option.getProduct().getName())
-                            .imageUrl(option.getProduct().getImageUrl())
-                            .build())
-                    .build();
-        });
-    }
-
-    // 유저용 Bid status 변환. 나중에 확인 후 삭제
-    @Transactional
-    public void updateSellingBidStatus(UUID sellingId, SellingStatus newStatus, Long userId, String email) {
-        // userId가 null이면 아예 진입도 못하게 막기
-        if (userId == null) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
-        }
-
-        SellingBid sellingBid = findSellingBid(sellingId);
-
-        // 본인 확인 (반드시 수행됨)
-        validateOwner(sellingBid, userId);
-
-        // 실제 상태 변경 로직 수행
-        processUpdate(sellingBid, newStatus, email);
-    }
-
-    // 내부 시스템용 Bid status 변환
-    @Transactional
-    public void updateSellingBidStatusBySystem(UUID sellingId, SellingStatus newStatus, String email) {
-        SellingBid sellingBid = findSellingBid(sellingId);
-
-        // 본인 확인 없이 바로 로직 수행 (내부에서만 호출하니까 안전)
-        processUpdate(sellingBid, newStatus, email);
-    }
-
-    // 변환할 수 있을 sellingBID인지 검사
-    private void validateTransition(SellingStatus current, SellingStatus next) {
-        if ((current == SellingStatus.CANCELLED || current == SellingStatus.MATCHED)
-                && next == SellingStatus.LIVE) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
-        }
-    }
-    // 실제 업데이트
-    private void processUpdate(SellingBid sellingBid, SellingStatus newStatus, String email) {
-        validateTransition(sellingBid.getStatus(), newStatus);
-        sellingBid.updateStatus(newStatus);
-        if (email != null) sellingBid.updateModifiedBy(email);
-    }
-    // 유저 검증
-    private void validateOwner(SellingBid sellingBid, Long userId) {
-        if (!Objects.equals(sellingBid.getUserId(), userId)) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
-        }
-    }
-    // Bid ID를 통한 sellingBid 검색
-    private SellingBid findSellingBid(UUID sellingId) {
-        return sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
-                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
-    }
-
-    // [Internal System] 엔티티 조회
-    @Transactional(readOnly = true)
-    public SellingBid findSellingBidById(UUID sellingId) {
-        return findSellingBid(sellingId);
-    }
+    /**
+     * 판매 입찰 엔티티 조회 (내부 시스템용)
+     */
+    SellingBid findSellingBidById(UUID sellingId);
 }

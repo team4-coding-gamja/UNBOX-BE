@@ -1,43 +1,73 @@
 package com.example.unbox_be.domain.trade.mapper;
 
-import com.example.unbox_be.domain.product.entity.ProductOption; // ✅ import 추가
-import com.example.unbox_be.domain.trade.dto.request.SellingBidRequestDto;
-import com.example.unbox_be.domain.trade.dto.response.SellingBidResponseDto;
+import com.example.unbox_be.domain.trade.dto.request.SellingBidCreateRequestDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidCreateResponseDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidDetailResponseDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidListResponseDto;
+import com.example.unbox_be.domain.trade.dto.response.SellingBidsPriceUpdateResponseDto;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
+import com.example.unbox_be.global.client.product.dto.ProductOptionForSellingBidInfoResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-@Mapper(
-        componentModel = "spring",
-        unmappedTargetPolicy = ReportingPolicy.IGNORE
-)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface SellingBidMapper {
 
-    // 1. DTO -> Entity 변환
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "status", ignore = true)
-    @Mapping(target = "userId", source = "userId")
-    @Mapping(target = "deadline", source = "deadline")
+        @Mapping(target = "id", ignore = true)
+        @Mapping(target = "sellerId", source = "sellerId")
+        @Mapping(target = "productOptionId", source = "productInfo.id")
+        @Mapping(target = "price", source = "dto.price")
+        @Mapping(target = "status", ignore = true)
+        @Mapping(target = "deadline", source = "deadline")
 
-    // ✅ [핵심 수정] 파라미터로 받은 객체(productOption)를 타겟 필드(productOption)에 그대로 넣음
-    @Mapping(source = "productOption", target = "productOption")
+        @Mapping(target = "productName", source = "productInfo.productName")
+        @Mapping(target = "modelNumber", source = "productInfo.modelNumber")
+        @Mapping(target = "productImageUrl", source = "productInfo.productImageUrl")
+        @Mapping(target = "productOptionName", source = "productInfo.productOptionName")
 
-    // ❌ [삭제] 기존에 에러 나던 부분 (dto.optionId -> productOption.id 매핑) 삭제
-    // @Mapping(source = "dto.optionId", target = "productOption.id")
+        SellingBid toEntity(
+                        SellingBidCreateRequestDto dto,
+                        Long sellerId,
+                        LocalDateTime deadline,
+                        ProductOptionForSellingBidInfoResponse productInfo);
 
-    SellingBid toEntity(
-            SellingBidRequestDto dto,
-            Long userId,
-            LocalDateTime deadline,
-            ProductOption productOption // ✅ 파라미터 추가
-    );
+        @Mapping(source = "id", target = "id")
+        SellingBidCreateResponseDto toCreateResponseDto(SellingBid entity);
 
+        SellingBidsPriceUpdateResponseDto toPriceUpdateResponseDto(UUID id, BigDecimal newPrice);
 
-    // 2. Entity -> Response DTO 변환 (기존 유지)
-    @Mapping(target = "product", ignore = true)
-    @Mapping(target = "size", ignore = true)
-    SellingBidResponseDto toResponseDto(SellingBid entity);
+        @Mapping(source = "entity.id", target = "id")
+        @Mapping(source = "entity.status", target = "status")
+        @Mapping(source = "entity.price", target = "price")
+        @Mapping(source = "entity.deadline", target = "deadline")
+        @Mapping(source = "entity.sellerId", target = "sellerId")
+        @Mapping(source = "entity.createdAt", target = "createdAt")
+        @Mapping(source = "productInfo.productName", target = "productName")
+        @Mapping(source = "productInfo.modelNumber", target = "modelNumber")
+        @Mapping(source = "productInfo.productImageUrl", target = "productImageUrl")
+        @Mapping(source = "productInfo.productOptionName", target = "productOptionName")
+        SellingBidDetailResponseDto toDetailResponseDto(SellingBid entity, ProductOptionForSellingBidInfoResponse productInfo);
+
+        /*
+         * =========================
+         * List 조회
+         * =========================
+         */
+
+        @Mapping(source = "entity.id", target = "id")
+        @Mapping(source = "entity.status", target = "status")
+        @Mapping(source = "entity.price", target = "price")
+        @Mapping(source = "entity.deadline", target = "deadline")
+        @Mapping(source = "entity.sellerId", target = "sellerId")
+        @Mapping(source = "entity.createdAt", target = "createdAt")
+        @Mapping(source = "productInfo.productName", target = "productName")
+        @Mapping(source = "productInfo.modelNumber", target = "modelNumber")
+        @Mapping(source = "productInfo.productImageUrl", target = "productImageUrl")
+        @Mapping(source = "productInfo.productOptionName", target = "productOptionName")
+        SellingBidListResponseDto toListResponseDto(SellingBid entity, ProductOptionForSellingBidInfoResponse productInfo);
 }

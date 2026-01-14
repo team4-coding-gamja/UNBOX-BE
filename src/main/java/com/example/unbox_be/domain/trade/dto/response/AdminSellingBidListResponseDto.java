@@ -16,11 +16,19 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AdminSellingBidListResponseDto {
     private UUID id;
-    private String productName;
-    private String brandName;
-    private String size;
-    private BigDecimal price;
     private SellingStatus status;
-    private LocalDateTime createdAt;
+    private BigDecimal price;
     private LocalDateTime deadline;
+    private LocalDateTime createdAt;
+
+    private Long sellerId;
+
+    private UUID productOptionId;
+    private String productOptionName;
+
+    private UUID productId;
+    private String productName;
+
+    private UUID brandId;
+    private String brandName;
 }

@@ -18,7 +18,7 @@ import java.util.UUID;
         name = "p_selling_bids",
         indexes = {
                 // [핵심] 1.사이즈별 -> 2.판매중인것 -> 3.가격낮은순
-                @Index(name = "idx_selling_option_status_price", columnList = "option_id, status, price")
+                @Index(name = "idx_selling_option_status_price", columnList = "product_option_id, status, price")
         })
 @Getter
 @Builder
@@ -34,11 +34,10 @@ public class SellingBid extends BaseEntity {
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private Long sellerId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "option_id") // 기존 컬럼 유지 시
-    private ProductOption productOption;
+    @Column(name = "product_option_id", nullable = false)
+    private UUID productOptionId;
 
     @Column(name = "price", nullable = false)
     private BigDecimal price;
@@ -50,9 +49,15 @@ public class SellingBid extends BaseEntity {
 
     private LocalDateTime deadline;
 
-    public void updatePrice(BigDecimal newPrice, Long userId, String email) {
+    // --- 상품, 상품 옵션 스냅샷 ---
+    private String productName;
+    private String modelNumber;
+    private String productImageUrl;
+    private String productOptionName;
+
+    public void updatePrice(BigDecimal newPrice, Long sellerId, String email) {
         // 본인 확인: 요청한 유저 ID와 입찰 생성자 ID 비교
-        if (!this.userId.equals(userId)) {
+        if (!this.sellerId.equals(sellerId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 

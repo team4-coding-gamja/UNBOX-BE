@@ -1,42 +1,51 @@
 package com.example.unbox_be.domain.cart.controller;
 
-import com.example.unbox_be.domain.cart.controller.api.CartApi;
-import com.example.unbox_be.domain.cart.dto.request.CartRequestDto;
-import com.example.unbox_be.domain.cart.dto.response.CartResponseDto;
+import com.example.unbox_be.domain.cart.dto.request.CartCreateRequestDto;
+import com.example.unbox_be.domain.cart.dto.response.CartCreateResponseDto;
+import com.example.unbox_be.domain.cart.dto.response.CartListResponseDto;
 import com.example.unbox_be.domain.cart.service.CartService;
 import com.example.unbox_be.global.response.CustomApiResponse;
 import com.example.unbox_be.global.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/carts")
 @RequiredArgsConstructor
-public class CartController implements CartApi {
+public class CartController {
 
     private final CartService cartService;
 
-    @Override
-    public CustomApiResponse<Void> addCart(CustomUserDetails userDetails, CartRequestDto requestDto) {
-        cartService.addCart(userDetails.getUserId(), requestDto);
-        return CustomApiResponse.success(null);
-    }
-
-    @Override
-    public CustomApiResponse<List<CartResponseDto>> getMyCarts(CustomUserDetails userDetails) {
-        List<CartResponseDto> result = cartService.getMyCarts(userDetails.getUserId());
+    @PostMapping
+    public CustomApiResponse<CartCreateResponseDto> createCart(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody CartCreateRequestDto requestDto
+    ) {
+        CartCreateResponseDto result = cartService.createCart(userDetails.getUserId(), requestDto);
         return CustomApiResponse.success(result);
     }
 
-    @Override
-    public CustomApiResponse<Void> deleteCart(CustomUserDetails userDetails, Long cartId) {
-        cartService.deleteCart(userDetails.getUserId(), cartId);
+    @GetMapping
+    public CustomApiResponse<List<CartListResponseDto>> getMyCarts(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<CartListResponseDto> result = cartService.getMyCarts(userDetails.getUserId());
+        return CustomApiResponse.success(result);
+    }
+
+    @DeleteMapping("/{id}")
+    public CustomApiResponse<Void> deleteCart(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id) {
+        cartService.deleteCart(userDetails.getUserId(), id);
         return CustomApiResponse.success(null);
     }
 
-    @Override
-    public CustomApiResponse<Void> deleteAllCarts(CustomUserDetails userDetails) {
+    @DeleteMapping
+    public CustomApiResponse<Void> deleteAllCarts(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         cartService.deleteAllCarts(userDetails.getUserId());
         return CustomApiResponse.success(null);
     }

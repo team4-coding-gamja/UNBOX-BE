@@ -1,6 +1,5 @@
 package com.example.unbox_be.domain.order.service;
 
-import com.example.unbox_be.domain.admin.repository.AdminRepository;
 import com.example.unbox_be.domain.order.dto.OrderSearchCondition;
 import com.example.unbox_be.domain.order.repository.AdminOrderRepository;
 import com.example.unbox_be.domain.order.dto.request.OrderStatusUpdateRequestDto;
@@ -27,7 +26,6 @@ import java.util.UUID;
 public class AdminOrderServiceImpl implements AdminOrderService {
 
     private final AdminOrderRepository adminOrderRepository;
-    private final AdminRepository adminRepository;
     private final OrderMapper orderMapper;
 
     // ✅ 관리자 주문 목록 조회 (검색 + 페이징)

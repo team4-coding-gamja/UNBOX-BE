@@ -12,14 +12,12 @@ import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor // 이 어노테이션이 있어야 new SellingBidRequestDto(id, price)가 가능합니다.
+@AllArgsConstructor
 @Builder
-public class SellingBidRequestDto {
-    @NotNull(message = "유저 ID는 필수입니다.")
-    private Long userId;
+public class SellingBidCreateRequestDto {
 
     @NotNull(message = "option ID 없음.")
-    private UUID optionId;
+    private UUID productOptionId;
 
     @NotNull(message = "Price 값 없음.")
     @Positive(message = "가격은 0보다 커야함")

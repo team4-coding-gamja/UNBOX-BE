@@ -55,7 +55,7 @@ public class SettlementService {
             throw new CustomException(ErrorCode.PAYMENT_SETTLEMENT_MISMATCH);
         }
 
-        if (!order.getSeller().getId().equals(sellingBid.getUserId())) {
+        if (!order.getSeller().getId().equals(sellingBid.getSellerId())) {
             throw new CustomException(ErrorCode.SETTLEMENT_SELLER_MISMATCH);
         }
 

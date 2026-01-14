@@ -30,8 +30,8 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private Category category;
 
-    @Column(name = "image_url")
-    private String imageUrl;
+    @Column(name = "product_image_url")
+    private String productImageUrl;
 
     @Column(columnDefinition = "integer default 0", nullable = false)
     private int reviewCount = 0;
@@ -44,12 +44,12 @@ public class Product extends BaseEntity {
     @JoinColumn(name = "brand_id", nullable = false)
     private Brand brand;
 
-    private Product(String name, String modelNumber, Category category, String imageUrl, Brand brand, int reviewCount,
+    private Product(String name, String modelNumber, Category category, String productImageUrl, Brand brand, int reviewCount,
             int totalScore) {
         this.name = name;
         this.modelNumber = modelNumber;
         this.category = category;
-        this.imageUrl = imageUrl;
+        this.productImageUrl = productImageUrl;
         this.brand = brand;
         this.reviewCount = reviewCount;
         this.totalScore = totalScore;
@@ -66,16 +66,16 @@ public class Product extends BaseEntity {
         return new Product(name, modelNumber, category, imageUrl, brand, 0, 0);
     }
 
-    public void update(String name, String modelNumber, Category category, String imageUrl) {
+    public void update(String name, String modelNumber, Category category, String productImageUrl) {
         validateName(name);
         validateModelNumber(modelNumber);
         validateCategory(category);
-        validateImageUrl(imageUrl);
+        validateImageUrl(productImageUrl);
 
         this.name = name;
         this.modelNumber = modelNumber;
         this.category = category;
-        this.imageUrl = imageUrl;
+        this.productImageUrl = productImageUrl;
     }
 
     // 유효성 검증 메서드

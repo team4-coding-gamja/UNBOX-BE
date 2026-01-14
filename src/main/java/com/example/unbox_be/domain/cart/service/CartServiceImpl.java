@@ -1,7 +1,8 @@
 package com.example.unbox_be.domain.cart.service;
 
-import com.example.unbox_be.domain.cart.dto.request.CartRequestDto;
-import com.example.unbox_be.domain.cart.dto.response.CartResponseDto;
+import com.example.unbox_be.domain.cart.dto.request.CartCreateRequestDto;
+import com.example.unbox_be.domain.cart.dto.response.CartCreateResponseDto;
+import com.example.unbox_be.domain.cart.dto.response.CartListResponseDto;
 import com.example.unbox_be.domain.cart.entity.Cart;
 import com.example.unbox_be.domain.cart.repository.CartRepository;
 import com.example.unbox_be.domain.trade.entity.SellingBid;
@@ -28,7 +29,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void addCart(Long userId, CartRequestDto requestDto) {
+    public CartCreateResponseDto createCart(Long userId, CartCreateRequestDto requestDto) {
         User user = userService.findUser(userId);
         SellingBid sellingBid = sellingBidService.findSellingBidById(requestDto.getSellingBidId());
 
@@ -38,7 +39,7 @@ public class CartServiceImpl implements CartService {
         }
 
         // 2. 본인 상품 검증: 본인이 올린 상품은 담을 수 없음
-        if (Objects.equals(sellingBid.getUserId(), userId)) {
+        if (Objects.equals(sellingBid.getSellerId(), userId)) {
             throw new CustomException(ErrorCode.CANNOT_ADD_MY_OWN_BID);
         }
 
@@ -52,12 +53,15 @@ public class CartServiceImpl implements CartService {
                 .sellingBid(sellingBid)
                 .build();
 
-        cartRepository.save(cart);
+        Cart save = cartRepository.save(cart);
+        return CartCreateResponseDto.builder()
+                .sellingBidId(save.getSellingBid().getId())
+                .build();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<CartResponseDto> getMyCarts(Long userId) {
+    public List<CartListResponseDto> getMyCarts(Long userId) {
         User user = userService.findUser(userId);
         List<Cart> carts = cartRepository.findAllByUserOrderByCreatedAtDesc(user);
 
@@ -91,26 +95,23 @@ public class CartServiceImpl implements CartService {
         carts.forEach(cart -> cart.softDelete(user.getEmail()));
     }
 
-    private CartResponseDto toResponseDto(Cart cart) {
+    private CartListResponseDto toResponseDto(Cart cart) {
         SellingBid bid = cart.getSellingBid();
-        var productOption = bid.getProductOption();
-        var product = productOption.getProduct();
 
-        return CartResponseDto.builder()
+        return CartListResponseDto.builder()
                 .cartId(cart.getId())
                 .createdAt(cart.getCreatedAt())
-                .sellingBid(CartResponseDto.SellingBidInfo.builder()
-                        .id(bid.getId())
-                        .price(bid.getPrice())
-                        .status(bid.getStatus())
-                        .size(productOption.getOption())
-                        .product(CartResponseDto.ProductInfo.builder()
-                                .id(product.getId())
-                                .name(product.getName())
-                                .brandName(product.getBrand().getName())
-                                .imageUrl(product.getImageUrl())
-                                .build())
-                        .build())
+
+                .sellingBidId(bid.getId())
+                .price(bid.getPrice())
+                .sellingStatus(bid.getStatus())
+
+                .productOptionId(bid.getProductOptionId())
+                .productOptionName(cart.getProductOptionName())
+
+                .productName(cart.getProductName())
+                .modelNumber(cart.getModelName())
+                .productImageUrl(cart.getProductImageUrl())
                 .build();
     }
 }

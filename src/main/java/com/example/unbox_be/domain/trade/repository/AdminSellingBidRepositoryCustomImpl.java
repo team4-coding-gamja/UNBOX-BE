@@ -39,8 +39,7 @@ public class AdminSellingBidRepositoryCustomImpl implements AdminSellingBidRepos
                         statusEq(condition.getStatus()),
                         productNameContains(condition.getProductName()),
                         brandNameContains(condition.getBrandName()),
-                        periodBetween(condition.getStartDate(), condition.getEndDate())
-                )
+                        periodBetween(condition.getStartDate(), condition.getEndDate()))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .orderBy(sellingBid.createdAt.desc())
@@ -57,8 +56,7 @@ public class AdminSellingBidRepositoryCustomImpl implements AdminSellingBidRepos
                         statusEq(condition.getStatus()),
                         productNameContains(condition.getProductName()),
                         brandNameContains(condition.getBrandName()),
-                        periodBetween(condition.getStartDate(), condition.getEndDate())
-                );
+                        periodBetween(condition.getStartDate(), condition.getEndDate()));
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
@@ -76,13 +74,13 @@ public class AdminSellingBidRepositoryCustomImpl implements AdminSellingBidRepos
     }
 
     private BooleanExpression periodBetween(LocalDate startDate, LocalDate endDate) {
-        if (startDate == null && endDate == null) return null;
+        if (startDate == null && endDate == null)
+            return null;
 
         if (startDate != null && endDate != null) {
             return sellingBid.createdAt.between(
                     startDate.atStartOfDay(),
-                    endDate.plusDays(1).atStartOfDay()
-            );
+                    endDate.plusDays(1).atStartOfDay());
         }
         if (startDate != null) {
             return sellingBid.createdAt.goe(startDate.atStartOfDay());

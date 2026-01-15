@@ -76,13 +76,13 @@ public class AdminSellingBidRepositoryCustomImpl implements AdminSellingBidRepos
     }
 
     private BooleanExpression periodBetween(LocalDate startDate, LocalDate endDate) {
-        if (startDate == null && endDate == null) return null;
+        if (startDate == null && endDate == null)
+            return null;
 
         if (startDate != null && endDate != null) {
             return sellingBid.createdAt.between(
                     startDate.atStartOfDay(),
-                    endDate.plusDays(1).atStartOfDay()
-            );
+                    endDate.plusDays(1).atStartOfDay());
         }
         if (startDate != null) {
             return sellingBid.createdAt.goe(startDate.atStartOfDay());

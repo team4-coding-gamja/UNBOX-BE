@@ -1,7 +1,7 @@
 package com.example.unbox_be.global.security.auth;
 
-import com.example.unbox_be.domain.admin.entity.Admin;
-import com.example.unbox_be.domain.user.entity.User;
+import com.example.unbox_be.domain.user.admin.entity.Admin;
+import com.example.unbox_be.domain.user.user.entity.User;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;

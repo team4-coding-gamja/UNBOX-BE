@@ -74,10 +74,6 @@ public enum ErrorCode {
     INVALID_ORDER_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태 변경입니다."),
     INVALID_ORDER_BUYER(HttpStatus.BAD_REQUEST, "유효하지 않은 주문의 구매자 입니다."),
 
-    // 위시리스트
-    WISHLIST_ALREADY_EXISTS(HttpStatus.BAD_REQUEST,"이미 찜 목록에 존재하는 상품입니다."),
-    WISHLIST_NOT_FOUND(HttpStatus.NOT_FOUND, "찜 목록에서 찾을 수 없습니다."),
-
     // 장바구니 (Cart)
     CART_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 장바구니에 담긴 상품입니다."),
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "장바구니 항목을 찾을 수 없습니다."),

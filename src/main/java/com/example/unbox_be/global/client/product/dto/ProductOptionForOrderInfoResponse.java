@@ -1,7 +1,7 @@
 package com.example.unbox_be.global.client.product.dto;
 
-import com.example.unbox_be.domain.product.entity.Product;
-import com.example.unbox_be.domain.product.entity.ProductOption;
+import com.example.unbox_be.domain.product.product.entity.Product;
+import com.example.unbox_be.domain.product.product.entity.ProductOption;
 import lombok.Builder;
 import lombok.Getter;
 

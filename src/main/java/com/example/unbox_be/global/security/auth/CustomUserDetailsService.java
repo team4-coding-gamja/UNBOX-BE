@@ -1,9 +1,9 @@
 package com.example.unbox_be.global.security.auth;
 
-import com.example.unbox_be.domain.admin.entity.Admin;
-import com.example.unbox_be.domain.admin.repository.AdminRepository;
-import com.example.unbox_be.domain.user.repository.UserRepository;
-import com.example.unbox_be.domain.user.entity.User;
+import com.example.unbox_be.domain.user.admin.entity.Admin;
+import com.example.unbox_be.domain.user.admin.repository.AdminRepository;
+import com.example.unbox_be.domain.user.user.repository.UserRepository;
+import com.example.unbox_be.domain.user.user.entity.User;
 import com.example.unbox_be.global.error.exception.CustomException;
 import com.example.unbox_be.global.error.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;

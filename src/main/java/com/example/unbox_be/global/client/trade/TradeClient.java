@@ -1,6 +1,5 @@
 package com.example.unbox_be.global.client.trade;
 
-import com.example.unbox_be.global.client.product.dto.ProductOptionForOrderInfoResponse;
 import com.example.unbox_be.global.client.trade.dto.SellingBidForCartInfoResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

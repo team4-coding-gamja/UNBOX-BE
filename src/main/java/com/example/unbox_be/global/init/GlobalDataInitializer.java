@@ -1,10 +1,10 @@
 package com.example.unbox_be.global.init;
 
-import com.example.unbox_be.domain.admin.entity.Admin;
-import com.example.unbox_be.domain.admin.entity.AdminRole;
-import com.example.unbox_be.domain.admin.repository.AdminRepository;
-import com.example.unbox_be.domain.user.entity.User;
-import com.example.unbox_be.domain.user.repository.UserRepository;
+import com.example.unbox_be.domain.user.admin.entity.Admin;
+import com.example.unbox_be.domain.user.admin.entity.AdminRole;
+import com.example.unbox_be.domain.user.admin.repository.AdminRepository;
+import com.example.unbox_be.domain.user.user.entity.User;
+import com.example.unbox_be.domain.user.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;

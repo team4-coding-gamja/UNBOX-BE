@@ -1,6 +1,6 @@
 package com.example.unbox_be.trade.event;
 
-import com.example.unbox_be.trade.service.AdminSellingBidService;
+import com.example.unbox_be.trade.application.service.AdminSellingBidService;
 import com.example.unbox_be.common.event.product.BrandDeletedEvent;
 import com.example.unbox_be.common.event.product.ProductDeletedEvent;
 import com.example.unbox_be.common.event.product.ProductOptionDeletedEvent;

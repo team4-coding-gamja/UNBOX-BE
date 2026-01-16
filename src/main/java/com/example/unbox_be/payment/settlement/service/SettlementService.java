@@ -8,8 +8,8 @@ import com.example.unbox_be.payment.settlement.dto.response.SettlementResponseDt
 import com.example.unbox_be.payment.settlement.entity.Settlement;
 import com.example.unbox_be.payment.settlement.entity.SettlementStatus;
 import com.example.unbox_be.payment.settlement.repository.SettlementRepository;
-import com.example.unbox_be.trade.entity.SellingBid;
-import com.example.unbox_be.trade.repository.SellingBidRepository;
+import com.example.unbox_be.trade.domain.entity.SellingBid;
+import com.example.unbox_be.trade.domain.repository.SellingBidRepository;
 import com.example.unbox_be.common.error.exception.CustomException;
 import com.example.unbox_be.common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;

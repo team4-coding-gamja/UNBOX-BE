@@ -1,11 +1,11 @@
 package com.example.unbox_be.product.reviews.dto.response;
 
+import com.example.unbox_be.order.entity.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -15,7 +15,7 @@ import java.util.UUID;
 @Builder
 public class ReviewDetailResponseDto {
 
-    private UUID id;
+    private UUID reviewId;
     private String content;
     private Integer rating;
     private String reviewImageUrl;
@@ -26,8 +26,8 @@ public class ReviewDetailResponseDto {
     @Getter
     @Builder
     public static class OrderInfo {
-        private UUID id;
-        private BigDecimal price;
+        private UUID orderId;
+        private OrderStatus orderStatus;
         private UserInfo buyer;
         private ProductOptionInfo productOption;
     }
@@ -35,14 +35,14 @@ public class ReviewDetailResponseDto {
     @Getter
     @Builder
     public static class UserInfo {
-        private Long id;
-        private String nickname;
+        private Long buyerId;
+        private String buyerNickname;
     }
 
     @Getter
     @Builder
     public static class ProductOptionInfo {
-        private UUID id;
+        private UUID productOptionId;
         private String productOptionName;
         private ProductInfo product;
     }
@@ -50,8 +50,8 @@ public class ReviewDetailResponseDto {
     @Getter
     @Builder
     public static class ProductInfo {
-        private UUID id;
-        private String name;
+        private UUID productId;
+        private String productName;
         private String productImageUrl;
     }
 }

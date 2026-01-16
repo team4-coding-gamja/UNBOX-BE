@@ -13,6 +13,6 @@ public interface ProductClient {
     @GetMapping("/internal/products/options/{id}/for-order")
     ProductOptionForOrderInfoResponse getProductForOrder (@PathVariable UUID id);
 
-    @GetMapping("/internal/products/options/{id}/for-review")
+    @GetMapping("/internal/products/options/{id}/for-sellingbid")
     ProductOptionForSellingBidInfoResponse getProductOptionForSellingBid (@PathVariable UUID id);
 }

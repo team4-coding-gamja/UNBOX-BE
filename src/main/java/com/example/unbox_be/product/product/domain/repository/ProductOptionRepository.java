@@ -26,7 +26,7 @@ public interface ProductOptionRepository extends JpaRepository<ProductOption, UU
 
 
     // ✅ 옵션 중복 체크(삭제 제외, 실무 권장)
-    boolean existsByProductAndOptionAndDeletedAtIsNull(Product product, String option);
+    boolean existsByProductAndNameAndDeletedAtIsNull(Product product, String name);
 
     // =========================
     // ✅ 페이징 조회 메서드 추가

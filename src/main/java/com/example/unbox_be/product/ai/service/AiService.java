@@ -26,7 +26,7 @@ public class AiService {
     @Transactional(readOnly = true)
     public AiReviewSummaryResponseDto summarizeReviews(UUID productId) {
         // 1. 해당 상품의 모든 리뷰 조회
-        List<Review> reviews = reviewRepository.findAllByOrderProductIdAndDeletedAtIsNull(productId);
+        List<Review> reviews = reviewRepository.findAllByProductSnapshotProductIdAndDeletedAtIsNull(productId);
 
         int reviewCount = reviews.size();
         if (reviewCount == 0) {

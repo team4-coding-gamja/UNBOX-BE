@@ -1,6 +1,6 @@
 package com.example.unbox_be.trade.service;
 
-import com.example.unbox_be.product.product.implementation.ProductClientAdapter;
+import com.example.unbox_be.product.product.infrastructure.adapter.ProductClientAdapter;
 import com.example.unbox_be.trade.dto.request.SellingBidSearchCondition;
 import com.example.unbox_be.trade.dto.response.AdminSellingBidListResponseDto;
 import com.example.unbox_be.trade.repository.AdminSellingBidRepository;

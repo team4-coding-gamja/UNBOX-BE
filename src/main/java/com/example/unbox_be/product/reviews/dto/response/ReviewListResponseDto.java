@@ -14,7 +14,7 @@ import java.util.UUID;
 @Builder
 public class ReviewListResponseDto {
 
-    private UUID id;
+    private UUID reviewId;
     private String content;
     private Integer rating;
     private String reviewImageUrl;

@@ -20,7 +20,7 @@ public interface SellingBidMapper {
 
         @Mapping(target = "id", ignore = true)
         @Mapping(target = "sellerId", source = "sellerId")
-        @Mapping(target = "productOptionId", source = "productInfo.id")
+        @Mapping(target = "productOptionId", source = "productInfo.productOptionId")
         @Mapping(target = "price", source = "dto.price")
         @Mapping(target = "status", ignore = true)
         @Mapping(target = "deadline", source = "deadline")

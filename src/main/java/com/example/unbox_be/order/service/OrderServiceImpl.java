@@ -10,7 +10,7 @@ import com.example.unbox_be.order.entity.Order;
 import com.example.unbox_be.order.entity.OrderStatus;
 import com.example.unbox_be.order.mapper.OrderMapper;
 import com.example.unbox_be.order.repository.OrderRepository;
-import com.example.unbox_be.product.product.implementation.ProductClientAdapter;
+import com.example.unbox_be.product.product.infrastructure.adapter.ProductClientAdapter;
 import com.example.unbox_be.payment.settlement.service.SettlementService;
 import com.example.unbox_be.trade.entity.SellingBid;
 import com.example.unbox_be.trade.entity.SellingStatus;
@@ -81,7 +81,7 @@ public class OrderServiceImpl implements OrderService {
                 .sellingBidId(bid.getId())
                 .buyer(buyer)
                 .seller(seller)
-                .productOptionId(productInfo.getId())
+                .productOptionId(productInfo.getProductOptionId())
                 .productId(productInfo.getProductId())
                 .productName(productInfo.getProductName())
                 .modelNumber(productInfo.getModelNumber())

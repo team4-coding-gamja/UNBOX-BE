@@ -25,34 +25,32 @@ public class Review extends BaseEntity {
     @Column(name = "review_id", updatable = false, nullable = false)
     private UUID id;
 
+    @Column(name = "order_id", nullable = false)
+    private UUID orderId;
+
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
     @Column(nullable = false)
     private Integer rating;
 
-    @Column(name = "review_Image_url")
-    private String reviewImageUrl;
+    @Column(name = "image_url")
+    private String imageUrl;
 
-    // 1주문 1리뷰 원칙
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
-    private Order order;
-
-    public Review(Order order, String content, Integer rating, String reviewImageUrl) {
-        this.order = order;
+    public Review(UUID orderId, String content, Integer rating, String imageUrl) {
+        this.orderId = orderId;
         this.content = content;
         this.rating = rating;
-        this.reviewImageUrl = reviewImageUrl;
+        this.imageUrl = imageUrl;
     }
 
-    public static Review createReview(Order order, String content, Integer rating, String imageUrl) {
-        validateCreate(order, content, rating, imageUrl);
-        return new Review(order, normalizeContent(content), rating, normalizeImageUrl(imageUrl));
+    public static Review createReview(UUID orderId, String content, Integer rating, String imageUrl) {
+        validateCreate(orderId, content, rating, imageUrl);
+        return new Review(orderId, normalizeContent(content), rating, normalizeImageUrl(imageUrl));
     }
 
-    public void update(String content, Integer rating, String reviewImageUrl) {
-        validatePatchUpdate(content, rating, reviewImageUrl);
+    public void update(String content, Integer rating, String imageUrl) {
+        validatePatchUpdate(content, rating, imageUrl);
 
         if (content != null) {
             this.content = normalizeContent(content);
@@ -60,9 +58,9 @@ public class Review extends BaseEntity {
         if (rating != null) {
             this.rating = rating;
         }
-        if (reviewImageUrl != null) {
-            String normalized = normalizeImageUrl(reviewImageUrl);
-            this.reviewImageUrl = normalized;
+        if (imageUrl != null) {
+            String normalized = normalizeImageUrl(imageUrl);
+            this.imageUrl = normalized;
         }
     }
 
@@ -70,8 +68,8 @@ public class Review extends BaseEntity {
     // Validation (Domain Rule)
     // =======================
 
-    private static void validateCreate(Order order, String content, Integer rating, String imageUrl) {
-        requireNotNull(order, "order");
+    private static void validateCreate(UUID orderId, String content, Integer rating, String imageUrl) {
+        requireNotNull(orderId, "order");
         validateContent(content);
         validateRating(rating);
         validateImageUrl(imageUrl);

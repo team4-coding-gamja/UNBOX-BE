@@ -68,7 +68,7 @@ public class ReviewServiceImpl implements ReviewService {
                 order,
                 requestDto.getContent(),
                 requestDto.getRating(),
-                requestDto.getImageUrl()
+                requestDto.getReviewImageUrl()
         );
 
         // 7) 저장
@@ -97,7 +97,7 @@ public class ReviewServiceImpl implements ReviewService {
             throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
         }
 
-        review.update(requestDto.getContent(), requestDto.getRating(), requestDto.getImageUrl());
+        review.update(requestDto.getContent(), requestDto.getRating(), requestDto.getReviewImageUrl());
         return reviewMapper.toReviewUpdateResponseDto(review);
     }
 

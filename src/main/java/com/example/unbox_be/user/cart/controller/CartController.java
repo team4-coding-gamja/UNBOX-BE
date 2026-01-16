@@ -11,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/carts")
@@ -38,7 +39,7 @@ public class CartController {
     @DeleteMapping("/{id}")
     public CustomApiResponse<Void> deleteCart(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         cartService.deleteCart(userDetails.getUserId(), id);
         return CustomApiResponse.success(null);
     }

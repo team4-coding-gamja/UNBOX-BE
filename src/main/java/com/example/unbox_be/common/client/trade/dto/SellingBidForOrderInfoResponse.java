@@ -13,15 +13,10 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class SellingBidForCartInfoResponse {
+public class SellingBidForOrderInfoResponse {
     private UUID sellingId;
     private Long sellerId;
     private UUID productOptionId;
     private BigDecimal price;
     private SellingStatus sellingStatus;
-
-    private String productName;
-    private String productOptionName;
-    private String productImageUrl;
-    private String modelNumber;
 }

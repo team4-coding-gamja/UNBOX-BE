@@ -9,6 +9,6 @@ import java.util.UUID;
 // @FeignClient(name = "trade-service")
 public interface OrderClient {
 
-    @GetMapping
+    @GetMapping("/internal/order/{id}/for-review")
     OrderForReviewInfoResponse getOrderForReview (@PathVariable UUID id);
 }

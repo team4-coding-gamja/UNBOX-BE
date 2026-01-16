@@ -28,16 +28,17 @@ public class Brand extends BaseEntity {
     @Column
     private String imageUrl;
 
+    // ======================= 연관 관계 =======================
     @OneToMany(mappedBy = "brand", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Product> products = new ArrayList<>();
 
-    // 생성자
+    // ======================= 생성자 =======================
     private Brand(String name, String imageUrl) {
         this.name = name;
         this.imageUrl = imageUrl;
     }
 
-    // 생성 메서드
+    // ======================= 정적 메서드 =======================
     public static Brand createBrand(String name, String imageUrl) {
         validateName(name);
         validateLogoUrl(imageUrl);
@@ -45,7 +46,7 @@ public class Brand extends BaseEntity {
         return new Brand(name, imageUrl);
     }
 
-    // 유효성 검증 메서드
+    // ======================= 유효성 검사 메서드 =======================
     private static void validateName(String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("브랜드명은 필수입니다.");

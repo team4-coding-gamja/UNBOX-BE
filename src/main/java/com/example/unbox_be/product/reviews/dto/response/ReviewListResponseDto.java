@@ -20,5 +20,6 @@ public class ReviewListResponseDto {
     private String reviewImageUrl;
     private LocalDateTime createdAt;
     private String buyerNickname;
+    private String productName;
     private String productOptionName;
 }

@@ -15,10 +15,10 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.example.unbox_be.product.product.entity.QBrand.brand;
-import static com.example.unbox_be.product.product.entity.QProduct.product;
-import static com.example.unbox_be.product.product.entity.QProductOption.productOption;
-import static com.example.unbox_be.trade.entity.QSellingBid.sellingBid;
+import static com.example.unbox_be.product.product.domain.entity.QBrand.brand;
+import static com.example.unbox_be.product.product.domain.entity.QProduct.product;
+import static com.example.unbox_be.product.product.domain.entity.QProductOption.productOption;
+import static com.example.unbox_be.trade.domain.entity.QSellingBid.sellingBid;
 
 @Repository
 @RequiredArgsConstructor

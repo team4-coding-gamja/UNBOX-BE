@@ -7,11 +7,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
-/**
- * MapStruct Mapper
- * - componentModel = "spring": 스프링 빈으로 등록 (@Component 불필요)
- * - unmappedTargetPolicy = ERROR: 매핑 누락을 컴파일 단계에서 잡기 (권장)
- */
 @Mapper(
         componentModel = "spring",
         unmappedTargetPolicy = ReportingPolicy.ERROR

@@ -23,25 +23,25 @@ public class ProductOption extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    // 같은 도메인 내부이므로 연관관계 유지
+    // ======================= 연관 관계 =======================
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    // 생성자
+    // ======================= 생성자 =======================
     private ProductOption(Product product, String name) {
         this.product = product;
         this.name = name;
     }
 
-    // 정적 메서드
+    // ======================= 정적 메서드 =======================
     public static ProductOption createProductOption(Product product, String name) {
         validateProduct(product);
         validateOption(name);
         return new ProductOption(product, name);
     }
 
-    // 검증 로직
+    // ======================= 유효성 검사 메서드 =======================
     private static void validateProduct(Product product) {
         if (product == null) {
             throw new IllegalArgumentException("상품은 필수입니다.");

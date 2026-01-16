@@ -36,7 +36,7 @@ public class AdminSellingBidServiceImpl implements AdminSellingBidService {
 
             // ✅ 설계하신 AdminSellingBidListResponseDto 구조에 맞게 매핑
             return AdminSellingBidListResponseDto.builder()
-                    .id(bid.getId())
+                    .sellingBidId(bid.getId())
                     .status(bid.getStatus())
                     .price(bid.getPrice())
                     .deadline(bid.getDeadline())
@@ -57,8 +57,8 @@ public class AdminSellingBidServiceImpl implements AdminSellingBidService {
 
     @Override
     @Transactional
-    public void deleteSellingBid(UUID sellingId, String deletedBy) {
-        SellingBid sellingBid = sellingBidRepository.findById(sellingId)
+    public void deleteSellingBid(UUID sellingBidId, String deletedBy) {
+        SellingBid sellingBid = sellingBidRepository.findById(sellingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
 
         sellingBid.softDelete(deletedBy);

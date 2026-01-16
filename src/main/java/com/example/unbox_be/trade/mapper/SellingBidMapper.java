@@ -36,12 +36,13 @@ public interface SellingBidMapper {
                         LocalDateTime deadline,
                         ProductOptionForSellingBidInfoResponse productInfo);
 
-        @Mapping(source = "id", target = "id")
+        @Mapping(source = "id", target = "sellingBidId")
         SellingBidCreateResponseDto toCreateResponseDto(SellingBid entity);
 
+        @Mapping(source = "id", target = "sellingBidId")
         SellingBidsPriceUpdateResponseDto toPriceUpdateResponseDto(UUID id, BigDecimal newPrice);
 
-        @Mapping(source = "entity.id", target = "id")
+        @Mapping(source = "entity.id", target = "sellingBidId")
         @Mapping(source = "entity.status", target = "status")
         @Mapping(source = "entity.price", target = "price")
         @Mapping(source = "entity.deadline", target = "deadline")
@@ -59,7 +60,7 @@ public interface SellingBidMapper {
          * =========================
          */
 
-        @Mapping(source = "entity.id", target = "id")
+        @Mapping(source = "entity.id", target = "sellingBidId")
         @Mapping(source = "entity.status", target = "status")
         @Mapping(source = "entity.price", target = "price")
         @Mapping(source = "entity.deadline", target = "deadline")

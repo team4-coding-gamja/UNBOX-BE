@@ -36,14 +36,14 @@ public interface SellingBidApi {
                         @io.swagger.v3.oas.annotations.media.ExampleObject(name = "판매 입찰(10000원)", value = """
                                         {
                                           "userId": 5,
-                                          "optionId": "aaaa0000-0000-0000-0000-000000000001",
+                                          "productOptionId": "aaaa0000-0000-0000-0000-000000000001",
                                           "price": 10000
                                         }
                                         """),
                         @io.swagger.v3.oas.annotations.media.ExampleObject(name = "판매 입찰(5000원)", value = """
                                         {
                                           "userId": 5,
-                                          "optionId": "aaaa0000-0000-0000-0000-000000000001",
+                                          "productOptionId": "aaaa0000-0000-0000-0000-000000000001",
                                           "price": 5000
                                         }
                                         """)

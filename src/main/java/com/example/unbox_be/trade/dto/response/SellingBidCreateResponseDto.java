@@ -14,7 +14,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class SellingBidCreateResponseDto {
 
-    private UUID id;
+    private UUID sellingBidId;
     private BigDecimal price;
 
     private String productName;

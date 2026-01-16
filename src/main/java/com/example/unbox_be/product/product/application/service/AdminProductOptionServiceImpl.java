@@ -53,7 +53,7 @@ public class AdminProductOptionServiceImpl implements AdminProductOptionService 
     public AdminProductOptionCreateResponseDto createProductOption(UUID productId, AdminProductOptionCreateRequestDto requestDto) {
         Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
-        if (productOptionRepository.existsByProductAndOptionAndDeletedAtIsNull(product, requestDto.getProductOptionName())) {
+        if (productOptionRepository.existsByProductAndNameAndDeletedAtIsNull(product, requestDto.getProductOptionName())) {
             throw new CustomException(ErrorCode.PRODUCT_OPTION_ALREADY_EXISTS);
         }
 

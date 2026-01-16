@@ -216,7 +216,7 @@ public class ProductServiceImpl implements ProductService {
                 }
 
                 // 리뷰 조회 및 DTO 변환
-                Page<Review> reviews = reviewRepository.findAllByOrderProductIdAndDeletedAtIsNull(productId, pageable);
+                Page<Review> reviews = reviewRepository.findAllByProductSnapshotProductIdAndDeletedAtIsNull(productId, pageable);
                 return reviews.map(reviewMapper::toReviewListResponseDto);
         }
 

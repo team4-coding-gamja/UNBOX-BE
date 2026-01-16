@@ -19,10 +19,13 @@ public interface TradeClientMapper {
                 .productOptionId(sellingBid.getProductOptionId())
                 .price(sellingBid.getPrice())
                 .sellingStatus(sellingBid.getStatus())
+                .productId(sellingBid.getProductId())
                 .productName(sellingBid.getProductName())
                 .productOptionName(sellingBid.getProductOptionName())
                 .productImageUrl(sellingBid.getProductImageUrl())
                 .modelNumber(sellingBid.getModelNumber())
+                .brandName(sellingBid.getBrandName())
+                .brandId(sellingBid.getBrandId())
                 .build();
     }
 
@@ -33,6 +36,13 @@ public interface TradeClientMapper {
                 .productOptionId(sellingBid.getProductOptionId())
                 .price(sellingBid.getPrice())
                 .sellingStatus(sellingBid.getStatus())
+                .productId(sellingBid.getProductId())
+                .productName(sellingBid.getProductName())
+                .productOptionName(sellingBid.getProductOptionName())
+                .productImageUrl(sellingBid.getProductImageUrl())
+                .modelNumber(sellingBid.getModelNumber())
+                .brandName(sellingBid.getBrandName())
+                .brandId(sellingBid.getBrandId())
                 .build();
     }
 }

@@ -51,9 +51,12 @@ public class Cart extends BaseEntity {
     private String productOptionName;
 
     @Builder
-    public Cart(User user, UUID sellingBidId, String productName, String productOptionName, String productImageUrl, String modelNumber) {
+    public Cart(User user, UUID sellingBidId,UUID productId, UUID productOptionId, String productName, String productOptionName, String productImageUrl,
+            String modelNumber) {
         this.user = user;
         this.sellingBidId = sellingBidId;
+        this.productId = productId;
+        this.productOptionId = productOptionId;
         this.productName = productName;
         this.productOptionName = productOptionName;
         this.productImageUrl = productImageUrl;

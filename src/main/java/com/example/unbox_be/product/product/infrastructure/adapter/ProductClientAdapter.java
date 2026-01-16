@@ -5,8 +5,8 @@ import com.example.unbox_be.product.product.domain.repository.ProductOptionRepos
 import com.example.unbox_be.common.client.product.ProductClient;
 import com.example.unbox_be.common.client.product.dto.ProductOptionForOrderInfoResponse;
 import com.example.unbox_be.common.client.product.dto.ProductOptionForSellingBidInfoResponse;
-import com.example.unbox_be.common.error.exception.CustomException;
-import com.example.unbox_be.common.error.exception.ErrorCode;
+import com.example.unbox_common.error.exception.CustomException;
+import com.example.unbox_common.error.exception.ErrorCode;
 import com.example.unbox_be.product.product.presentation.mapper.ProductClientMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

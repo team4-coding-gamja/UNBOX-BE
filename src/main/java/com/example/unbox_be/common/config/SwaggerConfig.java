@@ -1,26 +1,26 @@
 package com.example.unbox_be.common.config;
 
+// ✅ 공통 모듈의 정렬 유틸 Import
+import com.example.unbox_common.config.SwaggerSortUtil;
+
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.Paths;
-import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.tags.Tag;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Configuration
 public class SwaggerConfig {
 
     // =========================================================
-    // ✅ Group 분리
+    // ✅ Group 분리 (기존 로직 그대로 유지)
     // =========================================================
     @Bean
     public GroupedOpenApi totalApi(OpenApiCustomizer swaggerSortCustomizer) {
@@ -62,10 +62,11 @@ public class SwaggerConfig {
     }
 
     // =========================================================
-    // ✅ OpenAPI 기본 정보 + JWT
+    // OpenAPI 기본 정보 + JWT (기존 유지)
+    // (CommonSwaggerConfig가 있어도, 여기서 구체적인 제목/설명을 덮어씌우는 게 좋습니다)
     // =========================================================
     @Bean
-    public OpenAPI openAPI() {
+    public OpenAPI userOpenApi() {
         return new OpenAPI()
                 .components(new Components()
                         .addSecuritySchemes("bearer-key", new SecurityScheme()
@@ -86,14 +87,9 @@ public class SwaggerConfig {
 
     /**
      * =========================================================
-     * ✅ 목표
-     * - 태그 이름 표준화 (tagMap 기준)
-     * - 태그 내부 operation 정렬: POST → GET → PATCH/PUT → DELETE
-     * - 화면(summary)에 숫자(prefix) 표시 ❌
-     *
-     * ✅ 방법
-     * - Swagger UI 정렬 키로 실제로 쓰이는 operationId를 조작
-     * - operationId 앞에 A_/B_/C_/D_ prefix를 붙여 알파벳 정렬로 강제
+     * 리팩토링 포인트
+     * - 기존: 복잡한 정렬 로직이 여기 다 들어있었음.
+     * - 변경: 태그(TagMap)만 정의하고, 정렬은 unbox_common의 유틸에게 위임!
      * =========================================================
      */
     @Bean
@@ -104,8 +100,13 @@ public class SwaggerConfig {
         // ===== TEST =====
         tagMap.put("⚠️ 테스트 / 부트스트랩", "[테스트] 마스터 계정 생성");
 
-        // ===== USER =====
+        // ===== USER (그대로 유지) =====
         tagMap.put("사용자 인증", "[사용자] 인증 관리");
+        tagMap.put("회원 관리", "[사용자] 회원 관리");
+        tagMap.put("위시리스트 관리", "[사용자] 위시리스트(찜) 관리");
+        tagMap.put("장바구니 관리", "[사용자] 장바구니 관리");
+
+        // ===== PRODUCT / ORDER / ETC (그대로 유지) =====
         tagMap.put("상품 등록 요청 관리", "[사용자] 상품 등록 요청 관리");
         tagMap.put("상품 관리", "[사용자] 상품 관리");
         tagMap.put("판매입찰 관리", "[사용자] 판매입찰 관리");
@@ -113,132 +114,18 @@ public class SwaggerConfig {
         tagMap.put("결제 관리", "[사용자] 결제 관리");
         tagMap.put("리뷰 관리", "[사용자] 리뷰 관리");
 
-        tagMap.put("회원 관리", "[사용자] 회원 관리");
-        tagMap.put("위시리스트 관리", "[사용자] 위시리스트(찜) 관리");
-        tagMap.put("장바구니 관리", "[사용자] 장바구니 관리");
-
-        // ===== ADMIN =====
+        // ===== ADMIN (그대로 유지) =====
         tagMap.put("[관리자] 인증 관리", "[관리자] 인증 관리");
+        tagMap.put("[관리자] 스태프 관리", "[관리자] 스태프 관리");
+        tagMap.put("[관리자] 사용자 관리", "[관리자] 사용자 관리");
         tagMap.put("[관리자] 상품 등록 요청 관리", "[관리자] 상품 등록 요청 관리");
         tagMap.put("[관리자] 브랜드 관리", "[관리자] 브랜드 관리");
         tagMap.put("[관리자] 상품 관리", "[관리자] 상품 관리");
         tagMap.put("[관리자] 상품 옵션 관리", "[관리자] 상품 옵션 관리");
         tagMap.put("[관리자] 주문 관리", "[관리자] 주문 관리");
-
         tagMap.put("[관리자] 판매입찰 관리", "[관리자] 판매입찰 관리");
-        tagMap.put("[관리자] 스태프 관리", "[관리자] 스태프 관리");
-        tagMap.put("[관리자] 사용자 관리", "[관리자] 사용자 관리");
 
-
-        return openApi -> {
-
-            // ✅ 이 문서에서 실제로 사용된(치환된) 태그만 모으기
-            LinkedHashSet<String> usedStandardTags = new LinkedHashSet<>();
-
-            Paths paths = openApi.getPaths();
-            if (paths != null) {
-                for (Map.Entry<String, PathItem> e : paths.entrySet()) {
-
-                    String path = e.getKey();
-                    PathItem item = e.getValue();
-                    if (item == null) continue;
-
-                    Map<PathItem.HttpMethod, Operation> ops = item.readOperationsMap();
-                    if (ops == null) continue;
-
-                    for (Map.Entry<PathItem.HttpMethod, Operation> opEntry : ops.entrySet()) {
-
-                        PathItem.HttpMethod method = opEntry.getKey();
-                        Operation op = opEntry.getValue();
-                        if (op == null) continue;
-
-                        // -------------------------------------------------
-                        // 1) 태그 치환 + 실제 사용 태그 수집
-                        // -------------------------------------------------
-                        if (op.getTags() != null && !op.getTags().isEmpty()) {
-                            List<String> replaced = op.getTags().stream()
-                                    .map(t -> tagMap.getOrDefault(t, t))
-                                    .distinct()
-                                    .toList();
-
-                            op.setTags(replaced);
-                            usedStandardTags.addAll(replaced);
-                        }
-
-                        // -------------------------------------------------
-                        // 2) 숫자 없이 정렬 강제: operationId에만 prefix
-                        //    POST(A_) → GET(B_) → PATCH/PUT(C_) → DELETE(D_)
-                        // -------------------------------------------------
-                        String methodPrefix = methodOrderPrefix(method);
-
-                        // operationId가 없으면 스프링독이 자동 생성하는 경우가 있는데,
-                        // 커스터마이징 단계에서 null일 수 있어 안전 처리
-                        if (op.getOperationId() == null || op.getOperationId().isBlank()) {
-                            // path + method 기반으로 유니크하게 생성 (충돌 방지)
-                            String generated = (method != null ? method.name() : "UNKNOWN")
-                                    + "_" + safePathToId(path);
-                            op.setOperationId(methodPrefix + generated);
-                        } else {
-                            String oid = op.getOperationId();
-                            if (!oid.startsWith(methodPrefix)) {
-                                op.setOperationId(methodPrefix + oid);
-                            }
-                        }
-
-                        // -------------------------------------------------
-                        // ✅ summary는 건드리지 않는다 (숫자 표시 X)
-                        // -------------------------------------------------
-                    }
-                }
-            }
-
-            // ✅ “이 문서에서 실제 사용된 태그만” + tagMap 순서대로 tags 세팅
-            openApi.setTags(buildStandardTags(tagMap, usedStandardTags));
-        };
-    }
-
-    /**
-     * Swagger UI에서 operationsSorter=alpha일 때,
-     * operationId를 알파벳으로 정렬하므로 prefix로 순서를 강제한다.
-     */
-    private String methodOrderPrefix(PathItem.HttpMethod method) {
-        if (method == null) return "Z_";
-        return switch (method) {
-            case POST -> "A_";
-            case GET -> "B_";
-            case PATCH, PUT -> "C_";
-            case DELETE -> "D_";
-            default -> "Z_";
-        };
-    }
-
-    /**
-     * path를 operationId에 넣기 안전한 문자열로 변환
-     * 예) /api/admin/staff/{adminId} -> api_admin_staff_adminId
-     */
-    private String safePathToId(String path) {
-        if (path == null) return "unknown_path";
-        return path
-                .replaceAll("^/+", "")
-                .replace("/", "_")
-                .replace("{", "")
-                .replace("}", "")
-                .replaceAll("[^a-zA-Z0-9_]", "_");
-    }
-
-    /**
-     * tagMap.values() 순서를 유지하되,
-     * 이 문서에서 실제로 사용된 태그만 남김
-     */
-    private List<Tag> buildStandardTags(Map<String, String> tagMap, Set<String> usedStandardTags) {
-        LinkedHashSet<String> orderedAll = new LinkedHashSet<>(tagMap.values());
-
-        List<Tag> tags = new ArrayList<>();
-        for (String name : orderedAll) {
-            if (usedStandardTags.contains(name)) {
-                tags.add(new Tag().name(name));
-            }
-        }
-        return tags;
+        // [핵심] 100줄 넘는 정렬 로직을 1줄로 단축! (Util 사용)
+        return SwaggerSortUtil.createSorter(tagMap);
     }
 }

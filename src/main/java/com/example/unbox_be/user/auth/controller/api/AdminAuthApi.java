@@ -4,7 +4,7 @@ import com.example.unbox_be.user.auth.dto.request.AdminSignupRequestDto;
 import com.example.unbox_be.user.auth.dto.request.UserLoginRequestDto;
 import com.example.unbox_be.user.auth.dto.response.AdminSignupResponseDto;
 import com.example.unbox_be.user.auth.dto.response.AdminTokenResponseDto;
-import com.example.unbox_be.common.response.CustomApiResponse;
+import com.example.unbox_common.response.CustomApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;

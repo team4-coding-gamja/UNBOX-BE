@@ -13,8 +13,8 @@ import com.example.unbox_be.trade.presentation.mapper.SellingBidMapper;
 import com.example.unbox_be.trade.domain.repository.SellingBidRepository;
 
 import com.example.unbox_be.common.client.product.dto.ProductOptionForSellingBidInfoResponse;
-import com.example.unbox_be.common.error.exception.CustomException;
-import com.example.unbox_be.common.error.exception.ErrorCode;
+import com.example.unbox_common.error.exception.CustomException;
+import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;

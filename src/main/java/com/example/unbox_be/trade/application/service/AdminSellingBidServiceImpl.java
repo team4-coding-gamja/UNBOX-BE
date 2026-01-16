@@ -6,8 +6,8 @@ import com.example.unbox_be.trade.presentation.dto.response.AdminSellingBidListR
 import com.example.unbox_be.trade.domain.repository.AdminSellingBidRepository;
 import com.example.unbox_be.trade.domain.entity.SellingBid;
 import com.example.unbox_be.common.client.product.dto.ProductOptionForSellingBidInfoResponse;
-import com.example.unbox_be.common.error.exception.CustomException;
-import com.example.unbox_be.common.error.exception.ErrorCode;
+import com.example.unbox_common.error.exception.CustomException;
+import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -4,7 +4,7 @@ import com.example.unbox_be.product.product.presentation.dto.response.BrandListR
 import com.example.unbox_be.product.product.presentation.dto.response.ProductDetailResponseDto;
 import com.example.unbox_be.product.product.presentation.dto.response.ProductListResponseDto;
 import com.example.unbox_be.product.product.presentation.dto.response.ProductOptionListResponseDto;
-import com.example.unbox_be.common.response.CustomApiResponse;
+import com.example.unbox_common.response.CustomApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

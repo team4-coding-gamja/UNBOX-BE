@@ -1,11 +1,13 @@
 package com.example.unbox_be.common.security.auth;
 
+import com.example.unbox_common.security.auth.CustomUserDetails;
+import com.example.unbox_common.error.exception.CustomException;
+import com.example.unbox_common.error.exception.ErrorCode;
 import com.example.unbox_be.user.admin.entity.Admin;
 import com.example.unbox_be.user.admin.repository.AdminRepository;
-import com.example.unbox_be.user.user.repository.UserRepository;
 import com.example.unbox_be.user.user.entity.User;
-import com.example.unbox_be.common.error.exception.CustomException;
-import com.example.unbox_be.common.error.exception.ErrorCode;
+import com.example.unbox_be.user.user.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,37 +16,43 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
 
-    // 생성자를 통해 MemberRepository 의존성 주입
-    public CustomUserDetailsService(UserRepository userRepository, AdminRepository adminRepository) {
-        this.userRepository = userRepository;
-        this.adminRepository = adminRepository;
-        log.info("[CustomUserDetailsService] CustomUserDetailsService 생성자 주입");
-
-    }
-
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
-        // 1) 관리자 우선 조회
+        // 1) 관리자 조회
         Admin admin = adminRepository.findByEmailAndDeletedAtIsNull(email).orElse(null);
         if (admin != null) {
-            log.info("[CustomUserDetailsService/loadUserByUsername] Admin 조회 성공, email: {}", email);
-            return CustomUserDetails.ofAdmin(admin);
+            log.info("[LoadUser] Admin 발견: {}", email);
+
+            // 팩토리 메서드(ofAdmin) 대신 -> 생성자 직접 호출
+            return new CustomUserDetails(
+                    null,                           // userId
+                    admin.getId(),                  // adminId
+                    admin.getEmail(),
+                    admin.getPassword(),
+                    admin.getAdminRole().name()     // role
+            );
         }
 
-        // 2) 일반 사용자 조회
+        // 2) 일반 유저 조회
         User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        log.info("[CustomUserDetailsService/loadUserByUsername] CustomUserDetails 객체로 변환하기 전 User 정보 조회, email: {}", email);
+        log.info("[LoadUser] User 발견: {}", email);
 
-        // 조회된 Member 정보를 CustomUserDetails 객체로 변환하여 반환
-        return CustomUserDetails.ofUser(user);
-
+        // 팩토리 메서드(ofUser) 대신 -> 생성자 직접 호출
+        return new CustomUserDetails(
+                user.getId(),           // userId
+                null,                   // adminId
+                user.getEmail(),
+                user.getPassword(),
+                "ROLE_USER"             // role (하드코딩 or Enum 사용)
+        );
     }
 }

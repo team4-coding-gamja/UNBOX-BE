@@ -7,8 +7,8 @@ import com.example.unbox_be.product.reviews.dto.response.ReviewCreateResponseDto
 import com.example.unbox_be.product.reviews.dto.response.ReviewDetailResponseDto;
 import com.example.unbox_be.product.reviews.dto.response.ReviewUpdateResponseDto;
 import com.example.unbox_be.product.reviews.service.ReviewService;
-import com.example.unbox_be.common.response.CustomApiResponse;
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
+import com.example.unbox_common.response.CustomApiResponse;
+import com.example.unbox_common.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

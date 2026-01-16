@@ -1,8 +1,8 @@
 package com.example.unbox_be.product.reviews.service;
 
 import com.example.unbox_be.common.client.order.dto.OrderForReviewInfoResponse;
-import com.example.unbox_be.common.error.exception.CustomException;
-import com.example.unbox_be.common.error.exception.ErrorCode;
+import com.example.unbox_common.error.exception.CustomException;
+import com.example.unbox_common.error.exception.ErrorCode;
 import com.example.unbox_be.order.adapter.OrderClientAdapter;
 import com.example.unbox_be.order.entity.OrderStatus;
 import com.example.unbox_be.product.reviews.dto.request.ReviewCreateRequestDto;

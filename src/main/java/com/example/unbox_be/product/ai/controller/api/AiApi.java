@@ -1,7 +1,7 @@
 package com.example.unbox_be.product.ai.controller.api;
 
 import com.example.unbox_be.product.ai.dto.response.AiReviewSummaryResponseDto;
-import com.example.unbox_be.common.response.CustomApiResponse;
+import com.example.unbox_common.response.CustomApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

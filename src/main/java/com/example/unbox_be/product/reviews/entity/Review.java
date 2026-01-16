@@ -1,6 +1,6 @@
 package com.example.unbox_be.product.reviews.entity;
 
-import com.example.unbox_be.common.entity.BaseEntity;
+import com.example.unbox_common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;

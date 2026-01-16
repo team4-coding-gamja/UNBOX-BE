@@ -2,8 +2,8 @@ package com.example.unbox_be.user.cart.controller.api;
 
 import com.example.unbox_be.user.cart.dto.request.CartCreateRequestDto;
 import com.example.unbox_be.user.cart.dto.response.CartListResponseDto;
-import com.example.unbox_be.common.response.CustomApiResponse;
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
+import com.example.unbox_common.response.CustomApiResponse;
+import com.example.unbox_common.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

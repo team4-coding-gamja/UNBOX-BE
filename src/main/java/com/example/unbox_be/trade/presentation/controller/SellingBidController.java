@@ -8,9 +8,9 @@ import com.example.unbox_be.trade.presentation.dto.response.SellingBidDetailResp
 import com.example.unbox_be.trade.presentation.dto.response.SellingBidListResponseDto;
 import com.example.unbox_be.trade.presentation.dto.response.SellingBidsPriceUpdateResponseDto;
 import com.example.unbox_be.trade.application.service.SellingBidService;
-import com.example.unbox_be.common.pagination.PageSizeLimiter;
-import com.example.unbox_be.common.response.CustomApiResponse;
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
+import com.example.unbox_common.pagination.PageSizeLimiter;
+import com.example.unbox_common.response.CustomApiResponse;
+import com.example.unbox_common.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;

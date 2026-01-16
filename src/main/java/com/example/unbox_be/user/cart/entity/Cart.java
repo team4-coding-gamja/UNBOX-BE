@@ -1,7 +1,6 @@
 package com.example.unbox_be.user.cart.entity;
 
-import com.example.unbox_be.common.entity.BaseEntity;
-import com.example.unbox_be.trade.domain.entity.SellingBid;
+import com.example.unbox_common.entity.BaseEntity;
 import com.example.unbox_be.user.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

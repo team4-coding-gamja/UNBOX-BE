@@ -1,6 +1,6 @@
 package com.example.unbox_be.product.product.domain.entity;
 
-import com.example.unbox_be.common.entity.BaseEntity;
+import com.example.unbox_common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

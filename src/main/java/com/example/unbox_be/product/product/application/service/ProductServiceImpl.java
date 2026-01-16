@@ -50,7 +50,6 @@ public class ProductServiceImpl implements ProductService {
         private final ProductClientMapper productClientMapper;
 
         // ✅ 상품 목록 조회 (검색 + 페이징)
-        // ✅ 상품 목록 조회 (검색 + 페이징)
         public Page<ProductListResponseDto> getProducts(UUID brandId, String category, String keyword, Pageable pageable) {
 
                 // 1️⃣ category 문자열을 Category Enum으로 변환

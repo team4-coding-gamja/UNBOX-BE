@@ -31,7 +31,6 @@ public class OrderController implements OrderApi {
     public CustomApiResponse<UUID> createOrder(
             @RequestBody OrderCreateRequestDto requestDto,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        // 컨트롤러는 오직 '요청 수신'과 '응답 반환'에만 집중합니다.
         UUID orderId = orderService.createOrder(requestDto, userDetails.getUserId());
         return CustomApiResponse.success(orderId);
     }

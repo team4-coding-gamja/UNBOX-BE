@@ -20,7 +20,7 @@ public class Product extends BaseEntity {
     @Column(name = "product_id")
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "product_name", nullable = false)
     private String name;
 
     @Column(name = "model_number")
@@ -30,7 +30,7 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private Category category;
 
-    @Column(name = "image_url")
+    @Column(name = "product_image_url")
     private String imageUrl;
 
     @Column(columnDefinition = "integer default 0", nullable = false)
@@ -39,11 +39,12 @@ public class Product extends BaseEntity {
     @Column(columnDefinition = "integer default 0", nullable = false)
     private int totalScore = 0;
 
-    // 같은 도메인 내부이므로 연관관계 유지
+    // ======================= 연관 관계 =======================
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id", nullable = false)
     private Brand brand;
 
+    // ======================= 생성자 =======================
     private Product(String name, String modelNumber, Category category, String imageUrl, Brand brand, int reviewCount,
             int totalScore) {
         this.name = name;
@@ -55,7 +56,7 @@ public class Product extends BaseEntity {
         this.totalScore = totalScore;
     }
 
-    // 생성 메서드
+    // ======================= 정적 메서드 =======================
     public static Product createProduct(String name, String modelNumber, Category category, String imageUrl,
             Brand brand) {
         validateName(name);
@@ -78,7 +79,7 @@ public class Product extends BaseEntity {
         this.imageUrl = imageUrl;
     }
 
-    // 유효성 검증 메서드
+    // ======================= 유효성 검사 메서드 =======================
     private static void validateName(String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("상품명은 필수입니다.");

@@ -12,20 +12,14 @@ import java.util.UUID;
 
 public interface BrandRepository extends JpaRepository<Brand, UUID> {
 
-  // =========================
-  // ✅ Soft Delete "제외" 조회 (deleted_at is null)
-  // =========================
-
+  // ✅ 브랜드 목록 조회
   Page<Brand> findAllByDeletedAtIsNull(Pageable pageable);
 
-  // ✅ 중복 체크 - 삭제 제외(실무 권장)
+  // ✅ 이름으로 중복 체크
   boolean existsByNameAndDeletedAtIsNull(String name);
 
   // ✅ 브랜드 아이디로 조회
   Optional<Brand> findByIdAndDeletedAtIsNull(UUID id);
-
-  // ✅ 브랜드 ID 존재 여부 확인 (MSA 준비)
-  boolean existsByIdAndDeletedAtIsNull(UUID id);
 
   // ✅ 수정 시 중복 체크(본인 제외)
   boolean existsByNameAndIdNotAndDeletedAtIsNull(String name, UUID id);

@@ -23,7 +23,7 @@ public class ProductInternalController {
         return CustomApiResponse.success(productService.getProductOptionForOrder(id));
     }
 
-    @GetMapping("/bids/selling/{id}/for-selling-bid")
+    @GetMapping("/options/{id}/for-selling-bid")
     public ProductOptionForSellingBidInfoResponse getProductForSellingBid(@PathVariable UUID id) {
         return productService.getProductOptionForSellingBid(id);
     }

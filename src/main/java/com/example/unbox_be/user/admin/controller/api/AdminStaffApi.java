@@ -2,8 +2,8 @@ package com.example.unbox_be.user.admin.controller.api;
 
 import com.example.unbox_be.user.admin.dto.request.AdminMeUpdateRequestDto;
 import com.example.unbox_be.user.admin.dto.request.AdminStaffUpdateRequestDto;
-import com.example.unbox_be.common.response.CustomApiResponse;
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
+import com.example.unbox_common.response.CustomApiResponse;
+import com.example.unbox_common.security.auth.CustomUserDetails;
 import com.example.unbox_be.user.admin.dto.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

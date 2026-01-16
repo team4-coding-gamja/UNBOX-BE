@@ -3,7 +3,7 @@ package com.example.unbox_be.product.ai.controller;
 import com.example.unbox_be.product.ai.controller.api.AiApi;
 import com.example.unbox_be.product.ai.dto.response.AiReviewSummaryResponseDto;
 import com.example.unbox_be.product.ai.service.AiService;
-import com.example.unbox_be.common.response.CustomApiResponse;
+import com.example.unbox_common.response.CustomApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

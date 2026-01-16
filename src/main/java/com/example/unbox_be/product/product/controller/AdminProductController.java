@@ -8,9 +8,9 @@ import com.example.unbox_be.product.product.dto.response.AdminProductCreateRespo
 import com.example.unbox_be.product.product.dto.response.AdminProductListResponseDto;
 import com.example.unbox_be.product.product.dto.response.AdminProductUpdateResponseDto;
 import com.example.unbox_be.product.product.service.AdminProductService;
-import com.example.unbox_be.common.pagination.PageSizeLimiter;
-import com.example.unbox_be.common.response.CustomApiResponse;
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
+import com.example.unbox_common.pagination.PageSizeLimiter;
+import com.example.unbox_common.response.CustomApiResponse;
+import com.example.unbox_common.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

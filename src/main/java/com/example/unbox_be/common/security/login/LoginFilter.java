@@ -1,13 +1,13 @@
 package com.example.unbox_be.common.security.login;
 
-import com.example.unbox_be.common.error.ErrorResponse;
+import com.example.unbox_common.error.ErrorResponse;
 import com.example.unbox_be.user.auth.dto.request.UserLoginRequestDto;
 import com.example.unbox_be.user.auth.dto.response.UserTokenResponseDto;
-import com.example.unbox_be.common.error.exception.CustomAuthenticationException;
-import com.example.unbox_be.common.error.exception.ErrorCode;
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
-import com.example.unbox_be.common.security.jwt.JwtConstants;
-import com.example.unbox_be.common.security.jwt.JwtUtil;
+import com.example.unbox_common.error.exception.CustomAuthenticationException;
+import com.example.unbox_common.error.exception.ErrorCode;
+import com.example.unbox_common.security.auth.CustomUserDetails;
+import com.example.unbox_common.security.jwt.JwtConstants;
+import com.example.unbox_common.security.jwt.JwtUtil;
 import com.example.unbox_be.common.security.token.RefreshTokenRedisRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;

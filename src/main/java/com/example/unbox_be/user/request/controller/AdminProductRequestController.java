@@ -5,8 +5,8 @@ import com.example.unbox_be.user.request.dto.request.AdminProductRequestUpdateRe
 import com.example.unbox_be.user.request.dto.response.AdminProductRequestListResponseDto;
 import com.example.unbox_be.user.request.dto.response.AdminProductRequestUpdateResponseDto;
 import com.example.unbox_be.user.request.service.AdminProductRequestService;
-import com.example.unbox_be.common.pagination.PageSizeLimiter;
-import com.example.unbox_be.common.response.CustomApiResponse;
+import com.example.unbox_common.pagination.PageSizeLimiter;
+import com.example.unbox_common.response.CustomApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

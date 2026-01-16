@@ -6,9 +6,9 @@ import com.example.unbox_be.product.product.dto.response.AdminProductCreateRespo
 import com.example.unbox_be.product.product.dto.response.AdminProductListResponseDto;
 import com.example.unbox_be.product.product.dto.response.AdminProductUpdateResponseDto;
 import com.example.unbox_be.product.product.dto.request.ProductSearchCondition;
-import com.example.unbox_be.common.response.CustomApiResponse;
+import com.example.unbox_common.response.CustomApiResponse;
 
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
+import com.example.unbox_common.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

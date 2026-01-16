@@ -1,6 +1,6 @@
 package com.example.unbox_be.common.security.token;
 
-import com.example.unbox_be.common.security.jwt.JwtConstants;
+import com.example.unbox_common.security.jwt.JwtConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;

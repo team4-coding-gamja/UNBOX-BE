@@ -1,6 +1,6 @@
 package com.example.unbox_be.product.reviews.entity;
 
-import com.example.unbox_be.common.entity.BaseEntity;
+import com.example.unbox_common.entity.BaseEntity;
 import com.example.unbox_be.order.entity.Order;
 import jakarta.persistence.*;
 import lombok.*;

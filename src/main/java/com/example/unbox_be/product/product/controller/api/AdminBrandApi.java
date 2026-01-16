@@ -6,8 +6,8 @@ import com.example.unbox_be.product.product.dto.response.AdminBrandCreateRespons
 import com.example.unbox_be.product.product.dto.response.AdminBrandDetailResponseDto;
 import com.example.unbox_be.product.product.dto.response.AdminBrandListResponseDto;
 import com.example.unbox_be.product.product.dto.response.AdminBrandUpdateResponseDto;
-import com.example.unbox_be.common.response.CustomApiResponse;
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
+import com.example.unbox_common.response.CustomApiResponse;
+import com.example.unbox_common.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

@@ -1,9 +1,9 @@
 package com.example.unbox_be.order.entity;
 
-import com.example.unbox_be.common.entity.BaseEntity;
+import com.example.unbox_common.entity.BaseEntity;
 import com.example.unbox_be.user.user.entity.User;
-import com.example.unbox_be.common.error.exception.CustomException;
-import com.example.unbox_be.common.error.exception.ErrorCode;
+import com.example.unbox_common.error.exception.CustomException;
+import com.example.unbox_common.error.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;

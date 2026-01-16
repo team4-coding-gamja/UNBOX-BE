@@ -2,8 +2,8 @@ package com.example.unbox_be.trade.controller.api;
 
 import com.example.unbox_be.trade.dto.request.SellingBidSearchCondition;
 import com.example.unbox_be.trade.dto.response.AdminSellingBidListResponseDto;
-import com.example.unbox_be.common.response.CustomApiResponse;
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
+import com.example.unbox_common.response.CustomApiResponse;
+import com.example.unbox_common.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;

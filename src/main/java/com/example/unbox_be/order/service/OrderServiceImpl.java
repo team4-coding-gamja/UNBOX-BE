@@ -1,5 +1,7 @@
 package com.example.unbox_be.order.service;
 
+import com.example.unbox_be.common.client.trade.dto.SellingBidForOrderInfoResponse;
+import com.example.unbox_be.trade.infrastructure.adapter.TradeClientAdapter;
 import com.example.unbox_be.user.admin.entity.Admin;
 import com.example.unbox_be.user.admin.entity.AdminRole;
 import com.example.unbox_be.user.admin.repository.AdminRepository;
@@ -10,11 +12,11 @@ import com.example.unbox_be.order.entity.Order;
 import com.example.unbox_be.order.entity.OrderStatus;
 import com.example.unbox_be.order.mapper.OrderMapper;
 import com.example.unbox_be.order.repository.OrderRepository;
-import com.example.unbox_be.product.product.implementation.ProductClientAdapter;
+import com.example.unbox_be.product.product.infrastructure.adapter.ProductClientAdapter;
 import com.example.unbox_be.payment.settlement.service.SettlementService;
-import com.example.unbox_be.trade.entity.SellingBid;
-import com.example.unbox_be.trade.entity.SellingStatus;
-import com.example.unbox_be.trade.repository.SellingBidRepository;
+import com.example.unbox_be.trade.domain.entity.SellingBid;
+import com.example.unbox_be.trade.domain.entity.SellingStatus;
+import com.example.unbox_be.trade.domain.repository.SellingBidRepository;
 import com.example.unbox_be.user.user.entity.User;
 import com.example.unbox_be.user.user.repository.UserRepository;
 import com.example.unbox_be.common.client.product.dto.ProductOptionForOrderInfoResponse;
@@ -39,9 +41,8 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
-    private final SellingBidRepository sellingBidRepository;
+    private final TradeClientAdapter tradeClientAdapter;
     private final SettlementService settlementService;
-    private final ProductClientAdapter productClientAdapter;
 
     private final OrderMapper orderMapper;
 
@@ -50,45 +51,35 @@ public class OrderServiceImpl implements OrderService {
     public UUID createOrder(OrderCreateRequestDto requestDto, Long buyerId) {
         User buyer = getUserByIdOrThrow(buyerId);
 
-        // 1) sellingBid 먼저 조회 (락 없음) - 스냅샷이 bid에 있으면 여기서 해결 가능
-        SellingBid bid = sellingBidRepository.findByIdAndDeletedAtIsNull(requestDto.getSellingBidId())
-                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+        SellingBidForOrderInfoResponse sellingBidInfo = tradeClientAdapter.getSellingBidForOrder(requestDto.getSellingBidId());
 
-        if (Objects.equals(bid.getSellerId(), buyerId)) {
+
+        if (Objects.equals(sellingBidInfo.getSellerId(), buyerId)) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
-        if (bid.getProductOptionId() == null) {
+        if (sellingBidInfo.getProductOptionId() == null) {
             throw new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
         }
 
-        // 2) 외부 조회(스냅샷 채우기) - 락 없음
-        ProductOptionForOrderInfoResponse productInfo = productClientAdapter.getProductForOrder(bid.getProductOptionId());
-
-        // 3) DB에서 원샷으로 "LIVE -> MATCHED" 선점 시도 (동시성 핵심)
-        int updated = sellingBidRepository.updateStatusIfMatch(
-                bid.getId(), SellingStatus.LIVE, SellingStatus.MATCHED
-        );
-        if (updated == 0) {
-            // 이미 누가 매칭했거나 상태가 바뀜
-            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
-        }
+        // 3) DB에서 원샷으로 "LIVE -> MATCHED" 선점 시도 (동시성 핵심)(상태 바뀜)
+        tradeClientAdapter.occupySellingBid(sellingBidInfo.getSellingId());
 
         // 4) 판매자 조회 (필요하면)
-        User seller = getUserByIdOrThrow(bid.getSellerId());
+        User seller = getUserByIdOrThrow(sellingBidInfo.getSellerId());
 
-        // 5) Order 생성 (스냅샷 저장)
+        // 5) Order 생성 (스냅샷 저장) (브랜드 아이디는?)
         Order order = Order.builder()
-                .sellingBidId(bid.getId())
+                .sellingBidId(sellingBidInfo.getSellingId())
                 .buyer(buyer)
                 .seller(seller)
-                .productOptionId(productInfo.getId())
-                .productId(productInfo.getProductId())
-                .productName(productInfo.getProductName())
-                .modelNumber(productInfo.getModelNumber())
-                .productOptionName(productInfo.getProductOptionName())
-                .productImageUrl(productInfo.getProductImageUrl())
-                .brandName(productInfo.getBrandName())
-                .price(bid.getPrice())
+                .productOptionId(sellingBidInfo.getProductOptionId())
+                .productId(sellingBidInfo.getProductId())
+                .productName(sellingBidInfo.getProductName())
+                .modelNumber(sellingBidInfo.getModelNumber())
+                .productOptionName(sellingBidInfo.getProductOptionName())
+                .productImageUrl(sellingBidInfo.getProductImageUrl())
+                .brandName(sellingBidInfo.getBrandName())
+                .price(sellingBidInfo.getPrice())
                 .receiverName(requestDto.getReceiverName())
                 .receiverPhone(requestDto.getReceiverPhone())
                 .receiverAddress(requestDto.getReceiverAddress())

@@ -1,7 +1,6 @@
 package com.example.unbox_be.product.reviews.entity;
 
 import com.example.unbox_common.entity.BaseEntity;
-import com.example.unbox_be.order.entity.Order;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
@@ -31,28 +30,45 @@ public class Review extends BaseEntity {
     @Column(nullable = false)
     private Integer rating;
 
-    @Column(name = "review_Image_url")
-    private String reviewImageUrl;
+    @Column(name = "image_url")
+    private String imageUrl;
 
-    // 1주문 1리뷰 원칙
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
-    private Order order;
+    // ======================= ID 참조 =======================
 
-    public Review(Order order, String content, Integer rating, String reviewImageUrl) {
-        this.order = order;
+    @Column(name = "order_id", nullable = false)
+    private UUID orderId;
+
+    // ======================= 상품 스냅샷 =======================
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name="productId", column=@Column(name="product_id")),
+            @AttributeOverride(name="productName", column=@Column(name="product_name")),
+            @AttributeOverride(name="modelNumber", column=@Column(name="model_number")),
+            @AttributeOverride(name="productImageUrl", column=@Column(name="product_image_url")),
+            @AttributeOverride(name="productOptionId", column=@Column(name="product_option_id")),
+            @AttributeOverride(name="productOptionName", column=@Column(name="product_option_name")),
+            @AttributeOverride(name="brandName", column=@Column(name="brand_name"))
+    })
+    private ReviewProductSnapshot productSnapshot;
+
+    // ======================= 생성자 =======================
+    public Review(UUID orderId, String content, Integer rating, String imageUrl, ReviewProductSnapshot productSnapshot) {
+        this.orderId = orderId;
         this.content = content;
         this.rating = rating;
-        this.reviewImageUrl = reviewImageUrl;
+        this.imageUrl = imageUrl;
+        this.productSnapshot = productSnapshot;
     }
 
-    public static Review createReview(Order order, String content, Integer rating, String imageUrl) {
-        validateCreate(order, content, rating, imageUrl);
-        return new Review(order, normalizeContent(content), rating, normalizeImageUrl(imageUrl));
+    // ======================= 정적 메서드 =======================
+    public static Review createReview(UUID orderId, String content, Integer rating, String imageUrl, ReviewProductSnapshot snapshot) {
+        validateCreate(orderId, content, rating, imageUrl);
+        requireNotNull(snapshot, "productSnapshot");
+        return new Review(orderId, normalizeContent(content), rating, normalizeImageUrl(imageUrl), snapshot);
     }
 
-    public void update(String content, Integer rating, String reviewImageUrl) {
-        validatePatchUpdate(content, rating, reviewImageUrl);
+    public void update(String content, Integer rating, String imageUrl) {
+        validatePatchUpdate(content, rating, imageUrl);
 
         if (content != null) {
             this.content = normalizeContent(content);
@@ -60,18 +76,15 @@ public class Review extends BaseEntity {
         if (rating != null) {
             this.rating = rating;
         }
-        if (reviewImageUrl != null) {
-            String normalized = normalizeImageUrl(reviewImageUrl);
-            this.reviewImageUrl = normalized;
+        if (imageUrl != null) {
+            String normalized = normalizeImageUrl(imageUrl);
+            this.imageUrl = normalized;
         }
     }
 
-    // =======================
-    // Validation (Domain Rule)
-    // =======================
-
-    private static void validateCreate(Order order, String content, Integer rating, String imageUrl) {
-        requireNotNull(order, "order");
+    // ======================= 유효성 검사 메서드 =======================
+    private static void validateCreate(UUID orderId, String content, Integer rating, String imageUrl) {
+        requireNotNull(orderId, "order");
         validateContent(content);
         validateRating(rating);
         validateImageUrl(imageUrl);

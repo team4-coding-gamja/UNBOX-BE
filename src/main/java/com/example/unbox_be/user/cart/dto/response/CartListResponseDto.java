@@ -1,6 +1,6 @@
 package com.example.unbox_be.user.cart.dto.response;
 
-import com.example.unbox_be.trade.entity.SellingStatus;
+import com.example.unbox_be.trade.domain.entity.SellingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CartListResponseDto {
-    private Long cartId;
+    private UUID cartId;
     private LocalDateTime createdAt;
 
     private UUID sellingBidId;

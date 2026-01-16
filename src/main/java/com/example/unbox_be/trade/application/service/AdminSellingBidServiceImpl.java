@@ -24,6 +24,7 @@ public class AdminSellingBidServiceImpl implements AdminSellingBidService {
     private final AdminSellingBidRepository sellingBidRepository;
     private final ProductClientAdapter productClientAdapter;
 
+    // Todo : N + 1 문제 발생
     @Override
     @Transactional(readOnly = true)
     public Page<AdminSellingBidListResponseDto> getSellingBids(SellingBidSearchCondition condition, Pageable pageable) {

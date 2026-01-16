@@ -2,6 +2,7 @@ package com.example.unbox_be.trade.infrastructure.adapter;
 
 import com.example.unbox_be.common.client.trade.TradeClient;
 import com.example.unbox_be.common.client.trade.dto.SellingBidForCartInfoResponse;
+import com.example.unbox_be.common.client.trade.dto.SellingBidForOrderInfoResponse;
 import com.example.unbox_be.common.error.exception.CustomException;
 import com.example.unbox_be.common.error.exception.ErrorCode;
 import com.example.unbox_be.trade.domain.entity.SellingBid;
@@ -29,9 +30,9 @@ public class TradeClientAdapter implements TradeClient {
         return tradeClientMapper.toSellingBidForCartInfoResponse(sellingBid);
     }
 
-    // 판매 글 id 조회 (정버용)
-    public SellingBidForCartInfoResponse getSellingBidForOrder(UUID sellingBidId){
-        SellingBid sellingBid = sellingBidRepository.findWithDetailsByIdAndDeletedAtIsNull(sellingBidId)
+    // 판매 글 id 조회 (주문용)
+    public SellingBidForOrderInfoResponse getSellingBidForOrder(UUID sellingBidId){
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
         return tradeClientMapper.toSellingBidForOrderInfoResponse(sellingBid);
     }

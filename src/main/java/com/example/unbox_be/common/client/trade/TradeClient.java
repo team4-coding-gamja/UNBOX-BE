@@ -1,6 +1,7 @@
 package com.example.unbox_be.common.client.trade;
 
 import com.example.unbox_be.common.client.trade.dto.SellingBidForCartInfoResponse;
+import com.example.unbox_be.common.client.trade.dto.SellingBidForOrderInfoResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -13,5 +14,5 @@ public interface TradeClient {
     SellingBidForCartInfoResponse getSellingBidForCart (@PathVariable UUID id);
 
     @GetMapping("/internal/bids/selling/{id}/for-order")
-    SellingBidForCartInfoResponse getSellingBidForOrder (@PathVariable UUID id);
+    SellingBidForOrderInfoResponse getSellingBidForOrder (@PathVariable UUID id);
 }

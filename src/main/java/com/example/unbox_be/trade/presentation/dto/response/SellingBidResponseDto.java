@@ -14,7 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SellingBidResponseDto {
-    private UUID id;
+    private UUID sellingBidId;
     private SellingStatus status;
     private Long sellerId;
     private Integer price;
@@ -24,7 +24,7 @@ public class SellingBidResponseDto {
     // 연관된 상품 정보
     private String productName;
     private String modelNumber;
-    private String imageUrl;
+    private String productImageUrl;
 
     private String productOptionName;
 }

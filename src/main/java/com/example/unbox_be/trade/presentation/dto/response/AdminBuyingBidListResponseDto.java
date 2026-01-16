@@ -15,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminBuyingBidListResponseDto {
-    private UUID id;
+    private UUID buyingBidId;
     private String productName;
     private String brandName;
     private String size;

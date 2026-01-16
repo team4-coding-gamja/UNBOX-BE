@@ -1,7 +1,5 @@
 package com.example.unbox_be.trade.presentation.dto.response;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +14,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class SellingBidsPriceUpdateResponseDto {
 
-    private UUID id;
+    private UUID sellingBidId;
     private BigDecimal newPrice;
 }

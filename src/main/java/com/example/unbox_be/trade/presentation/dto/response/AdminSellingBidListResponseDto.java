@@ -15,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminSellingBidListResponseDto {
-    private UUID id;
+    private UUID sellingBidId;
     private SellingStatus status;
     private BigDecimal price;
     private LocalDateTime deadline;

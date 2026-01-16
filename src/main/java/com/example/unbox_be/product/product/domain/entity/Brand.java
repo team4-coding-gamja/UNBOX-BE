@@ -56,11 +56,11 @@ public class Brand extends BaseEntity {
         }
     }
 
-    private static void validateLogoUrl(String logoUrl) {
-        if (logoUrl == null || logoUrl.isBlank()) {
+    private static void validateLogoUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
         throw new IllegalArgumentException("로고 URL은 필수입니다.");
         }
-        if (!logoUrl.startsWith("http://") && !logoUrl.startsWith("https://")) {
+        if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
             throw new IllegalArgumentException("로고 URL은 http 또는 https 형식이어야 합니다.");
         }
     }

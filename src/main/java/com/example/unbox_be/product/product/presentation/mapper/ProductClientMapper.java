@@ -23,7 +23,7 @@ public interface ProductClientMapper {
                 .productId(product.getId())
                 .productName(product.getName())
                 .modelNumber(product.getModelNumber())
-                .productImageUrl(product.getName())
+                .productImageUrl(product.getImageUrl())
 
                 .brandId(product.getBrand().getId())
                 .brandName(product.getBrand().getName())

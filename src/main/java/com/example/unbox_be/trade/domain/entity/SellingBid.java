@@ -49,10 +49,13 @@ public class SellingBid extends BaseEntity {
     private LocalDateTime deadline;
 
     // --- 상품, 상품 옵션 스냅샷 ---
+    private UUID productId;
     private String productName;
     private String modelNumber;
     private String productImageUrl;
     private String productOptionName;
+    private UUID brandId;
+    private String brandName;
 
     public void updatePrice(BigDecimal newPrice, Long sellerId, String email) {
         // 본인 확인: 요청한 유저 ID와 입찰 생성자 ID 비교

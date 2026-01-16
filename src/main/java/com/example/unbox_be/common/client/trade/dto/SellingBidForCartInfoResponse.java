@@ -20,8 +20,11 @@ public class SellingBidForCartInfoResponse {
     private BigDecimal price;
     private SellingStatus sellingStatus;
 
+    private UUID productId;
     private String productName;
     private String productOptionName;
     private String productImageUrl;
     private String modelNumber;
+    private UUID brandId;
+    private String brandName;
 }

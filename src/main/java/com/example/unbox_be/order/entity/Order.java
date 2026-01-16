@@ -40,13 +40,13 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "seller_id", nullable = false)
     private User seller;
 
+    // --- 상품 스냅샷 (Snapshot) ---
     @Column(name = "product_option_id", nullable = false)
     private UUID productOptionId;
 
     @Column(name = "product_id", nullable = false)
     private UUID productId;
 
-    // --- 상품 스냅샷 (Snapshot) ---
     @Column(name = "product_name", nullable = false)
     private String productName;
 

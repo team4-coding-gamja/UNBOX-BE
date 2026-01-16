@@ -4,13 +4,14 @@ import com.example.unbox_be.user.cart.dto.request.CartCreateRequestDto;
 import com.example.unbox_be.user.cart.dto.response.CartCreateResponseDto;
 import com.example.unbox_be.user.cart.dto.response.CartListResponseDto;
 import com.example.unbox_be.user.cart.service.CartService;
-import com.example.unbox_be.common.response.CustomApiResponse;
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
+import com.example.unbox_common.response.CustomApiResponse;
+import com.example.unbox_common.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/carts")
@@ -38,7 +39,7 @@ public class CartController {
     @DeleteMapping("/{id}")
     public CustomApiResponse<Void> deleteCart(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         cartService.deleteCart(userDetails.getUserId(), id);
         return CustomApiResponse.success(null);
     }

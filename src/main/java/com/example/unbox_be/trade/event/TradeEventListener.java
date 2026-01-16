@@ -1,9 +1,9 @@
 package com.example.unbox_be.trade.event;
 
-import com.example.unbox_be.trade.service.AdminSellingBidService;
-import com.example.unbox_be.common.event.product.BrandDeletedEvent;
-import com.example.unbox_be.common.event.product.ProductDeletedEvent;
-import com.example.unbox_be.common.event.product.ProductOptionDeletedEvent;
+import com.example.unbox_be.trade.application.service.AdminSellingBidService;
+import com.example.unbox_common.event.product.BrandDeletedEvent;
+import com.example.unbox_common.event.product.ProductDeletedEvent;
+import com.example.unbox_common.event.product.ProductOptionDeletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;

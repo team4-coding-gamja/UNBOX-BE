@@ -6,7 +6,7 @@ import com.example.unbox_be.payment.payment.dto.request.PaymentCreateRequestDto;
 import com.example.unbox_be.payment.payment.dto.response.PaymentReadyResponseDto;
 import com.example.unbox_be.payment.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_be.payment.payment.service.PaymentService;
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
+import com.example.unbox_common.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

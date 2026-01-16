@@ -4,7 +4,7 @@ import com.example.unbox_be.order.dto.OrderSearchCondition;
 import com.example.unbox_be.order.dto.request.OrderStatusUpdateRequestDto;
 import com.example.unbox_be.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.order.dto.response.OrderResponseDto;
-import com.example.unbox_be.common.response.CustomApiResponse;
+import com.example.unbox_common.response.CustomApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

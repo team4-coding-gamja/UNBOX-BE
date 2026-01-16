@@ -7,9 +7,9 @@ import com.example.unbox_be.order.dto.request.OrderTrackingRequestDto;
 import com.example.unbox_be.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_be.order.dto.response.OrderResponseDto;
 import com.example.unbox_be.order.service.OrderService;
-import com.example.unbox_be.common.pagination.PageSizeLimiter;
-import com.example.unbox_be.common.response.CustomApiResponse;
-import com.example.unbox_be.common.security.auth.CustomUserDetails;
+import com.example.unbox_common.pagination.PageSizeLimiter;
+import com.example.unbox_common.response.CustomApiResponse;
+import com.example.unbox_common.security.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +31,6 @@ public class OrderController implements OrderApi {
     public CustomApiResponse<UUID> createOrder(
             @RequestBody OrderCreateRequestDto requestDto,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        // 컨트롤러는 오직 '요청 수신'과 '응답 반환'에만 집중합니다.
         UUID orderId = orderService.createOrder(requestDto, userDetails.getUserId());
         return CustomApiResponse.success(orderId);
     }

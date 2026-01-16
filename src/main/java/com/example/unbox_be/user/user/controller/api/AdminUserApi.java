@@ -4,7 +4,7 @@ import com.example.unbox_be.user.user.dto.request.AdminUserUpdateRequestDto;
 import com.example.unbox_be.user.user.dto.response.AdminUserDetailResponseDto;
 import com.example.unbox_be.user.user.dto.response.AdminUserListResponseDto;
 import com.example.unbox_be.user.user.dto.response.AdminUserUpdateResponseDto;
-import com.example.unbox_be.common.response.CustomApiResponse;
+import com.example.unbox_common.response.CustomApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;

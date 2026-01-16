@@ -1,6 +1,6 @@
 package com.example.unbox_be.common.security.login;
 
-import com.example.unbox_be.common.security.jwt.JwtUtil;
+import com.example.unbox_common.security.jwt.JwtUtil;
 import com.example.unbox_be.common.security.token.RefreshTokenRedisRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

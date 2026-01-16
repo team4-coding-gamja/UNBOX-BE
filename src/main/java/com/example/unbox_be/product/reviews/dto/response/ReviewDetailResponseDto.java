@@ -1,6 +1,5 @@
 package com.example.unbox_be.product.reviews.dto.response;
 
-import com.example.unbox_be.order.entity.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,7 +26,7 @@ public class ReviewDetailResponseDto {
     @Builder
     public static class OrderInfo {
         private UUID orderId;
-        private OrderStatus orderStatus;
+        private String orderStatus;
         private UserInfo buyer;
         private ProductOptionInfo productOption;
     }

@@ -14,20 +14,7 @@ import org.mapstruct.ReportingPolicy;
 )
 public interface ProductMapper {
 
-    default ProductListResponseDto toProductListDto(Product product, Integer lowestPrice) {
-        return ProductListResponseDto.builder()
-                .productId(product.getId())
-                .productName(product.getName())
-                .modelNumber(product.getModelNumber())
-                .category(product.getCategory())
-                .productImageUrl(product.getImageUrl())
-                .brandId(product.getBrand().getId())
-                .brandName(product.getBrand().getName())
-                .lowestPrice(lowestPrice)
-                .build();
-    }
-
-    default ProductDetailResponseDto toProductDetailDto(Product product, Integer lowestPrice) {
+    default ProductDetailResponseDto toProductDetailDto(Product product) {
 
         // 평균 리뷰 계산
         double avg = 0.0;
@@ -46,26 +33,17 @@ public interface ProductMapper {
                 .brandName(product.getBrand().getName())
                 .reviewCount(product.getReviewCount())
                 .averageRating(avg)
-                .lowestPrice(lowestPrice)
                 .build();
     }
 
-    default ProductOptionListResponseDto toProductOptionListDto(ProductOption option, Integer lowestPrice) {
+    default ProductOptionListResponseDto toProductOptionListDto(ProductOption option) {
         return ProductOptionListResponseDto.builder()
                 .productOptionId(option.getId())
                 .productOptionName(option.getName())
-                .lowestPrice(lowestPrice)
                 .build();
     }
 
-    /* =========================
-       목록 조회 (최저가 포함)
-       ========================= */
-
-    default ProductListResponseDto toProductListResponseDto(
-            Product product,
-            Integer lowestPrice
-    ) {
+    default ProductListResponseDto toProductListResponseDto(Product product) {
         return ProductListResponseDto.builder()
                 .productId(product.getId())
                 .productName(product.getName())
@@ -74,7 +52,6 @@ public interface ProductMapper {
                 .productImageUrl(product.getImageUrl())
                 .brandId(product.getBrand().getId())
                 .brandName(product.getBrand().getName())
-                .lowestPrice(lowestPrice)
                 .build();
     }
 }

@@ -1,6 +1,5 @@
 package com.example.unbox_be.product.reviews.entity;
 
-import com.example.unbox_be.order.entity.OrderStatus;
 import jakarta.persistence.Embeddable;
 import lombok.*;
 
@@ -15,7 +14,7 @@ public class ReviewProductSnapshot {
 
     private Long buyerId;
     private String buyerNickname;
-    private OrderStatus orderStatus;
+    private String orderStatus;
     private UUID productId;
     private String productName;
     private String modelNumber;

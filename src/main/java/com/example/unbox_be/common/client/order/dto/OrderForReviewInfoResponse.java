@@ -1,6 +1,5 @@
 package com.example.unbox_be.common.client.order.dto;
 
-import com.example.unbox_be.order.entity.OrderStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -13,7 +12,7 @@ public class OrderForReviewInfoResponse {
     private Long buyerId;
     private String buyerNickname;
 
-    private OrderStatus orderStatus;
+    private String orderStatus;
 
     private UUID productId;
     private String productName;

@@ -4,7 +4,6 @@ import com.example.unbox_be.common.client.order.dto.OrderForReviewInfoResponse;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import com.example.unbox_be.order.adapter.OrderClientAdapter;
-import com.example.unbox_be.order.entity.OrderStatus;
 import com.example.unbox_be.product.reviews.dto.request.ReviewCreateRequestDto;
 import com.example.unbox_be.product.reviews.dto.request.ReviewUpdateRequestDto;
 import com.example.unbox_be.product.reviews.dto.response.ReviewCreateResponseDto;
@@ -28,6 +27,8 @@ public class ReviewServiceImpl implements ReviewService {
     private final OrderClientAdapter orderClientAdapter;
     private final ReviewMapper reviewMapper;
 
+    private static final String ORDER_STATUS_COMPLETED = "COMPLETED";
+
     // ✅ 리뷰 생성
     @Override
     @Transactional
@@ -44,7 +45,7 @@ public class ReviewServiceImpl implements ReviewService {
         OrderForReviewInfoResponse orderInfo = orderClientAdapter.getOrderForReview(orderId);
 
         // 3) 주문 상태 검증
-        if (orderInfo.getOrderStatus() != OrderStatus.COMPLETED) {
+        if (!ORDER_STATUS_COMPLETED.equals(orderInfo.getOrderStatus())) {
             throw new CustomException(ErrorCode.ORDER_NOT_COMPLETED);
         }
 

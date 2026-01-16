@@ -15,5 +15,5 @@ public class ProductOptionListResponseDto {
 
     private UUID  productOptionId;
     private String productOptionName;
-    private Integer lowestPrice;
+//    private Integer lowestPrice;
 }

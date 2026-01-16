@@ -2,8 +2,8 @@ package com.example.unbox_be.order.adapter;
 
 import com.example.unbox_be.common.client.order.OrderClient;
 import com.example.unbox_be.common.client.order.dto.OrderForReviewInfoResponse;
-import com.example.unbox_be.common.error.exception.CustomException;
-import com.example.unbox_be.common.error.exception.ErrorCode;
+import com.example.unbox_common.error.exception.CustomException;
+import com.example.unbox_common.error.exception.ErrorCode;
 import com.example.unbox_be.order.entity.Order;
 import com.example.unbox_be.order.mapper.OrderClientMapper;
 import com.example.unbox_be.order.repository.OrderRepository;

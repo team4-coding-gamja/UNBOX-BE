@@ -14,7 +14,7 @@ public interface OrderClientMapper {
 
     @Mapping(target = "buyerId", source = "buyer.id") // USER 분리하면 수정
     @Mapping(target = "buyerNickname", source = "buyer.nickname") // USER 분리하면 수정
-    @Mapping(target = "orderStatus", source = "status")
+    @Mapping(target = "orderStatus", expression = "java(order.getStatus().name())")
     @Mapping(target = "productId", source = "productId")
     @Mapping(target = "productName", source = "productName")
     @Mapping(target = "modelNumber", source = "modelNumber")

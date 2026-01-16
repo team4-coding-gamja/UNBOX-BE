@@ -18,6 +18,7 @@ import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,38 +36,25 @@ public class SellingBidServiceImpl implements SellingBidService {
     private final SellingBidMapper sellingBidMapper;
     private final ProductClientAdapter productClientAdapter;
 
-    /**
-     * ✅ 판매 입찰 생성
-     * - 옵션 존재 확인
-     * - 가격 유효성 검증
-     * - 만료일(deadline) 30일 뒤 00시로 설정
-     * - 저장 후 ID 반환
-     */
+    // ✅ 판매 입찰 생성
     @Override
     @Transactional
     public SellingBidCreateResponseDto createSellingBid(Long sellerId, SellingBidCreateRequestDto requestDto) {
 
         validatePrice(requestDto.getPrice());
 
-        // ✅ Product 서비스에 optionId로 검증 요청
-        ProductOptionForSellingBidInfoResponse productInfo = productClientAdapter
-                .getProductOptionForSellingBid(requestDto.getProductOptionId());
+        ProductOptionForSellingBidInfoResponse productInfo = productClientAdapter.getProductOptionForSellingBid(requestDto.getProductOptionId());
 
+        // 만료일(deadline) 30일 뒤 00시로 설정
         LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();
 
-        // ✅ SellingBid는 optionId만 저장
         SellingBid sellingBid = sellingBidMapper.toEntity(requestDto, sellerId, deadline, productInfo);
 
         SellingBid savedBid = sellingBidRepository.save(sellingBid);
         return sellingBidMapper.toCreateResponseDto(savedBid);
     }
 
-    /**
-     * ✅ 판매 입찰 취소
-     * - 본인 소유 입찰인지 확인
-     * - LIVE 상태에서만 취소 가능
-     * - 상태를 CANCELLED 로 변경
-     */
+    // ✅ 판매 입찰 취소
     @Override
     @Transactional
     public void cancelSellingBid(UUID sellingId, Long userId, String deletedBy) {
@@ -84,13 +72,7 @@ public class SellingBidServiceImpl implements SellingBidService {
         processUpdateStatus(sellingBid, SellingStatus.CANCELLED, deletedBy);
     }
 
-    /**
-     * ✅ 판매 입찰 가격 수정
-     * - 본인 소유 입찰인지 확인
-     * - LIVE 상태에서만 변경 가능
-     * - 가격 유효성 검증 후 업데이트
-     *
-     */
+    // ✅ 판매 입찰 가격 수정
     @Override
     @Transactional
     public SellingBidsPriceUpdateResponseDto updateSellingBidPrice(UUID sellingId,
@@ -116,11 +98,7 @@ public class SellingBidServiceImpl implements SellingBidService {
         return sellingBidMapper.toPriceUpdateResponseDto(sellingId, requestDto.getNewPrice());
     }
 
-    /**
-     * ✅ 판매 입찰 상세 조회
-     * - 본인 소유 입찰인지 확인
-     * - 연관 옵션/상품이 정상인지 체크 후 DTO로 응답
-     */
+    // ✅ 판매 입찰 상세 조회
     @Override
     @Transactional(readOnly = true)
     public SellingBidDetailResponseDto getSellingBidDetail(UUID sellingId, Long userId) {
@@ -135,11 +113,7 @@ public class SellingBidServiceImpl implements SellingBidService {
         return sellingBidMapper.toDetailResponseDto(sellingBid, productInfo);
     }
 
-    /**
-     * ✅ 내 판매 입찰 목록 조회 (Slice)
-     * - 최신순(createdAt DESC)
-     * - 옵션/상품이 삭제되었거나 누락된 경우에도 NPE 방지
-     */
+    // ✅ 내 판매 입찰 목록 조회 (Slice)
     @Override
     @Transactional(readOnly = true)
     public Slice<SellingBidListResponseDto> getMySellingBids(Long userId, Pageable pageable) {
@@ -154,33 +128,7 @@ public class SellingBidServiceImpl implements SellingBidService {
         });
     }
 
-    /**
-     * ✅ [유저용] 상태 변경 (임시/테스트용 성격)
-     * - userId가 null이면 차단
-     * - 본인 소유 확인 후 상태 변경
-     */
-    @Transactional
-    public void updateSellingBidStatus(UUID sellingId, SellingStatus newStatus, Long userId, String modifiedBy) {
-
-        // userId 없으면 접근 자체를 거부
-        if (userId == null) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
-        }
-
-        // 입찰 조회
-        SellingBid sellingBid = findSellingBidOrThrow(sellingId);
-
-        // 본인 소유 확인
-        validateOwner(sellingBid, userId);
-
-        // 상태 변경 처리
-        processUpdateStatus(sellingBid, newStatus, modifiedBy);
-    }
-
-    /**
-     * ✅ [내부 시스템용] 상태 변경
-     * - 내부 호출만 가정하고, 소유자 검증 없이 상태 변경
-     */
+    // ✅ [내부 시스템용] 상태 변경
     @Transactional
     public void updateSellingBidStatusBySystem(UUID sellingId, SellingStatus newStatus, String modifiedBy) {
 

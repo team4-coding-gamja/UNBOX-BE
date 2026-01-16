@@ -1,13 +1,11 @@
 package com.example.unbox_be.product.reviews.mapper;
 
-import com.example.unbox_be.order.entity.Order;
 import com.example.unbox_be.product.reviews.dto.response.ReviewCreateResponseDto;
 import com.example.unbox_be.product.reviews.dto.response.ReviewDetailResponseDto;
 import com.example.unbox_be.product.reviews.dto.response.ReviewListResponseDto;
 import com.example.unbox_be.product.reviews.dto.response.ReviewUpdateResponseDto;
 import com.example.unbox_be.product.reviews.entity.Review;
 import com.example.unbox_be.product.reviews.entity.ReviewProductSnapshot;
-import com.example.unbox_be.user.user.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

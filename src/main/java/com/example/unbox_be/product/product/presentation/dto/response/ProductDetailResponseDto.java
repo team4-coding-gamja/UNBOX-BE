@@ -23,7 +23,7 @@ public class ProductDetailResponseDto {
     private UUID brandId;
     private String brandName;
 
-    private Integer lowestPrice;
+//    private Integer lowestPrice;
 
     private Integer reviewCount;
     private Double averageRating;

@@ -41,11 +41,6 @@ public interface SellingBidService {
     Slice<SellingBidListResponseDto> getMySellingBids(Long userId, Pageable pageable);
 
     /**
-     * 판매 입찰 상태 변경 (유저용)
-     */
-    void updateSellingBidStatus(UUID sellingId, SellingStatus newStatus, Long userId, String email);
-
-    /**
      * 판매 입찰 상태 변경 (시스템용)
      */
     void updateSellingBidStatusBySystem(UUID sellingId, SellingStatus newStatus, String email);

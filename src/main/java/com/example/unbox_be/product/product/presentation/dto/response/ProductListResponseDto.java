@@ -23,6 +23,6 @@ public class ProductListResponseDto {
     private UUID brandId;
     private String brandName;
 
-    private Integer lowestPrice;
+//    private Integer lowestPrice;
 }
 

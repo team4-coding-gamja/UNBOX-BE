@@ -1,4 +1,4 @@
-package com.example.unbox_be.user.cart.dto.response;
+package com.example.unbox_be.trade.presentation.dto.response;
 
 import com.example.unbox_be.trade.domain.entity.SellingStatus;
 import lombok.AllArgsConstructor;
@@ -14,18 +14,21 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CartListResponseDto {
-    private Long cartId;
+public class AdminSellingBidListResponseDto {
+    private UUID id;
+    private SellingStatus status;
+    private BigDecimal price;
+    private LocalDateTime deadline;
     private LocalDateTime createdAt;
 
-    private UUID sellingBidId;
-    private BigDecimal price;
-    private SellingStatus sellingStatus;
+    private Long sellerId;
 
     private UUID productOptionId;
     private String productOptionName;
 
+    private UUID productId;
     private String productName;
-    private String modelNumber;
-    private String productImageUrl;
+
+    private UUID brandId;
+    private String brandName;
 }

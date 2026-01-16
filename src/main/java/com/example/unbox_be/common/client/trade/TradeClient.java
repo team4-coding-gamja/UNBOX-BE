@@ -11,4 +11,7 @@ public interface TradeClient {
 
     @GetMapping("/internal/bids/selling/{id}/for-cart")
     SellingBidForCartInfoResponse getSellingBidForCart (@PathVariable UUID id);
+
+    @GetMapping("/internal/bids/selling/{id}/for-order")
+    SellingBidForCartInfoResponse getSellingBidForOrder (@PathVariable UUID id);
 }

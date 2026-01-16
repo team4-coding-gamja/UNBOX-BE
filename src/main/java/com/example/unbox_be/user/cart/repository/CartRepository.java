@@ -1,7 +1,7 @@
 package com.example.unbox_be.user.cart.repository;
 
 import com.example.unbox_be.user.cart.entity.Cart;
-import com.example.unbox_be.trade.entity.SellingBid;
+import com.example.unbox_be.trade.domain.entity.SellingBid;
 import com.example.unbox_be.user.user.entity.User;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;

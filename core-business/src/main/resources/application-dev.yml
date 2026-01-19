@@ -1,0 +1,95 @@
+# =============================================================================
+# 개발 환경 설정 (Development Environment)
+# AWS 개발 환경에서 사용 (.env.dev 파일과 연동)
+# =============================================================================
+
+spring:
+  # 환경별 설정 파일 로드
+  config:
+    import: "optional:file:.env.dev[.properties]"
+
+  # 데이터베이스 설정 (AWS RDS PostgreSQL)
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_HIKARI_MAXIMUM_POOL_SIZE:5}
+      minimum-idle: ${DB_HIKARI_MINIMUM_IDLE:2}
+      connection-timeout: ${DB_HIKARI_CONNECTION_TIMEOUT:20000}
+      idle-timeout: ${DB_HIKARI_IDLE_TIMEOUT:300000}
+      max-lifetime: ${DB_HIKARI_MAX_LIFETIME:900000}
+
+  # JPA 설정 (개발용)
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 개발 환경에서는 스키마 검증만
+    show-sql: ${SPRING_JPA_SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: ${SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL:true}
+
+  # 초기 데이터 로딩 설정
+  sql:
+    init:
+      mode: never  # 개발 환경에서는 초기 데이터 로딩 안 함
+
+  # Redis 설정 (AWS ElastiCache)
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      timeout: ${REDIS_TIMEOUT:5000}
+      lettuce:
+        pool:
+          max-active: ${REDIS_LETTUCE_POOL_MAX_ACTIVE:4}
+          max-idle: ${REDIS_LETTUCE_POOL_MAX_IDLE:4}
+          min-idle: ${REDIS_LETTUCE_POOL_MIN_IDLE:1}
+
+  # 캐시 설정
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000  # 10분
+
+# 로깅 설정 (개발용 - 상세 로그)
+logging:
+  level:
+    root: INFO
+    com.example.unbox_be: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){magenta} %clr(%-5level){highlight} %clr(%logger{36}){cyan} - %msg%n"
+
+# 액추에이터 설정 (개발용 - 모든 엔드포인트 활성화)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Swagger 설정 (개발용)
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true
+
+# 개발 편의 설정
+spring:
+  devtools:
+    restart:
+      enabled: ${SPRING_DEVTOOLS_RESTART_ENABLED:false}
+    livereload:
+      enabled: ${SPRING_DEVTOOLS_LIVERELOAD_ENABLED:false}

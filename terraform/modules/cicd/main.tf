@@ -1,0 +1,1 @@
+# ECR, CodePipeline 등 CI/CD 리소스

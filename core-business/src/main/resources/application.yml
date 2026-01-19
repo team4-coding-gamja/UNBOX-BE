@@ -1,0 +1,113 @@
+# =============================================================================
+# UNBOX 공통 설정 (Common Configuration)
+# 모든 환경에서 공통으로 사용되는 설정
+# =============================================================================
+
+spring:
+  # 환경변수 파일 로드
+  config:
+    import: "optional:file:.env[.properties]"
+
+  # 애플리케이션 기본 정보
+  application:
+    name: unbox-backend
+
+  # JPA 공통 설정
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: Asia/Seoul
+        default_batch_fetch_size: 100
+
+  # Jackson 설정
+  jackson:
+    time-zone: Asia/Seoul
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+  # 멀티파트 파일 업로드 기본 설정
+  servlet:
+    multipart:
+      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:10MB}
+      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:10MB}
+
+  # OpenAI 설정
+  openai:
+    api-key: ${OPENAI_API_KEY}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    model: ${OPENAI_MODEL:gpt-4o-mini}
+    timeout-ms: ${OPENAI_REQUEST_TIMEOUT:10000}
+    max-in-memory-size-mb: 4
+
+# JWT 설정 (사용자 정의 프로퍼티)
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION:86400000}
+
+# CORS 설정
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,PATCH,OPTIONS}
+  allowed-headers: ${CORS_ALLOWED_HEADERS:*}
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+  max-age: ${CORS_MAX_AGE:3600}
+
+# Swagger/OpenAPI 설정
+springdoc:
+  swagger-ui:
+    doc-expansion: none
+    tags-sorter: none
+    operations-sorter: alpha
+    disable-swagger-default-url: false
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  show-actuator: false
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+# 서버 기본 설정
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: ${SERVER_SERVLET_CONTEXT_PATH:/api}
+  tomcat:
+    threads:
+      max: ${SERVER_TOMCAT_THREADS_MAX:200}
+      min-spare: ${SERVER_TOMCAT_THREADS_MIN_SPARE:10}
+    connection-timeout: ${SERVER_TOMCAT_CONNECTION_TIMEOUT:20000}
+    max-connections: ${SERVER_TOMCAT_MAX_CONNECTIONS:8192}
+
+# 액추에이터 기본 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,info}
+  endpoint:
+    health:
+      show-details: ${MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS:when-authorized}
+  metrics:
+    export:
+      prometheus:
+        enabled: ${MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED:false}
+  server:
+    port: ${MANAGEMENT_SERVER_PORT:${server.port}}
+
+# 로깅 기본 설정
+logging:
+  level:
+    root: ${LOGGING_LEVEL_ROOT:INFO}
+    com.example.unbox_be: ${LOGGING_LEVEL_COM_EXAMPLE_UNBOX_BE:INFO}
+    org.springframework.security: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY:INFO}
+    org.hibernate.SQL: ${LOGGING_LEVEL_ORG_HIBERNATE_SQL:WARN}
+    org.hibernate.type.descriptor.sql: ${LOGGING_LEVEL_ORG_HIBERNATE_TYPE_DESCRIPTOR_SQL:WARN}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

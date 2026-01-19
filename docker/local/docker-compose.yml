@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 데이터베이스
+  postgres:
+    image: postgres:15-alpine
+    container_name: unbox-postgres-local
+    environment:
+      POSTGRES_DB: unbox_db
+      POSTGRES_USER: unbox_user
+      POSTGRES_PASSWORD: unbox_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - unbox-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unbox_user -d unbox_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 캐시
+  redis:
+    image: redis:7-alpine
+    container_name: unbox-redis-local
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - unbox-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Core Business Service (기존 백엔드)
+  core-business:
+    build:
+      context: ../../
+      dockerfile: core-business/Dockerfile
+    container_name: unbox-core-business-local
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/unbox_db
+      SPRING_DATASOURCE_USERNAME: unbox_user
+      SPRING_DATASOURCE_PASSWORD: unbox_password
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - unbox-network
+    restart: unless-stopped
+
+  # Product Service (새로운 상품 서비스)
+  product-service:
+    build:
+      context: ../../
+      dockerfile: product-service/Dockerfile
+    container_name: unbox-product-service-local
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/unbox_db
+      SPRING_DATASOURCE_USERNAME: unbox_user
+      SPRING_DATASOURCE_PASSWORD: unbox_password
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - unbox-network
+    restart: unless-stopped
+
+networks:
+  unbox-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

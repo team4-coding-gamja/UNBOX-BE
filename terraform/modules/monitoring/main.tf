@@ -1,0 +1,1 @@
+# CloudWatch, X-Ray 등 모니터링 리소스

@@ -1,0 +1,36 @@
+# Product Service 로컬 환경 설정
+
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  # 로컬 데이터베이스 설정 (Docker Compose 사용시)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/unbox_db
+    username: unbox_user
+    password: unbox_password
+    driver-class-name: org.postgresql.Driver
+
+  # JPA 로컬 설정
+  jpa:
+    hibernate:
+      ddl-auto: update  # 로컬에서는 자동 스키마 업데이트
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Redis 로컬 설정
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 5000
+
+# 로깅 설정 (로컬 개발용)
+logging:
+  level:
+    root: INFO
+    com.example.product: DEBUG
+    org.springframework.web: DEBUG

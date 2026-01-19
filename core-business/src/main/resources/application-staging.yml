@@ -1,0 +1,102 @@
+# =============================================================================
+# 스테이징 환경 설정 (Staging Environment)
+# 운영과 유사한 환경, 최종 테스트용 (.env.staging 파일과 연동)
+# =============================================================================
+
+spring:
+  # 환경별 설정 파일 로드
+  config:
+    import: "optional:file:.env.staging[.properties]"
+
+  # 데이터베이스 설정 (AWS RDS PostgreSQL)
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_HIKARI_MAXIMUM_POOL_SIZE:10}
+      minimum-idle: ${DB_HIKARI_MINIMUM_IDLE:5}
+      connection-timeout: ${DB_HIKARI_CONNECTION_TIMEOUT:30000}
+      idle-timeout: ${DB_HIKARI_IDLE_TIMEOUT:600000}
+      max-lifetime: ${DB_HIKARI_MAX_LIFETIME:1800000}
+
+  # JPA 설정 (스테이징용)
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 스키마 검증만
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: ${SPRING_JPA_PROPERTIES_HIBERNATE_JDBC_BATCH_SIZE:20}
+        order_inserts: ${SPRING_JPA_PROPERTIES_HIBERNATE_ORDER_INSERTS:true}
+        order_updates: ${SPRING_JPA_PROPERTIES_HIBERNATE_ORDER_UPDATES:true}
+
+  # 초기 데이터 로딩 설정
+  sql:
+    init:
+      mode: never
+
+  # Redis 설정 (AWS ElastiCache)
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      timeout: ${REDIS_TIMEOUT:3000}
+      lettuce:
+        pool:
+          max-active: ${REDIS_LETTUCE_POOL_MAX_ACTIVE:8}
+          max-idle: ${REDIS_LETTUCE_POOL_MAX_IDLE:8}
+          min-idle: ${REDIS_LETTUCE_POOL_MIN_IDLE:2}
+
+  # 캐시 설정
+  cache:
+    type: redis
+    redis:
+      time-to-live: 1800000  # 30분
+
+# 로깅 설정 (스테이징용 - 적당한 로그)
+logging:
+  level:
+    root: INFO
+    com.example.unbox_be: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  file:
+    name: ${LOGGING_FILE_NAME:/var/log/unbox/application.log}
+  logback:
+    rollingpolicy:
+      max-file-size: ${LOGGING_LOGBACK_ROLLINGPOLICY_MAX_FILE_SIZE:100MB}
+      max-history: ${LOGGING_LOGBACK_ROLLINGPOLICY_MAX_HISTORY:7}
+
+# 액추에이터 설정 (스테이징용 - 선택적 활성화)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Swagger 설정 (스테이징용)
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true
+
+# SSL 설정 (스테이징용)
+server:
+  ssl:
+    enabled: ${SERVER_SSL_ENABLED:false}
+    key-store-type: ${SERVER_SSL_KEY_STORE_TYPE:PKCS12}
+    protocol: ${SERVER_SSL_PROTOCOL:TLS}
+    enabled-protocols: ${SERVER_SSL_ENABLED_PROTOCOLS:TLSv1.2,TLSv1.3}

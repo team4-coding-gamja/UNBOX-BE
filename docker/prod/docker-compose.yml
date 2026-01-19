@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Core Business Service
+  core-business:
+    build:
+      context: ../../
+      dockerfile: core-business/Dockerfile
+    container_name: unbox-core-business-prod
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: ${DATABASE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DATABASE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
+      JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC"
+    ports:
+      - "${CORE_BUSINESS_PORT}:8080"
+    networks:
+      - unbox-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+        reservations:
+          memory: 512M
+
+  # Product Service
+  product-service:
+    build:
+      context: ../../
+      dockerfile: product-service/Dockerfile
+    container_name: unbox-product-service-prod
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: ${DATABASE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DATABASE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
+      JAVA_OPTS: "-Xms256m -Xmx512m -XX:+UseG1GC"
+    ports:
+      - "${PRODUCT_SERVICE_PORT}:8081"
+    networks:
+      - unbox-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 256M
+
+networks:
+  unbox-network:
+    driver: bridge

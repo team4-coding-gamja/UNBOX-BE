@@ -1,0 +1,35 @@
+# Product Service 개발 환경 설정
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  # 개발 서버 데이터베이스 설정 (환경변수로 주입)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  # JPA 개발 환경 설정
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 개발 서버에서는 validate 사용
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  # Redis 개발 환경 설정
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT}
+      timeout: 5000
+
+# 로깅 설정 (개발 서버용)
+logging:
+  level:
+    root: INFO
+    com.example.product: DEBUG

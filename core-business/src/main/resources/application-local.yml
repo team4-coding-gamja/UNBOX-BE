@@ -1,0 +1,120 @@
+# =============================================================================
+# 로컬 개발 환경 설정 (Local Development Environment)
+# 개발자 로컬 머신에서 실행할 때 사용 (.env.local 파일과 연동)
+# =============================================================================
+
+spring:
+  # 환경별 설정 파일 로드
+  config:
+    import: "optional:file:.env.local[.properties]"
+
+  # 데이터베이스 설정 (로컬 PostgreSQL 또는 H2)
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:unboxdb_local}
+    username: ${DB_USERNAME:unbox_local}
+    password: ${DB_PASSWORD:local_password_123}
+    hikari:
+      maximum-pool-size: ${DB_HIKARI_MAXIMUM_POOL_SIZE:3}
+      minimum-idle: ${DB_HIKARI_MINIMUM_IDLE:1}
+      connection-timeout: ${DB_HIKARI_CONNECTION_TIMEOUT:20000}
+
+  # JPA 설정 (로컬용 - 개발 편의성)
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:create-drop}
+    show-sql: ${SPRING_JPA_SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: ${SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL:true}
+    defer-datasource-initialization: true
+
+  # 초기 데이터 로딩 설정
+  sql:
+    init:
+      mode: ${SPRING_SQL_INIT_MODE:always}
+      data-locations: ${SPRING_SQL_INIT_DATA_LOCATIONS:classpath:data.sql}
+
+  # Redis 설정 (로컬 Redis)
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: ${REDIS_TIMEOUT:5000}
+      lettuce:
+        pool:
+          max-active: ${REDIS_LETTUCE_POOL_MAX_ACTIVE:2}
+          max-idle: ${REDIS_LETTUCE_POOL_MAX_IDLE:2}
+          min-idle: ${REDIS_LETTUCE_POOL_MIN_IDLE:0}
+
+  # 캐시 설정 (로컬용)
+  cache:
+    type: redis
+    redis:
+      time-to-live: 300000  # 5분
+
+  # H2 Console 설정 (H2 DB 사용 시)
+  h2:
+    console:
+      enabled: ${SPRING_H2_CONSOLE_ENABLED:false}
+      path: ${SPRING_H2_CONSOLE_PATH:/h2-console}
+
+  # 개발 도구 설정
+  devtools:
+    restart:
+      enabled: ${SPRING_DEVTOOLS_RESTART_ENABLED:true}
+    livereload:
+      enabled: ${SPRING_DEVTOOLS_LIVERELOAD_ENABLED:true}
+
+  # 출력 설정 (컬러 로그)
+  output:
+    ansi:
+      enabled: ${SPRING_OUTPUT_ANSI_ENABLED:always}
+
+# 로깅 설정 (로컬용 - 상세 로그 + 컬러)
+logging:
+  level:
+    root: INFO
+    com.example.unbox_be: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){magenta} %clr(%-5level){highlight} %clr(%logger{36}){cyan} - %msg%n"
+
+# 액추에이터 설정 (로컬용 - 모든 엔드포인트 활성화)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: false
+
+# Swagger 설정 (로컬용)
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  api-docs:
+    enabled: true
+
+# 파일 업로드 설정 (로컬용)
+file:
+  upload:
+    path: ${FILE_UPLOAD_PATH:./uploads}
+    max-size: ${FILE_UPLOAD_MAX_SIZE:10MB}
+
+# 테스트 데이터 설정
+test:
+  admin:
+    email: ${TEST_ADMIN_EMAIL:admin@unbox.local}
+    password: ${TEST_ADMIN_PASSWORD:admin123!}
+  user:
+    email: ${TEST_USER_EMAIL:user@unbox.local}
+    password: ${TEST_USER_PASSWORD:user123!}

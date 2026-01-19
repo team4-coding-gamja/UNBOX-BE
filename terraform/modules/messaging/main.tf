@@ -1,0 +1,1 @@
+# Kafka, SQS, SNS 등 메시징 리소스

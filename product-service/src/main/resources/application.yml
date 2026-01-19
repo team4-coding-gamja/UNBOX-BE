@@ -1,0 +1,34 @@
+# Product Service 공통 설정
+
+server:
+  port: 8081  # Product Service 전용 포트
+
+spring:
+  application:
+    name: product-service
+  
+  # JPA 기본 설정
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 운영에서는 validate 사용
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Actuator 설정 (헬스체크용)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# 로깅 설정
+logging:
+  level:
+    root: INFO
+    com.example.product: INFO

@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Trade Service Application
+  trade-service:
+    build: ../../
+    container_name: unbox-trade-service
+    ports:
+      - "${TRADE_SERVICE_PORT}:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET}
+      
+      # 거래에 필요한 다른 서비스 URL
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+      - PRODUCT_SERVICE_URL=${PRODUCT_SERVICE_URL}
+      - ORDER_SERVICE_URL=${ORDER_SERVICE_URL}
+      - PAYMENT_SERVICE_URL=${PAYMENT_SERVICE_URL}
+      
+      # 로깅 설정
+      - LOGGING_LEVEL_ROOT=${ROOT_LOG_LEVEL}
+      - LOGGING_LEVEL_COM_UNBOX=${LOG_LEVEL}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ../../logs:/app/logs
+    networks:
+      - trade-network
+
+  # PostgreSQL for Trade Service
+  postgres:
+    image: postgres:16-alpine
+    container_name: unbox-trade-postgres
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d/
+    networks:
+      - trade-network
+
+  # Redis for Trade Service
+  redis:
+    image: redis:alpine
+    container_name: unbox-trade-redis
+    ports:
+      - "${REDIS_PORT}:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - trade-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  trade-network:
+    driver: bridge

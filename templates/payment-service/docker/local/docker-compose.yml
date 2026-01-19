@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # Payment Service Application
+  payment-service:
+    build: ../../
+    container_name: unbox-payment-service
+    ports:
+      - "${PAYMENT_SERVICE_PORT}:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET}
+      
+      # 결제 관련 외부 API 설정
+      - PAYMENT_GATEWAY_URL=${PAYMENT_GATEWAY_URL}
+      - PAYMENT_GATEWAY_API_KEY=${PAYMENT_GATEWAY_API_KEY}
+      
+      # 로깅 설정
+      - LOGGING_LEVEL_ROOT=${ROOT_LOG_LEVEL}
+      - LOGGING_LEVEL_COM_UNBOX=${LOG_LEVEL}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ../../logs:/app/logs
+    networks:
+      - payment-network
+
+  # PostgreSQL for Payment Service
+  postgres:
+    image: postgres:16-alpine
+    container_name: unbox-payment-postgres
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d/
+    networks:
+      - payment-network
+
+  # Redis for Payment Service
+  redis:
+    image: redis:alpine
+    container_name: unbox-payment-redis
+    ports:
+      - "${REDIS_PORT}:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - payment-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  payment-network:
+    driver: bridge

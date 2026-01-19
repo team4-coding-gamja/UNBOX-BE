@@ -63,10 +63,24 @@ mkdir -p "$TARGET_DIR/scripts"
 
 # 파일 복사
 echo "📁 docker/local/ 파일들 복사 중..."
-cp -r "$TEMPLATE_DIR/docker/local/"* "$TARGET_DIR/docker/local/"
+echo "🔍 소스 디렉토리 내용: $TEMPLATE_DIR/docker/local/"
+ls -la "$TEMPLATE_DIR/docker/local/" || echo "❌ 소스 디렉토리에 접근할 수 없습니다."
+
+# 숨김 파일도 포함하여 복사
+cp -r "$TEMPLATE_DIR/docker/local/." "$TARGET_DIR/docker/local/"
+if [ $? -eq 0 ]; then
+    echo "✅ docker/local/ 파일 복사 완료"
+else
+    echo "❌ docker/local/ 파일 복사 실패"
+fi
 
 echo "🔧 scripts/ 파일들 복사 중..."
-cp -r "$TEMPLATE_DIR/scripts/"* "$TARGET_DIR/scripts/"
+cp -r "$TEMPLATE_DIR/scripts/." "$TARGET_DIR/scripts/"
+if [ $? -eq 0 ]; then
+    echo "✅ scripts/ 파일 복사 완료"
+else
+    echo "❌ scripts/ 파일 복사 실패"
+fi
 
 # 실행 권한 부여
 chmod +x "$TARGET_DIR/scripts/"*.sh

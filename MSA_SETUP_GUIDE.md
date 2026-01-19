@@ -155,11 +155,9 @@ docker-compose -f docker/local/docker-compose.yml logs
 docker ps -a
 ```
 
-## 📞 지원
+## 문제발생 시 확인사항
 
 문제가 발생하면 다음을 확인해주세요:
 1. 이 가이드의 문제 해결 섹션
 2. `scripts/README.md` 파일
 3. 각 서비스 템플릿의 로그 출력
-
-추가 도움이 필요하면 인프라 담당자에게 문의하세요.

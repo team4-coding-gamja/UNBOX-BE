@@ -1,14 +1,12 @@
 package com.example.unbox_be.user.cart.service;
 
 import com.example.unbox_be.common.client.trade.dto.SellingBidForCartInfoResponse;
-import com.example.unbox_be.product.product.infrastructure.adapter.ProductClientAdapter;
 import com.example.unbox_be.trade.infrastructure.adapter.TradeClientAdapter;
 import com.example.unbox_be.user.cart.dto.request.CartCreateRequestDto;
 import com.example.unbox_be.user.cart.dto.response.CartCreateResponseDto;
 import com.example.unbox_be.user.cart.dto.response.CartListResponseDto;
 import com.example.unbox_be.user.cart.entity.Cart;
 import com.example.unbox_be.user.cart.repository.CartRepository;
-import com.example.unbox_be.trade.domain.entity.SellingBid;
 import com.example.unbox_be.trade.domain.entity.SellingStatus;
 import com.example.unbox_be.user.user.entity.User;
 import com.example.unbox_be.user.user.service.UserService;

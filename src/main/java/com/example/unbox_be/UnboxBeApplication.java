@@ -6,9 +6,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableAsync;
 
+import org.springframework.cloud.openfeign.EnableFeignClients;
+
 @Slf4j
 @EnableAsync
 @SpringBootApplication
+@EnableFeignClients
 @ComponentScan(basePackages = "com.example")
 public class UnboxBeApplication {
 

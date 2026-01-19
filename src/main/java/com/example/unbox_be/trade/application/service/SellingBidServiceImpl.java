@@ -1,6 +1,6 @@
 package com.example.unbox_be.trade.application.service;
 
-import com.example.unbox_be.product.product.infrastructure.adapter.ProductClientAdapter;
+import com.example.unbox_be.common.client.product.ProductClient;
 import com.example.unbox_be.trade.presentation.dto.request.SellingBidCreateRequestDto;
 import com.example.unbox_be.trade.presentation.dto.request.SellingBidsPriceUpdateRequestDto;
 import com.example.unbox_be.trade.presentation.dto.response.SellingBidCreateResponseDto;
@@ -18,7 +18,6 @@ import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +33,7 @@ public class SellingBidServiceImpl implements SellingBidService {
 
     private final SellingBidRepository sellingBidRepository;
     private final SellingBidMapper sellingBidMapper;
-    private final ProductClientAdapter productClientAdapter;
+    private final ProductClient productClient;
 
     // ✅ 판매 입찰 생성
     @Override
@@ -43,7 +42,7 @@ public class SellingBidServiceImpl implements SellingBidService {
 
         validatePrice(requestDto.getPrice());
 
-        ProductOptionForSellingBidInfoResponse productInfo = productClientAdapter.getProductOptionForSellingBid(requestDto.getProductOptionId());
+        ProductOptionForSellingBidInfoResponse productInfo = productClient.getProductOptionForSellingBid(requestDto.getProductOptionId());
 
         // 만료일(deadline) 30일 뒤 00시로 설정
         LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();
@@ -107,7 +106,7 @@ public class SellingBidServiceImpl implements SellingBidService {
         validateOwner(sellingBid, userId);
 
         // ✅ optionId 기준으로 Product 서비스 호출
-        ProductOptionForSellingBidInfoResponse productInfo = productClientAdapter
+        ProductOptionForSellingBidInfoResponse productInfo = productClient
                 .getProductOptionForSellingBid(sellingBid.getProductOptionId());
 
         return sellingBidMapper.toDetailResponseDto(sellingBid, productInfo);
@@ -121,7 +120,7 @@ public class SellingBidServiceImpl implements SellingBidService {
         Slice<SellingBid> bids = sellingBidRepository.findBySellerIdOrderByCreatedAtDesc(userId, pageable);
 
         return bids.map(bid -> {
-            ProductOptionForSellingBidInfoResponse productInfo = productClientAdapter
+            ProductOptionForSellingBidInfoResponse productInfo = productClient
                     .getProductOptionForSellingBid(bid.getProductOptionId());
 
             return sellingBidMapper.toListResponseDto(bid, productInfo);

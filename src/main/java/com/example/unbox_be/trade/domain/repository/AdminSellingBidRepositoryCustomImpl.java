@@ -15,9 +15,6 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.example.unbox_be.product.product.domain.entity.QBrand.brand;
-import static com.example.unbox_be.product.product.domain.entity.QProduct.product;
-import static com.example.unbox_be.product.product.domain.entity.QProductOption.productOption;
 import static com.example.unbox_be.trade.domain.entity.QSellingBid.sellingBid;
 
 @Repository
@@ -31,14 +28,10 @@ public class AdminSellingBidRepositoryCustomImpl implements AdminSellingBidRepos
 
         List<SellingBid> content = queryFactory
                 .selectFrom(sellingBid)
-                // ✅ 연관관계(productOption) 제거 → FK(productOptionId) 기반 ON 조인
-                .leftJoin(productOption).on(productOption.id.eq(sellingBid.productOptionId)).fetchJoin()
-                .leftJoin(productOption.product, product).fetchJoin()
-                .leftJoin(product.brand, brand).fetchJoin()
                 .where(
                         statusEq(condition.getStatus()),
                         productNameContains(condition.getProductName()),
-                        brandNameContains(condition.getBrandName()),
+                        brandNameContains(condition.getBrandName()), 
                         periodBetween(condition.getStartDate(), condition.getEndDate())
                 )
                 .offset(pageable.getOffset())
@@ -46,13 +39,9 @@ public class AdminSellingBidRepositoryCustomImpl implements AdminSellingBidRepos
                 .orderBy(sellingBid.createdAt.desc())
                 .fetch();
 
-        // countQuery는 fetchJoin ❌ (성능/중복 row 위험)
         JPAQuery<Long> countQuery = queryFactory
                 .select(sellingBid.count())
                 .from(sellingBid)
-                .leftJoin(productOption).on(productOption.id.eq(sellingBid.productOptionId))
-                .leftJoin(productOption.product, product)
-                .leftJoin(product.brand, brand)
                 .where(
                         statusEq(condition.getStatus()),
                         productNameContains(condition.getProductName()),
@@ -68,11 +57,11 @@ public class AdminSellingBidRepositoryCustomImpl implements AdminSellingBidRepos
     }
 
     private BooleanExpression productNameContains(String productName) {
-        return productName != null ? product.name.containsIgnoreCase(productName) : null;
+       return productName != null ? sellingBid.productName.containsIgnoreCase(productName) : null;
     }
 
     private BooleanExpression brandNameContains(String brandName) {
-        return brandName != null ? brand.name.containsIgnoreCase(brandName) : null;
+       return brandName != null ? sellingBid.brandName.containsIgnoreCase(brandName) : null;
     }
 
     private BooleanExpression periodBetween(LocalDate startDate, LocalDate endDate) {

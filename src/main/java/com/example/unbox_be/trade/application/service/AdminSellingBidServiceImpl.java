@@ -1,6 +1,6 @@
 package com.example.unbox_be.trade.application.service;
 
-import com.example.unbox_be.product.product.infrastructure.adapter.ProductClientAdapter;
+import com.example.unbox_be.common.client.product.ProductClient;
 import com.example.unbox_be.trade.presentation.dto.request.SellingBidSearchCondition;
 import com.example.unbox_be.trade.presentation.dto.response.AdminSellingBidListResponseDto;
 import com.example.unbox_be.trade.domain.repository.AdminSellingBidRepository;
@@ -22,7 +22,7 @@ import java.util.UUID;
 public class AdminSellingBidServiceImpl implements AdminSellingBidService {
 
     private final AdminSellingBidRepository sellingBidRepository;
-    private final ProductClientAdapter productClientAdapter;
+    private final ProductClient productClient;
 
     // Todo : N + 1 문제 발생
     @Override
@@ -33,7 +33,7 @@ public class AdminSellingBidServiceImpl implements AdminSellingBidService {
 
         return sellingBids.map(bid -> {
             // ✅ Product 서비스로부터 상세 정보 조회
-            ProductOptionForSellingBidInfoResponse productInfo = productClientAdapter.getProductOptionForSellingBid(bid.getProductOptionId());
+            ProductOptionForSellingBidInfoResponse productInfo = productClient.getProductOptionForSellingBid(bid.getProductOptionId());
 
             // ✅ 설계하신 AdminSellingBidListResponseDto 구조에 맞게 매핑
             return AdminSellingBidListResponseDto.builder()

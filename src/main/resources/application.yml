@@ -46,6 +46,9 @@ cors:
   allowed-origins:
     - "${CORS_ALLOWED_ORIGINS:http://localhost:5173}"
 
+product-service:
+  url: ${PRODUCT_SERVICE_URL:http://localhost:8081}
+
 springdoc:
   swagger-ui:
     doc-expansion: none

@@ -71,11 +71,49 @@ cp -r "$TEMPLATE_DIR/scripts/"* "$TARGET_DIR/scripts/"
 # 실행 권한 부여
 chmod +x "$TARGET_DIR/scripts/"*.sh
 
-# .env 파일 생성 안내
-if [ -f "$TARGET_DIR/docker/local/.env.example" ] && [ ! -f "$TARGET_DIR/docker/local/.env" ]; then
-    echo "📝 .env 파일을 생성합니다..."
+# .env 파일 생성
+echo "📝 환경 설정 파일 처리 중..."
+echo "🔍 디버깅: $TARGET_DIR/docker/local/ 디렉토리 내용 확인..."
+ls -la "$TARGET_DIR/docker/local/" || echo "❌ docker/local 디렉토리에 접근할 수 없습니다."
+
+if [ -f "$TARGET_DIR/docker/local/.env.example" ]; then
+    echo "✅ .env.example 파일을 찾았습니다."
+    
+    if [ -f "$TARGET_DIR/docker/local/.env" ]; then
+        echo "⚠️  .env 파일이 이미 존재합니다. 백업을 생성합니다..."
+        BACKUP_FILE="$TARGET_DIR/docker/local/.env.backup.$(date +%Y%m%d_%H%M%S)"
+        cp "$TARGET_DIR/docker/local/.env" "$BACKUP_FILE"
+        if [ $? -eq 0 ]; then
+            echo "📋 기존 .env 파일을 $(basename $BACKUP_FILE)로 백업했습니다."
+        else
+            echo "❌ 백업 생성에 실패했습니다. 권한을 확인해주세요."
+        fi
+    fi
+    
+    echo "📝 .env.example에서 .env 파일을 생성합니다..."
     cp "$TARGET_DIR/docker/local/.env.example" "$TARGET_DIR/docker/local/.env"
-    echo "✅ .env 파일이 생성되었습니다."
+    
+    # 복사 결과 확인
+    if [ $? -eq 0 ] && [ -f "$TARGET_DIR/docker/local/.env" ]; then
+        echo "✅ .env 파일이 성공적으로 생성되었습니다."
+        echo "📄 생성된 파일 정보:"
+        ls -la "$TARGET_DIR/docker/local/.env"
+        echo ""
+        echo "🔧 반드시 $TARGET_DIR/docker/local/.env 파일을 열어서 다음 항목들을 수정하세요:"
+        echo "   - POSTGRES_PASSWORD: 데이터베이스 비밀번호 (현재값: ChangeHERE!)"
+        echo "   - JWT_SECRET: JWT 시크릿 키 (32자 이상 권장, 현재값: ChangeHERE!)"
+    else
+        echo "❌ .env 파일 생성에 실패했습니다."
+        echo "🔍 문제 해결 방법:"
+        echo "   1. 디렉토리 권한 확인: ls -la $TARGET_DIR/docker/local/"
+        echo "   2. 수동으로 복사: cp $TARGET_DIR/docker/local/.env.example $TARGET_DIR/docker/local/.env"
+        echo "   3. 현재 사용자 권한 확인: whoami && id"
+    fi
+else
+    echo "❌ .env.example 파일을 찾을 수 없습니다."
+    echo "🔍 예상 위치: $TARGET_DIR/docker/local/.env.example"
+    echo "📁 현재 디렉토리 내용:"
+    ls -la "$TARGET_DIR/docker/local/" 2>/dev/null || echo "   디렉토리에 접근할 수 없습니다."
 fi
 
 echo ""

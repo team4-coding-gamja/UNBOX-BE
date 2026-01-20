@@ -1,9 +1,6 @@
-rootProject.name = 'UNBOX-BE'
+rootProject.name = 'unbox_workspace'
 
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        mavenCentral()
-        maven { url 'https://jitpack.io' }
-    }
-}
+include 'unbox_common'
+include 'unbox_user'    // User will rename unbox_be -> unbox_user
+include 'unbox_product'
+include 'unbox_trade'

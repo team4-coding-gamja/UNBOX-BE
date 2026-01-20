@@ -1,49 +1,81 @@
 version: '3.8'
 
 services:
-  # 1. Spring Boot App
-  app:
-    build: .
-    container_name: MVP-api-app
+  # 1. User Service (formerly unbox_be)
+  unbox-user:
+    build: ./unbox_user
+    container_name: unbox-user
     ports:
       - "8081:8081"
     environment:
-      - DB_DRIVER_CLASS_NAME=${DB_DRIVER_CLASS_NAME}
-
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${DB_NAME}
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_user
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      # Redis 연결 설정 (컨테이너 이름인 'redis'로 찾아갑니다)
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
-      - SPRING_PROFILES_ACTIVE=dev
-    volumes:
-      - ./logs:/app/logs
     depends_on:
       - db
       - redis
 
-  # 2. PostgreSQL 16.11
+  # 2. Product Service
+  unbox-product:
+    build: ./unbox_product
+    container_name: unbox-product
+    ports:
+      - "8082:8081" # Map internal 8081 to external 8082 if app runs on 8081 default
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_product
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
+    depends_on:
+      - db
+      - redis
+
+  # 3. Trade Service
+  unbox-trade:
+    build: ./unbox_trade
+    container_name: unbox-trade
+    ports:
+      - "8083:8081" # Map internal 8081 to external 8083
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_trade
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
+    depends_on:
+      - db
+      - redis
+
+  # 4. PostgreSQL
   db:
     image: postgres:16.11-alpine
-    container_name: potato-postgres
+    container_name: unbox-postgres
     platform: linux/amd64
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      # Initial DB creation might need a script to create multiple DBs (unbox_user, unbox_product, unbox_trade)
+      # For now, default to one or use a volume with init script
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
+      - ./postgres_init:/docker-entrypoint-initdb.d
 
-  # 3. Redis (최신 안정판)
+  # 5. Redis
   redis:
     image: redis:alpine
-    container_name: potato-redis
+    container_name: unbox-redis
     ports:
-      - "6379:6379" # 내 맥북에서도 Redis Desktop Manager 등으로 접속 가능
-    command: redis-server --save 60 1 --loglevel warning # 데이터 저장 설정
+      - "6379:6379"
     volumes:
       - ./redis_data:/data

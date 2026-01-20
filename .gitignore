@@ -46,6 +46,7 @@ out/
 
 # 도커 데이터 볼륨 (PostgreSQL 데이터 저장 폴더)
 postgres_data/
+postgres_init/
 redis_data/
 
 # macOS 시스템 파일
@@ -54,3 +55,13 @@ redis_data/
 ### Logs ###
 logs/
 *.log
+
+### VS Code ###
+.vscode/
+
+### Local Docker Environment ###
+/docker/local/.env
+/docker/local/init-db/
+/docker/local/postgres_data/
+/docker/local/redis_data/
+/docker/local/.env.example

@@ -23,43 +23,80 @@ public class TradeClientAdapter implements TradeClient {
     private final SellingBidRepository sellingBidRepository;
     private final TradeClientMapper tradeClientMapper;
 
-    // 판매 글 id 조회 (장바구니 용)
+    // ✅ 판매 글 조회 (장바구니용)
     @Override
-    public SellingBidForCartInfoResponse getSellingBidForCart(UUID sellingBidId){
+    public SellingBidForCartInfoResponse getSellingBidForCart(UUID sellingBidId) {
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
         return tradeClientMapper.toSellingBidForCartInfoResponse(sellingBid);
     }
 
-    // 판매 글 id 조회 (주문용)
-    public SellingBidForOrderInfoResponse getSellingBidForOrder(UUID sellingBidId){
+    // ✅ 판매 글 조회 (주문용)
+    public SellingBidForOrderInfoResponse getSellingBidForOrder(UUID sellingBidId) {
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
         return tradeClientMapper.toSellingBidForOrderInfoResponse(sellingBid);
     }
 
+    // ✅ 판매 입찰 선점 (LIVE → RESERVED)
     @Transactional
     public void occupySellingBid(UUID sellingBidId) {
-        // 1. 존재 여부 확인 (혹은 findById로 가져와도 됨)
-        // 존재하지 않는 ID라면 여기서 1차로 걸러짐
+        // 1) 존재 여부 확인
         if (!sellingBidRepository.existsById(sellingBidId)) {
             throw new CustomException(ErrorCode.SELLING_BID_NOT_FOUND);
         }
 
-        // 2. 동시성 제어 업데이트 (LIVE 상태인 것만 MATCHED로 변경)
-        // updateStatusIfMatch는 Repository에 정의된 @Modifying 쿼리여야 함
-        // Status 변경해야함 (MATCHED -> )
-        int updated = sellingBidRepository.updateStatusIfMatch(
+        // 2) 동시성 제어 업데이트 (LIVE 상태인 것만 RESERVED로 변경)
+        int updated = sellingBidRepository.updateStatusIfReserved(
                 sellingBidId,
                 SellingStatus.LIVE,
-                SellingStatus.MATCHED
-        );
+                SellingStatus.RESERVED);
 
-        // 3. 업데이트 실패 시 (이미 팔렸거나, 상태가 LIVE가 아님) 예외 발생
+        // 3) 업데이트 실패 시 예외 발생
         if (updated == 0) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
     }
 
-}
+    // ✅ 판매 입찰 복구 (RESERVED → LIVE)
+    @Transactional
+    public void releaseSellingBid(UUID sellingBidId) {
+        // 1) 존재 여부 확인
+        if (!sellingBidRepository.existsById(sellingBidId)) {
+            throw new CustomException(ErrorCode.SELLING_BID_NOT_FOUND);
+        }
 
+        // 2) 동시성 제어 업데이트 (RESERVED 상태인 것만 LIVE로 복구)
+        int updated = sellingBidRepository.updateStatusIfReserved(
+                sellingBidId,
+                SellingStatus.RESERVED,
+                SellingStatus.LIVE);
+
+        // 3) 업데이트 실패 시 예외 발생
+        if (updated == 0) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+    }
+
+    // ✅ 판매 입찰 상태 변경 (결제용 - RESERVED → SOLD 또는 LIVE)
+    @Override
+    @Transactional
+    public void updateSellingBidStatus(UUID sellingBidId, String status, String updatedBy) {
+        // 1) 존재 여부 확인
+        if (!sellingBidRepository.existsById(sellingBidId)) {
+            throw new CustomException(ErrorCode.SELLING_BID_NOT_FOUND);
+        }
+
+        // 2) String → Enum 변환
+        SellingStatus newStatus = SellingStatus.valueOf(status);
+
+        // 3) 상태 업데이트 (Repository 직접 사용 또는 엔티티 조회 후 변경)
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+
+        sellingBid.updateStatus(newStatus);
+        if (updatedBy != null) {
+            sellingBid.updateModifiedBy(updatedBy);
+        }
+    }
+}

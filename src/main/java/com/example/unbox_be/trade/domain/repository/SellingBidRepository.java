@@ -84,14 +84,13 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
-                update SellingBid s
-                set s.status = :newStatus
-                where s.id = :id
-                  and s.status = :expectedStatus
-                  and s.deletedAt is null
-            """)
-    int updateStatusIfMatch(
-            @Param("id") UUID id,
-            @Param("expectedStatus") SellingStatus expectedStatus,
-            @Param("newStatus") SellingStatus newStatus);
+    update SellingBid s
+       set s.status = :toStatus
+     where s.id = :id
+       and s.status = :fromStatus
+       and s.deletedAt is null
+    """)
+    int updateStatusIfReserved(@Param("id") UUID id,
+                               @Param("fromStatus") SellingStatus fromStatus,
+                               @Param("toStatus") SellingStatus toStatus);
 }

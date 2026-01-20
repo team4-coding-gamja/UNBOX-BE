@@ -2,7 +2,6 @@ package com.example.unbox_user.user.cart.repository;
 
 import com.example.unbox_user.user.cart.entity.Cart;
 import com.example.unbox_user.user.user.entity.User;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

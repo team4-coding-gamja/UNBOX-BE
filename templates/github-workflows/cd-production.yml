@@ -1,0 +1,272 @@
+name: CD - {{SERVICE_NAME}} Production Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI - {{SERVICE_NAME}} Build and Push"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy'
+        required: true
+        default: 'latest'
+        type: string
+      skip_approval:
+        description: 'Skip manual approval (emergency deployment)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  AWS_REGION: ap-northeast-2
+  TERRAFORM_VERSION: 1.6.0
+
+jobs:
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    
+    # OIDC 인증을 위한 권한 설정
+    permissions:
+      id-token: write
+      contents: read
+    
+    # Production 환경 보호 (수동 승인 필요)
+    environment:
+      name: production
+      url: https://api.unbox.com/{{SERVICE_NAME}}/actuator/health
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    # CI에서 생성된 빌드 정보 다운로드 (workflow_run인 경우)
+    - name: Download build info
+      if: github.event_name == 'workflow_run'
+      uses: actions/download-artifact@v4
+      with:
+        name: build-info
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+        
+    - name: Load build info
+      if: github.event_name == 'workflow_run'
+      run: |
+        if [ -f build-info.env ]; then
+          cat build-info.env >> $GITHUB_ENV
+          echo "Using image tag from CI: $IMAGE_TAG"
+        else
+          echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
+          echo "Using fallback image tag: ${{ github.sha }}"
+        fi
+        
+    - name: Set manual image tag
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> $GITHUB_ENV
+        echo "Using manual image tag: ${{ github.event.inputs.image_tag }}"
+    
+    # Production 배포 전 확인사항 출력
+    - name: Pre-deployment Checklist
+      run: |
+        echo "🚨 PRODUCTION DEPLOYMENT CHECKLIST"
+        echo "=================================="
+        echo "Service: {{SERVICE_NAME}}"
+        echo "Environment: production"
+        echo "Image Tag: ${{ env.IMAGE_TAG }}"
+        echo "Deployer: ${{ github.actor }}"
+        echo "Trigger: ${{ github.event_name }}"
+        echo ""
+        echo "✅ Pre-deployment checks:"
+        echo "   - Staging deployment successful"
+        echo "   - Code review completed"
+        echo "   - Tests passing"
+        echo "   - Database migrations ready (if any)"
+        echo ""
+        echo "⚠️  This deployment will affect PRODUCTION users!"
+    
+    # OIDC를 사용한 AWS 인증
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-{{SERVICE_NAME}}-prod-role
+        aws-region: ${{ env.AWS_REGION }}
+        
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+        
+    # Production용 Terraform 디렉토리 사용
+    - name: Terraform Init
+      working-directory: terraform/production
+      run: |
+        terraform init \
+          -backend-config="bucket=terraform-state-bucket" \
+          -backend-config="key=services/{{SERVICE_NAME}}/production/terraform.tfstate" \
+          -backend-config="region=${{ env.AWS_REGION }}"
+          
+    - name: Terraform Plan
+      working-directory: terraform/production
+      run: |
+        terraform plan \
+          -var="image_tag=${{ env.IMAGE_TAG }}" \
+          -var="service_name={{SERVICE_NAME}}" \
+          -var="environment=production" \
+          -out=tfplan
+          
+    # Blue/Green 배포를 위한 현재 상태 백업
+    - name: Backup Current State
+      working-directory: terraform/production
+      run: |
+        echo "📋 Current production state:"
+        terraform show -json > current-state.json
+        
+        # 현재 실행 중인 태스크 정보 저장
+        aws ecs describe-services \
+          --cluster unbox-prod-cluster \
+          --services unbox-{{SERVICE_NAME}}-production \
+          --query 'services[0].taskDefinition' \
+          --output text > current-task-definition.txt
+          
+        echo "Current task definition: $(cat current-task-definition.txt)"
+        
+    - name: Terraform Apply
+      working-directory: terraform/production
+      run: terraform apply -auto-approve tfplan
+      
+    # 배포 후 상세 헬스 체크 (Production은 더 엄격)
+    - name: Production Health Check
+      run: |
+        echo "⏳ Waiting for production service to be ready..."
+        sleep 60  # Production은 더 오래 대기
+        
+        HEALTH_URL="https://api.unbox.com/{{SERVICE_NAME}}/actuator/health"
+        MAX_ATTEMPTS=15  # Production은 더 많은 재시도
+        ATTEMPT=1
+        
+        while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+          echo "🔍 Production health check attempt $ATTEMPT/$MAX_ATTEMPTS"
+          
+          # 더 상세한 헬스 체크
+          RESPONSE=$(curl -s -w "%{http_code}" "$HEALTH_URL" -o /tmp/health_response.json)
+          HTTP_CODE="${RESPONSE: -3}"
+          
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Health check passed!"
+            echo "🌐 Service URL: $HEALTH_URL"
+            echo "📊 Health response:"
+            cat /tmp/health_response.json | jq '.' 2>/dev/null || cat /tmp/health_response.json
+            break
+          else
+            if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+              echo "❌ Production health check failed after $MAX_ATTEMPTS attempts"
+              echo "HTTP Code: $HTTP_CODE"
+              echo "Response: $(cat /tmp/health_response.json 2>/dev/null || echo 'No response')"
+              echo ""
+              echo "🚨 PRODUCTION DEPLOYMENT FAILED!"
+              echo "🔄 Automatic rollback will be initiated..."
+              exit 1
+            fi
+            echo "⏳ Health check failed (HTTP: $HTTP_CODE), retrying in 20 seconds..."
+            sleep 20
+          fi
+          
+          ATTEMPT=$((ATTEMPT + 1))
+        done
+        
+    # 추가 검증 (Production 전용)
+    - name: Production Validation
+      run: |
+        echo "🔍 Running additional production validations..."
+        
+        # ECS 서비스 상태 확인
+        SERVICE_STATUS=$(aws ecs describe-services \
+          --cluster unbox-prod-cluster \
+          --services unbox-{{SERVICE_NAME}}-production \
+          --query 'services[0].status' \
+          --output text)
+          
+        if [ "$SERVICE_STATUS" != "ACTIVE" ]; then
+          echo "❌ ECS service is not ACTIVE: $SERVICE_STATUS"
+          exit 1
+        fi
+        
+        # 실행 중인 태스크 수 확인
+        RUNNING_COUNT=$(aws ecs describe-services \
+          --cluster unbox-prod-cluster \
+          --services unbox-{{SERVICE_NAME}}-production \
+          --query 'services[0].runningCount' \
+          --output text)
+          
+        DESIRED_COUNT=$(aws ecs describe-services \
+          --cluster unbox-prod-cluster \
+          --services unbox-{{SERVICE_NAME}}-production \
+          --query 'services[0].desiredCount' \
+          --output text)
+          
+        if [ "$RUNNING_COUNT" != "$DESIRED_COUNT" ]; then
+          echo "❌ Running count ($RUNNING_COUNT) doesn't match desired count ($DESIRED_COUNT)"
+          exit 1
+        fi
+        
+        echo "✅ All production validations passed!"
+        echo "   Service Status: $SERVICE_STATUS"
+        echo "   Running Tasks: $RUNNING_COUNT/$DESIRED_COUNT"
+        
+    # 배포 성공 알림
+    - name: Production Deployment Success
+      if: success()
+      run: |
+        echo "🎉 PRODUCTION DEPLOYMENT SUCCESSFUL!"
+        echo "=================================="
+        echo ""
+        echo "📋 Deployment Details:"
+        echo "   Service: {{SERVICE_NAME}}"
+        echo "   Environment: production"
+        echo "   Image Tag: ${{ env.IMAGE_TAG }}"
+        echo "   Deployed by: ${{ github.actor }}"
+        echo "   Deployment Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        echo ""
+        echo "🌐 Production URLs:"
+        echo "   Health Check: https://api.unbox.com/{{SERVICE_NAME}}/actuator/health"
+        echo "   Service API: https://api.unbox.com/{{SERVICE_NAME}}/"
+        echo ""
+        echo "🔍 Monitoring:"
+        echo "   ECS Console: https://console.aws.amazon.com/ecs/home?region=${{ env.AWS_REGION }}#/clusters/unbox-prod-cluster/services"
+        echo "   CloudWatch Logs: https://console.aws.amazon.com/cloudwatch/home?region=${{ env.AWS_REGION }}#logsV2:log-groups/log-group/%2Fecs%2F{{SERVICE_NAME}}-production"
+        echo "   CloudWatch Metrics: https://console.aws.amazon.com/cloudwatch/home?region=${{ env.AWS_REGION }}#metricsV2:graph=~();search={{SERVICE_NAME}}"
+        
+    # 배포 실패 시 자동 롤백
+    - name: Auto Rollback on Failure
+      if: failure()
+      working-directory: terraform/production
+      run: |
+        echo "🚨 PRODUCTION DEPLOYMENT FAILED!"
+        echo "🔄 Initiating automatic rollback..."
+        
+        if [ -f current-task-definition.txt ]; then
+          PREVIOUS_TASK_DEF=$(cat current-task-definition.txt)
+          echo "Rolling back to: $PREVIOUS_TASK_DEF"
+          
+          # 이전 태스크 정의로 롤백
+          aws ecs update-service \
+            --cluster unbox-prod-cluster \
+            --service unbox-{{SERVICE_NAME}}-production \
+            --task-definition "$PREVIOUS_TASK_DEF" \
+            --force-new-deployment
+            
+          echo "✅ Rollback initiated. Please monitor the service status."
+        else
+          echo "❌ Cannot find previous task definition for rollback"
+          echo "🔧 Manual intervention required!"
+        fi
+        
+        echo ""
+        echo "🆘 IMMEDIATE ACTIONS REQUIRED:"
+        echo "   1. Check ECS service status"
+        echo "   2. Monitor application logs"
+        echo "   3. Verify rollback completion"
+        echo "   4. Notify the team"

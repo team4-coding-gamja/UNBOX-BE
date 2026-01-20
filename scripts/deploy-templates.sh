@@ -115,7 +115,7 @@ if [ -f "$TARGET_DIR/docker/local/.env.example" ]; then
         echo ""
         echo "🔧 반드시 $TARGET_DIR/docker/local/.env 파일을 열어서 다음 항목들을 수정하세요:"
         echo "   - POSTGRES_PASSWORD: 데이터베이스 비밀번호 (현재값: ChangeHERE!)"
-        echo "   - JWT_SECRET: JWT 시크릿 키 (32자 이상 권장, 현재값: ChangeHERE!)"
+        echo "   - SPRING_JWT_SECRET: Spring JWT 시크릿 키 (현재값: ChangeHERE!)"
     else
         echo "❌ .env 파일 생성에 실패했습니다."
         echo "🔍 문제 해결 방법:"

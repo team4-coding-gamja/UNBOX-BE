@@ -56,7 +56,7 @@ rm -rf temp-templates
 
 ### 5단계: 환경 설정
 ```bash
-# .env 파일 수정 (3단계에서 자동 생성됨)
+# .env 파일 수정
 vim docker/local/.env
 
 # 필수 수정 항목:

@@ -11,14 +11,13 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface TradeClientMapper {
 
-
-    default SellingBidForCartInfoResponse toSellingBidForCartInfoResponse(SellingBid sellingBid){
+    default SellingBidForCartInfoResponse toSellingBidForCartInfoResponse(SellingBid sellingBid) {
         return SellingBidForCartInfoResponse.builder()
                 .sellingId(sellingBid.getId())
                 .sellerId(sellingBid.getSellerId())
                 .productOptionId(sellingBid.getProductOptionId())
                 .price(sellingBid.getPrice())
-                .sellingStatus(sellingBid.getStatus())
+                .sellingStatus(sellingBid.getStatus().name())
                 .productId(sellingBid.getProductId())
                 .productName(sellingBid.getProductName())
                 .productOptionName(sellingBid.getProductOptionName())
@@ -29,13 +28,13 @@ public interface TradeClientMapper {
                 .build();
     }
 
-    default SellingBidForOrderInfoResponse toSellingBidForOrderInfoResponse(SellingBid sellingBid){
+    default SellingBidForOrderInfoResponse toSellingBidForOrderInfoResponse(SellingBid sellingBid) {
         return SellingBidForOrderInfoResponse.builder()
                 .sellingId(sellingBid.getId())
                 .sellerId(sellingBid.getSellerId())
                 .productOptionId(sellingBid.getProductOptionId())
                 .price(sellingBid.getPrice())
-                .sellingStatus(sellingBid.getStatus())
+                .sellingStatus(sellingBid.getStatus().name())
                 .productId(sellingBid.getProductId())
                 .productName(sellingBid.getProductName())
                 .productOptionName(sellingBid.getProductOptionName())

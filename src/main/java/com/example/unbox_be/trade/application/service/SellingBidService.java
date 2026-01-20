@@ -1,5 +1,7 @@
 package com.example.unbox_be.trade.application.service;
 
+import com.example.unbox_be.common.client.trade.dto.SellingBidForCartInfoResponse;
+import com.example.unbox_be.common.client.trade.dto.SellingBidForOrderInfoResponse;
 import com.example.unbox_be.trade.presentation.dto.request.SellingBidCreateRequestDto;
 import com.example.unbox_be.trade.presentation.dto.request.SellingBidsPriceUpdateRequestDto;
 import com.example.unbox_be.trade.presentation.dto.response.SellingBidCreateResponseDto;
@@ -10,6 +12,7 @@ import com.example.unbox_be.trade.domain.entity.SellingBid;
 import com.example.unbox_be.trade.domain.entity.SellingStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -40,13 +43,14 @@ public interface SellingBidService {
      */
     Slice<SellingBidListResponseDto> getMySellingBids(Long userId, Pageable pageable);
 
-    /**
-     * 판매 입찰 상태 변경 (시스템용)
-     */
-    void updateSellingBidStatusBySystem(UUID sellingId, SellingStatus newStatus, String email);
+    // ========================================
+    // ✅ 내부 시스템용 API (Internal API)
+    // ========================================
+    SellingBidForCartInfoResponse getSellingBidForCart(UUID sellingBidId);
 
-    /**
-     * 판매 입찰 엔티티 조회 (내부 시스템용)
-     */
-    SellingBid findSellingBidById(UUID sellingId);
+    SellingBidForOrderInfoResponse getSellingBidForOrder(UUID sellingBidId);
+
+    void occupySellingBid(UUID sellingBidId);
+
+    void updateSellingBidStatus(UUID id, String status, String updatedBy);
 }

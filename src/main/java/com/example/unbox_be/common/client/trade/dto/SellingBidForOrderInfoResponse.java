@@ -1,6 +1,5 @@
 package com.example.unbox_be.common.client.trade.dto;
 
-import com.example.unbox_be.trade.domain.entity.SellingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +17,7 @@ public class SellingBidForOrderInfoResponse {
     private Long sellerId;
     private UUID productOptionId;
     private BigDecimal price;
-    private SellingStatus sellingStatus;
+    private String sellingStatus;
 
     private UUID productId;
     private String productName;

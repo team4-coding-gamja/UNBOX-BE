@@ -3,11 +3,10 @@ package com.example.unbox_be.user.cart.service;
 import com.example.unbox_be.common.client.trade.dto.SellingBidForCartInfoResponse;
 import com.example.unbox_be.trade.infrastructure.adapter.TradeClientAdapter;
 import com.example.unbox_be.user.cart.dto.request.CartCreateRequestDto;
-import com.example.unbox_be.user.cart.dto.response.CartCreateResponseDto;
 import com.example.unbox_be.user.cart.dto.response.CartListResponseDto;
+import com.example.unbox_be.user.cart.dto.response.CartCreateResponseDto;
 import com.example.unbox_be.user.cart.entity.Cart;
 import com.example.unbox_be.user.cart.repository.CartRepository;
-import com.example.unbox_be.trade.domain.entity.SellingStatus;
 import com.example.unbox_be.user.user.entity.User;
 import com.example.unbox_be.user.user.service.UserService;
 import com.example.unbox_common.error.exception.CustomException;
@@ -37,7 +36,7 @@ public class CartServiceImpl implements CartService {
                 .getSellingBidForCart(requestDto.getSellingBidId());
 
         // 1. 상태 검증: 판매중(LIVE)인 상품만 담을 수 있음
-        if (sellingBidInfo.getSellingStatus() != SellingStatus.LIVE) {
+        if (!"LIVE".equals(sellingBidInfo.getSellingStatus())) {
             throw new CustomException(ErrorCode.BID_NOT_AVAILABLE_FOR_CART);
         }
 

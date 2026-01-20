@@ -37,15 +37,10 @@ public class SellingBidInternalController {
         return ResponseEntity.ok().build();
     }
 
-    // ✅ 결제 상태 변경 (결제용)
     @PatchMapping("/{id}/status")
     public ResponseEntity<Void> updateSellingBidStatus(
             @PathVariable UUID id,
             @RequestBody UpdateSellingStatusRequestDto request) {
-        // DTO field names: status, updatedBy (Assuming record structure based on user's diff)
-        // If record: request.status().name(), request.updatedBy()
-        // If lombok object: request.getStatus().name(), request.getUpdatedBy()
-        // Based on recent user edit, it's a RECORD.
         sellingBidService.updateSellingBidStatus(id, request.status().name(), request.updatedBy());
         return ResponseEntity.ok().build();
     }

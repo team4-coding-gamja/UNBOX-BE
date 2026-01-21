@@ -1,9 +1,9 @@
-package com.example.unbox_user.payment.mapper;
+package com.example.unbox_payment.payment.mapper;
 
-import com.example.unbox_user.common.client.order.dto.OrderForPaymentInfoResponse;
-import com.example.unbox_user.payment.dto.response.PaymentReadyResponseDto;
-import com.example.unbox_user.payment.entity.Payment;
-import com.example.unbox_user.payment.entity.PaymentMethod;
+import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
+import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
+import com.example.unbox_payment.payment.entity.Payment;
+import com.example.unbox_payment.payment.entity.PaymentMethod;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

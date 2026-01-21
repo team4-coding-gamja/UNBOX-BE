@@ -1,11 +1,11 @@
-package com.example.unbox_user.payment.controller;
+package com.example.unbox_payment.payment.controller;
 
-import com.example.unbox_user.payment.controller.api.PaymentApi;
-import com.example.unbox_user.payment.dto.request.PaymentConfirmRequestDto;
-import com.example.unbox_user.payment.dto.request.PaymentCreateRequestDto;
-import com.example.unbox_user.payment.dto.response.PaymentReadyResponseDto;
-import com.example.unbox_user.payment.dto.response.TossConfirmResponse;
-import com.example.unbox_user.payment.service.PaymentService;
+import com.example.unbox_payment.payment.controller.api.PaymentApi;
+import com.example.unbox_payment.payment.dto.request.PaymentConfirmRequestDto;
+import com.example.unbox_payment.payment.dto.request.PaymentCreateRequestDto;
+import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
+import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
+import com.example.unbox_payment.payment.service.PaymentService;
 import com.example.unbox_common.response.CustomApiResponse;
 import com.example.unbox_common.security.auth.CustomUserDetails;
 import jakarta.validation.Valid;

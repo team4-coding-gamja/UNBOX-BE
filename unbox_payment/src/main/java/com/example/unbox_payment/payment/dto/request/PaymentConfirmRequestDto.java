@@ -1,4 +1,4 @@
-package com.example.unbox_user.payment.dto.request;
+package com.example.unbox_payment.payment.dto.request;
 
 import java.util.UUID;
 

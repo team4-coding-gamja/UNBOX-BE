@@ -1,4 +1,4 @@
-package com.example.unbox_user.payment.entity;
+package com.example.unbox_payment.payment.entity;
 
 public enum PaymentMethod {
     CARD("카드"),

@@ -1,6 +1,6 @@
-package com.example.unbox_user.payment.dto.request;
+package com.example.unbox_payment.payment.dto.request;
 
-import com.example.unbox_user.payment.entity.PaymentMethod;
+import com.example.unbox_payment.payment.entity.PaymentMethod;
 
 import java.util.UUID;
 

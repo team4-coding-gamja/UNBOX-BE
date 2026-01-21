@@ -1,9 +1,9 @@
-package com.example.unbox_user.payment.service;
+package com.example.unbox_payment.payment.service;
 
-import com.example.unbox_user.common.client.payment.dto.PaymentForSettlementResponse;
-import com.example.unbox_user.payment.dto.response.PaymentReadyResponseDto;
-import com.example.unbox_user.payment.dto.response.TossConfirmResponse;
-import com.example.unbox_user.payment.entity.PaymentMethod;
+import com.example.unbox_payment.common.client.payment.dto.PaymentForSettlementResponse;
+import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
+import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
+import com.example.unbox_payment.payment.entity.PaymentMethod;
 
 import java.util.UUID;
 

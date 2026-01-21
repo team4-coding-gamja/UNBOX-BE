@@ -1,4 +1,4 @@
-package com.example.unbox_user.payment.dto.response;
+package com.example.unbox_payment.payment.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,15 +1,15 @@
-package com.example.unbox_user.payment.service;
+package com.example.unbox_payment.payment.service;
 
-import com.example.unbox_user.common.client.order.OrderClient;
-import com.example.unbox_user.common.client.order.dto.OrderForPaymentInfoResponse;
-import com.example.unbox_user.payment.dto.response.TossConfirmResponse;
-import com.example.unbox_user.payment.entity.Payment;
-import com.example.unbox_user.payment.entity.PaymentStatus;
-import com.example.unbox_user.payment.entity.PgTransaction;
-import com.example.unbox_user.payment.mapper.PgTransactionMapper;
-import com.example.unbox_user.payment.repository.PaymentRepository;
-import com.example.unbox_user.payment.repository.PgTransactionRepository;
-import com.example.unbox_user.common.client.trade.TradeClient;
+import com.example.unbox_payment.common.client.order.OrderClient;
+import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
+import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
+import com.example.unbox_payment.payment.entity.Payment;
+import com.example.unbox_payment.payment.entity.PaymentStatus;
+import com.example.unbox_payment.payment.entity.PgTransaction;
+import com.example.unbox_payment.payment.mapper.PgTransactionMapper;
+import com.example.unbox_payment.payment.repository.PaymentRepository;
+import com.example.unbox_payment.payment.repository.PgTransactionRepository;
+import com.example.unbox_payment.common.client.trade.TradeClient;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;

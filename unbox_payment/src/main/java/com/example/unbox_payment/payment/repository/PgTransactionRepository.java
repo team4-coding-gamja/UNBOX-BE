@@ -1,6 +1,6 @@
-package com.example.unbox_user.payment.repository;
+package com.example.unbox_payment.payment.repository;
 
-import com.example.unbox_user.payment.entity.PgTransaction;
+import com.example.unbox_payment.payment.entity.PgTransaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

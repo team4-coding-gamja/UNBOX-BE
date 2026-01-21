@@ -2,7 +2,6 @@ plugins {
     id 'java-library'
     id 'org.springframework.boot' version '3.5.9'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'maven-publish'
 }
 
 group = 'com.github.team4-coding-gamja'
@@ -21,8 +20,18 @@ configurations {
     }
 }
 
-repositories {
+ repositories {
     mavenCentral()
+}
+
+ext {
+    set('springCloudVersion', "2025.0.1")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
 }
 
 tasks.named('bootJar') {
@@ -34,39 +43,31 @@ tasks.named('jar') {
     archiveClassifier = ''
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-        }
-    }
-}
-
 dependencies {
 
     // JPA
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     // Spring Security
-    implementation 'org.springframework.boot:spring-boot-starter-security'
+    api 'org.springframework.boot:spring-boot-starter-security'
 
     // Validation
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    api 'org.springframework.boot:spring-boot-starter-validation'
 
     // Web
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+    api 'org.springframework.boot:spring-boot-starter-web'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
     // JWT
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+    api 'io.jsonwebtoken:jjwt-api:0.12.3'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
 
     // QueryDSL
-    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+    api 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
@@ -77,8 +78,20 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // Swagger
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+    api 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
     // Redis
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    api 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Spring Cloud OpenFeign
+    api 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+    // PostgreSQL
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // MapStruct (Library)
+    api 'org.mapstruct:mapstruct:1.5.5.Final'
+
+    // Logging (Logstash)
+    api 'net.logstash.logback:logstash-logback-encoder:9.0'
 }

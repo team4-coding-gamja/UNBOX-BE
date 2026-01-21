@@ -1,9 +1,9 @@
-package com.example.unbox_user.payment.controller.api;
+package com.example.unbox_payment.payment.controller.api;
 
-import com.example.unbox_user.payment.dto.request.PaymentConfirmRequestDto;
-import com.example.unbox_user.payment.dto.request.PaymentCreateRequestDto;
-import com.example.unbox_user.payment.dto.response.PaymentReadyResponseDto;
-import com.example.unbox_user.payment.dto.response.TossConfirmResponse;
+import com.example.unbox_payment.payment.dto.request.PaymentConfirmRequestDto;
+import com.example.unbox_payment.payment.dto.request.PaymentCreateRequestDto;
+import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
+import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_common.response.CustomApiResponse;
 import com.example.unbox_common.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;

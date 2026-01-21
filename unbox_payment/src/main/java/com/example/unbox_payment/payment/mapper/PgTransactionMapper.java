@@ -1,8 +1,8 @@
-package com.example.unbox_user.payment.mapper;
+package com.example.unbox_payment.payment.mapper;
 
-import com.example.unbox_user.payment.dto.response.TossConfirmResponse;
-import com.example.unbox_user.payment.entity.Payment;
-import com.example.unbox_user.payment.entity.PgTransaction;
+import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
+import com.example.unbox_payment.payment.entity.Payment;
+import com.example.unbox_payment.payment.entity.PgTransaction;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

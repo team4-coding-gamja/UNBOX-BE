@@ -1,7 +1,7 @@
-package com.example.unbox_user.payment.dto.response;
+package com.example.unbox_payment.payment.dto.response;
 
-import com.example.unbox_user.payment.entity.PgTransaction;
-import com.example.unbox_user.payment.entity.PgTransactionStatus;
+import com.example.unbox_payment.payment.entity.PgTransaction;
+import com.example.unbox_payment.payment.entity.PgTransactionStatus;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

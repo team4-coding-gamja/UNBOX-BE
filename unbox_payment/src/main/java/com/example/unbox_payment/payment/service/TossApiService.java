@@ -1,6 +1,6 @@
-package com.example.unbox_user.payment.service;
+package com.example.unbox_payment.payment.service;
 
-import com.example.unbox_user.payment.dto.response.TossConfirmResponse;
+import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

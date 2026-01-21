@@ -43,6 +43,8 @@ out/
 
 ### ENV ###
 .env
+# .env.example 파일은 템플릿이므로 버전 관리에 포함
+!.env.example
 
 # 도커 데이터 볼륨 (PostgreSQL 데이터 저장 폴더)
 postgres_data/
@@ -56,6 +58,10 @@ redis_data/
 logs/
 *.log
 
+*.md
+.spec
+docs/
+
 ### VS Code ###
 .vscode/
 
@@ -65,3 +71,4 @@ logs/
 /docker/local/postgres_data/
 /docker/local/redis_data/
 /docker/local/.env.example
+>>>>>>> develop

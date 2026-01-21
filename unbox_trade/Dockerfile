@@ -1,11 +1,50 @@
-FROM bellsoft/liberica-openjdk-alpine:17
+# ============================================
+# Multi-stage build for Spring Boot Application
+# ============================================
 
-# 2. 컨테이너 내부 작업 디렉토리 설정
+# Stage 1: Build
+FROM gradle:8.5-jdk17 AS builder
+
 WORKDIR /app
 
-# 3. 방금 성공적으로 만든 .jar 파일을 컨테이너 내부로 복사
-# build/libs 폴더 안의 jar 파일을 app.jar라는 이름으로 가져옵니다.
-COPY build/libs/*SNAPSHOT.jar app.jar
+# Copy Gradle files from service directory
+COPY unbox_trade/build.gradle ./build.gradle
+COPY unbox_trade/gradle ./gradle
+COPY settings.gradle ./settings.gradle
 
-# 4. 앱 실행 명령어
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Copy common module
+COPY unbox_common ./unbox_common
+
+# Download dependencies (cached layer)
+RUN gradle dependencies --no-daemon || true
+
+# Copy source code
+COPY unbox_trade/src ./src
+
+# Build application
+RUN gradle clean bootJar --no-daemon -x test
+
+# Stage 2: Runtime
+FROM eclipse-temurin:17-jre-alpine
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+# Copy JAR from builder
+COPY --from=builder /app/build/libs/*.jar app.jar
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${SERVER_PORT:-8080}/actuator/health || exit 1
+
+# Expose port (will be overridden by environment variable)
+EXPOSE 8080
+
+# JVM options for container
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
+
+# Run application
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

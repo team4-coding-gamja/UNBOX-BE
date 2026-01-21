@@ -1,0 +1,63 @@
+# ============================================
+# AWS 설정
+# ============================================
+aws_region = "ap-northeast-2"
+
+# ============================================
+# User Service
+# ============================================
+user_service_image_tag      = "latest"
+user_service_cpu            = 256
+user_service_memory         = 512
+user_service_desired_count  = 2
+
+# Secrets Manager ARN (인프라팀이 제공)
+user_db_password_secret_arn = "arn:aws:secretsmanager:ap-northeast-2:ACCOUNT_ID:secret:staging/user-db-password-XXXXX"
+jwt_secret_arn              = "arn:aws:secretsmanager:ap-northeast-2:ACCOUNT_ID:secret:staging/jwt-secret-XXXXX"
+
+# 로컬 테스트용 (실제로는 Secrets Manager 사용)
+user_db_password = "CHANGE_ME_USER_DB_PASSWORD"
+
+# ============================================
+# Product Service
+# ============================================
+product_service_image_tag      = "latest"
+product_service_cpu            = 256
+product_service_memory         = 512
+product_service_desired_count  = 2
+
+product_db_password_secret_arn = "arn:aws:secretsmanager:ap-northeast-2:ACCOUNT_ID:secret:staging/product-db-password-XXXXX"
+product_db_password            = "CHANGE_ME_PRODUCT_DB_PASSWORD"
+
+# ============================================
+# Order Service
+# ============================================
+order_service_image_tag      = "latest"
+order_service_cpu            = 256
+order_service_memory         = 512
+order_service_desired_count  = 2
+
+order_db_password_secret_arn = "arn:aws:secretsmanager:ap-northeast-2:ACCOUNT_ID:secret:staging/order-db-password-XXXXX"
+order_db_password            = "CHANGE_ME_ORDER_DB_PASSWORD"
+
+# ============================================
+# Payment Service
+# ============================================
+payment_service_image_tag      = "latest"
+payment_service_cpu            = 256
+payment_service_memory         = 512
+payment_service_desired_count  = 2
+
+payment_db_password_secret_arn = "arn:aws:secretsmanager:ap-northeast-2:ACCOUNT_ID:secret:staging/payment-db-password-XXXXX"
+payment_db_password            = "CHANGE_ME_PAYMENT_DB_PASSWORD"
+
+# ============================================
+# Trade Service
+# ============================================
+trade_service_image_tag      = "latest"
+trade_service_cpu            = 256
+trade_service_memory         = 512
+trade_service_desired_count  = 2
+
+trade_db_password_secret_arn = "arn:aws:secretsmanager:ap-northeast-2:ACCOUNT_ID:secret:staging/trade-db-password-XXXXX"
+trade_db_password            = "CHANGE_ME_TRADE_DB_PASSWORD"

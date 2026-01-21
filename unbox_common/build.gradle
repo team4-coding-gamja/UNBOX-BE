@@ -82,6 +82,8 @@ dependencies {
 
     // Redis
     api 'org.springframework.boot:spring-boot-starter-data-redis'
+    
+    api 'org.springframework.boot:spring-boot-starter-cache'
 
     // Spring Cloud OpenFeign
     api 'org.springframework.cloud:spring-cloud-starter-openfeign'

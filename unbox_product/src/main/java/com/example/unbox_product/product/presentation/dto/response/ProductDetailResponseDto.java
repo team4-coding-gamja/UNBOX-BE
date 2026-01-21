@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Getter
@@ -23,7 +24,7 @@ public class ProductDetailResponseDto {
     private UUID brandId;
     private String brandName;
 
-//    private Integer lowestPrice;
+    private BigDecimal lowestPrice;
 
     private Integer reviewCount;
     private Double averageRating;

@@ -207,3 +207,19 @@ variable "trade_db_password_secret_arn" {
   description = "ARN of AWS Secrets Manager secret for trade DB password"
   type        = string
 }
+
+# ============================================
+# GitHub OIDC 변수
+# ============================================
+
+variable "github_org" {
+  description = "GitHub organization or username"
+  type        = string
+  default     = "team4-coding-gamja"  # 실제 조직명으로 변경
+}
+
+variable "github_repo" {
+  description = "GitHub repository name"
+  type        = string
+  default     = "UNBOX-BE"  # 실제 리포지토리명으로 변경
+}

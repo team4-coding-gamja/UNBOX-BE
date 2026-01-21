@@ -107,3 +107,23 @@ output "trade_db_endpoint" {
   value       = aws_db_instance.trade.endpoint
   sensitive   = true
 }
+
+# ============================================
+# GitHub Actions 출력
+# ============================================
+
+output "github_actions_role_arn" {
+  description = "IAM Role ARN for GitHub Actions"
+  value       = aws_iam_role.github_actions.arn
+}
+
+output "ecr_repositories" {
+  description = "ECR repository URLs"
+  value = {
+    product = aws_ecr_repository.product_service.repository_url
+    order   = aws_ecr_repository.order_service.repository_url
+    payment = aws_ecr_repository.payment_service.repository_url
+    trade   = aws_ecr_repository.trade_service.repository_url
+    user    = aws_ecr_repository.user_service.repository_url
+  }
+}

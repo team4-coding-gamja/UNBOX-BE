@@ -9,7 +9,7 @@ terraform {
     }
   }
   
-  # S3 Backend 설정 (인프라팀이 제공)
+  # S3 Backend 설정 (낙균님이 제공)
   backend "s3" {
     bucket         = "unbox-terraform-state"
     key            = "production/terraform.tfstate"

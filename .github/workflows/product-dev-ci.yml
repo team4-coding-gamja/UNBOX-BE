@@ -80,7 +80,7 @@ jobs:
 
       - name: Set image tag
         id: image-tag
-        run: echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+        run: echo "tag=dev-${{ github.sha }}" >> $GITHUB_OUTPUT
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image

@@ -11,10 +11,7 @@ import org.mapstruct.ReportingPolicy;
 
 import java.math.BigDecimal;
 
-@Mapper(
-        componentModel = "spring",
-        unmappedTargetPolicy = ReportingPolicy.IGNORE
-)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ProductMapper {
 
     default ProductDetailResponseDto toProductDetailResponseDto(ProductRedisDto infoDto, BigDecimal lowestPrice) {
@@ -42,10 +39,11 @@ public interface ProductMapper {
                 .build();
     }
 
-    default ProductOptionListResponseDto toProductOptionListDto(ProductOption option) {
+    default ProductOptionListResponseDto toProductOptionListDto(ProductOption option, BigDecimal lowestPrice) {
         return ProductOptionListResponseDto.builder()
                 .productOptionId(option.getId())
                 .productOptionName(option.getName())
+                .lowestPrice(lowestPrice)
                 .build();
     }
 
@@ -61,10 +59,12 @@ public interface ProductMapper {
                 .build();
     }
 
-    default ProductOptionListResponseDto toProductOptionListDtoFromRedis(ProductRedisDto.ProductOptionDto redisOption) {
+    default ProductOptionListResponseDto toProductOptionListDtoFromRedis(ProductRedisDto.ProductOptionDto redisOption,
+            BigDecimal lowestPrice) {
         return ProductOptionListResponseDto.builder()
                 .productOptionId(redisOption.getOptionId())
                 .productOptionName(redisOption.getOptionName())
+                .lowestPrice(lowestPrice)
                 .build();
     }
 }

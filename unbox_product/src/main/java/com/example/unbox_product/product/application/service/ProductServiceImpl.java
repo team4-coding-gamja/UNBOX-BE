@@ -32,7 +32,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -50,18 +52,18 @@ public class ProductServiceImpl implements ProductService {
         private final RedisTemplate<String, Object> redisTemplate; // redis
 
         // ✅ 상품 목록 조회 (검색 + 페이징) - 최저가 조회 제거 버전
-        public Page<ProductListResponseDto> getProducts(UUID brandId, String category, String keyword, Pageable pageable) {
+        public Page<ProductListResponseDto> getProducts(UUID brandId, String category, String keyword,
+                        Pageable pageable) {
 
                 // 1️⃣ category 문자열을 Category Enum으로 변환
                 Category categoryEnum = Category.fromNullable(category);
 
                 // 2️⃣ 브랜드 / 카테고리 / 키워드 조건으로 상품을 페이징 조회 (deletedAt IS NULL 포함)
                 Page<Product> products = productRepository.findByFiltersAndDeletedAtIsNull(
-                        brandId,
-                        categoryEnum,
-                        keyword,
-                        pageable
-                );
+                                brandId,
+                                categoryEnum,
+                                keyword,
+                                pageable);
 
                 // 3️⃣ 최저가 조회 로직 제거
                 return products.map(productMapper::toProductListResponseDto);
@@ -72,7 +74,7 @@ public class ProductServiceImpl implements ProductService {
         @Transactional(readOnly = true)
         public ProductDetailResponseDto getProductDetail(UUID productId) {
                 String infoKey = "prod:info:" + productId;
-                String priceKey = "prod:price:" + productId;
+                String priceKey = "prod:prices:" + productId;
 
                 // 1️⃣ [Redis] 상품 정보(Info) 조회 (먼저 찔러보기)
                 ProductRedisDto infoDto = (ProductRedisDto) redisTemplate.opsForValue().get(infoKey);
@@ -82,10 +84,11 @@ public class ProductServiceImpl implements ProductService {
 
                         // A. 상품+브랜드 조회 (기존에 있던 메서드 활용)
                         Product product = productRepository.findByIdAndDeletedAtIsNullWithBrand(productId)
-                                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+                                        .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
                         // B. 옵션 별도 조회 (엔티티에 필드가 없으므로 리포지토리로 따로 조회)
-                        List<ProductOption> options = productOptionRepository.findAllByProductIdAndDeletedAtIsNull(productId);
+                        List<ProductOption> options = productOptionRepository
+                                        .findAllByProductIdAndDeletedAtIsNull(productId);
 
                         // C. DTO 변환 (상품과 옵션 리스트를 합침)
                         infoDto = ProductRedisDto.from(product, options);
@@ -94,45 +97,59 @@ public class ProductServiceImpl implements ProductService {
                         redisTemplate.opsForValue().set(infoKey, infoDto, Duration.ofHours(24));
                 }
 
-                // 3️⃣ [Redis] 가격 조회 (가격은 항상 Redis에서)
-                Object priceObj = redisTemplate.opsForValue().get(priceKey);
-                // 아직 캐시 미스 시, trade로 직접 요청은 구현 X
-                BigDecimal price = (priceObj != null)
-                        ? new BigDecimal(String.valueOf(priceObj))
-                        : BigDecimal.ZERO;
+                // 3️⃣ [Redis] 가격 조회 (가격은 항상 Redis에서 Hash 구조로 조회)
+                Map<Object, Object> prices = redisTemplate.opsForHash().entries(priceKey);
+
+                // 최저가 계산
+                BigDecimal lowestPrice = prices.values().stream()
+                                .map(v -> new BigDecimal(String.valueOf(v)))
+                                .min(BigDecimal::compareTo)
+                                .orElse(BigDecimal.ZERO);
 
                 // 4️⃣ 결과 반환
-                return productMapper.toProductDetailResponseDto(infoDto, price);
+                return productMapper.toProductDetailResponseDto(infoDto, lowestPrice);
         }
 
-        // ✅ 상품 옵션 조회 (옵션별 최저가 완전 제거)
+        // ✅ 상품 옵션 조회 (옵션별 최저가 포함)
         @Override
         public List<ProductOptionListResponseDto> getProductOptions(UUID productId) {
                 String infoKey = "prod:info:" + productId;
+                String priceKey = "prod:prices:" + productId;
 
-                // 1️⃣ [Redis] 캐시 먼저 찔러보기
-                // (이미 상세 조회 때 저장된 'prod:info' 안에 옵션들도 다 들어있음!)
+                // 1️⃣ [Redis] 가격 정보 조회 (항상 Redis에서 가져옴)
+                Map<Object, Object> prices = redisTemplate.opsForHash().entries(priceKey);
+
+                // 2️⃣ [Redis] 상품 정보 조회
                 ProductRedisDto infoDto = (ProductRedisDto) redisTemplate.opsForValue().get(infoKey);
 
                 if (infoDto != null) {
-                        // ✅ [Cache Hit] Redis에 있으면 바로 변환해서 반환 (DB 접근 X)
+                        // ✅ [Cache Hit] Redis에 있으면 바로 변환해서 반환
                         return infoDto.getOptions().stream()
-                                .map(productMapper::toProductOptionListDtoFromRedis) // Mapper 메서드 추가 필요
-                                .toList();
+                                        .map(option -> {
+                                                BigDecimal price = getPriceFromMap(prices, option.getOptionId());
+                                                return productMapper.toProductOptionListDtoFromRedis(option, price);
+                                        })
+                                        .toList();
                 }
 
-                // 2️⃣ [Cache Miss] 없으면 DB 조회 (기존 로직)
-                // 참고: 여기서 굳이 Redis에 적재하진 않음 (상세 조회가 메인 캐시 적재 담당)
+                // 3️⃣ [Cache Miss] 없으면 DB 조회
                 if (!productRepository.existsById(productId)) {
                         throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
                 }
 
-                List<ProductOption> options =
-                        productOptionRepository.findAllByProductIdAndDeletedAtIsNull(productId);
+                List<ProductOption> options = productOptionRepository.findAllByProductIdAndDeletedAtIsNull(productId);
 
                 return options.stream()
-                        .map(productMapper::toProductOptionListDto)
-                        .toList();
+                                .map(option -> {
+                                        BigDecimal price = getPriceFromMap(prices, option.getId());
+                                        return productMapper.toProductOptionListDto(option, price);
+                                })
+                                .toList();
+        }
+
+        private BigDecimal getPriceFromMap(Map<Object, Object> prices, UUID optionId) {
+                Object priceObj = prices.get(optionId.toString());
+                return (priceObj != null) ? new BigDecimal(String.valueOf(priceObj)) : BigDecimal.ZERO;
         }
 
         // ✅ 브랜드 전체 조회
@@ -179,7 +196,8 @@ public class ProductServiceImpl implements ProductService {
                 }
 
                 // 리뷰 조회 및 DTO 변환
-                Page<Review> reviews = reviewRepository.findAllByProductSnapshotProductIdAndDeletedAtIsNull(productId, pageable);
+                Page<Review> reviews = reviewRepository.findAllByProductSnapshotProductIdAndDeletedAtIsNull(productId,
+                                pageable);
                 return reviews.map(reviewMapper::toReviewListResponseDto);
         }
 

@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Getter
@@ -15,5 +16,5 @@ public class ProductOptionListResponseDto {
 
     private UUID  productOptionId;
     private String productOptionName;
-//    private Integer lowestPrice;
+    private BigDecimal lowestPrice;
 }

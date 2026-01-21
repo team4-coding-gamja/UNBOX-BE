@@ -1,7 +1,10 @@
 package com.example.unbox_user.order.order.service;
 
+import com.example.unbox_user.common.client.order.dto.OrderForPaymentInfoResponse;
+import com.example.unbox_user.common.client.order.dto.OrderForReviewInfoResponse;
 import com.example.unbox_user.common.client.trade.dto.SellingBidForOrderInfoResponse;
 import com.example.unbox_user.common.client.trade.TradeClient;
+import com.example.unbox_user.order.order.mapper.OrderClientMapper;
 import com.example.unbox_user.user.admin.entity.Admin;
 import com.example.unbox_user.user.admin.entity.AdminRole;
 import com.example.unbox_user.user.admin.repository.AdminRepository;
@@ -38,8 +41,8 @@ public class OrderServiceImpl implements OrderService {
     private final AdminRepository adminRepository;
     private final TradeClient tradeClient;
     private final SettlementService settlementService;
-
     private final OrderMapper orderMapper;
+    private final OrderClientMapper orderClientMapper;
 
     // ✅ 주문 생성
     @Override
@@ -64,7 +67,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 5) 판매 입찰 선점 (LIVE → RESERVED)
-        tradeClient.occupySellingBid(sellingBidInfo.getSellingId());
+        tradeClient.reserveSellingBid(sellingBidInfo.getSellingId(), "order-service");
 
         // 6) 판매자 조회
         User seller = userRepository.findByIdAndDeletedAtIsNull(sellingBidInfo.getSellerId())
@@ -148,7 +151,7 @@ public class OrderServiceImpl implements OrderService {
 
         // 5) 결제 전 취소: SellingBid 복구 (RESERVED → LIVE)
         if (previousStatus == OrderStatus.PAYMENT_PENDING) {
-            tradeClient.updateSellingBidStatus(order.getSellingBidId(), "LIVE", "SYSTEM");
+            tradeClient.liveSellingBid(order.getSellingBidId(), "order-service");
             log.info("결제 전 주문 취소 - SellingBid 복구: {}", order.getSellingBidId());
         }
 
@@ -227,5 +230,38 @@ public class OrderServiceImpl implements OrderService {
 
         // 5) DTO 변환 및 반환
         return orderMapper.toDetailResponseDto(order);
+    }
+
+    // ========================================
+    // ✅ 내부 시스템용 API (Internal API)
+    // ========================================
+
+    // ✅ 주문 조회 (결제용)
+    @Override
+    @Transactional(readOnly = true)
+    public OrderForPaymentInfoResponse getOrderForPayment(UUID orderId) {
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        return orderClientMapper.toOrderForPaymentInfoResponse(order);
+    }
+
+    // ✅ 주문 조회 (리뷰용)
+    @Override
+    @Transactional(readOnly = true)
+    public OrderForReviewInfoResponse getOrderForReview(UUID orderId) {
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        return orderClientMapper.toOrderForReviewInfoResponse(order);
+    }
+
+    // ✅ 주문 상태 변경 (결제 완료용: PAYMENT_PENDING → PENDING_SHIPMENT)
+    @Override
+    @Transactional
+    public void pendingShipmentOrder(UUID orderId, String updatedBy) {
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 상태 변경 (내부에서 PAYMENT_PENDING 검증)
+        order.updateStatusAfterPayment();
     }
 }

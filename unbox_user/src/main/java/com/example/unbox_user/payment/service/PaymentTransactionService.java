@@ -1,7 +1,7 @@
 package com.example.unbox_user.payment.service;
 
-import com.example.unbox_user.order.order.entity.Order;
-import com.example.unbox_user.order.order.repository.OrderRepository;
+import com.example.unbox_user.common.client.order.OrderClient;
+import com.example.unbox_user.common.client.order.dto.OrderForPaymentInfoResponse;
 import com.example.unbox_user.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_user.payment.entity.Payment;
 import com.example.unbox_user.payment.entity.PaymentStatus;
@@ -27,9 +27,9 @@ public class PaymentTransactionService {
 
     private final PaymentRepository paymentRepository;
     private final PgTransactionRepository pgTransactionRepository;
-    private final TradeClient tradeClient;
-    private final OrderRepository orderRepository;
     private final PgTransactionMapper pgTransactionMapper;
+    private final TradeClient tradeClient;
+    private final OrderClient orderClient;
 
     @Value("${payment.toss.seller-key:MOCK_SELLER_KEY_TEST}")
     private String pgSellerKey;
@@ -49,8 +49,7 @@ public class PaymentTransactionService {
         }
 
         // 주문 정보 조회
-        Order order = orderRepository.findByIdAndDeletedAtIsNull(payment.getOrderId())
-                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
 
         // 결제 금액 검증
         if (payment.getAmount().compareTo(response.getTotalAmount()) != 0) {
@@ -61,13 +60,10 @@ public class PaymentTransactionService {
         payment.completePayment(response.getPaymentKey(), response.getApproveNo());
 
         // 판매 입찰 상태 변경 (RESERVED → SOLD)
-        tradeClient.updateSellingBidStatus(
-                order.getSellingBidId(),
-                "SOLD",
-                "SYSTEM");
+        tradeClient.soldSellingBid(orderInfo.getSellingBidId(), "payment-service");
 
         // 주문 상태 변경 (PAYMENT_PENDING → PENDING_SHIPMENT)
-        order.updateStatusAfterPayment();
+        orderClient.pendingShipmentOrder(orderInfo.getOrderId(), "payment-service");
 
         // PG 트랜잭션 로그 저장 (성공)
         PgTransaction transaction = pgTransactionMapper.toSuccessEntity(payment, response, pgSellerKey);
@@ -83,17 +79,13 @@ public class PaymentTransactionService {
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
         // 주문 정보 조회
-        Order order = orderRepository.findByIdAndDeletedAtIsNull(payment.getOrderId())
-                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
 
         // 결제 상태를 FAILED로 변경
         payment.failPayment();
 
         // 판매 입찰 상태 복구 (RESERVED → LIVE)
-        tradeClient.updateSellingBidStatus(
-                order.getSellingBidId(),
-                "LIVE",
-                "SYSTEM");
+        tradeClient.liveSellingBid(orderInfo.getSellingBidId(), "payment-service");
 
         // PG 트랜잭션 로그 저장 (실패)
         PgTransaction transaction = pgTransactionMapper.toFailedEntity(payment, response);

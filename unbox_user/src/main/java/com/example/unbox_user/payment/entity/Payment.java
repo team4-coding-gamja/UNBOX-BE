@@ -27,6 +27,14 @@ public class Payment extends BaseEntity {
     @Column(name = "order_id", nullable = false, updatable = false)
     private UUID orderId;
 
+    // ======================= 판매자/구매자 스냅샷 =======================
+
+    @Column(name = "buyer_id", nullable = false)
+    private Long buyerId;
+
+    @Column(name = "seller_id", nullable = false)
+    private Long sellerId;
+
     // ======================= 결제 정보 =======================
     @Column(name = "payment_amount", nullable = false)
     private BigDecimal amount;

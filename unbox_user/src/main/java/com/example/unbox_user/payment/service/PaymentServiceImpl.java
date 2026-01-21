@@ -1,14 +1,16 @@
 package com.example.unbox_user.payment.service;
 
-import com.example.unbox_user.order.order.entity.Order;
-import com.example.unbox_user.order.order.entity.OrderStatus;
-import com.example.unbox_user.order.order.repository.OrderRepository;
-import com.example.unbox_user.order.settlement.service.SettlementService;
+import com.example.unbox_user.common.client.order.OrderClient;
+import com.example.unbox_user.common.client.order.dto.OrderForPaymentInfoResponse;
+import com.example.unbox_user.common.client.payment.dto.PaymentForSettlementResponse;
+import com.example.unbox_user.common.client.settlement.SettlementClient;
+import com.example.unbox_user.common.client.trade.TradeClient;
 import com.example.unbox_user.payment.dto.response.PaymentReadyResponseDto;
 import com.example.unbox_user.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_user.payment.entity.Payment;
 import com.example.unbox_user.payment.entity.PaymentMethod;
 import com.example.unbox_user.payment.entity.PaymentStatus;
+import com.example.unbox_user.payment.mapper.PaymentClientMapper;
 import com.example.unbox_user.payment.mapper.PaymentMapper;
 import com.example.unbox_user.payment.repository.PaymentRepository;
 import com.example.unbox_common.error.exception.CustomException;
@@ -28,17 +30,16 @@ import java.util.UUID;
 @Slf4j
 public class PaymentServiceImpl implements PaymentService {
 
-    // ✅ 결제 가능한 주문 상태 정의
-    private static final Set<OrderStatus> PAYABLE_STATUSES = Set.of(
-            OrderStatus.PAYMENT_PENDING // 결제 대기 상태만 결제 가능
-    );
+    private static final Set<String> PAYABLE_STATUSES = Set.of("PAYMENT_PENDING");
 
     private final PaymentRepository paymentRepository;
-    private final OrderRepository orderRepository;
     private final PaymentTransactionService paymentTransactionService;
-    private final SettlementService settlementService;
     private final TossApiService tossApiService;
     private final PaymentMapper paymentMapper;
+    private final PaymentClientMapper paymentClientMapper;
+    private final TradeClient tradeClient;
+    private final OrderClient orderClient;
+    private final SettlementClient settlementClient;
 
     // ✅ 결제 준비 (초기 레코드 생성)
     @Override
@@ -50,25 +51,24 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // 주문 정보 조회
-        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(orderId);
 
         // 구매자 존재 여부 및 본인 확인
-        if (order.getBuyer() == null || !order.getBuyer().getId().equals(userId)) {
+        if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
             throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
         }
 
         // 주문 금액 검증
-        if (order.getPrice() == null || order.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            log.error("주문 금액 정보가 올바르지 않습니다. OrderID: {}", order.getId());
+        if (orderInfo.getPrice() == null || orderInfo.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            log.error("주문 금액 정보가 올바르지 않습니다. OrderID: {}", orderInfo.getOrderId());
             throw new CustomException(ErrorCode.INVALID_BID_PRICE);
         }
 
         // 주문 상태 검증 (결제 가능한 상태인지)
-        if (!PAYABLE_STATUSES.contains(order.getStatus())) {
-            log.error("결제 불가능한 주문 상태입니다. OrderID: {}, Status: {}", order.getId(), order.getStatus());
+        if (!PAYABLE_STATUSES.contains(orderInfo.getStatus())) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
+
 
         // 기존 결제 내역 확인
         Optional<Payment> existingPayment = paymentRepository.findByOrderIdAndDeletedAtIsNull(orderId);
@@ -84,18 +84,18 @@ public class PaymentServiceImpl implements PaymentService {
 
             // 준비 상태인 경우 기존 정보 반환
             if (payment.getStatus() == PaymentStatus.READY) {
-                return paymentMapper.toReadyResponseDto(payment, order);
+                return paymentMapper.toReadyResponseDto(payment, orderInfo);
             }
         }
 
         // 새로운 결제 엔티티 생성
-        Payment payment = paymentMapper.toEntity(order, method);
+        Payment payment = paymentMapper.toEntity(orderInfo, method);
 
         // 결제 정보 저장
         Payment savedPayment = paymentRepository.save(payment);
 
         // 응답 DTO 생성 및 반환
-        return paymentMapper.toReadyResponseDto(savedPayment, order);
+        return paymentMapper.toReadyResponseDto(savedPayment, orderInfo);
     }
 
     // ✅ 결제 승인 처리
@@ -112,23 +112,20 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // 주문 정보 조회
-        Order order = orderRepository.findByIdAndDeletedAtIsNull(payment.getOrderId())
-                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
 
         // 구매자 존재 여부 및 본인 확인
-        if (order.getBuyer() == null || !order.getBuyer().getId().equals(userId)) {
+        if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
             throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
         }
 
         // 주문 금액 검증
-        if (order.getPrice() == null || order.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            log.error("주문 금액 정보가 올바르지 않습니다. OrderID: {}", order.getId());
+        if (orderInfo.getPrice() == null || orderInfo.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             throw new CustomException(ErrorCode.INVALID_BID_PRICE);
         }
 
         // 주문 상태 검증 (결제 가능한 상태인지)
-        if (!PAYABLE_STATUSES.contains(order.getStatus())) {
-            log.error("결제 불가능한 주문 상태입니다. OrderID: {}, Status: {}", order.getId(), order.getStatus());
+        if (!PAYABLE_STATUSES.contains(orderInfo.getStatus())) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
@@ -151,7 +148,7 @@ public class PaymentServiceImpl implements PaymentService {
                 paymentTransactionService.processSuccessfulPayment(paymentId, response);
 
                 // 정산 정보 생성
-                settlementService.createSettlement(paymentId, order.getId());
+                settlementClient.createSettlementForPayment(paymentId);
 
             } catch (Exception e) {
                 // 예외 발생 시 로그 기록
@@ -171,4 +168,17 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
+    // ========================================
+    // ✅ 내부 시스템용 API (Internal API)
+    // ========================================
+
+    // ✅ 결제 조회 (정산용)
+    @Override
+    @Transactional(readOnly = true)
+    public PaymentForSettlementResponse getPaymentForSettlement(UUID paymentId) {
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        return paymentClientMapper.toPaymentForSettlementResponse(payment);
+    }
 }

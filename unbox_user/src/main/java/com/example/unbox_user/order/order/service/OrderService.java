@@ -1,5 +1,7 @@
 package com.example.unbox_user.order.order.service;
 
+import com.example.unbox_user.common.client.order.dto.OrderForPaymentInfoResponse;
+import com.example.unbox_user.common.client.order.dto.OrderForReviewInfoResponse;
 import com.example.unbox_user.order.order.dto.request.OrderCreateRequestDto;
 import com.example.unbox_user.order.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_user.order.order.dto.response.OrderResponseDto;
@@ -69,4 +71,20 @@ public interface OrderService {
      * @return 확정된 주문 정보
      */
     OrderDetailResponseDto confirmOrder(UUID orderId, Long userId);
+
+    // ========================================
+    // ✅ 내부 시스템용 API (Internal API)
+    // ========================================
+    /**
+     * 주문 조회 (리뷰용)
+     */
+    OrderForReviewInfoResponse getOrderForReview(UUID orderId);
+    /**
+     * 주문 조회 (결제용)
+     */
+    OrderForPaymentInfoResponse getOrderForPayment(UUID orderId);
+    /**
+     * 주문 상태 변경 (결제 완료용: PAYMENT_PENDING → PENDING_SHIPMENT)
+     */
+    void pendingShipmentOrder(UUID orderId, String updatedBy);
 }

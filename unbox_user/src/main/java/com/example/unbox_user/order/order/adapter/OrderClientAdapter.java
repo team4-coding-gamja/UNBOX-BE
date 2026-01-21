@@ -1,6 +1,5 @@
 package com.example.unbox_user.order.order.adapter;
 
-import com.example.unbox_user.common.client.order.OrderClient;
 import com.example.unbox_user.common.client.order.dto.OrderForReviewInfoResponse;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;

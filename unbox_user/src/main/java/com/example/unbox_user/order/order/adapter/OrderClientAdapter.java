@@ -16,13 +16,12 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class OrderClientAdapter implements OrderClient {
+public class OrderClientAdapter{
 
     private final OrderClientMapper orderClientMapper;
     private final OrderRepository orderRepository;
 
     // ✅ 주문 조회 (리뷰용)
-    @Override
     public OrderForReviewInfoResponse getOrderForReview (UUID orderId) {
         Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));

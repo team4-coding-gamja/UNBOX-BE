@@ -8,8 +8,6 @@ import com.example.unbox_trade.trade.presentation.dto.response.SellingBidCreateR
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidDetailResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidListResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidsPriceUpdateResponseDto;
-import com.example.unbox_trade.trade.domain.entity.SellingBid;
-import com.example.unbox_trade.trade.domain.entity.SellingStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
@@ -49,7 +47,16 @@ public interface SellingBidService {
 
     SellingBidForOrderInfoResponse getSellingBidForOrder(UUID sellingBidId);
 
-    void occupySellingBid(UUID sellingBidId);
-
-    void updateSellingBidStatus(UUID id, String status, String updatedBy);
+    /**
+     * 판매 입찰 선점 (주문용: LIVE → RESERVED)
+     */
+    void reserveSellingBid(UUID sellingBidId, String updatedBy);
+    /**
+     * 판매 입찰 완료 처리 (결제 완료용: RESERVED → SOLD)
+     */
+    void soldSellingBid(UUID sellingBidId, String updatedBy);
+    /**
+     * 판매 입찰 복구 (결제 실패/취소용: RESERVED → LIVE)
+     */
+    void liveSellingBid(UUID sellingBidId, String updatedBy);
 }

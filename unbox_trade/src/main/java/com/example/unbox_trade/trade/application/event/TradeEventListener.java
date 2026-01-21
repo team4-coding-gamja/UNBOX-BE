@@ -1,4 +1,4 @@
-package com.example.unbox_trade.trade.event;
+package com.example.unbox_trade.trade.application.event;
 
 import com.example.unbox_trade.trade.application.service.AdminSellingBidService;
 import com.example.unbox_common.event.product.BrandDeletedEvent;

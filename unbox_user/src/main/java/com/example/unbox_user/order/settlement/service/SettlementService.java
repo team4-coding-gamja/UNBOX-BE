@@ -1,12 +1,15 @@
 package com.example.unbox_user.order.settlement.service;
 
+import com.example.unbox_user.common.client.payment.PaymentClient;
+import com.example.unbox_user.common.client.payment.dto.PaymentForSettlementResponse;
+import com.example.unbox_user.common.client.settlement.dto.SettlementCreateResponse;
+import com.example.unbox_user.common.client.settlement.dto.SettlementForPaymentResponse;
 import com.example.unbox_user.order.order.entity.Order;
 import com.example.unbox_user.order.order.repository.OrderRepository;
-import com.example.unbox_user.payment.entity.Payment;
-import com.example.unbox_user.payment.repository.PaymentRepository;
 import com.example.unbox_user.order.settlement.dto.response.SettlementResponseDto;
 import com.example.unbox_user.order.settlement.entity.Settlement;
 import com.example.unbox_user.order.settlement.entity.SettlementStatus;
+import com.example.unbox_user.order.settlement.mapper.SettlementClientMapper;
 import com.example.unbox_user.order.settlement.repository.SettlementRepository;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
@@ -16,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,9 +31,11 @@ public class SettlementService {
     private static final double FEE_RATE = 0.03;
 
     private final OrderRepository orderRepository;
-    private final PaymentRepository paymentRepository;
     private final SettlementRepository settlementRepository;
+    private final PaymentClient paymentClient;
+    private final SettlementClientMapper settlementClientMapper;
 
+    // ✅ 정산 생성
     @Transactional
     public SettlementResponseDto createSettlement(UUID paymentId, UUID orderId) {
         if (settlementRepository.existsByOrderId(orderId)) {
@@ -37,19 +44,18 @@ public class SettlementService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new CustomException((ErrorCode.PAYMENT_NOT_FOUND)));
+        PaymentForSettlementResponse paymentInfo = paymentClient.getPaymentForSettlement(paymentId);
 
         // seller 검증
         if (order.getSeller() == null) {
             throw new CustomException(ErrorCode.SETTLEMENT_SELLER_MISMATCH);
         }
 
-        if (!payment.getOrderId().equals(orderId)) {
+        if (!paymentInfo.getOrderId().equals(orderId)) {
             throw new CustomException(ErrorCode.PAYMENT_SETTLEMENT_MISMATCH);
         }
 
-        BigDecimal totalAmount = payment.getAmount();
+        BigDecimal totalAmount = paymentInfo.getAmount();
         BigDecimal fees = totalAmount.multiply(BigDecimal.valueOf(FEE_RATE))
                 .setScale(0, java.math.RoundingMode.HALF_UP);
 
@@ -82,5 +88,57 @@ public class SettlementService {
         }
         settlement.updateStatus(SettlementStatus.CONFIRMED);
         return SettlementResponseDto.from(settlement);
+    }
+
+    // ========================================
+    // ✅ 내부 시스템용 API (Internal API)
+    // ========================================
+
+    // ✅ 정산 조회 (결제용)
+    @Transactional(readOnly = true)
+    public SettlementForPaymentResponse getSettlementForPayment(UUID settlementId) {
+        Settlement settlement = settlementRepository.findById(settlementId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
+
+        return settlementClientMapper.toSettlementForPaymentResponse(settlement);
+    }
+
+    // ✅ 정산 생성 (결제 완료 시)
+    @Transactional
+    public SettlementCreateResponse createSettlementForPayment(UUID paymentId) {
+
+        // 1. 중복 생성 방지
+        Optional<Settlement> existing = settlementRepository.findByPaymentId(paymentId);
+        if (existing.isPresent()) {
+            log.warn("정산이 이미 존재합니다. settlementId={}, paymentId={}",
+                    existing.get().getId(), paymentId);
+            return settlementClientMapper.toSettlementCreateResponse(existing.get());
+        }
+
+        // 2. Payment 정보 조회
+        PaymentForSettlementResponse paymentInfo = paymentClient.getPaymentForSettlement(paymentId);
+
+        // 3. 정산 금액 계산
+        BigDecimal totalAmount = paymentInfo.getAmount();
+        BigDecimal fees = totalAmount.multiply(BigDecimal.valueOf(FEE_RATE))
+                .setScale(0, RoundingMode.HALF_UP);
+        BigDecimal settlementAmount = totalAmount.subtract(fees);
+
+        // 4. 정산 생성
+        Settlement settlement = Settlement.builder()
+                .orderId(paymentInfo.getOrderId())
+                .paymentId(paymentId)
+                .sellerId(paymentInfo.getSellerId())
+                .totalAmount(totalAmount)
+                .feesAmount(fees)
+                .settlementAmount(settlementAmount)
+                .settlementStatus(SettlementStatus.PENDING)
+                .build();
+
+        Settlement savedSettlement = settlementRepository.save(settlement);
+        log.info("정산 생성 완료: settlementId={}, paymentId={}, sellerId={}, amount={}",
+                savedSettlement.getId(), paymentId, paymentInfo.getSellerId(), settlementAmount);
+
+        return settlementClientMapper.toSettlementCreateResponse(savedSettlement);
     }
 }

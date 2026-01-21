@@ -1,0 +1,89 @@
+name: Order Service - Dev CI
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'unbox_order/**'
+      - 'unbox_common/**'
+      - '.github/workflows/order-dev-ci.yml'
+
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: unbox-order-service
+  SERVICE_NAME: order-service
+  SERVICE_PATH: unbox_order
+
+jobs:
+  build:
+    name: Build and Push Image
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    outputs:
+      image-tag: ${{ steps.image-tag.outputs.tag }}
+      image-uri: ${{ steps.build-image.outputs.image }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.DEV_IAM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-OrderCI
+          audience: sts.amazonaws.com
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: image-tag
+        run: echo "tag=dev-${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -f ${{ env.SERVICE_PATH }}/Dockerfile \
+            .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Notify Discord - CI Success
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "✅ Dev CI 성공 - Order 서비스",
+                "description": "**환경:** Dev\n**서비스:** order-service\n**브랜치:** develop\n**커밋:** `${{ github.sha }}`\n**이미지:** `${{ steps.build-image.outputs.image }}`",
+                "color": 3066993,
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+              }]
+            }'
+
+      - name: Notify Discord - CI Failed
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "❌ Dev CI 실패 - Order 서비스",
+                "description": "**환경:** Dev\n**서비스:** order-service\n**브랜치:** develop\n**커밋:** `${{ github.sha }}`\n**실패 원인:** 빌드 또는 푸시 실패",
+                "color": 15158332,
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+              }]
+            }'

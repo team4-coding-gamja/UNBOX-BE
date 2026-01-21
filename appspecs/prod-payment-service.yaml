@@ -1,0 +1,21 @@
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: "<TASK_DEFINITION_ARN>"
+        LoadBalancerInfo:
+          ContainerName: "payment-service"
+          ContainerPort: 8085
+        PlatformVersion: "LATEST"
+        NetworkConfiguration:
+          AwsvpcConfiguration:
+            Subnets:
+              - "<SUBNET_1>"
+              - "<SUBNET_2>"
+            SecurityGroups:
+              - "<SECURITY_GROUP>"
+            AssignPublicIp: "DISABLED"
+
+Hooks:
+  - AfterAllowTestTraffic: "arn:aws:lambda:ap-northeast-2:ACCOUNT_ID:function:unbox-prod-deployment-validator"

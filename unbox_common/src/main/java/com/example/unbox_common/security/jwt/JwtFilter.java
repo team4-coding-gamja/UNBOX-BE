@@ -28,7 +28,6 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        String path = request.getRequestURI();
         if (HttpMethod.OPTIONS.matches(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
@@ -55,7 +54,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
             CustomUserDetails userDetails;
 
-            // ✅ 앞서 만든 POJO CustomUserDetails 팩토리 사용
+            // 앞서 만든 POJO CustomUserDetails 팩토리 사용
             if ("ROLE_USER".equals(role)) {
                 Long userId = jwtUtil.getUserId(token);
                 userDetails = CustomUserDetails.ofUserIdOnly(userId, email, role);

@@ -50,6 +50,25 @@ UNBOX는 구매자와 판매자 간의 투명한 거래와 철저한 검수 시�
 
 <br>
 
+## 📚 Documentation
+
+프로젝트 관련 모든 문서는 [docs](./docs) 폴더에서 확인할 수 있습니다.
+
+### 🚀 빠른 시작
+- [ECR 푸시 체크리스트](./docs/ECR_PUSH_CHECKLIST.md)
+- [GitHub Secrets 설정](./docs/GITHUB_SECRETS_CURRENT.md)
+- [Discord 알림 설정](./docs/DISCORD_QUICKSTART.md)
+
+### 📖 주요 가이드
+- [CI/CD 설정 가이드](./docs/CI_CD_SETUP_CHECKLIST.md)
+- [Docker 설정 가이드](./docs/DOCKER_SETUP_GUIDE.md)
+- [ECR 배포 가이드](./docs/ECR_DEPLOYMENT_GUIDE.md)
+- [Terraform 가이드](./terraform/README.md)
+
+**전체 문서 목록:** [docs/README.md](./docs/README.md)
+
+<br>
+
 ## 📜 Conventions
 
 ### GitHub Flow Strategy

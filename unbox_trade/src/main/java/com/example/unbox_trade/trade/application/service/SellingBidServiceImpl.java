@@ -51,8 +51,7 @@ public class SellingBidServiceImpl implements SellingBidService {
             throw new CustomException(ErrorCode.INVALID_BID_PRICE);
         }
 
-        ProductOptionForSellingBidInfoResponse productInfo = productClient
-                .getProductOptionForSellingBid(requestDto.getProductOptionId());
+        ProductOptionForSellingBidInfoResponse productInfo = productClient.getProductOptionForSellingBid(requestDto.getProductOptionId());
 
         // 만료일(deadline) 30일 뒤 00시로 설정
         LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();

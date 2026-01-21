@@ -21,7 +21,6 @@ public class AdminSellingBidServiceImpl implements AdminSellingBidService {
 
     private final AdminSellingBidRepository sellingBidRepository;
 
-    // Todo : N + 1 문제 발생
     @Override
     @Transactional(readOnly = true)
     public Page<AdminSellingBidListResponseDto> getSellingBids(SellingBidSearchCondition condition, Pageable pageable) {
@@ -59,13 +58,13 @@ public class AdminSellingBidServiceImpl implements AdminSellingBidService {
         sellingBid.softDelete(deletedBy);
     }
 
-    // ✅ [추가] 옵션 ID 리스트로 판매 입찰 일괄 삭제 (브랜드/상품 삭제 시 사용)
+    // [추가] 옵션 ID 리스트로 판매 입찰 일괄 삭제 (브랜드/상품 삭제 시 사용)
     @Transactional
     public void deleteSellingBidsByOptionIds(List<UUID> optionIds) {
         sellingBidRepository.deleteAllByProductOptionIdIn(optionIds);
     }
 
-    // ✅ [추가] 단건 옵션 ID로 판매 입찰 삭제 (옵션 삭제 시 사용)
+    // [추가] 단건 옵션 ID로 판매 입찰 삭제 (옵션 삭제 시 사용)
     @Transactional
     public void deleteSellingBidByOptionId(UUID optionId) {
         sellingBidRepository.deleteByProductOptionId(optionId);

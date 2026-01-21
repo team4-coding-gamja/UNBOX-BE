@@ -19,6 +19,7 @@ import com.example.unbox_trade.trade.presentation.mapper.TradeClientMapper;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
+import com.example.unbox_common.event.trade.TradePriceChangedEvent;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class SellingBidServiceImpl implements SellingBidService {
     private final SellingBidMapper sellingBidMapper;
     private final ProductClient productClient;
     private final TradeClientMapper tradeClientMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ✅ 판매 입찰 생성
     @Override
@@ -56,6 +59,10 @@ public class SellingBidServiceImpl implements SellingBidService {
         SellingBid sellingBid = sellingBidMapper.toEntity(requestDto, sellerId, deadline, productInfo);
 
         SellingBid savedBid = sellingBidRepository.save(sellingBid);
+
+        // 🔔 최저가 갱신 이벤트 발행
+        publishPriceEvent(savedBid.getProductId(), savedBid.getProductOptionId());
+
         return sellingBidMapper.toCreateResponseDto(savedBid);
     }
 
@@ -82,6 +89,9 @@ public class SellingBidServiceImpl implements SellingBidService {
         if (deletedBy != null) {
             sellingBid.updateModifiedBy(deletedBy);
         }
+
+        // 🔔 최저가 갱신 이벤트 발행
+        publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
     }
 
     // ✅ 판매 입찰 가격 수정
@@ -110,6 +120,9 @@ public class SellingBidServiceImpl implements SellingBidService {
 
         // 엔티티 가격 업데이트 (JPA dirty checking으로 반영)
         sellingBid.updatePrice(requestDto.getNewPrice(), userId, "SYSTEM");
+
+        // 🔔 최저가 갱신 이벤트 발행
+        publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
 
         return sellingBidMapper.toPriceUpdateResponseDto(sellingId, requestDto.getNewPrice());
     }
@@ -188,17 +201,20 @@ public class SellingBidServiceImpl implements SellingBidService {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
+        SellingBid sellingBid = sellingBidRepository.findById(sellingBidId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
         // updatedBy 기록 (선택사항)
         if (updatedBy != null) {
-            SellingBid sellingBid = sellingBidRepository.findById(sellingBidId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
             sellingBid.updateModifiedBy(updatedBy);
         }
+
+        // 🔔 최저가 갱신 이벤트 발행
+        publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
     }
 
     // ✅ 판매 입찰 완료 처리 (결제 완료용: RESERVED → SOLD)
-    @Override
     @Transactional
+    @Override
     public void soldSellingBid(UUID sellingBidId, String updatedBy) {
         // 입찰 조회
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
@@ -212,6 +228,15 @@ public class SellingBidServiceImpl implements SellingBidService {
         if (updatedBy != null) {
             sellingBid.updateModifiedBy(updatedBy);
         }
+
+        // 🔔 최저가 갱신 이벤트 발행
+        publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
+    }
+
+    private void publishPriceEvent(UUID productId, UUID optionId) {
+        BigDecimal minPrice = sellingBidRepository.findLowestPriceByOptionId(optionId)
+                .orElse(BigDecimal.ZERO);
+        eventPublisher.publishEvent(new TradePriceChangedEvent(productId, optionId, minPrice));
     }
 
     // ✅ 판매 입찰 복구 (결제 실패/취소용: RESERVED → LIVE)

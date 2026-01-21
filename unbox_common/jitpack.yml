@@ -1,8 +1,0 @@
-# 파일명: jitpack.yml
-jdk:
-  - openjdk17
-
-# gradlew 실행 권한 문제 방지 및 빌드 명령어 명시
-install:
-  - chmod +x gradlew
-  - ./gradlew publishToMavenLocal

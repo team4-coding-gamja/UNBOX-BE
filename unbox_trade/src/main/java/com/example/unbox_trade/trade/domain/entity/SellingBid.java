@@ -32,12 +32,17 @@ public class SellingBid extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    // ======================= ID 참조 =======================
     @Column(name = "user_id", nullable = false)
     private Long sellerId;
 
     @Column(name = "product_option_id", nullable = false)
     private UUID productOptionId;
 
+    @Column(name = "product_id", nullable = false)
+    private UUID productId;
+
+    // ======================= 판매입찰 정보 =======================
     @Column(name = "price", nullable = false)
     private BigDecimal price;
 
@@ -48,15 +53,23 @@ public class SellingBid extends BaseEntity {
 
     private LocalDateTime deadline;
 
-    // --- 상품, 상품 옵션 스냅샷 ---
-    private UUID productId;
+    // ======================= 상품 스냅샷 =======================
+    @Column(name = "product_name", nullable = false)
     private String productName;
+
+    @Column(name = "model_number", nullable = false)
     private String modelNumber;
+
+    @Column(name = "product_image_url")
     private String productImageUrl;
+
+    @Column(name = "product_option_name", nullable = false)
     private String productOptionName;
-    private UUID brandId;
+
+    @Column(name = "brand_name", nullable = false)
     private String brandName;
 
+    // ======================= 비즈니스 로직 메서드 =======================
     public void updatePrice(BigDecimal newPrice, Long sellerId, String email) {
         // 본인 확인: 요청한 유저 ID와 입찰 생성자 ID 비교
         if (!this.sellerId.equals(sellerId)) {

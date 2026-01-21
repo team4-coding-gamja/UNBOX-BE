@@ -43,7 +43,6 @@ public class AdminSellingBidServiceImpl implements AdminSellingBidService {
                     .productId(bid.getProductId())
                     .productName(bid.getProductName())
                     // 브랜드 정보 (스냅샷)
-                    .brandId(bid.getBrandId())
                     .brandName(bid.getBrandName())
                     .build();
         });

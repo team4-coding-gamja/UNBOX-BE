@@ -18,8 +18,8 @@ public record OrderCreatedEvent(
         return OrderCreatedEvent.builder()
                 .orderId(order.getId())
                 .sellingBidId(order.getSellingBidId())
-                .buyerId(order.getBuyer().getId())
-                .sellerId(order.getSeller().getId())
+                .buyerId(order.getBuyerId())
+                .sellerId(order.getSellerId())
                 .occurredAt(LocalDateTime.now())
                 .build();
     }

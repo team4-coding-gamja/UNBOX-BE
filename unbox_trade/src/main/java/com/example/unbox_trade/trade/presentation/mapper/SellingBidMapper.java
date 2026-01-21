@@ -30,7 +30,6 @@ public interface SellingBidMapper {
         @Mapping(target = "modelNumber", source = "productInfo.modelNumber")
         @Mapping(target = "productImageUrl", source = "productInfo.productImageUrl")
         @Mapping(target = "productOptionName", source = "productInfo.productOptionName")
-        @Mapping(target = "brandId", source = "productInfo.brandId")
         @Mapping(target = "brandName", source = "productInfo.brandName")
 
         SellingBid toEntity(

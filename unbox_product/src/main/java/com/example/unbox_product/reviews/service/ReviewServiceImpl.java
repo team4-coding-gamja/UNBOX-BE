@@ -54,11 +54,8 @@ public class ReviewServiceImpl implements ReviewService {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 5) Review 스냅샷 구성 (OrderSnapshot 기반 복사)
+        // 5) Review 스냅샷 구성 (상품 정보만)
         ReviewProductSnapshot snapshot = ReviewProductSnapshot.builder()
-                .buyerId(orderInfo.getBuyerId())
-                .buyerNickname(orderInfo.getBuyerNickname())
-                .orderStatus(orderInfo.getOrderStatus())
                 .productId(orderInfo.getProductId())
                 .productName(orderInfo.getProductName())
                 .modelNumber(orderInfo.getModelNumber())
@@ -71,11 +68,11 @@ public class ReviewServiceImpl implements ReviewService {
         // 6) 엔티티 생성
         Review review = Review.createReview(
                 orderId,
+                orderInfo.getBuyerNickname(), // 작성자 이름 스냅샷
                 requestDto.getContent(),
                 requestDto.getRating(),
                 requestDto.getReviewImageUrl(),
-                snapshot
-        );
+                snapshot);
 
         Review saved = reviewRepository.save(review);
         return reviewMapper.toReviewCreateResponseDto(saved);

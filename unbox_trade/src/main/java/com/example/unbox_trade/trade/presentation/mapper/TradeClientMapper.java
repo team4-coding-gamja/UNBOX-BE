@@ -22,7 +22,6 @@ public interface TradeClientMapper {
                 .productImageUrl(sellingBid.getProductImageUrl())
                 .modelNumber(sellingBid.getModelNumber())
                 .brandName(sellingBid.getBrandName())
-                .brandId(sellingBid.getBrandId())
                 .build();
     }
 
@@ -39,7 +38,6 @@ public interface TradeClientMapper {
                 .productImageUrl(sellingBid.getProductImageUrl())
                 .modelNumber(sellingBid.getModelNumber())
                 .brandName(sellingBid.getBrandName())
-                .brandId(sellingBid.getBrandId())
                 .build();
     }
 }

@@ -34,26 +34,22 @@ public class Review extends BaseEntity {
     private String imageUrl;
 
     // ======================= ID 참조 =======================
-
     @Column(name = "order_id", nullable = false)
     private UUID orderId;
 
+    // ======================= 작성자 스냅샷 =======================
+    @Column(name = "author_name", nullable = false)
+    private String authorName;
+
     // ======================= 상품 스냅샷 =======================
     @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name="productId", column=@Column(name="product_id")),
-            @AttributeOverride(name="productName", column=@Column(name="product_name")),
-            @AttributeOverride(name="modelNumber", column=@Column(name="model_number")),
-            @AttributeOverride(name="productImageUrl", column=@Column(name="product_image_url")),
-            @AttributeOverride(name="productOptionId", column=@Column(name="product_option_id")),
-            @AttributeOverride(name="productOptionName", column=@Column(name="product_option_name")),
-            @AttributeOverride(name="brandName", column=@Column(name="brand_name"))
-    })
     private ReviewProductSnapshot productSnapshot;
 
     // ======================= 생성자 =======================
-    public Review(UUID orderId, String content, Integer rating, String imageUrl, ReviewProductSnapshot productSnapshot) {
+    public Review(UUID orderId, String authorName, String content, Integer rating, String imageUrl,
+            ReviewProductSnapshot productSnapshot) {
         this.orderId = orderId;
+        this.authorName = authorName;
         this.content = content;
         this.rating = rating;
         this.imageUrl = imageUrl;
@@ -61,10 +57,12 @@ public class Review extends BaseEntity {
     }
 
     // ======================= 정적 메서드 =======================
-    public static Review createReview(UUID orderId, String content, Integer rating, String imageUrl, ReviewProductSnapshot snapshot) {
-        validateCreate(orderId, content, rating, imageUrl);
+    public static Review createReview(UUID orderId, String authorName, String content, Integer rating, String imageUrl,
+            ReviewProductSnapshot snapshot) {
+        validateCreate(orderId, authorName, content, rating, imageUrl);
         requireNotNull(snapshot, "productSnapshot");
-        return new Review(orderId, normalizeContent(content), rating, normalizeImageUrl(imageUrl), snapshot);
+        return new Review(orderId, authorName, normalizeContent(content), rating, normalizeImageUrl(imageUrl),
+                snapshot);
     }
 
     public void update(String content, Integer rating, String imageUrl) {
@@ -83,8 +81,10 @@ public class Review extends BaseEntity {
     }
 
     // ======================= 유효성 검사 메서드 =======================
-    private static void validateCreate(UUID orderId, String content, Integer rating, String imageUrl) {
+    private static void validateCreate(UUID orderId, String authorName, String content, Integer rating,
+            String imageUrl) {
         requireNotNull(orderId, "order");
+        requireNotNull(authorName, "authorName");
         validateContent(content);
         validateRating(rating);
         validateImageUrl(imageUrl);
@@ -121,7 +121,8 @@ public class Review extends BaseEntity {
     }
 
     private static void validateImageUrl(String imageUrl) {
-        if (imageUrl == null) return; // 선택 값
+        if (imageUrl == null)
+            return; // 선택 값
         if (imageUrl.isBlank()) {
             throw new IllegalArgumentException("imageUrl은 공백일 수 없습니다. 없으면 null로 보내세요.");
         }
@@ -143,7 +144,8 @@ public class Review extends BaseEntity {
     }
 
     private static String normalizeImageUrl(String imageUrl) {
-        if (imageUrl == null) return null;
+        if (imageUrl == null)
+            return null;
         String trimmed = imageUrl.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }

@@ -26,16 +26,8 @@ public class ReviewDetailResponseDto {
     @Builder
     public static class OrderInfo {
         private UUID orderId;
-        private String orderStatus;
-        private UserInfo buyer;
+        private String authorName;
         private ProductOptionInfo productOption;
-    }
-
-    @Getter
-    @Builder
-    public static class UserInfo {
-        private Long buyerId;
-        private String buyerNickname;
     }
 
     @Getter

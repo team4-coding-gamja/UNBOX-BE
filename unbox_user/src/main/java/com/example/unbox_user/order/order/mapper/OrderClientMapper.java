@@ -10,9 +10,11 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface OrderClientMapper {
 
-    @Mapping(target = "buyerId", source = "buyer.id") // USER 분리하면 수정
-    @Mapping(target = "buyerNickname", source = "buyer.nickname") // USER 분리하면 수정
+    // 검증용 필드
+    @Mapping(target = "buyerId", source = "buyerId")
     @Mapping(target = "orderStatus", expression = "java(order.getStatus().name())")
+    // 스냅샷 저장 필드
+    @Mapping(target = "buyerNickname", source = "buyerName")
     @Mapping(target = "productId", source = "productId")
     @Mapping(target = "productName", source = "productName")
     @Mapping(target = "modelNumber", source = "modelNumber")
@@ -26,7 +28,7 @@ public interface OrderClientMapper {
     @Mapping(target = "status", expression = "java(order.getStatus().name())")
     @Mapping(target = "price", source = "price")
     @Mapping(target = "sellingBidId", source = "sellingBidId")
-    @Mapping(target = "buyerId", source = "buyer.id")
-    @Mapping(target = "sellerId", source = "seller.id")
+    @Mapping(target = "buyerId", source = "buyerId")
+    @Mapping(target = "sellerId", source = "sellerId")
     OrderForPaymentInfoResponse toOrderForPaymentInfoResponse(Order order);
 }

@@ -26,8 +26,6 @@ public class AdminOrderRepositoryCustomImpl implements AdminOrderRepositoryCusto
     public Page<Order> findAdminOrders(OrderSearchCondition condition, Pageable pageable) {
         List<Order> content = queryFactory
                 .selectFrom(order)
-                .leftJoin(order.buyer).fetchJoin()
-                .leftJoin(order.seller).fetchJoin() // seller도 같이 fetchJoin 하는 것이 좋음 (상세 정보용)
                 .where(
                         statusEq(condition.getStatus()),
                         productNameContains(condition.getProductName()),

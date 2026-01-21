@@ -20,9 +20,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findAllByBuyerIdAndDeletedAtIsNull(Long buyerId, Pageable pageable);
 
     // 주문 상세 조회(삭제 포함)
-    @EntityGraph(attributePaths = {"buyer", "seller"})
     Optional<Order> findWithDetailsById(UUID id);
 
-    @EntityGraph(attributePaths = {"buyer", "seller"})
     Optional<Order> findByIdAndDeletedAtIsNull(UUID id);
 }

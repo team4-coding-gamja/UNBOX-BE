@@ -1,12 +1,12 @@
 name: User Service - Dev CD
 
 on:
-  workflow_run:
-    workflows: ["User Service - Dev CI"]
-    types:
-      - completed
-    branches:
-      - develop
+  # workflow_run:
+  #   workflows: ["User Service - Dev CI"]
+  #   types:
+  #     - completed
+  #   branches:
+  #     - develop
 
   workflow_dispatch:
     inputs:

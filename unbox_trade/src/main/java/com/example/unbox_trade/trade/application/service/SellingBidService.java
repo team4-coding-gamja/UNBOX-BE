@@ -8,8 +8,6 @@ import com.example.unbox_trade.trade.presentation.dto.response.SellingBidCreateR
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidDetailResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidListResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidsPriceUpdateResponseDto;
-import com.example.unbox_trade.trade.domain.entity.SellingBid;
-import com.example.unbox_trade.trade.domain.entity.SellingStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 

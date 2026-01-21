@@ -60,7 +60,29 @@ services:
       - db
       - redis
 
-  # 4. PostgreSQL
+  # 4. Payment Service
+  unbox-payment:
+    build: ./unbox_payment
+    container_name: unbox-payment
+    ports:
+      - "8084:8080" # Map internal 8080 to external 8084
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_payment
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
+      - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - PRODUCT_SERVICE_URL=http://unbox-product:8080
+      - USER_SERVICE_URL=http://unbox-user:8080
+      - TRADE_SERVICE_URL=http://unbox-trade:8080
+    depends_on:
+      - db
+      - redis
+
+  # 5. PostgreSQL
   db:
     image: postgres:16.11-alpine
     container_name: unbox-postgres

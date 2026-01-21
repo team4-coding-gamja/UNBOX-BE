@@ -1,4 +1,4 @@
-package com.example.unbox_user.common.client.payment.dto;
+package com.example.unbox_payment.common.client.order.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,10 +12,13 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaymentForSettlementResponse {
-    private UUID paymentId;
+public class OrderForPaymentInfoResponse {
     private UUID orderId;
-    private Long sellerId;
-    private BigDecimal amount;
     private String status;
+    private BigDecimal price;
+    private UUID sellingBidId;
+
+    // 구매자/판매자 ID
+    private Long buyerId;
+    private Long sellerId;
 }

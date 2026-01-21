@@ -27,11 +27,11 @@ public class Settlement extends BaseEntity {
     @Column(name = "order_id", nullable = false)
     private UUID orderId;
 
-    @Column(name = "seller_id", nullable = false)
-    private Long sellerId;
-
     @Column(name = "payment_id", nullable = false)
     private UUID paymentId;
+
+    @Column(name = "seller_id", nullable = false)
+    private Long sellerId;
 
     // ======================= 정산 금액 정보 =======================
     @Column(name = "total_amount", nullable = false)

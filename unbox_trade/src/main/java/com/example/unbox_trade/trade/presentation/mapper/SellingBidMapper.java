@@ -25,10 +25,13 @@ public interface SellingBidMapper {
         @Mapping(target = "status", ignore = true)
         @Mapping(target = "deadline", source = "deadline")
 
+        @Mapping(target = "productId", source = "productInfo.productId")
         @Mapping(target = "productName", source = "productInfo.productName")
         @Mapping(target = "modelNumber", source = "productInfo.modelNumber")
         @Mapping(target = "productImageUrl", source = "productInfo.productImageUrl")
         @Mapping(target = "productOptionName", source = "productInfo.productOptionName")
+        @Mapping(target = "brandId", source = "productInfo.brandId")
+        @Mapping(target = "brandName", source = "productInfo.brandName")
 
         SellingBid toEntity(
                         SellingBidCreateRequestDto dto,

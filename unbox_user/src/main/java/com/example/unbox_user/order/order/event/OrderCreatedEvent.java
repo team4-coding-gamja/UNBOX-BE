@@ -12,8 +12,7 @@ public record OrderCreatedEvent(
         UUID sellingBidId,
         Long buyerId,
         Long sellerId,
-        LocalDateTime occurredAt
-) {
+        LocalDateTime occurredAt) {
     // 생성 시점에 시간을 자동 할당하는 정적 팩토리 메서드나 커스텀 생성자
     public static OrderCreatedEvent from(Order order) {
         return OrderCreatedEvent.builder()

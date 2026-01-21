@@ -16,6 +16,7 @@ import java.util.UUID;
 public class PaymentForSettlementResponse {
     private UUID paymentId;
     private UUID orderId;
+    private Long sellerId;
     private BigDecimal amount;
     private String status;
 }

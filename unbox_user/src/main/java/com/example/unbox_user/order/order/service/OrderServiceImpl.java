@@ -244,6 +244,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
         return orderClientMapper.toOrderForPaymentInfoResponse(order);
     }
+
     // ✅ 주문 조회 (리뷰용)
     @Override
     @Transactional(readOnly = true)
@@ -252,6 +253,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
         return orderClientMapper.toOrderForReviewInfoResponse(order);
     }
+
     // ✅ 주문 상태 변경 (결제 완료용: PAYMENT_PENDING → PENDING_SHIPMENT)
     @Override
     @Transactional

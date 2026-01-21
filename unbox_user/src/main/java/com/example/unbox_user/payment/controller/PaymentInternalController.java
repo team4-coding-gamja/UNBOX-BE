@@ -2,8 +2,6 @@ package com.example.unbox_user.payment.controller;
 
 
 import com.example.unbox_user.common.client.payment.dto.PaymentForSettlementResponse;
-import com.example.unbox_user.payment.mapper.PaymentClientMapper;
-import com.example.unbox_user.payment.mapper.PaymentMapper;
 import com.example.unbox_user.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

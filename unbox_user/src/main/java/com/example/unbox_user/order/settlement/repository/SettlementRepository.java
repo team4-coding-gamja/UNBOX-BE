@@ -20,4 +20,6 @@ public interface SettlementRepository extends JpaRepository<Settlement, UUID> {
     List<Settlement> findAllBySellerIdAndSettlementStatusAndDeletedAtIsNull(Long sellerId, SettlementStatus status);
 
     boolean existsByOrderId(UUID orderId);
+
+    Optional<Settlement> findByPaymentId(UUID paymentId);
 }

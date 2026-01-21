@@ -107,7 +107,7 @@ jobs:
               }]
             }'
 
-      - name: Notify Discord - CI Failed
+      - name: Notify Discord - CI Failed.
         if: failure()
         run: |
           curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \

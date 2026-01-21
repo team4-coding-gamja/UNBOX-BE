@@ -1,9 +1,9 @@
 package com.example.unbox_user.order.settlement.service;
 
+import com.example.unbox_user.common.client.payment.PaymentClient;
+import com.example.unbox_user.common.client.payment.dto.PaymentForSettlementResponse;
 import com.example.unbox_user.order.order.entity.Order;
 import com.example.unbox_user.order.order.repository.OrderRepository;
-import com.example.unbox_user.payment.entity.Payment;
-import com.example.unbox_user.payment.repository.PaymentRepository;
 import com.example.unbox_user.order.settlement.dto.response.SettlementResponseDto;
 import com.example.unbox_user.order.settlement.entity.Settlement;
 import com.example.unbox_user.order.settlement.entity.SettlementStatus;
@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import static com.example.unbox_user.payment.entity.QPayment.payment;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -26,8 +28,8 @@ public class SettlementService {
     private static final double FEE_RATE = 0.03;
 
     private final OrderRepository orderRepository;
-    private final PaymentRepository paymentRepository;
     private final SettlementRepository settlementRepository;
+    private final PaymentClient paymentClient;
 
     @Transactional
     public SettlementResponseDto createSettlement(UUID paymentId, UUID orderId) {
@@ -37,19 +39,18 @@ public class SettlementService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new CustomException((ErrorCode.PAYMENT_NOT_FOUND)));
+        PaymentForSettlementResponse paymentInfo = paymentClient.getPaymentForSettlement(paymentId);
 
         // seller 검증
         if (order.getSeller() == null) {
             throw new CustomException(ErrorCode.SETTLEMENT_SELLER_MISMATCH);
         }
 
-        if (!payment.getOrderId().equals(orderId)) {
+        if (!paymentInfo.getOrderId().equals(orderId)) {
             throw new CustomException(ErrorCode.PAYMENT_SETTLEMENT_MISMATCH);
         }
 
-        BigDecimal totalAmount = payment.getAmount();
+        BigDecimal totalAmount = paymentInfo.getAmount();
         BigDecimal fees = totalAmount.multiply(BigDecimal.valueOf(FEE_RATE))
                 .setScale(0, java.math.RoundingMode.HALF_UP);
 

@@ -172,49 +172,65 @@ public class SellingBidServiceImpl implements SellingBidService {
         return tradeClientMapper.toSellingBidForOrderInfoResponse(sellingBid);
     }
 
-    // ✅ 주문 상태 변경 (주문용)
+    // ✅ 판매 입찰 선점 (주문용: LIVE → RESERVED)
     @Override
     @Transactional
-    public void occupySellingBid(UUID sellingBidId) {
+    public void reserveSellingBid(UUID sellingBidId, String updatedBy) {
         // 존재 여부 확인
         if (!sellingBidRepository.existsById(sellingBidId)) {
             throw new CustomException(ErrorCode.SELLING_BID_NOT_FOUND);
         }
-
         // 동시성 제어 업데이트 (LIVE 상태인 것만 RESERVED로 변경)
         int updated = sellingBidRepository.updateStatusIfReserved(
                 sellingBidId,
                 SellingStatus.LIVE,
                 SellingStatus.RESERVED);
-
         // 업데이트 실패 시 예외 발생
         if (updated == 0) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
+
+        // updatedBy 기록 (선택사항)
+        if (updatedBy != null) {
+            SellingBid sellingBid = sellingBidRepository.findById(sellingBidId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+            sellingBid.updateModifiedBy(updatedBy);
+        }
     }
 
-    // ✅ 결제 상태 변경 (결제용)
-    @Transactional
+    // ✅ 판매 입찰 완료 처리 (결제 완료용: RESERVED → SOLD)
     @Override
-    public void updateSellingBidStatus(UUID id, String status, String updatedBy) {
-        // String → Enum 변환
-        SellingStatus newStatus = SellingStatus.valueOf(status);
-
+    @Transactional
+    public void soldSellingBid(UUID sellingBidId, String updatedBy) {
         // 입찰 조회
-        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
-
-        // 상태 전이 검증 (CANCELLED, SOLD 상태에서 LIVE로 되돌리기 금지)
-        if ((sellingBid.getStatus() == SellingStatus.CANCELLED || sellingBid.getStatus() == SellingStatus.SOLD)
-                && newStatus == SellingStatus.LIVE) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+        // 상태 검증 (RESERVED 상태만 SOLD로 변경 가능)
+        if (sellingBid.getStatus() != SellingStatus.RESERVED) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
-
         // 상태 변경
-        sellingBid.updateStatus(newStatus);
+        sellingBid.updateStatus(SellingStatus.SOLD);
         if (updatedBy != null) {
             sellingBid.updateModifiedBy(updatedBy);
         }
     }
 
+    // ✅ 판매 입찰 복구 (결제 실패/취소용: RESERVED → LIVE)
+    @Override
+    @Transactional
+    public void liveSellingBid(UUID sellingBidId, String updatedBy) {
+        // 입찰 조회
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+        // 상태 검증 (RESERVED 상태만 LIVE로 복구 가능)
+        if (sellingBid.getStatus() != SellingStatus.RESERVED) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+        // 상태 변경
+        sellingBid.updateStatus(SellingStatus.LIVE);
+        if (updatedBy != null) {
+            sellingBid.updateModifiedBy(updatedBy);
+        }
+    }
 }

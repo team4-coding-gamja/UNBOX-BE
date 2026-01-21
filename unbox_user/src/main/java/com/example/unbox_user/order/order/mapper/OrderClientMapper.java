@@ -1,5 +1,6 @@
 package com.example.unbox_user.order.order.mapper;
 
+import com.example.unbox_user.common.client.order.dto.OrderForPaymentInfoResponse;
 import com.example.unbox_user.common.client.order.dto.OrderForReviewInfoResponse;
 import com.example.unbox_user.order.order.entity.Order;
 import org.mapstruct.Mapper;
@@ -23,4 +24,10 @@ public interface OrderClientMapper {
     @Mapping(target = "productOptionName", source = "productOptionName")
     @Mapping(target = "brandName", source = "brandName")
     OrderForReviewInfoResponse toOrderForReviewInfoResponse(Order order);
+
+    @Mapping(target = "orderId", source = "id")
+    @Mapping(target = "status", expression = "java(order.getStatus().name())")
+    @Mapping(target = "price", source = "price")
+    @Mapping(target = "sellingBidId", source = "sellingBidId")
+    OrderForPaymentInfoResponse toOrderForPaymentInfoResponse(Order order);
 }

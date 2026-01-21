@@ -1,5 +1,6 @@
 package com.example.unbox_user.payment.service;
 
+import com.example.unbox_user.common.client.payment.dto.PaymentForSettlementResponse;
 import com.example.unbox_user.order.order.entity.Order;
 import com.example.unbox_user.order.order.entity.OrderStatus;
 import com.example.unbox_user.order.order.repository.OrderRepository;
@@ -9,6 +10,7 @@ import com.example.unbox_user.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_user.payment.entity.Payment;
 import com.example.unbox_user.payment.entity.PaymentMethod;
 import com.example.unbox_user.payment.entity.PaymentStatus;
+import com.example.unbox_user.payment.mapper.PaymentClientMapper;
 import com.example.unbox_user.payment.mapper.PaymentMapper;
 import com.example.unbox_user.payment.repository.PaymentRepository;
 import com.example.unbox_common.error.exception.CustomException;
@@ -39,6 +41,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final SettlementService settlementService;
     private final TossApiService tossApiService;
     private final PaymentMapper paymentMapper;
+    private final PaymentClientMapper paymentClientMapper;
 
     // ✅ 결제 준비 (초기 레코드 생성)
     @Override
@@ -171,4 +174,17 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
+    // ========================================
+    // ✅ 내부 시스템용 API (Internal API)
+    // ========================================
+
+    // ✅ 결제 조회 (정산용)
+    @Override
+    @Transactional(readOnly = true)
+    public PaymentForSettlementResponse getPaymentForSettlement(UUID paymentId) {
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        return paymentClientMapper.toPaymentForSettlementResponse(payment);
+    }
 }

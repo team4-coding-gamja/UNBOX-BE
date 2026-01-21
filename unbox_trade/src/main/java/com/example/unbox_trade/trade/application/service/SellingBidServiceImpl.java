@@ -176,9 +176,8 @@ public class SellingBidServiceImpl implements SellingBidService {
     @Transactional
     public void reserveSellingBid(UUID sellingBidId, String updatedBy) {
         // 존재 여부 확인
-        if (!sellingBidRepository.existsById(sellingBidId)) {
-            throw new CustomException(ErrorCode.SELLING_BID_NOT_FOUND);
-        }
+        sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
         // 동시성 제어 업데이트 (LIVE 상태인 것만 RESERVED로 변경)
         int updated = sellingBidRepository.updateStatusIfReserved(
                 sellingBidId,

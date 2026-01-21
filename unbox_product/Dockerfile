@@ -7,15 +7,19 @@ FROM gradle:8.5-jdk17 AS builder
 
 WORKDIR /app
 
-# Copy Gradle files
-COPY build.gradle settings.gradle ./
-COPY gradle ./gradle
+# Copy Gradle files from service directory
+COPY unbox_product/build.gradle ./build.gradle
+COPY unbox_product/gradle ./gradle
+COPY settings.gradle ./settings.gradle
+
+# Copy common module
+COPY unbox_common ./unbox_common
 
 # Download dependencies (cached layer)
 RUN gradle dependencies --no-daemon || true
 
 # Copy source code
-COPY src ./src
+COPY unbox_product/src ./src
 
 # Build application
 RUN gradle clean bootJar --no-daemon -x test

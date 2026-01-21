@@ -81,4 +81,6 @@ dependencies {
 
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    // 2. Spring Cache Abstraction (캐싱 어노테이션 @Cacheable 등 지원)
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
 }

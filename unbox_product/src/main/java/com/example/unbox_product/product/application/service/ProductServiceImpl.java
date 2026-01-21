@@ -69,6 +69,7 @@ public class ProductServiceImpl implements ProductService {
 
         // 상품 상세 조회 (Redis 적용)
         @Override
+        @Transactional(readOnly = true)
         public ProductDetailResponseDto getProductDetail(UUID productId) {
                 String infoKey = "prod:info:" + productId;
                 String priceKey = "prod:price:" + productId;

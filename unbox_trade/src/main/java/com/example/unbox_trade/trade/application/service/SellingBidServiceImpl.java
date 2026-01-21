@@ -201,20 +201,20 @@ public class SellingBidServiceImpl implements SellingBidService {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
+        SellingBid sellingBid = sellingBidRepository.findById(sellingBidId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
         // updatedBy 기록 (선택사항)
         if (updatedBy != null) {
-            SellingBid sellingBid = sellingBidRepository.findById(sellingBidId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
             sellingBid.updateModifiedBy(updatedBy);
         }
-        
+
         // 🔔 최저가 갱신 이벤트 발행
-        publishPriceEvent(bid.getProductId(), bid.getProductOptionId());
+        publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
     }
 
     // ✅ 판매 입찰 완료 처리 (결제 완료용: RESERVED → SOLD)
-    @Override
     @Transactional
+    @Override
     public void soldSellingBid(UUID sellingBidId, String updatedBy) {
         // 입찰 조회
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)

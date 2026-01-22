@@ -22,7 +22,7 @@ RUN gradle dependencies --no-daemon || true
 COPY unbox_user/src ./src
 
 # Build application
-RUN gradle clean bootJar --no-daemon -x test
+RUN gradle bootJar --no-daemon -x test
 
 # Stage 2: Runtime
 FROM eclipse-temurin:17-jre-alpine

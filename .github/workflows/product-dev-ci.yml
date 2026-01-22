@@ -71,6 +71,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Gradle 캐시 설정
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Download dependencies
+        run: ./gradlew dependencies --no-daemon || true
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -87,17 +110,27 @@ jobs:
         id: image-tag
         run: echo "tag=dev-${{ github.sha }}" >> $GITHUB_OUTPUT
 
-      - name: Build, tag, and push image to Amazon ECR
+      # Docker Buildx 설정 (레이어 캐시용)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Docker 빌드 및 푸시 (캐시 포함)
+      - name: Build and push Docker image
         id: build-image
+        uses: docker/build-push-action@v5
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-            -f ${{ env.SERVICE_PATH }}/Dockerfile \
-            .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        with:
+          context: .
+          file: ${{ env.SERVICE_PATH }}/Dockerfile
+          push: true
+          tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:buildcache
+          cache-to: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:buildcache,mode=max
+
+      - name: Set image output
+        run: echo "image=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.image-tag.outputs.tag }}" >> $GITHUB_OUTPUT
 
       - name: Notify Discord - CI Success
         run: |
@@ -106,13 +139,13 @@ jobs:
             -d '{
               "embeds": [{
                 "title": "✅ Dev CI 성공 - Product 서비스",
-                "description": "**환경:** Dev\n**서비스:** product-service\n**브랜치:** develop\n**커밋:** `${{ github.sha }}`\n**이미지:** `${{ steps.build-image.outputs.image }}`",
+                "description": "**환경:** Dev\n**서비스:** product-service\n**브랜치:** develop\n**커밋:** `${{ github.sha }}`\n**이미지:** `${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.image-tag.outputs.tag }}`",
                 "color": 3066993,
                 "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
               }]
             }'
 
-      - name: Notify Discord - CI Failed.
+      - name: Notify Discord - CI Failed
         if: failure()
         run: |
           curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \

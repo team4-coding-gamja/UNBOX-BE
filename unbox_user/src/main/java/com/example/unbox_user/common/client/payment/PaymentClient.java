@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;
 
-// @FeignClient(name = "payment-service", url = "${peyment-service.url}")
+@FeignClient(name = "payment-service", url = "${payment-service.url}")
 public interface PaymentClient {
 
     // ✅ 결제 조회 (정산용)

@@ -30,6 +30,10 @@ WORKDIR /app
 
 # 비root 사용자 생성
 RUN addgroup -S spring && adduser -S spring -G spring
+
+# Create logs directory and set ownership
+RUN mkdir -p logs && chown -R spring:spring logs && chown -R spring:spring /app
+
 USER spring:spring
 
 # JAR 파일 복사

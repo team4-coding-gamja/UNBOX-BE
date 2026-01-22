@@ -9,10 +9,12 @@ import java.util.UUID;
 @Builder
 public class OrderForReviewInfoResponse {
 
-    private Long buyerId;
-    private String buyerNickname;
+    // ===== 검증용 필드 (스냅샷에 저장하지 않음) =====
+    private Long buyerId; // 권한 검증용
+    private String orderStatus; // 주문 완료 상태 검증용
 
-    private String orderStatus;
+    // ===== 스냅샷 저장 필드 =====
+    private String buyerNickname;
 
     private UUID productId;
     private String productName;

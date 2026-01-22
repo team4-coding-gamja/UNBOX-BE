@@ -3,7 +3,7 @@ package com.example.unbox_product.reviews.service;
 import com.example.unbox_product.common.client.order.dto.OrderForReviewInfoResponse;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
-import com.example.unbox_product.common.client.order.OrderFeignClient;
+import com.example.unbox_product.common.client.order.OrderClient;
 import com.example.unbox_product.reviews.dto.request.ReviewCreateRequestDto;
 import com.example.unbox_product.reviews.dto.request.ReviewUpdateRequestDto;
 import com.example.unbox_product.reviews.dto.response.ReviewCreateResponseDto;
@@ -24,7 +24,7 @@ import java.util.UUID;
 public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
-    private final OrderFeignClient orderFeignClient;
+    private final OrderClient orderClient;
     private final ReviewMapper reviewMapper;
 
     private static final String ORDER_STATUS_COMPLETED = "COMPLETED";
@@ -42,7 +42,7 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         // 2) 주문(리뷰용 정보) 조회
-        OrderForReviewInfoResponse orderInfo = orderFeignClient.getOrderForReview(orderId);
+        OrderForReviewInfoResponse orderInfo = orderClient.getOrderForReview(orderId);
 
         // 3) 주문 상태 검증
         if (!ORDER_STATUS_COMPLETED.equals(orderInfo.getOrderStatus())) {
@@ -54,11 +54,8 @@ public class ReviewServiceImpl implements ReviewService {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 5) Review 스냅샷 구성 (OrderSnapshot 기반 복사)
+        // 5) Review 스냅샷 구성 (상품 정보만)
         ReviewProductSnapshot snapshot = ReviewProductSnapshot.builder()
-                .buyerId(orderInfo.getBuyerId())
-                .buyerNickname(orderInfo.getBuyerNickname())
-                .orderStatus(orderInfo.getOrderStatus())
                 .productId(orderInfo.getProductId())
                 .productName(orderInfo.getProductName())
                 .modelNumber(orderInfo.getModelNumber())
@@ -71,11 +68,11 @@ public class ReviewServiceImpl implements ReviewService {
         // 6) 엔티티 생성
         Review review = Review.createReview(
                 orderId,
+                orderInfo.getBuyerNickname(), // 작성자 이름 스냅샷
                 requestDto.getContent(),
                 requestDto.getRating(),
                 requestDto.getReviewImageUrl(),
-                snapshot
-        );
+                snapshot);
 
         Review saved = reviewRepository.save(review);
         return reviewMapper.toReviewCreateResponseDto(saved);
@@ -99,7 +96,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
         // 권한 검증: review.orderId → 주문 조회 → buyerId 비교
-        OrderForReviewInfoResponse orderInfo = orderFeignClient.getOrderForReview(review.getOrderId());
+        OrderForReviewInfoResponse orderInfo = orderClient.getOrderForReview(review.getOrderId());
         if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
             throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
         }
@@ -116,7 +113,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
         // 권한 검증
-        OrderForReviewInfoResponse orderInfo = orderFeignClient.getOrderForReview(review.getOrderId());
+        OrderForReviewInfoResponse orderInfo = orderClient.getOrderForReview(review.getOrderId());
         if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
             throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
         }

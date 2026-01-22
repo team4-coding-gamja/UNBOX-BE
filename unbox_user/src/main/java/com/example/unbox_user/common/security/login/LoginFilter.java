@@ -1,8 +1,8 @@
 package com.example.unbox_user.common.security.login;
 
 import com.example.unbox_common.error.ErrorResponse;
-import com.example.unbox_user.user.auth.dto.request.UserLoginRequestDto;
-import com.example.unbox_user.user.auth.dto.response.UserTokenResponseDto;
+import com.example.unbox_user.auth.dto.request.UserLoginRequestDto;
+import com.example.unbox_user.auth.dto.response.UserTokenResponseDto;
 import com.example.unbox_common.error.exception.CustomAuthenticationException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import com.example.unbox_common.security.auth.CustomUserDetails;

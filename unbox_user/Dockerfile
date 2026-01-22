@@ -10,7 +10,6 @@ WORKDIR /app
 
 # Copy Gradle files from service directory
 COPY unbox_user/build.gradle ./build.gradle
-COPY unbox_user/gradle ./gradle
 COPY settings.gradle ./settings.gradle
 
 # Copy common module

@@ -1,3 +1,12 @@
+# Order Service용 .dockerignore
+# 다른 서비스 폴더 제외 (빌드 컨텍스트 최소화)
+
+# 다른 서비스 제외
+unbox_product/
+unbox_user/
+unbox_payment/
+unbox_trade/
+
 # Git
 .git
 .gitignore
@@ -15,10 +24,6 @@
 **/target/
 **/.gradle/
 **/out/
-
-# Gradle wrapper (already in image)
-.gradle
-gradle/wrapper/*.jar
 
 # Test files
 **/test/

@@ -1,6 +1,6 @@
 # ============================================
 # Multi-stage build for Spring Boot Application
-# Test cache optimization - Trade Service
+# Test: Service-specific .dockerignore - Trade Service
 # ============================================
 
 # Stage 1: Build

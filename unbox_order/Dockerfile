@@ -1,5 +1,6 @@
 # ============================================
 # Multi-stage build for Spring Boot Application
+# Test cache optimization - Order Service
 # ============================================
 
 # Stage 1: Build

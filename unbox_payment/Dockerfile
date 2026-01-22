@@ -1,6 +1,6 @@
 # ============================================
 # Multi-stage build for Spring Boot Application
-# Test cache optimization - Payment Service
+# Test: Service-specific .dockerignore - Payment Service
 # ============================================
 
 # Stage 1: Build

@@ -1,0 +1,70 @@
+# Trade Service용 .dockerignore
+# 다른 서비스 폴더 제외 (빌드 컨텍스트 최소화)
+
+# 다른 서비스 제외
+unbox_product/
+unbox_user/
+unbox_payment/
+unbox_order/
+
+# Git
+.git
+.gitignore
+.github
+
+# IDE
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+
+# Build artifacts
+**/build/
+**/target/
+**/.gradle/
+**/out/
+
+# Test files
+**/test/
+**/*Test.java
+**/*Tests.java
+
+# Documentation
+docs/
+*.md
+README.md
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+appspecs/
+task-definitions/
+terraform/
+scripts/
+
+# Data directories
+postgres_data/
+redis_data/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Spec files
+.spec/

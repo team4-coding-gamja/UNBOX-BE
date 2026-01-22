@@ -5,9 +5,6 @@ import com.example.unbox_user.common.client.order.dto.OrderForReviewInfoResponse
 import com.example.unbox_user.common.client.trade.dto.SellingBidForOrderInfoResponse;
 import com.example.unbox_user.common.client.trade.TradeClient;
 import com.example.unbox_user.order.order.mapper.OrderClientMapper;
-import com.example.unbox_user.user.admin.entity.Admin;
-import com.example.unbox_user.user.admin.entity.AdminRole;
-import com.example.unbox_user.user.admin.repository.AdminRepository;
 import com.example.unbox_user.order.order.dto.request.OrderCreateRequestDto;
 import com.example.unbox_user.order.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_user.order.order.dto.response.OrderResponseDto;
@@ -38,7 +35,6 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
-    private final AdminRepository adminRepository;
     private final TradeClient tradeClient;
     private final SettlementService settlementService;
     private final OrderMapper orderMapper;
@@ -48,7 +44,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public UUID createOrder(OrderCreateRequestDto requestDto, Long buyerId) {
-        // 1) 구매자 조회
+        // 1) 구매자 조회 (스냅샷 저장을 위해)
         User buyer = userRepository.findByIdAndDeletedAtIsNull(buyerId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -69,15 +65,17 @@ public class OrderServiceImpl implements OrderService {
         // 5) 판매 입찰 선점 (LIVE → RESERVED)
         tradeClient.reserveSellingBid(sellingBidInfo.getSellingId(), "order-service");
 
-        // 6) 판매자 조회
-        User seller = userRepository.findByIdAndDeletedAtIsNull(sellingBidInfo.getSellerId())
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        // 6) 판매자 존재 여부 확인
+        if (!userRepository.existsById(sellingBidInfo.getSellerId())) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND);
+        }
 
         // 7) 주문 생성 (스냅샷 저장)
         Order order = Order.builder()
                 .sellingBidId(sellingBidInfo.getSellingId())
-                .buyer(buyer)
-                .seller(seller)
+                .buyerId(buyerId)
+                .sellerId(sellingBidInfo.getSellerId())
+                .buyerName(buyer.getNickname()) // 구매자 닉네임 스냅샷
                 .productOptionId(sellingBidInfo.getProductOptionId())
                 .productId(sellingBidInfo.getProductId())
                 .productName(sellingBidInfo.getProductName())
@@ -112,12 +110,12 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDetailResponseDto getOrderDetail(UUID orderId, Long userId) {
         // 1) 주문 조회
-        Order order = orderRepository.findWithDetailsById(orderId)
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
         // 2) 조회 권한 검증 (구매자 또는 판매자)
-        boolean isBuyer = order.getBuyer().getId().equals(userId);
-        boolean isSeller = order.getSeller().getId().equals(userId);
+        boolean isBuyer = order.getBuyerId().equals(userId);
+        boolean isSeller = order.getSellerId().equals(userId);
 
         if (!isBuyer && !isSeller) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
@@ -132,12 +130,12 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderDetailResponseDto cancelOrder(UUID orderId, Long userId) {
         // 1) 주문 조회
-        Order order = orderRepository.findWithDetailsById(orderId)
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
         // 2) 권한 검증 (구매자 또는 판매자)
-        boolean isBuyer = order.getBuyer().getId().equals(userId);
-        boolean isSeller = order.getSeller().getId().equals(userId);
+        boolean isBuyer = order.getBuyerId().equals(userId);
+        boolean isSeller = order.getSellerId().equals(userId);
 
         if (!isBuyer && !isSeller) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
@@ -170,11 +168,11 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderDetailResponseDto registerTracking(UUID orderId, String trackingNumber, Long sellerId) {
         // 1) 주문 조회
-        Order order = orderRepository.findWithDetailsById(orderId)
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
         // 2) 판매자 권한 검증
-        if (!order.getSeller().getId().equals(sellerId)) {
+        if (!order.getSellerId().equals(sellerId)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
@@ -182,31 +180,6 @@ public class OrderServiceImpl implements OrderService {
         order.registerTracking(trackingNumber);
 
         // 4) DTO 변환 및 반환
-        return orderMapper.toDetailResponseDto(order);
-    }
-
-    // ✅ 관리자/검수자 주문 상태 변경
-    @Override
-    @Transactional
-    public OrderDetailResponseDto updateAdminStatus(UUID orderId, OrderStatus newStatus, String finalTrackingNumber,
-            Long adminId) {
-        // 1) 관리자 조회
-        Admin admin = adminRepository.findByIdAndDeletedAtIsNull(adminId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
-
-        // 2) 관리자 권한 검증 (마스터 또는 검수자)
-        if (admin.getAdminRole() != AdminRole.ROLE_MASTER && admin.getAdminRole() != AdminRole.ROLE_INSPECTOR) {
-            throw new CustomException(ErrorCode.ACCESS_DENIED);
-        }
-
-        // 3) 주문 조회
-        Order order = orderRepository.findWithDetailsById(orderId)
-                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
-
-        // 4) 주문 상태 변경
-        order.updateAdminStatus(newStatus, finalTrackingNumber);
-
-        // 5) DTO 변환 및 반환
         return orderMapper.toDetailResponseDto(order);
     }
 

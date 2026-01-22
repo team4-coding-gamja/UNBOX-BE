@@ -27,6 +27,23 @@ public class Order extends BaseEntity {
     @Column(name = "order_id", columnDefinition = "uuid")
     private UUID id;
 
+    // ======================= 강한 ID 참조 =======================
+    @Column(name = "selling_bid_id", nullable = false)
+    private UUID sellingBidId;
+
+    @Column(name = "buyer_id", nullable = false)
+    private Long buyerId;
+
+    @Column(name = "seller_id", nullable = false)
+    private Long sellerId;
+
+    // ======================= 약한 ID 참조 =======================
+    @Column(name = "product_option_id", nullable = false)
+    private UUID productOptionId;
+
+    @Column(name = "product_id", nullable = false)
+    private UUID productId;
+
     // ======================= 주문 정보 =======================
     @Column(nullable = false)
     private BigDecimal price;
@@ -61,6 +78,11 @@ public class Order extends BaseEntity {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    // ======================= 구매자 스냅샷 =======================
+    // 구매자 닉네임 스냅샷 (리뷰 작성 시 사용)
+    @Column(name = "buyer_name", nullable = false)
+    private String buyerName;
+
     // ======================= 상품 스냅샷 =======================
     @Column(name = "product_name", nullable = false)
     private String productName;
@@ -77,33 +99,17 @@ public class Order extends BaseEntity {
     @Column(name = "brand_name", nullable = false)
     private String brandName;
 
-    // ======================= ID 참조 =======================
-    @Column(name = "selling_bid_id", nullable = false)
-    private UUID sellingBidId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "buyer_id", nullable = false)
-    private User buyer;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seller_id", nullable = false)
-    private User seller;
-
-    @Column(name = "product_option_id", nullable = false)
-    private UUID productOptionId;
-
-    @Column(name = "product_id", nullable = false)
-    private UUID productId;
-
     // ======================= 생성자 =======================
     @Builder
-    public Order(UUID sellingBidId, User buyer, User seller, UUID productOptionId, UUID productId,
+    public Order(UUID sellingBidId, Long buyerId, Long sellerId, String buyerName,
+            UUID productOptionId, UUID productId,
             String productName, String modelNumber, String productOptionName, String productImageUrl, String brandName,
             BigDecimal price, String receiverName, String receiverPhone, String receiverAddress,
             String receiverZipCode) {
         this.sellingBidId = sellingBidId;
-        this.buyer = buyer;
-        this.seller = seller;
+        this.buyerId = buyerId;
+        this.sellerId = sellerId;
+        this.buyerName = buyerName;
         this.productOptionId = productOptionId;
         this.productId = productId;
         this.productName = productName;
@@ -176,7 +182,7 @@ public class Order extends BaseEntity {
     // ✅ 구매 확정
     public void confirm(User requestUser) {
         // 본인 확인
-        if (!this.buyer.getId().equals(requestUser.getId())) {
+        if (!this.buyerId.equals(requestUser.getId())) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 

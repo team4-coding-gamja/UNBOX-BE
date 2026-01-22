@@ -47,7 +47,7 @@ public class SettlementService {
         PaymentForSettlementResponse paymentInfo = paymentClient.getPaymentForSettlement(paymentId);
 
         // seller 검증
-        if (order.getSeller() == null) {
+        if (order.getSellerId() == null) {
             throw new CustomException(ErrorCode.SETTLEMENT_SELLER_MISMATCH);
         }
 
@@ -64,7 +64,7 @@ public class SettlementService {
         Settlement settlement = Settlement.builder()
                 .orderId(orderId)
                 .paymentId(paymentId)
-                .sellerId(order.getSeller().getId())
+                .sellerId(order.getSellerId())
                 .totalAmount(totalAmount)
                 .feesAmount(fees)
                 .settlementAmount(settlementAmount)

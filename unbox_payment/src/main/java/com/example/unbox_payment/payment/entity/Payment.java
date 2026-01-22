@@ -23,12 +23,11 @@ public class Payment extends BaseEntity {
     @Column(name = "payment_id", updatable = false, nullable = false)
     private UUID id;
 
-    // ======================= ID 참조 =======================
+    // ======================= 강한 ID 참조 =======================
     @Column(name = "order_id", nullable = false, updatable = false)
     private UUID orderId;
 
-    // ======================= 판매자/구매자 스냅샷 =======================
-
+    // ======================= 약한 ID 참조 =======================
     @Column(name = "buyer_id", nullable = false)
     private Long buyerId;
 

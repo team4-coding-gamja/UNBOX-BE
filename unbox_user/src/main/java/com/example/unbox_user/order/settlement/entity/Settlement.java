@@ -23,13 +23,15 @@ public class Settlement extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // ======================= ID 참조 =======================
+    // ======================= 강한 ID 참조 =======================
     @Column(name = "order_id", nullable = false)
     private UUID orderId;
 
+    // ======================= 약한 ID 참조 =======================
     @Column(name = "payment_id", nullable = false)
     private UUID paymentId;
 
+    // 판매자별 정산 조회 성능을 위한 비정규화 (Order.sellerId의 스냅샷)
     @Column(name = "seller_id", nullable = false)
     private Long sellerId;
 

@@ -31,9 +31,16 @@ spring:
 
 # Custom Feign Client URLs
 product-service:
-  url: ${PRODUCT_SERVICE_URL:http://localhost:8081}
+  url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+
 user-service:
   url: ${USER_SERVICE_URL:http://localhost:8081}
+
+payment-service:
+  url: ${TRADE_SERVICE_URL:http://localhost:8085}
+
+order-service:
+  url: ${ORDER_SERVICE_URL:http://localhost:8084}
 
 cors:
   allowed-origins:

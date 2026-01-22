@@ -3,7 +3,9 @@ version: '3.8'
 services:
   # 1. User Service (formerly unbox_be)
   unbox-user:
-    build: ./unbox_user
+    build:
+      context: .
+      dockerfile: unbox_user/Dockerfile
     container_name: unbox-user
     ports:
       - "8081:8080"
@@ -16,16 +18,22 @@ services:
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
       - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - ORDER_SERVICE_URL=http://unbox-order:8080
+      - PAYMENT_SERVICE_URL=http://unbox-payment:8080
+      - TRADE_SERVICE_URL=http://unbox-trade:8080
+      - PRODUCT_SERVICE_URL=http://unbox-product:8080
     depends_on:
       - db
       - redis
 
   # 2. Product Service
   unbox-product:
-    build: ./unbox_product
+    build:
+      context: .
+      dockerfile: unbox_product/Dockerfile
     container_name: unbox-product
     ports:
-      - "8082:8080" # Map internal 8080 to external 8082
+      - "8082:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_product
@@ -35,16 +43,22 @@ services:
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
       - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - ORDER_SERVICE_URL=http://unbox-order:8080
+      - PAYMENT_SERVICE_URL=http://unbox-payment:8080
+      - TRADE_SERVICE_URL=http://unbox-trade:8080
+      - USER_SERVICE_URL=http://unbox-user:8080
     depends_on:
       - db
       - redis
 
   # 3. Trade Service
   unbox-trade:
-    build: ./unbox_trade
+    build:
+      context: .
+      dockerfile: unbox_trade/Dockerfile
     container_name: unbox-trade
     ports:
-      - "8083:8080" # Map internal 8080 to external 8083
+      - "8083:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_trade
@@ -56,16 +70,20 @@ services:
       - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
       - PRODUCT_SERVICE_URL=http://unbox-product:8080
       - USER_SERVICE_URL=http://unbox-user:8080
+      - ORDER_SERVICE_URL=http://unbox-order:8080
+      - PAYMENT_SERVICE_URL=http://unbox-payment:8080
     depends_on:
       - db
       - redis
 
   # 4. Payment Service
   unbox-payment:
-    build: ./unbox_payment
+    build:
+      context: .
+      dockerfile: unbox_payment/Dockerfile
     container_name: unbox-payment
     ports:
-      - "8084:8080" # Map internal 8080 to external 8084
+      - "8085:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_payment
@@ -78,11 +96,37 @@ services:
       - PRODUCT_SERVICE_URL=http://unbox-product:8080
       - USER_SERVICE_URL=http://unbox-user:8080
       - TRADE_SERVICE_URL=http://unbox-trade:8080
+      - ORDER_SERVICE_URL=http://unbox-order:8080
     depends_on:
       - db
       - redis
 
-  # 5. PostgreSQL
+  # 5. Order Service
+  unbox-order:
+    build:
+      context: .
+      dockerfile: unbox_order/Dockerfile
+    container_name: unbox-order
+    ports:
+      - "8084:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_order
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
+      - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - USER_SERVICE_URL=http://unbox-user:8080
+      - TRADE_SERVICE_URL=http://unbox-trade:8080
+      - PAYMENT_SERVICE_URL=http://unbox-payment:8080
+      - PRODUCT_SERVICE_URL=http://unbox-product:8080
+    depends_on:
+      - db
+      - redis
+
+  # 6. PostgreSQL
   db:
     image: postgres:16.11-alpine
     container_name: unbox-postgres
@@ -92,13 +136,11 @@ services:
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      # Initial DB creation might need a script to create multiple DBs (unbox_user, unbox_product, unbox_trade)
-      # For now, default to one or use a volume with init script
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
       - ./postgres_init:/docker-entrypoint-initdb.d
 
-  # 5. Redis
+  # 7. Redis
   redis:
     image: redis:alpine
     container_name: unbox-redis

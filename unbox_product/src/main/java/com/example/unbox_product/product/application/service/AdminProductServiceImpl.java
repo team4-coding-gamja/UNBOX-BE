@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,8 @@ public class AdminProductServiceImpl implements AdminProductService {
         private final ProductOptionRepository productOptionRepository;
         private final AdminProductMapper adminProductMapper;
         private final ApplicationEventPublisher eventPublisher; // 이벤트 발행기
+        private final RedisTemplate<String, Object> redisTemplate;
+
 
         // ✅ 상품 목록 조회
         @Override
@@ -95,6 +98,9 @@ public class AdminProductServiceImpl implements AdminProductService {
                                 requestDto.getCategory(),
                                 requestDto.getProductImageUrl());
 
+                // 캐시 삭제 (정보만)
+                redisTemplate.delete("prod:info:" + productId);
+
                 return adminProductMapper.toAdminProductUpdateResponseDto(product);
         }
 
@@ -112,6 +118,10 @@ public class AdminProductServiceImpl implements AdminProductService {
                         .toList();
 
                 product.softDelete(deletedBy);
+
+                // 삭제된 상품이니 정보, 가격 삭제
+                redisTemplate.delete("prod:info:" + productId);
+                redisTemplate.delete("prod:prices:" + productId);
 
                 // 상품 삭제 이벤트 발행
                 eventPublisher.publishEvent(new ProductDeletedEvent(productId, deletedOptionIds));

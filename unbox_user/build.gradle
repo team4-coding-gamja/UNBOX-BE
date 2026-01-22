@@ -20,51 +20,33 @@ configurations {
     }
 }
 
-ext {
-    set('springCloudVersion', "2025.0.1")
-}
-
 repositories {
     mavenCentral()
 }
 
+ext {
+    set('springCloudVersion', "2025.0.1")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
 
 dependencies {
-
     // unbox_common
     implementation project(':unbox_common')
-
-    // JPA
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-    // Web
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-
-    // Logging
-    implementation 'net.logstash.logback:logstash-logback-encoder:9.0'
-
-    // Spring Security
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-
-    // Validation
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-
-    // PostgreSQL
-    runtimeOnly 'org.postgresql:postgresql'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    // mapstruct
-    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-
+    // MapStruct Processor (Not transitive)
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-
-    // 롬복과 MapStruct를 같이 쓸 때 필드를 연결해주는 필수 라이브러리
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
-    // QueryDSL
+    // QueryDSL Processor (Not transitive)
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
     annotationProcessor "jakarta.persistence:jakarta.persistence-api"
@@ -76,30 +58,10 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    // Swagger
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
-
-    // JWT
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
-    implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
-    implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
-
-    // Redis
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
-    // Spring Cloud OpenFeign
-    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
-
-    // OPEN AI
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 }
 
-dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-    }
-}
+
 
 tasks.named('test') {
     useJUnitPlatform()

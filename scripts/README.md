@@ -325,7 +325,7 @@ rm .github/workflows/user-*.yml
 2. **포트 번호**는 각 서비스마다 고유해야 합니다
 3. **서비스 이름**은 소문자로 작성하세요 (예: user, order)
 4. 생성 후 **반드시 파일 내용을 확인**하세요
-5. **인프라 팀**이 AWS 리소스를 먼저 생성해야 배포가 가능합니다
+5. **낙균님**이 AWS 리소스를 생성해야 배포가 가능합니다
 
 ---
 
@@ -333,7 +333,6 @@ rm .github/workflows/user-*.yml
 
 - [CI/CD Pipeline Design](.kiro/specs/cicd-pipeline/design.md)
 - [CI/CD Pipeline Requirements](.kiro/specs/cicd-pipeline/requirements.md)
-- [Terraform Setup](../terraform/README.md)
 
 ---
 

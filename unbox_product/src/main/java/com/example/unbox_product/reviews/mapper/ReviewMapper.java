@@ -30,7 +30,7 @@ public interface ReviewMapper {
         @Mapping(target = "rating", source = "rating")
         @Mapping(target = "reviewImageUrl", source = "imageUrl")
         @Mapping(target = "createdAt", source = "createdAt")
-        @Mapping(target = "buyerNickname", source = "authorName")
+        @Mapping(target = "buyerNickname", source = "buyerNickname")
         @Mapping(target = "productName", source = "productSnapshot.productName")
         @Mapping(target = "productOptionName", source = "productSnapshot.productOptionName")
         ReviewListResponseDto toReviewListResponseDto(Review review);
@@ -50,7 +50,7 @@ public interface ReviewMapper {
 
                 return ReviewDetailResponseDto.OrderInfo.builder()
                                 .orderId(review.getOrderId())
-                                .authorName(review.getAuthorName())
+                                .buyerNickname(review.getBuyerNickname())
                                 .productOption(
                                                 ReviewDetailResponseDto.ProductOptionInfo.builder()
                                                                 .productOptionId(s.getProductOptionId())

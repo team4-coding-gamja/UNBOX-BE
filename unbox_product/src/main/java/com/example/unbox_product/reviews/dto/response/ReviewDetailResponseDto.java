@@ -26,7 +26,7 @@ public class ReviewDetailResponseDto {
     @Builder
     public static class OrderInfo {
         private UUID orderId;
-        private String authorName;
+        private String buyerNickname;
         private ProductOptionInfo productOption;
     }
 

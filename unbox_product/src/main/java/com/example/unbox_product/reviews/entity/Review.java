@@ -38,18 +38,18 @@ public class Review extends BaseEntity {
     private UUID orderId;
 
     // ======================= 작성자 스냅샷 =======================
-    @Column(name = "author_name", nullable = false)
-    private String authorName;
+    @Column(name = "buyer_nickname", nullable = false)
+    private String buyerNickname;
 
     // ======================= 상품 스냅샷 =======================
     @Embedded
     private ReviewProductSnapshot productSnapshot;
 
     // ======================= 생성자 =======================
-    public Review(UUID orderId, String authorName, String content, Integer rating, String imageUrl,
+    public Review(UUID orderId, String buyerNickname, String content, Integer rating, String imageUrl,
             ReviewProductSnapshot productSnapshot) {
         this.orderId = orderId;
-        this.authorName = authorName;
+        this.buyerNickname = buyerNickname;
         this.content = content;
         this.rating = rating;
         this.imageUrl = imageUrl;
@@ -57,11 +57,12 @@ public class Review extends BaseEntity {
     }
 
     // ======================= 정적 메서드 =======================
-    public static Review createReview(UUID orderId, String authorName, String content, Integer rating, String imageUrl,
+    public static Review createReview(UUID orderId, String buyerNickname, String content, Integer rating,
+            String imageUrl,
             ReviewProductSnapshot snapshot) {
-        validateCreate(orderId, authorName, content, rating, imageUrl);
+        validateCreate(orderId, buyerNickname, content, rating, imageUrl);
         requireNotNull(snapshot, "productSnapshot");
-        return new Review(orderId, authorName, normalizeContent(content), rating, normalizeImageUrl(imageUrl),
+        return new Review(orderId, buyerNickname, normalizeContent(content), rating, normalizeImageUrl(imageUrl),
                 snapshot);
     }
 
@@ -81,10 +82,10 @@ public class Review extends BaseEntity {
     }
 
     // ======================= 유효성 검사 메서드 =======================
-    private static void validateCreate(UUID orderId, String authorName, String content, Integer rating,
+    private static void validateCreate(UUID orderId, String buyerNickname, String content, Integer rating,
             String imageUrl) {
         requireNotNull(orderId, "order");
-        requireNotNull(authorName, "authorName");
+        requireNotNull(buyerNickname, "buyerNickname");
         validateContent(content);
         validateRating(rating);
         validateImageUrl(imageUrl);

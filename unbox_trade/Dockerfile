@@ -7,18 +7,20 @@ FROM gradle:8.5-jdk17 AS builder
 
 WORKDIR /app
 
-# Copy Gradle files from service directory
-COPY unbox_trade/build.gradle ./build.gradle
-COPY unbox_trade/gradle ./gradle
+# Copy Gradle wrapper and settings first (least frequently changed)
 COPY settings.gradle ./settings.gradle
+COPY unbox_trade/gradle ./gradle
 
-# Copy common module
+# Copy build files (changes less frequently than source code)
+COPY unbox_trade/build.gradle ./build.gradle
+
+# Copy common module (shared dependency)
 COPY unbox_common ./unbox_common
 
-# Download dependencies (cached layer)
+# Download dependencies (cached layer - only re-runs if build files change)
 RUN gradle dependencies --no-daemon || true
 
-# Copy source code
+# Copy source code (changes most frequently - separate layer)
 COPY unbox_trade/src ./src
 
 # Build application

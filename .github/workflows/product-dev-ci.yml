@@ -202,13 +202,6 @@ jobs:
           ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.image-tag.outputs.tag }}
           \`\`\`
           
-          ### 📝 커밋 정보
-          
-          - **SHA**: \`${{ github.sha }}\`
-          - **브랜치**: \`${{ github.ref_name }}\`
-          - **작성자**: ${{ github.actor }}
-          - **시간**: $(date -u +%Y-%m-%d\ %H:%M:%S\ UTC)
-          
           ---
           
           > 💡 **Tip**: 빌드 시간이 예상보다 길다면 캐시가 무효화되었을 수 있습니다. build.gradle이나 의존성이 변경되었는지 확인하세요.

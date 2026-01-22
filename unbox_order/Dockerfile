@@ -9,7 +9,7 @@ WORKDIR /app
 
 # 변경 빈도가 낮은 파일부터 복사 (캐시 최적화)
 COPY settings.gradle ./settings.gradle
-COPY SERVICE_NAME/build.gradle ./build.gradle
+COPY unbox_order/build.gradle ./build.gradle
 
 # 공통 모듈 복사
 COPY unbox_common ./unbox_common
@@ -18,7 +18,7 @@ COPY unbox_common ./unbox_common
 RUN gradle dependencies --no-daemon || true
 
 # 소스 코드 복사 (가장 자주 변경됨)
-COPY SERVICE_NAME/src ./src
+COPY unbox_order/src ./src
 
 # 빌드
 RUN gradle bootJar --no-daemon -x test

@@ -7,23 +7,20 @@ FROM gradle:8.5-jdk17 AS builder
 
 WORKDIR /app
 
-# Copy Gradle wrapper and settings first (least frequently changed)
+# 변경 빈도가 낮은 파일부터 복사 (캐시 최적화)
 COPY settings.gradle ./settings.gradle
-COPY unbox_trade/gradle ./gradle
-
-# Copy build files (changes less frequently than source code)
 COPY unbox_trade/build.gradle ./build.gradle
 
-# Copy common module (shared dependency)
+# 공통 모듈 복사
 COPY unbox_common ./unbox_common
 
-# Download dependencies (cached layer - only re-runs if build files change)
+# 의존성 다운로드 (캐시 레이어)
 RUN gradle dependencies --no-daemon || true
 
-# Copy source code (changes most frequently - separate layer)
+# 소스 코드 복사 (가장 자주 변경됨)
 COPY unbox_trade/src ./src
 
-# Build application
+# 빌드
 RUN gradle bootJar --no-daemon -x test
 
 # Stage 2: Runtime

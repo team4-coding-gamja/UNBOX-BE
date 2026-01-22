@@ -1,5 +1,6 @@
 # ============================================
 # Multi-stage build for Spring Boot Application
+# User Service
 # ============================================
 
 # Stage 1: Build

@@ -10,6 +10,6 @@ import java.util.UUID;
 @FeignClient(name = "product-service", url = "${product-service.url}")
 public interface ProductClient {
 
-    @GetMapping("/internal/products/options/{id}/for-sellingbid")
+    @GetMapping("/internal/products/options/{id}/for-selling-bid")
     ProductOptionForSellingBidInfoResponse getProductOptionForSellingBid (@PathVariable UUID id);
 }

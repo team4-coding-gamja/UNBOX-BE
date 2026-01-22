@@ -6,7 +6,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication(scanBasePackages = {"com.example.unbox_trade", "com.example.unbox_common"})
 @org.springframework.cloud.openfeign.EnableFeignClients
 @org.springframework.boot.context.properties.ConfigurationPropertiesScan
-@org.springframework.data.jpa.repository.config.EnableJpaAuditing
 public class UnboxTradeApplication {
 
     public static void main(String[] args) {

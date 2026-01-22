@@ -31,7 +31,7 @@ public interface PgTransactionRepository extends JpaRepository<PgTransaction, UU
     @Query("""
     select pt from PgTransaction pt
     where pt.payment.id = :paymentId
-      and pt.eventStatus = com.example.unbox_be.payment.payment.entity.PgTransactionStatus.DONE
+      and pt.eventStatus = com.example.unbox_payment.payment.entity.PgTransactionStatus.DONE
       and pt.deletedAt is null
     order by pt.createdAt desc
     limit 1

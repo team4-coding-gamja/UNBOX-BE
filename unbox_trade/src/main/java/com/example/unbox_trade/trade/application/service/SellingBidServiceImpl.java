@@ -1,6 +1,8 @@
 package com.example.unbox_trade.trade.application.service;
 
 import com.example.unbox_trade.common.client.product.ProductClient;
+import com.example.unbox_trade.common.client.product.dto.ProductOptionForSellingBidInfoResponse;
+import com.example.unbox_trade.common.client.user.UserClient;
 import com.example.unbox_trade.trade.presentation.dto.internal.SellingBidForCartInfoResponse;
 import com.example.unbox_trade.trade.presentation.dto.internal.SellingBidForOrderInfoResponse;
 import com.example.unbox_trade.trade.presentation.dto.request.SellingBidCreateRequestDto;
@@ -13,11 +15,10 @@ import com.example.unbox_trade.trade.domain.entity.SellingBid;
 import com.example.unbox_trade.trade.domain.entity.SellingStatus;
 import com.example.unbox_trade.trade.presentation.mapper.SellingBidMapper;
 import com.example.unbox_trade.trade.domain.repository.SellingBidRepository;
-
-import com.example.unbox_trade.common.client.product.dto.ProductOptionForSellingBidInfoResponse;
 import com.example.unbox_trade.trade.presentation.mapper.TradeClientMapper;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
+import com.example.unbox_common.event.trade.TradePriceChangedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
@@ -30,7 +31,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
-import com.example.unbox_common.event.trade.TradePriceChangedEvent;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +39,7 @@ public class SellingBidServiceImpl implements SellingBidService {
     private final SellingBidRepository sellingBidRepository;
     private final SellingBidMapper sellingBidMapper;
     private final ProductClient productClient;
+    private final UserClient userClient;
     private final TradeClientMapper tradeClientMapper;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -46,6 +47,9 @@ public class SellingBidServiceImpl implements SellingBidService {
     @Override
     @Transactional
     public SellingBidCreateResponseDto createSellingBid(Long sellerId, SellingBidCreateRequestDto requestDto) {
+        // 1) 회원 검증 (API Call)
+        userClient.getUserInfoForSellingBid(sellerId);
+
         // 가격 유효성 검사
         if (requestDto.getPrice() == null || requestDto.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             throw new CustomException(ErrorCode.INVALID_BID_PRICE);

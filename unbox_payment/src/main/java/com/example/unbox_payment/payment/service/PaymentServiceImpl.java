@@ -2,7 +2,7 @@ package com.example.unbox_payment.payment.service;
 
 import com.example.unbox_payment.common.client.order.OrderClient;
 import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
-import com.example.unbox_payment.common.client.payment.dto.PaymentForSettlementResponse;
+import com.example.unbox_payment.payment.dto.internal.PaymentForSettlementResponse;
 import com.example.unbox_payment.common.client.settlement.SettlementClient;
 import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
 import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;

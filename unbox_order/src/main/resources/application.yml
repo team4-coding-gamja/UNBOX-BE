@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: unbox-order
+
+  config:
+    import: "optional:file:.env[.properties]"
+
+  datasource:
+    driver-class-name: ${DB_DRIVER_CLASS_NAME}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  sql:
+    init:
+      mode: never
+
+server:
+  port: ${SERVER_PORT:8084}
+
+# Feign Client URLs
+user-service:
+  url: ${USER_SERVICE_URL:http://localhost:8081}
+
+product-service:
+  url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+
+trade-service:
+  url: ${TRADE_SERVICE_URL:http://localhost:8083}
+
+payment-service:
+  url: ${PAYMENT_SERVICE_URL:http://localhost:8085}

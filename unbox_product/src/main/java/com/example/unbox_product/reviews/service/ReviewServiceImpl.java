@@ -9,6 +9,7 @@ import com.example.unbox_product.reviews.dto.request.ReviewUpdateRequestDto;
 import com.example.unbox_product.reviews.dto.response.ReviewCreateResponseDto;
 import com.example.unbox_product.reviews.dto.response.ReviewDetailResponseDto;
 import com.example.unbox_product.reviews.dto.response.ReviewUpdateResponseDto;
+import com.example.unbox_product.reviews.dto.response.ReviewListResponseDto;
 import com.example.unbox_product.reviews.entity.Review;
 import com.example.unbox_product.reviews.entity.ReviewProductSnapshot;
 import com.example.unbox_product.reviews.mapper.ReviewMapper;
@@ -18,6 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -68,6 +74,7 @@ public class ReviewServiceImpl implements ReviewService {
         // 6) 엔티티 생성
         Review review = Review.createReview(
                 orderId,
+                orderInfo.getBuyerId(),
                 orderInfo.getBuyerNickname(), // 작성자 이름 스냅샷
                 requestDto.getContent(),
                 requestDto.getRating(),
@@ -119,5 +126,23 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         review.softDelete(deletedBy);
+    }
+
+    // ✅ 상품별 리뷰 목록 조회 (AI 요약용)
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReviewListResponseDto> getReviewsByProduct(UUID productId) {
+        // productSnapshot.productId로 조회
+        return reviewRepository.findAllByProductSnapshotProductIdAndDeletedAtIsNull(productId).stream()
+                .map(reviewMapper::toReviewListResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    // ✅ 내가 쓴 리뷰 목록 조회
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReviewListResponseDto> getMyReviews(Long userId, Pageable pageable) {
+        return reviewRepository.findAllByBuyerIdAndDeletedAtIsNull(userId, pageable)
+                .map(reviewMapper::toReviewListResponseDto);
     }
 }

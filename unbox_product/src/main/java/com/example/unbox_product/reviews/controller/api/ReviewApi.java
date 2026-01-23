@@ -5,6 +5,9 @@ import com.example.unbox_product.reviews.dto.request.ReviewUpdateRequestDto;
 import com.example.unbox_product.reviews.dto.response.ReviewCreateResponseDto;
 import com.example.unbox_product.reviews.dto.response.ReviewDetailResponseDto;
 import com.example.unbox_product.reviews.dto.response.ReviewUpdateResponseDto;
+import com.example.unbox_product.reviews.dto.response.ReviewListResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.example.unbox_common.response.CustomApiResponse;
 import com.example.unbox_common.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,6 +43,14 @@ public interface ReviewApi {
             @AuthenticationPrincipal CustomUserDetails userDetails,
 
             @RequestBody @Valid ReviewCreateRequestDto requestDto
+    );
+
+    // ✅ 내 리뷰 목록 조회
+    @Operation(summary = "내 리뷰 목록 조회", description = "내가 작성한 리뷰 목록을 페이징하여 조회합니다.")
+    @GetMapping("/my-reviews")
+    CustomApiResponse<Page<ReviewListResponseDto>> getMyReviews(
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Parameter(description = "페이지 정보") Pageable pageable
     );
 
     // ✅ 리뷰 상세 조회

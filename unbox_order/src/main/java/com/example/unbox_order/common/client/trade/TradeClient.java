@@ -9,9 +9,15 @@ import java.util.UUID;
 @FeignClient(name = "unbox-trade", url = "${trade-service.url}")
 public interface TradeClient {
 
-    @GetMapping("/internal/bids/selling/{sellingBidId}/order-info")
+    @GetMapping("/internal/bids/selling/{sellingBidId}/for-order")
     SellingBidForOrderResponse getSellingBidForOrder(@PathVariable("sellingBidId") UUID sellingBidId);
 
-    @PatchMapping("/internal/bids/selling/{sellingBidId}/status")
-    void updateSellingBidStatus(@PathVariable("sellingBidId") UUID sellingBidId, @RequestParam("status") String status);
+    @PostMapping("/internal/bids/selling/{sellingBidId}/reserve")
+    void reserveSellingBid(@PathVariable("sellingBidId") UUID sellingBidId, @RequestParam("updatedBy") String updatedBy);
+
+    @PostMapping("/internal/bids/selling/{sellingBidId}/sold")
+    void soldSellingBid(@PathVariable("sellingBidId") UUID sellingBidId, @RequestParam("updatedBy") String updatedBy);
+
+    @PostMapping("/internal/bids/selling/{sellingBidId}/live")
+    void liveSellingBid(@PathVariable("sellingBidId") UUID sellingBidId, @RequestParam("updatedBy") String updatedBy);
 }

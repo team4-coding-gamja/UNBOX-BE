@@ -18,6 +18,6 @@ public interface SettlementClient {
     SettlementForPaymentResponse getSettlementForPayment (@PathVariable("id") UUID id);
 
     // ✅ 정산 생성 (결제용)
-    @PostMapping("/internal/settlement")
+    @PostMapping("/internal/settlement/create")
     SettlementCreateResponse createSettlementForPayment(@RequestParam("paymentId") UUID paymentId);
 }

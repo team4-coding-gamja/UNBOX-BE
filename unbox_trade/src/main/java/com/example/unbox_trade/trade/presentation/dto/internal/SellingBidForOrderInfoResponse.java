@@ -13,11 +13,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SellingBidForOrderInfoResponse {
-    private UUID sellingId;
+    private UUID sellingBidId;
     private Long sellerId;
     private UUID productOptionId;
     private BigDecimal price;
-    private String sellingStatus;
+    private String status;
 
     private UUID productId;
     private String productName;

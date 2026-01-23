@@ -13,7 +13,7 @@
       "portMappings": [
         {
           "name": "http",
-          "containerPort": 8082,
+          "containerPort": 80,
           "protocol": "tcp"
         }
       ],

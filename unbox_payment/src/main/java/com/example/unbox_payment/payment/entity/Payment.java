@@ -27,8 +27,8 @@ public class Payment extends BaseEntity {
     @Column(name = "payment_key", unique = true, nullable = false, length = 200)
     private String paymentKey; // 토스 결제 키 (고유)
 
-    @Column(name = "order_id", nullable = false, length = 64)
-    private String orderId; // 주문 ID
+    @Column(name = "order_id", nullable = false)
+    private UUID orderId; // 주문 ID
 
     // ======================= 비즈니스 필수 필드 =======================
     @Column(name = "buyer_id", nullable = false)

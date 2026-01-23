@@ -12,6 +12,9 @@ import java.util.UUID;
 public class TossApiService {
 
     public TossConfirmResponse confirm(String paymentKey, BigDecimal amount) {
+        // ✅ 실제 토스 API 호출 시: orderId는 UUID.toString()으로 변환하여 전송
+        // 예: tossPaymentsApi.confirm(paymentKey, orderId.toString(), amount)
+
         String confirmedKey = paymentKey + "_CONFIRMED_" + UUID.randomUUID().toString().substring(0, 4);
         return TossConfirmResponse.builder()
                 .paymentKey(paymentKey)
@@ -23,6 +26,7 @@ public class TossApiService {
                 .rawJson("{\"status\":\"DONE\"}")
                 .build();
     }
+
     public void cancel(String paymentKey, String cancelReason) {
         try {
             log.info("PG 결제 취소 요청 발송 - Key: {}, 사유: {}", paymentKey, cancelReason);

@@ -44,8 +44,8 @@ public class PaymentTransactionService {
             throw new CustomException(ErrorCode.PG_PROCESSED_ALREADY_EXISTS);
         }
 
-        // 주문 정보 조회 (orderId를 UUID로 변환)
-        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(UUID.fromString(payment.getOrderId()));
+        // 주문 정보 조회
+        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
 
         // 결제 금액 검증
         if (payment.getAmount().compareTo(response.getTotalAmount()) != 0) {
@@ -74,8 +74,8 @@ public class PaymentTransactionService {
         Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        // 주문 정보 조회 (orderId를 UUID로 변환)
-        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(UUID.fromString(payment.getOrderId()));
+        // 주문 정보 조회
+        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
 
         // 결제 상태를 FAILED로 변경
         payment.failPayment();

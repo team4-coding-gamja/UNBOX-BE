@@ -12,13 +12,10 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(
-    name = "p_pg_transaction",
-    indexes = {
+@Table(name = "p_pg_transaction", indexes = {
         @Index(name = "idx_payment_key", columnList = "payment_key"),
         @Index(name = "idx_transaction_at", columnList = "transaction_at")
-    }
-)
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
@@ -43,8 +40,8 @@ public class PgTransaction extends BaseEntity {
     @Column(name = "payment_key", nullable = false, length = 200)
     private String paymentKey; // 결제 키
 
-    @Column(name = "order_id", nullable = false, length = 64)
-    private String orderId; // 주문 ID
+    @Column(name = "order_id", nullable = false)
+    private UUID orderId; // 주문 ID
 
     // ======================= 거래 정보 =======================
     @Column(name = "method", nullable = false)
@@ -87,14 +84,13 @@ public class PgTransaction extends BaseEntity {
             Payment payment,
             String transactionKey,
             String paymentKey,
-            String orderId,
+            UUID orderId,
             String method,
             String customerKey,
             PgTransactionStatus status,
             BigDecimal amount,
             LocalDateTime transactionAt,
-            String rawResponse
-    ) {
+            String rawResponse) {
         return PgTransaction.builder()
                 .payment(payment)
                 .transactionKey(transactionKey)

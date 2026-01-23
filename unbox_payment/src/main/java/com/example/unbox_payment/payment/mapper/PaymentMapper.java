@@ -13,7 +13,7 @@ public interface PaymentMapper {
 
     // ✅ OrderForPaymentInfoResponse → Payment Entity
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "orderId", expression = "java(orderInfo.getOrderId().toString())")
+    @Mapping(target = "orderId", source = "orderInfo.orderId")
     @Mapping(target = "buyerId", source = "orderInfo.buyerId")
     @Mapping(target = "sellerId", source = "orderInfo.sellerId")
     @Mapping(target = "amount", source = "orderInfo.price")

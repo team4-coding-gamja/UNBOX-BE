@@ -11,7 +11,7 @@ public interface PaymentClientMapper {
 
     @Mapping(target = "paymentId", source = "id")
     @Mapping(target = "status", expression = "java(payment.getStatus().name())")
-    @Mapping(target = "orderId", expression = "java(java.util.UUID.fromString(payment.getOrderId()))")
+    @Mapping(target = "orderId", source = "orderId")
     @Mapping(target = "sellerId", source = "sellerId")
     @Mapping(target = "amount", source = "amount")
     PaymentForSettlementResponse toPaymentForSettlementResponse(Payment payment);

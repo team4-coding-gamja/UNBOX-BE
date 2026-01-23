@@ -68,8 +68,8 @@ public class PaymentServiceImpl implements PaymentService {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        // 기존 결제 내역 확인 (orderId를 String으로 변환)
-        Optional<Payment> existingPayment = paymentRepository.findByOrderIdAndDeletedAtIsNull(orderId.toString());
+        // 기존 결제 내역 확인
+        Optional<Payment> existingPayment = paymentRepository.findByOrderIdAndDeletedAtIsNull(orderId);
 
         // 기존 결제가 존재하는 경우 처리
         if (existingPayment.isPresent()) {
@@ -109,8 +109,8 @@ public class PaymentServiceImpl implements PaymentService {
             throw new CustomException(ErrorCode.PAYMENT_ALREADY_EXISTS);
         }
 
-        // 주문 정보 조회 (orderId를 UUID로 변환)
-        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(UUID.fromString(payment.getOrderId()));
+        // 주문 정보 조회
+        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
 
         // 구매자 존재 여부 및 본인 확인
         if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {

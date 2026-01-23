@@ -46,7 +46,7 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "tag=${{ github.event.inputs.image-tag }}" >> $GITHUB_OUTPUT
           else
-            echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "tag=dev-${{ github.sha }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Login to Amazon ECR

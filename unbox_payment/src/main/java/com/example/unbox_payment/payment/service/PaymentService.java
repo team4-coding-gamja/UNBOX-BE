@@ -1,6 +1,7 @@
 package com.example.unbox_payment.payment.service;
 
 import com.example.unbox_payment.payment.dto.internal.PaymentForSettlementResponse;
+import com.example.unbox_payment.payment.dto.internal.PaymentStatusResponse;
 import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
 import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_payment.payment.entity.PaymentMethod;
@@ -23,4 +24,9 @@ public interface PaymentService {
      * 결제 조회 (정산용)
      */
     PaymentForSettlementResponse getPaymentForSettlement(UUID paymentId);
+
+    /**
+     * 결제 상태 조회
+     */
+    PaymentStatusResponse getPaymentStatus(UUID orderId);
 }

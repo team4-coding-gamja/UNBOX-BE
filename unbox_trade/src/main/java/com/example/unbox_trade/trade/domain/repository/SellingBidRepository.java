@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -82,9 +83,12 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
    * - 동시 요청 시 단 1건만 성공
    * - 반환값: 변경된 row 수 (1 = 성공, 0 = 실패)
    */
+  @Transactional
+  @Modifying(clearAutomatically = true)
+  @Query("UPDATE SellingBid s SET s.status = :toStatus WHERE s.id = :id AND s.status = :fromStatus")
   int updateStatusIfReserved(@Param("id") UUID id,
-      @Param("fromStatus") SellingStatus fromStatus,
-      @Param("toStatus") SellingStatus toStatus);
+                             @Param("fromStatus") SellingStatus fromStatus,
+                             @Param("toStatus") SellingStatus toStatus);
 
   @Query("SELECT MIN(sb.price) FROM SellingBid sb WHERE sb.productOptionId = :optionId AND sb.status = 'LIVE' AND sb.deletedAt IS NULL")
   Optional<java.math.BigDecimal> findLowestPriceByOptionId(@Param("optionId") UUID optionId);

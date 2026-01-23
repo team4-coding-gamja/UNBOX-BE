@@ -23,63 +23,75 @@ public class Payment extends BaseEntity {
     @Column(name = "payment_id", updatable = false, nullable = false)
     private UUID id;
 
-    // ======================= 강한 ID 참조 =======================
-    @Column(name = "order_id", nullable = false, updatable = false)
-    private UUID orderId;
+    // ======================= 토스 페이먼츠 필수 필드 =======================
+    @Column(name = "payment_key", unique = true, nullable = false, length = 200)
+    private String paymentKey; // 토스 결제 키 (고유)
 
-    // ======================= 약한 ID 참조 =======================
+    @Column(name = "order_id", nullable = false)
+    private UUID orderId; // 주문 ID
+
+    // ======================= 비즈니스 필수 필드 =======================
     @Column(name = "buyer_id", nullable = false)
-    private Long buyerId;
+    private Long buyerId; // 구매자 ID
 
     @Column(name = "seller_id", nullable = false)
-    private Long sellerId;
+    private Long sellerId; // 판매자 ID
 
     // ======================= 결제 정보 =======================
-    @Column(name = "payment_amount", nullable = false)
-    private BigDecimal amount;
-
-    @Column(name = "payment_method", nullable = false)
+    @Column(name = "method", nullable = false)
     @Enumerated(EnumType.STRING)
-    private PaymentMethod method;
+    private PaymentMethod method; // 결제수단
 
-    @Column(name = "pg_payment_key")
-    private String pgPaymentKey;
-
-    @Column(name = "pg_approve_no")
-    private String pgApproveNo;
+    @Column(name = "amount", nullable = false, precision = 19, scale = 2)
+    private BigDecimal amount; // 결제 금액
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private PaymentStatus status;
+    private PaymentStatus status; // 결제 상태
 
-    @Column(name = "captured_at")
-    private LocalDateTime capturedAt;
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt; // 결제 승인 시각
 
     @Version
-    private Long version;
+    private Long version; // 낙관적 락
 
     // ======================= 비즈니스 로직 메서드 =======================
 
-    // ✅ 결제 완료 처리
-    public void completePayment(String pgPaymentKey, String pgApproveNo) {
+    /**
+     * 결제 승인 완료 처리
+     */
+    public void completePayment(String paymentKey) {
         if (this.status == PaymentStatus.DONE) {
             throw new IllegalStateException("이미 완료된 결제입니다.");
         }
         if (this.status == PaymentStatus.CANCELED) {
             throw new IllegalStateException("취소된 결제는 완료 처리할 수 없습니다.");
         }
-        this.pgPaymentKey = pgPaymentKey;
-        this.pgApproveNo = pgApproveNo;
+        this.paymentKey = paymentKey;
         this.status = PaymentStatus.DONE;
-        this.capturedAt = LocalDateTime.now();
+        this.approvedAt = LocalDateTime.now();
     }
 
-    // ✅ 결제 실패 처리
+    /**
+     * 결제 실패 처리
+     */
     public void failPayment() {
         this.status = PaymentStatus.FAILED;
     }
 
-    // ✅ 결제 상태 변경
+    /**
+     * 결제 취소 처리
+     */
+    public void cancelPayment() {
+        if (this.status != PaymentStatus.DONE) {
+            throw new IllegalStateException("완료된 결제만 취소할 수 있습니다.");
+        }
+        this.status = PaymentStatus.CANCELED;
+    }
+
+    /**
+     * 결제 상태 변경
+     */
     public void changeStatus(PaymentStatus nextStatus) {
         // 완료된 결제는 취소만 가능
         if (this.status == PaymentStatus.DONE && nextStatus != PaymentStatus.CANCELED) {
@@ -92,8 +104,9 @@ public class Payment extends BaseEntity {
         }
 
         // 동일 상태로의 변경은 무시
-        if (this.status == nextStatus)
+        if (this.status == nextStatus) {
             return;
+        }
 
         this.status = nextStatus;
     }

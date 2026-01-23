@@ -22,12 +22,11 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     // ✅ 주문 ID로 결제 존재 여부 확인 (중복 결제 방지용)
     boolean existsByOrderIdAndDeletedAtIsNull(UUID orderId);
 
-    // ✅ PG 결제 키로 조회 (취소/조회 시 사용)
-    @Query("select p from Payment p where p.pgPaymentKey = :receiptKey and p.deletedAt is null")
-    Optional<Payment> findByPgPaymentKeyAndDeletedAtIsNull(@Param("receiptKey") String receiptKey);
+    // ✅ PG 결제 키로 조회 (취소/조회 시 사용) - pgPaymentKey → paymentKey로 변경
+    @Query("select p from Payment p where p.paymentKey = :paymentKey and p.deletedAt is null")
+    Optional<Payment> findByPaymentKeyAndDeletedAtIsNull(@Param("paymentKey") String paymentKey);
 
     // ✅ 완료된 결제 내역 조회 (주문 ID 기준)
     @Query("select p from Payment p where p.orderId = :orderId and p.status = 'DONE' and p.deletedAt is null")
     Optional<Payment> findDonePaymentByOrderId(@Param("orderId") UUID orderId);
-
 }

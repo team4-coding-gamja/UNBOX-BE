@@ -10,18 +10,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.UUID;
 
-@FeignClient(name = "unbox-user", contextId = "orderClient", path = "/api/order")
+@FeignClient(name = "unbox-order", contextId = "orderClient", url = "${order-service.url}")
 public interface OrderClient {
 
     // 주문 조회 (리뷰용)
-    @GetMapping("/internal/order/{id}/for-review")
+    @GetMapping("/internal/orders/{id}/for-review")
     OrderForReviewInfoResponse getOrderForReview (@PathVariable("id") UUID id);
 
     // 주문 조회 (결제용)
-    @GetMapping("/internal/order/{id}/for-payment")
+    @GetMapping("/internal/orders/{id}/for-payment")
     OrderForPaymentInfoResponse getOrderForPayment (@PathVariable("id") UUID id);
 
     // 주문 상태 변경 (결제 완료용: PAYMENT_PENDING → PENDING_SHIPMENT)
-    @PostMapping("/internal/order/{id}/pending-shipment")
+    @PostMapping("/internal/orders/{id}/pending-shipment")
     void pendingShipmentOrder (@PathVariable("id") UUID id, @RequestParam("updatedBy") String updatedBy);
 }

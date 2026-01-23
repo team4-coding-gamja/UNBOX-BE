@@ -1,5 +1,6 @@
 # ============================================
 # Multi-stage build for Spring Boot Application
+# Test: Service-specific .dockerignore - User Service
 # ============================================
 
 # Stage 1: Build
@@ -9,7 +10,6 @@ WORKDIR /app
 
 # 변경 빈도가 낮은 파일부터 복사 (캐시 최적화)
 COPY settings.gradle ./settings.gradle
-COPY unbox_user/gradle ./gradle
 COPY unbox_user/build.gradle ./build.gradle
 
 # 공통 모듈 복사

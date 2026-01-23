@@ -14,7 +14,6 @@ import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,9 +29,6 @@ public class PaymentTransactionService {
     private final PgTransactionMapper pgTransactionMapper;
     private final TradeClient tradeClient;
     private final OrderClient orderClient;
-
-    @Value("${payment.toss.seller-key:MOCK_SELLER_KEY_TEST}")
-    private String pgSellerKey;
 
     // ✅ 결제 승인 성공 처리
     @Transactional
@@ -56,8 +52,8 @@ public class PaymentTransactionService {
             throw new CustomException(ErrorCode.PRICE_MISMATCH);
         }
 
-        // 결제 완료 처리
-        payment.completePayment(response.getPaymentKey(), response.getApproveNo());
+        // 결제 완료 처리 (paymentKey만 전달)
+        payment.completePayment(response.getPaymentKey());
 
         // 판매 입찰 상태 변경 (RESERVED → SOLD)
         tradeClient.soldSellingBid(orderInfo.getSellingBidId(), "payment-service");
@@ -66,7 +62,7 @@ public class PaymentTransactionService {
         orderClient.pendingShipmentOrder(orderInfo.getOrderId(), "payment-service");
 
         // PG 트랜잭션 로그 저장 (성공)
-        PgTransaction transaction = pgTransactionMapper.toSuccessEntity(payment, response, pgSellerKey);
+        PgTransaction transaction = pgTransactionMapper.toSuccessEntity(payment, response);
         pgTransactionRepository.save(transaction);
     }
 

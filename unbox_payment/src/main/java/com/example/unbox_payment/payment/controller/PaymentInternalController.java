@@ -2,6 +2,7 @@ package com.example.unbox_payment.payment.controller;
 
 
 import com.example.unbox_payment.payment.dto.internal.PaymentForSettlementResponse;
+import com.example.unbox_payment.payment.dto.internal.PaymentStatusResponse;
 import com.example.unbox_payment.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,5 +23,11 @@ public class PaymentInternalController {
     @GetMapping("/{id}/for-settlement")
     public PaymentForSettlementResponse getPaymentForSettlement(@PathVariable UUID id) {
         return paymentService.getPaymentForSettlement(id);
+    }
+
+    // ✅ 결제 상태 조회
+    @GetMapping("/orders/{orderId}/status")
+    public PaymentStatusResponse getPaymentStatus(@PathVariable UUID orderId) {
+        return paymentService.getPaymentStatus(orderId);
     }
 }

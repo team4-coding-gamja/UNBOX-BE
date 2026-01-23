@@ -38,6 +38,9 @@ public class Review extends BaseEntity {
     private UUID orderId;
 
     // ======================= 작성자 스냅샷 =======================
+    @Column(name = "buyer_id", nullable = false)
+    private Long buyerId;
+
     @Column(name = "buyer_nickname", nullable = false)
     private String buyerNickname;
 
@@ -46,9 +49,10 @@ public class Review extends BaseEntity {
     private ReviewProductSnapshot productSnapshot;
 
     // ======================= 생성자 =======================
-    public Review(UUID orderId, String buyerNickname, String content, Integer rating, String imageUrl,
+    public Review(UUID orderId, Long buyerId, String buyerNickname, String content, Integer rating, String imageUrl,
             ReviewProductSnapshot productSnapshot) {
         this.orderId = orderId;
+        this.buyerId = buyerId;
         this.buyerNickname = buyerNickname;
         this.content = content;
         this.rating = rating;
@@ -57,12 +61,12 @@ public class Review extends BaseEntity {
     }
 
     // ======================= 정적 메서드 =======================
-    public static Review createReview(UUID orderId, String buyerNickname, String content, Integer rating,
+    public static Review createReview(UUID orderId, Long buyerId, String buyerNickname, String content, Integer rating,
             String imageUrl,
             ReviewProductSnapshot snapshot) {
-        validateCreate(orderId, buyerNickname, content, rating, imageUrl);
+        validateCreate(orderId, buyerId, buyerNickname, content, rating, imageUrl);
         requireNotNull(snapshot, "productSnapshot");
-        return new Review(orderId, buyerNickname, normalizeContent(content), rating, normalizeImageUrl(imageUrl),
+        return new Review(orderId, buyerId, buyerNickname, normalizeContent(content), rating, normalizeImageUrl(imageUrl),
                 snapshot);
     }
 
@@ -82,9 +86,10 @@ public class Review extends BaseEntity {
     }
 
     // ======================= 유효성 검사 메서드 =======================
-    private static void validateCreate(UUID orderId, String buyerNickname, String content, Integer rating,
+    private static void validateCreate(UUID orderId, Long buyerId, String buyerNickname, String content, Integer rating,
             String imageUrl) {
         requireNotNull(orderId, "order");
+        requireNotNull(buyerId, "buyerId");
         requireNotNull(buyerNickname, "buyerNickname");
         validateContent(content);
         validateRating(rating);

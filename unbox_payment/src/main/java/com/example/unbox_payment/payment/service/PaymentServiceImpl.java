@@ -3,6 +3,7 @@ package com.example.unbox_payment.payment.service;
 import com.example.unbox_payment.common.client.order.OrderClient;
 import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
 import com.example.unbox_payment.payment.dto.internal.PaymentForSettlementResponse;
+import com.example.unbox_payment.payment.dto.internal.PaymentStatusResponse;
 import com.example.unbox_payment.common.client.settlement.SettlementClient;
 import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
 import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
@@ -66,7 +67,6 @@ public class PaymentServiceImpl implements PaymentService {
         if (!PAYABLE_STATUSES.contains(orderInfo.getStatus())) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
-
 
         // 기존 결제 내역 확인
         Optional<Payment> existingPayment = paymentRepository.findByOrderIdAndDeletedAtIsNull(orderId);
@@ -178,5 +178,20 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
         return paymentClientMapper.toPaymentForSettlementResponse(payment);
+    }
+
+    // ✅ 결제 상태 조회
+    @Override
+    @Transactional(readOnly = true)
+    public PaymentStatusResponse getPaymentStatus(UUID orderId) {
+        return paymentRepository.findByOrderIdAndDeletedAtIsNull(orderId)
+                .map(payment -> PaymentStatusResponse.builder()
+                        .orderId(payment.getOrderId())
+                        .status(payment.getStatus().name())
+                        .build())
+                .orElse(PaymentStatusResponse.builder()
+                        .orderId(orderId)
+                        .status("NOT_FOUND")
+                        .build());
     }
 }

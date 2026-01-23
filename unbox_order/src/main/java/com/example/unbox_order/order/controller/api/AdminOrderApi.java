@@ -66,8 +66,26 @@ public interface AdminOrderApi {
             summary = "관리자 주문 상태 변경",
             description = """
                     주문 상태를 변경합니다.
-                    - 상태가 SHIPPED_TO_BUYER 인 경우 운송장 번호(trackingNumber)가 필수입니다.
-                    - 상태 전이 규칙은 Order 도메인 로직에서 검증됩니다.
+
+                    **가능한 상태 (OrderStatus) 목록:**
+                    - `PAYMENT_PENDING`: 결제 대기
+                    - `PENDING_SHIPMENT`: 발송 대기 (결제 완료)
+                    - `SHIPPED_TO_CENTER`: 센터 발송 완료 (판매자 -> 센터)
+                    - `ARRIVED_AT_CENTER`: 센터 입고 완료
+                    - `IN_INSPECTION`: 검수 중
+                    - `INSPECTION_PASSED`: 검수 합격
+                    - `INSPECTION_FAILED`: 검수 불합격
+                    - `SHIPPED_TO_BUYER`: 구매자 발송 완료 (센터 -> 구매자) - **운송장 번호 필수**
+                    - `DELIVERED`: 배송 완료
+                    - `COMPLETED`: 구매 확정
+                    - `CANCELLED`: 주문 취소
+
+                    **관리자 상태 전이 규칙:**
+                    - `SHIPPED_TO_CENTER` -> `ARRIVED_AT_CENTER`
+                    - `ARRIVED_AT_CENTER` -> `IN_INSPECTION`, `INSPECTION_PASSED`, `INSPECTION_FAILED`
+                    - `IN_INSPECTION` -> `INSPECTION_PASSED`, `INSPECTION_FAILED`
+                    - `INSPECTION_PASSED` -> `SHIPPED_TO_BUYER`
+                    - `SHIPPED_TO_BUYER` -> `DELIVERED`
                     """
     )
     @ApiResponses({

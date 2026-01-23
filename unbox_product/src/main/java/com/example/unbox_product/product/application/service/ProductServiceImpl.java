@@ -23,6 +23,9 @@ import com.example.unbox_product.product.presentation.dto.internal.ProductOption
 import com.example.unbox_product.product.presentation.dto.internal.ProductOptionForSellingBidInfoResponse;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
+import com.example.unbox_product.common.client.trade.TradeClient;
+import com.example.unbox_product.common.client.trade.dto.LowestPriceResponseDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
@@ -36,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class ProductServiceImpl implements ProductService {
@@ -49,6 +53,7 @@ public class ProductServiceImpl implements ProductService {
         private final ReviewMapper reviewMapper;
         private final ProductClientMapper productClientMapper;
         private final RedisTemplate<String, Object> redisTemplate; // redis
+        private final TradeClient tradeClient; // Feign Client
 
         // ✅ 상품 목록 조회 (검색 + 페이징) - 최저가 조회 제거 버전
         public Page<ProductListResponseDto> getProducts(UUID brandId, String category, String keyword,
@@ -125,7 +130,7 @@ public class ProductServiceImpl implements ProductService {
                         // ✅ [Cache Hit] Redis에 있으면 바로 변환해서 반환
                         return infoDto.getOptions().stream()
                                         .map(option -> {
-                                                BigDecimal price = getPriceFromMap(prices, option.getOptionId());
+                                                BigDecimal price = getPriceWithFallback(prices, option.getOptionId(), productId);
                                                 return productMapper.toProductOptionListDtoFromRedis(option, price);
                                         })
                                         .toList();
@@ -140,15 +145,36 @@ public class ProductServiceImpl implements ProductService {
 
                 return options.stream()
                                 .map(option -> {
-                                        BigDecimal price = getPriceFromMap(prices, option.getId());
+                                        BigDecimal price = getPriceWithFallback(prices, option.getId(), productId);
                                         return productMapper.toProductOptionListDto(option, price);
                                 })
                                 .toList();
         }
 
-        private BigDecimal getPriceFromMap(Map<Object, Object> prices, UUID optionId) {
+        private BigDecimal getPriceWithFallback(Map<Object, Object> prices, UUID optionId, UUID productId) {
+                // 1. Redis에서 확인
                 Object priceObj = prices.get(optionId.toString());
-                return (priceObj != null) ? new BigDecimal(String.valueOf(priceObj)) : BigDecimal.ZERO;
+                if (priceObj != null) {
+                    return new BigDecimal(String.valueOf(priceObj));
+                }
+
+                // 2. Redis에 없으면 Trade 서비스에 실시간 최저가 요청 (Fallback)
+                try {
+                    LowestPriceResponseDto response = tradeClient.getLowestPrice(optionId);
+                    BigDecimal price = response != null ? response.getLowestPrice() : BigDecimal.ZERO;
+
+                    // ✅ [Redis Cache-Aside] DB에서 가져온 값 Redis에 저장
+                    if (price.compareTo(BigDecimal.ZERO) > 0) {
+                        String priceKey = "prod:prices:" + productId;
+                        log.info("Saving lowest price to Redis. Key: {}, Field: {}, Value: {}", priceKey, optionId, price);
+                        redisTemplate.opsForHash().put(priceKey, optionId.toString(), price.toString());
+                    }
+
+                    return price;
+                } catch (Exception e) {
+                    // Trade 서비스 장애 시 0원 처리
+                    return BigDecimal.ZERO;
+                }
         }
 
         // ✅ 브랜드 전체 조회

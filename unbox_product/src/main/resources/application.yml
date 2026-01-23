@@ -42,13 +42,13 @@ spring:
       client:
         config:
           default:
-            loggerLevel: basic
+            loggerLevel: BASIC
             connectTimeout: 1000
             readTimeout: 3000
 
 logging:
   level:
-    com.example.unbox_product.common.client: DEBUG
+    com.example.unbox_product.common.client: INFO
 
 # Custom Feign Client URLs
 user-service:

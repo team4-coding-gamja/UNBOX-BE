@@ -47,7 +47,7 @@ spring:
       client:
         config:
           default:
-            loggerLevel: basic
+            loggerLevel: BASIC
             connectTimeout: 1000
             readTimeout: 3000
           payment-service:
@@ -55,7 +55,7 @@ spring:
 
 logging:
   level:
-    com.example.unbox_user.common.client: DEBUG
+    com.example.unbox_user.common.client: INFO
 
 cors:
   allowed-origins:

@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -12,7 +13,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LowestPriceResponseDto {
+public class LowestPriceResponseDto implements Serializable {
     private UUID productOptionId;
     private String productOptionName;
     private BigDecimal lowestPrice;

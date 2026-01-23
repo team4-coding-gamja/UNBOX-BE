@@ -71,3 +71,7 @@ docs/
 /docker/local/postgres_data/
 /docker/local/redis_data/
 /docker/local/.env.example
+docker-compose.test.yml
+
+### Test ###
+tests/

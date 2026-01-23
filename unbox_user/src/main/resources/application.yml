@@ -42,6 +42,21 @@ spring:
     timeout-ms: 10000
     max-in-memory-size-mb: 4
 
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: basic
+            connectTimeout: 1000
+            readTimeout: 3000
+          payment-service:
+            readTimeout: 10000
+
+logging:
+  level:
+    com.example.unbox_user.common.client: DEBUG
+
 cors:
   allowed-origins:
     - "${CORS_ALLOWED_ORIGINS:http://localhost:5173}"

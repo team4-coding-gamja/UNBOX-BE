@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@Tag(name = "판매입찰 관리", description = "판매입찰 관리 API")
+@Tag(name = "[사용자] 판매입찰 관리", description = "판매입찰 관리 API")
 public interface SellingBidApi {
 
         // ✅ 1) 판매 입찰 생성

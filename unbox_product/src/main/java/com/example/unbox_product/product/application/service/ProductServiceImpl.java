@@ -161,10 +161,12 @@ public class ProductServiceImpl implements ProductService {
                 // 2. Redis에 없으면 Trade 서비스에 실시간 최저가 요청 (Fallback)
                 try {
                     LowestPriceResponseDto response = tradeClient.getLowestPrice(optionId);
-                    BigDecimal price = response != null ? response.getLowestPrice() : BigDecimal.ZERO;
+                    BigDecimal price = (response != null && response.getLowestPrice() != null)
+                            ? response.getLowestPrice()
+                            : BigDecimal.ZERO;
 
                     // ✅ [Redis Cache-Aside] DB에서 가져온 값 Redis에 저장
-                    if (price.compareTo(BigDecimal.ZERO) > 0) {
+                    if (price.compareTo(BigDecimal.ZERO) >= 0) {
                         String priceKey = "prod:prices:" + productId;
                         log.info("Saving lowest price to Redis. Key: {}, Field: {}, Value: {}", priceKey, optionId, price);
                         redisTemplate.opsForHash().put(priceKey, optionId.toString(), price.toString());
@@ -172,7 +174,7 @@ public class ProductServiceImpl implements ProductService {
 
                     return price;
                 } catch (Exception e) {
-                    // Trade 서비스 장애 시 0원 처리
+                    log.warn("Trade 최저가 조회 실패. productId={}, optionId={}", productId, optionId, e);
                     return BigDecimal.ZERO;
                 }
         }

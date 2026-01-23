@@ -23,6 +23,19 @@ spring:
     init:
       mode: never
 
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: basic
+            connectTimeout: 1000
+            readTimeout: 3000
+          unbox-payment:
+            readTimeout: 10000
+          unbox-user:
+            readTimeout: 5000
+
 server:
   port: ${SERVER_PORT:8080}
 
@@ -38,6 +51,12 @@ trade-service:
 
 payment-service:
   url: ${PAYMENT_SERVICE_URL:http://localhost:8085}
+
+
+
+logging:
+  level:
+    com.example.unbox_order.common.client: DEBUG
 
 cors:
   allowed-origins:

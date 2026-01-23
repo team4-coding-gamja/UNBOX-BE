@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-@Tag(name = "결제 관리", description = "결제 관리 API")
+@Tag(name = "[사용자] 결제 관리", description = "결제 관리 API")
 @RequestMapping("/api/payment")
 public interface PaymentApi {
 

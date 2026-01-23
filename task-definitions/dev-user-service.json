@@ -12,6 +12,9 @@
       "image": "ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/unbox-dev-user-repo:<IMAGE_TAG>",
       "portMappings": [
         {
+          
+          
+          "name": "http",
           "containerPort": 8081,
           "protocol": "tcp"
         }

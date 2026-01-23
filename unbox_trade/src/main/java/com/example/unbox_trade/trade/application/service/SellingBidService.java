@@ -8,6 +8,7 @@ import com.example.unbox_trade.trade.presentation.dto.response.SellingBidCreateR
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidDetailResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidListResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidsPriceUpdateResponseDto;
+import com.example.unbox_trade.trade.presentation.dto.internal.LowestPriceResponseDto;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 
@@ -59,4 +60,9 @@ public interface SellingBidService {
      * 판매 입찰 복구 (결제 실패/취소용: RESERVED → LIVE)
      */
     void liveSellingBid(UUID sellingBidId, String updatedBy);
+
+    /**
+     * 상품 옵션별 최저가 조회 (Internal)
+     */
+    LowestPriceResponseDto getLowestPrice(UUID productOptionId);
 }

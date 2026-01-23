@@ -11,6 +11,7 @@ import com.example.unbox_trade.trade.presentation.dto.response.SellingBidCreateR
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidDetailResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidListResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidsPriceUpdateResponseDto;
+import com.example.unbox_trade.trade.presentation.dto.internal.LowestPriceResponseDto;
 import com.example.unbox_trade.trade.domain.entity.SellingBid;
 import com.example.unbox_trade.trade.domain.entity.SellingStatus;
 import com.example.unbox_trade.trade.presentation.mapper.SellingBidMapper;
@@ -259,5 +260,28 @@ public class SellingBidServiceImpl implements SellingBidService {
         if (updatedBy != null) {
             sellingBid.updateModifiedBy(updatedBy);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public LowestPriceResponseDto getLowestPrice(UUID productOptionId) {
+        // 1. 최저가 조회 (LIVE 상태만)
+        BigDecimal minPrice = sellingBidRepository.findLowestPriceByOptionId(productOptionId)
+                .orElse(BigDecimal.ZERO);
+
+        // 2. 상품 옵션 정보 조회 (이름이 필요함)
+        String optionName = "Unknown Option";
+        try {
+            ProductOptionForSellingBidInfoResponse productInfo = productClient.getProductOptionForSellingBid(productOptionId);
+            optionName = productInfo.getProductOptionName();
+        } catch (Exception e) {
+            // Product 서비스 호출 실패 시 기본값 유지 (최저가는 반환해야 함)
+        }
+
+        return LowestPriceResponseDto.builder()
+                .productOptionId(productOptionId)
+                .productOptionName(optionName)
+                .lowestPrice(minPrice)
+                .build();
     }
 }

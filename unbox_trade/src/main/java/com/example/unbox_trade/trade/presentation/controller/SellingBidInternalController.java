@@ -10,6 +10,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 
+import com.example.unbox_trade.trade.presentation.dto.internal.LowestPriceResponseDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "[Internal] 판매 입찰 관리", description = "내부 시스템용 판매 입찰 API")
 @RestController
 @RequestMapping("/internal/bids/selling")
 @RequiredArgsConstructor
@@ -46,5 +51,13 @@ public class SellingBidInternalController {
     public ResponseEntity<Void> liveSellingBid(@PathVariable UUID id, @RequestParam String updatedBy) {
         sellingBidService.liveSellingBid(id, updatedBy);
         return ResponseEntity.ok().build();
+    }
+
+    // ✅ 상품 옵션별 최저가 조회 (Internal)
+    @Operation(summary = "상품 옵션별 최저가 조회", description = "상품 옵션 ID로 LIVE 상태인 판매 입찰 중 최저가를 조회합니다.")
+    @GetMapping("/product-option/{productOptionId}/lowest-price")
+    public LowestPriceResponseDto getLowestPrice(
+            @PathVariable UUID productOptionId) {
+        return sellingBidService.getLowestPrice(productOptionId);
     }
 }

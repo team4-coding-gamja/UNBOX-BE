@@ -13,7 +13,7 @@
       "portMappings": [
         {
           "name": "http",
-          "containerPort": 8085,
+          "containerPort": 80,
           "protocol": "tcp"
         }
       ],
@@ -24,7 +24,7 @@
         },
         {
           "name": "SERVER_PORT",
-          "value": "8085"
+          "value": "80"
         }
       ],
       "logConfiguration": {
@@ -38,7 +38,7 @@
       "healthCheck": {
         "command": [
           "CMD-SHELL",
-          "curl -f http://localhost:8085/actuator/health || exit 1"
+          "curl -f http://localhost:80/actuator/health || exit 1"
         ],
         "interval": 30,
         "timeout": 5,

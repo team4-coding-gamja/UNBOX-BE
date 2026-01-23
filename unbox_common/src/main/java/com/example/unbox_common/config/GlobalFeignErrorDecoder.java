@@ -8,6 +8,7 @@ import feign.codec.ErrorDecoder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.InputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
@@ -22,7 +23,9 @@ public class GlobalFeignErrorDecoder implements ErrorDecoder {
         String bodyStr = "Unknown Error";
         try {
             if (response.body() != null) {
-                bodyStr = new String(response.body().asInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                try (InputStream is = response.body().asInputStream()) {
+                    bodyStr = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                }
                 ErrorResponse errorResponse = objectMapper.readValue(bodyStr, ErrorResponse.class);
                 return new FeignClientException(errorResponse.getStatus(), errorResponse.getMessage(), errorResponse.getData());
             }

@@ -223,6 +223,7 @@ public class SellingBidServiceImpl implements SellingBidService {
 
     // ✅ 판매 입찰 선점 (주문용: LIVE → RESERVED)
     @Override
+    @Transactional
     @DistributedLock(key = "#sellingBidId", waitTime = 0)
     public void reserveSellingBid(UUID sellingBidId, String updatedBy) {
         // 존재 여부 확인

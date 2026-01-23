@@ -24,7 +24,7 @@ public class SettlementInternalController {
     private final SettlementService settlementService;
 
     // 정산 조회 (결제용)
-    @Operation(summary = "정산 조회 (결제용)", description = "결제 ID로 정산 정보를 조회합니다.")
+    @Operation(summary = "정산 조회 (결제용)", description = "정산 ID로 정산 정보를 조회합니다.")
     @GetMapping("/{id}/for-payment")
     public SettlementForPaymentResponse getSettlementForPayment(@PathVariable UUID id) {
         return settlementService.getSettlementForPayment(id);

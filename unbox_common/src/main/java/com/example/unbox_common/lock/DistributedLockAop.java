@@ -46,6 +46,7 @@ public class DistributedLockAop {
             // 트랜잭션 분리 실행
             return aopForTransaction.proceed(joinPoint);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.error("Redisson Lock Interrupted", e);
             throw e;
         } finally {

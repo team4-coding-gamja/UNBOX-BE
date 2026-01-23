@@ -170,6 +170,7 @@ public class ProductServiceImpl implements ProductService {
                         String priceKey = "prod:prices:" + productId;
                         log.info("Saving lowest price to Redis. Key: {}, Field: {}, Value: {}", priceKey, optionId, price);
                         redisTemplate.opsForHash().put(priceKey, optionId.toString(), price.toString());
+                        redisTemplate.expire(priceKey, Duration.ofMinutes(30));
                     }
 
                     return price;

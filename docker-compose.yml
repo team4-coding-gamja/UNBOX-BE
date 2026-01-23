@@ -1,11 +1,10 @@
-version: '3.8'
-
 services:
   # 1. User Service (formerly unbox_be)
   unbox-user:
     build:
       context: .
       dockerfile: unbox_user/Dockerfile
+    platform: linux/amd64  # <--- 추가됨: Mac 호환성 해결
     container_name: unbox-user
     platform: linux/amd64
     ports:
@@ -32,6 +31,7 @@ services:
     build:
       context: .
       dockerfile: unbox_product/Dockerfile
+    platform: linux/amd64  # <--- 추가됨
     container_name: unbox-product
     platform: linux/amd64
     ports:
@@ -58,6 +58,7 @@ services:
     build:
       context: .
       dockerfile: unbox_trade/Dockerfile
+    platform: linux/amd64  # <--- 추가됨
     container_name: unbox-trade
     platform: linux/amd64
     ports:
@@ -84,6 +85,7 @@ services:
     build:
       context: .
       dockerfile: unbox_payment/Dockerfile
+    platform: linux/amd64  # <--- 추가됨
     container_name: unbox-payment
     platform: linux/amd64
     ports:
@@ -110,6 +112,7 @@ services:
     build:
       context: .
       dockerfile: unbox_order/Dockerfile
+    platform: linux/amd64  # <--- 추가됨
     container_name: unbox-order
     platform: linux/amd64
     ports:
@@ -135,7 +138,7 @@ services:
   db:
     image: postgres:16.11-alpine
     container_name: unbox-postgres
-    platform: linux/amd64
+    platform: linux/amd64  # 기존 유지 (잘 하셨습니다)
     ports:
       - "5432:5432"
     environment:
@@ -149,6 +152,8 @@ services:
   redis:
     image: redis:alpine
     container_name: unbox-redis
+    # Redis는 보통 멀티 아키텍처를 지원하므로 platform 지정이 필수는 아니지만,
+    # 만약 에러가 난다면 여기에도 platform: linux/amd64를 추가하세요.
     ports:
       - "6379:6379"
     volumes:

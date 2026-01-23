@@ -11,21 +11,20 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface PaymentMapper {
 
-    // ✅ OrderForPaymentInfoResponse용
+    // ✅ OrderForPaymentInfoResponse → Payment Entity
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "orderId", source = "orderInfo.orderId")
+    @Mapping(target = "orderId", expression = "java(orderInfo.getOrderId().toString())")
     @Mapping(target = "buyerId", source = "orderInfo.buyerId")
     @Mapping(target = "sellerId", source = "orderInfo.sellerId")
     @Mapping(target = "amount", source = "orderInfo.price")
     @Mapping(target = "method", source = "method")
     @Mapping(target = "status", constant = "READY")
-    @Mapping(target = "pgPaymentKey", ignore = true)
-    @Mapping(target = "pgApproveNo", ignore = true)
-    @Mapping(target = "capturedAt", ignore = true)
+    @Mapping(target = "paymentKey", ignore = true)
+    @Mapping(target = "approvedAt", ignore = true)
     @Mapping(target = "version", ignore = true)
     Payment toEntity(OrderForPaymentInfoResponse orderInfo, PaymentMethod method);
 
-    // ✅ OrderForPaymentInfoResponse용
+    // ✅ Payment + OrderInfo → PaymentReadyResponseDto
     @Mapping(target = "paymentId", source = "payment.id")
     @Mapping(target = "orderId", source = "orderInfo.orderId")
     @Mapping(target = "price", source = "orderInfo.price")

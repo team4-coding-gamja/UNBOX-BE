@@ -8,7 +8,7 @@
   "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/unbox-dev-ecs-task-role",
   "containerDefinitions": [
     {
-      "name": "product-service",
+      "name": "product",
       "image": "ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/unbox-dev-product-repo:<IMAGE_TAG>",
       "portMappings": [
         {

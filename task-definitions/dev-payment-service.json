@@ -12,6 +12,7 @@
       "image": "ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/unbox-dev-payment-repo:<IMAGE_TAG>",
       "portMappings": [
         {
+          "name": "http",
           "containerPort": 8085,
           "protocol": "tcp"
         }
@@ -24,12 +25,6 @@
         {
           "name": "SERVER_PORT",
           "value": "8085"
-        }
-      ],
-      "secrets": [
-        {
-          "name": "SPRING_DATASOURCE_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:ACCOUNT_ID:secret:dev/payment-db-password"
         }
       ],
       "logConfiguration": {

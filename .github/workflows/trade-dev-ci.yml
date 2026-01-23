@@ -13,7 +13,7 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: unbox-trade-service
+  ECR_REPOSITORY: unbox-dev-trade-repo
   SERVICE_NAME: trade-service
   SERVICE_PATH: unbox_trade
 

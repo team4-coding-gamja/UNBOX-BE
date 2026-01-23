@@ -68,8 +68,6 @@ cors:
     - "${CORS_ALLOWED_ORIGINS:http://localhost:5173}"
 
 springdoc:
-  api-docs:
-    path: /product/v3/api-docs
   swagger-ui:
     doc-expansion: none
     tags-sorter: alpha

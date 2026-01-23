@@ -74,8 +74,6 @@ order-service:
   url: ${ORDER_SERVICE_URL:http://localhost:8084}
 
 springdoc:
-  api-docs:
-    path: /user/v3/api-docs
   swagger-ui:
     doc-expansion: none
     tags-sorter: none

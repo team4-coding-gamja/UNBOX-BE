@@ -1,5 +1,4 @@
 {
-  "_comment": "Dev 환경은 비용 최적화를 위해서 Fargate Spot (100%) 사용합니다.",
   "family": "unbox-dev-user-service",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],

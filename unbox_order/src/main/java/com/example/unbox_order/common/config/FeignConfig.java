@@ -1,6 +1,9 @@
 package com.example.unbox_order.common.config;
 
+import com.example.unbox_common.config.GlobalFeignErrorDecoder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.RequestInterceptor;
+import feign.codec.ErrorDecoder;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,5 +30,9 @@ public class FeignConfig {
                 }
             }
         };
+    }
+    @Bean
+    public ErrorDecoder errorDecoder(ObjectMapper objectMapper) {
+        return new GlobalFeignErrorDecoder(objectMapper);
     }
 }

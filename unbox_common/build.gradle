@@ -84,6 +84,12 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-data-redis'
     
     api 'org.springframework.boot:spring-boot-starter-cache'
+    
+    // Redisson (Distributed Lock)
+    api 'org.redisson:redisson-spring-boot-starter:3.25.0'
+
+    // AOP
+    api 'org.springframework.boot:spring-boot-starter-aop'
 
     // Spring Cloud OpenFeign
     api 'org.springframework.cloud:spring-cloud-starter-openfeign'

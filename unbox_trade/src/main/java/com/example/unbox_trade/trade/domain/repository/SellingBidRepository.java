@@ -43,10 +43,6 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
 
   Optional<SellingBid> findByIdAndDeletedAtIsNull(UUID sellingId);
 
-  @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
-  @org.springframework.data.jpa.repository.QueryHints({
-      @jakarta.persistence.QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000")
-  })
   @Query("select sb from SellingBid sb where sb.id = :sellingId and sb.deletedAt is null")
   Optional<SellingBid> findByIdAndDeletedAtIsNullForUpdate(@Param("sellingId") UUID sellingId);
 

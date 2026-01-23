@@ -16,7 +16,7 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECS_SERVICE: unbox-dev-user-service
+  ECS_SERVICE: unbox-dev-user
   ECS_CLUSTER: unbox-dev-cluster
   TASK_DEFINITION_FAMILY: unbox-dev-user-service
   SERVICE_NAME: user-service

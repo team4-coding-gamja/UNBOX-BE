@@ -16,7 +16,7 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECS_SERVICE: unbox-dev-product-service
+  ECS_SERVICE: unbox-dev-product
   ECS_CLUSTER: unbox-dev-cluster
   TASK_DEFINITION_FAMILY: unbox-dev-product-service
   SERVICE_NAME: product-service

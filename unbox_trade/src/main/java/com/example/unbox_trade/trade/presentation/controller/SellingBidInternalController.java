@@ -14,7 +14,7 @@ import com.example.unbox_trade.trade.presentation.dto.internal.LowestPriceRespon
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Tag(name = "[Internal] 판매 입찰 관리", description = "내부 시스템용 판매 입찰 API")
+@Tag(name = "[내부] 판매 입찰 관리", description = "내부 시스템용 판매 입찰 API")
 @RestController
 @RequestMapping("/internal/bids/selling")
 @RequiredArgsConstructor

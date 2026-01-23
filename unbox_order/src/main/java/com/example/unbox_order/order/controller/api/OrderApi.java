@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@Tag(name = "주문 관리", description = "주문 관리 API")
+@Tag(name = "[사용자] 주문 관리", description = "주문 관리 API")
 public interface OrderApi {
 
     @Operation(summary = "주문 생성", description = "구매자가 상품을 주문합니다.")

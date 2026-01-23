@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@Tag(name = "AI", description = "AI 기능 API (리뷰 요약 등)")
+@Tag(name = "[사용자] AI", description = "AI 기능 API (리뷰 요약 등)")
 @RequestMapping("/api/ai")
 public interface AiApi {
 

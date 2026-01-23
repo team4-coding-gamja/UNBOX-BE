@@ -16,7 +16,7 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECS_SERVICE: unbox-dev-trade-service
+  ECS_SERVICE: unbox-dev-trade
   ECS_CLUSTER: unbox-dev-cluster
   TASK_DEFINITION_FAMILY: unbox-dev-trade-service
   SERVICE_NAME: trade-service

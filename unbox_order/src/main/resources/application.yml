@@ -61,3 +61,12 @@ logging:
 cors:
   allowed-origins:
     - "${CORS_ALLOWED_ORIGINS:http://localhost:5173}"
+
+springdoc:
+  api-docs:
+    path: /order/v3/api-docs
+  swagger-ui:
+    doc-expansion: none
+    tags-sorter: alpha
+    operations-sorter: alpha
+    custom-path: /css/swagger-custom.css

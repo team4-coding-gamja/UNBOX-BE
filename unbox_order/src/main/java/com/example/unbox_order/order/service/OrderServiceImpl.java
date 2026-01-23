@@ -62,7 +62,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 5) 판매 입찰 선점 (LIVE → RESERVED)
-        tradeClient.updateSellingBidStatus(sellingBidInfo.getSellingBidId(), "RESERVED");
+        tradeClient.reserveSellingBid(sellingBidInfo.getSellingBidId(), "ORDER_SERVICE");
 
         // 6) 주문 생성 (스냅샷 저장)
         Order order = Order.builder()
@@ -138,7 +138,7 @@ public class OrderServiceImpl implements OrderService {
 
         // 5) 결제 전 취소: SellingBid 복구 (RESERVED → LIVE)
         if (previousStatus == OrderStatus.PAYMENT_PENDING) {
-            tradeClient.updateSellingBidStatus(order.getSellingBidId(), "LIVE");
+            tradeClient.liveSellingBid(order.getSellingBidId(), "ORDER_SERVICE");
             log.info("결제 전 주문 취소 - SellingBid 복구: {}", order.getSellingBidId());
         }
 

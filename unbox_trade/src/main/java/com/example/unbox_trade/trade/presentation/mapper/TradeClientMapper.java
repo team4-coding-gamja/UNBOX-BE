@@ -27,11 +27,11 @@ public interface TradeClientMapper {
 
     default SellingBidForOrderInfoResponse toSellingBidForOrderInfoResponse(SellingBid sellingBid) {
         return SellingBidForOrderInfoResponse.builder()
-                .sellingId(sellingBid.getId())
+                .sellingBidId(sellingBid.getId())
                 .sellerId(sellingBid.getSellerId())
                 .productOptionId(sellingBid.getProductOptionId())
                 .price(sellingBid.getPrice())
-                .sellingStatus(sellingBid.getStatus().name())
+                .status(sellingBid.getStatus().name())
                 .productId(sellingBid.getProductId())
                 .productName(sellingBid.getProductName())
                 .productOptionName(sellingBid.getProductOptionName())

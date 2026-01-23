@@ -14,6 +14,6 @@ public interface PaymentClient {
     @GetMapping("/internal/payments/orders/{orderId}/status")
     PaymentStatusResponse getPaymentStatus(@PathVariable("orderId") UUID orderId);
 
-    @GetMapping("/internal/payments/{paymentId}/settlement-info")
+    @GetMapping("/internal/payments/{paymentId}/for-settlement")
     PaymentForSettlementResponse getPaymentForSettlement(@PathVariable("paymentId") UUID paymentId);
 }

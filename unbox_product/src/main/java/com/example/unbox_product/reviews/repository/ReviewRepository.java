@@ -18,4 +18,6 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     List<Review> findAllByProductSnapshotProductIdAndDeletedAtIsNull(UUID productId);
 
     Page<Review> findAllByProductSnapshotProductIdAndDeletedAtIsNull(UUID productId, Pageable pageable);
+
+    Page<Review> findAllByBuyerIdAndDeletedAtIsNull(Long buyerId, Pageable pageable);
 }

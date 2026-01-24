@@ -107,6 +107,9 @@ dependencies {
     // MapStruct (Library)
     api 'org.mapstruct:mapstruct:1.5.5.Final'
 
+    // Actuator
+    api 'org.springframework.boot:spring-boot-starter-actuator'
+
     // Logging (Logstash)
     api 'net.logstash.logback:logstash-logback-encoder:9.0'
 }

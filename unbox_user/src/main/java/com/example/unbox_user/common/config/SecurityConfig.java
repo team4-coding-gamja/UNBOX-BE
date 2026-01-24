@@ -83,7 +83,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(
                         "/", "/swagger-ui/**", "/swagger-ui.html",
-                        "/v3/api-docs/**", "/api-docs/**", "/swagger-resources/**"
+                        "/v3/api-docs/**", "/api-docs/**", "/swagger-resources/**",
+                        "/actuator/**"
                 ).permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/test/bootstrap/master").permitAll()

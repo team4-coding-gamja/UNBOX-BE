@@ -114,72 +114,93 @@ public class ProductServiceImpl implements ProductService {
                 return productMapper.toProductDetailResponseDto(infoDto, lowestPrice);
         }
 
-        // ✅ 상품 옵션 조회 (옵션별 최저가 포함)
-        @Override
-        public List<ProductOptionListResponseDto> getProductOptions(UUID productId) {
-                String infoKey = "prod:info:" + productId;
+        // ✅ 상품 옵션 조회 (옵션별 최저가 포함) - Batch Optimization Applied
+    @Override
+    public List<ProductOptionListResponseDto> getProductOptions(UUID productId) {
+        String infoKey = "prod:info:" + productId;
+        String priceKey = "prod:prices:" + productId;
+
+        // 1️⃣ [Redis] 가격 정보 조회 (항상 Redis에서 가져옴)
+        Map<Object, Object> prices = redisTemplate.opsForHash().entries(priceKey);
+
+        // 2️⃣ [Redis] 상품 정보 조회
+        ProductRedisDto infoDto = (ProductRedisDto) redisTemplate.opsForValue().get(infoKey);
+
+        if (infoDto != null) {
+            // ✅ [Cache Hit] Redis에 있으면 바로 변환해서 반환
+            List<UUID> optionIds = infoDto.getOptions().stream().map(ProductRedisDto.ProductOptionDto::getOptionId).toList();
+            
+            fillMissingPrices(prices, optionIds, productId); // Batch Lookup
+
+            return infoDto.getOptions().stream()
+                    .map(option -> {
+                        BigDecimal price = getPriceFromMap(prices, option.getOptionId());
+                        return productMapper.toProductOptionListDtoFromRedis(option, price);
+                    })
+                    .toList();
+        }
+
+        // 3️⃣ [Cache Miss] 없으면 DB 조회
+        if (!productRepository.existsById(productId)) {
+            throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        List<ProductOption> options = productOptionRepository.findAllByProductIdAndDeletedAtIsNull(productId);
+        
+        List<UUID> optionIds = options.stream().map(ProductOption::getId).toList();
+        fillMissingPrices(prices, optionIds, productId); // Batch Lookup
+
+        return options.stream()
+                .map(option -> {
+                    BigDecimal price = getPriceFromMap(prices, option.getId());
+                    return productMapper.toProductOptionListDto(option, price);
+                })
+                .toList();
+    }
+
+    private void fillMissingPrices(Map<Object, Object> prices, List<UUID> optionIds, UUID productId) {
+        List<UUID> missingIds = optionIds.stream()
+                .filter(id -> !prices.containsKey(id.toString()))
+                .toList();
+
+        if (missingIds.isEmpty()) return;
+
+        try {
+            List<LowestPriceResponseDto> fetched = tradeClient.getLowestPrices(missingIds);
+
+            Map<String, String> newPrices = new java.util.HashMap<>();
+
+            for (LowestPriceResponseDto dto : fetched) {
+                if (dto.getLowestPrice() != null) {
+                    String val = dto.getLowestPrice().toString();
+                    prices.put(dto.getProductOptionId().toString(), val); // Update local map
+                    newPrices.put(dto.getProductOptionId().toString(), val);
+                }
+            }
+
+            // Redis Multi-set (Cache-aside)
+            if (!newPrices.isEmpty()) {
                 String priceKey = "prod:prices:" + productId;
+                redisTemplate.opsForHash().putAll(priceKey, newPrices);
+                redisTemplate.expire(priceKey, Duration.ofMinutes(30));
+                log.info("Batch updated prices for product {}, count: {}", productId, newPrices.size());
+            }
 
-                // 1️⃣ [Redis] 가격 정보 조회 (항상 Redis에서 가져옴)
-                Map<Object, Object> prices = redisTemplate.opsForHash().entries(priceKey);
-
-                // 2️⃣ [Redis] 상품 정보 조회
-                ProductRedisDto infoDto = (ProductRedisDto) redisTemplate.opsForValue().get(infoKey);
-
-                if (infoDto != null) {
-                        // ✅ [Cache Hit] Redis에 있으면 바로 변환해서 반환
-                        return infoDto.getOptions().stream()
-                                        .map(option -> {
-                                                BigDecimal price = getPriceWithFallback(prices, option.getOptionId(), productId);
-                                                return productMapper.toProductOptionListDtoFromRedis(option, price);
-                                        })
-                                        .toList();
-                }
-
-                // 3️⃣ [Cache Miss] 없으면 DB 조회
-                if (!productRepository.existsById(productId)) {
-                        throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
-                }
-
-                List<ProductOption> options = productOptionRepository.findAllByProductIdAndDeletedAtIsNull(productId);
-
-                return options.stream()
-                                .map(option -> {
-                                        BigDecimal price = getPriceWithFallback(prices, option.getId(), productId);
-                                        return productMapper.toProductOptionListDto(option, price);
-                                })
-                                .toList();
+        } catch (Exception e) {
+            log.warn("Trade batch price lookup failed for product {}", productId, e);
+            // Fallback: missing prices remain 'null' in map, handled as ZERO in getPriceFromMap
         }
+    }
 
-        private BigDecimal getPriceWithFallback(Map<Object, Object> prices, UUID optionId, UUID productId) {
-                // 1. Redis에서 확인
-                Object priceObj = prices.get(optionId.toString());
-                if (priceObj != null) {
-                    return new BigDecimal(String.valueOf(priceObj));
-                }
-
-                // 2. Redis에 없으면 Trade 서비스에 실시간 최저가 요청 (Fallback)
-                try {
-                    LowestPriceResponseDto response = tradeClient.getLowestPrice(optionId);
-                    BigDecimal price = (response != null && response.getLowestPrice() != null)
-                            ? response.getLowestPrice()
-                            : BigDecimal.ZERO;
-
-                    // ✅ [Redis Cache-Aside] DB에서 가져온 값 Redis에 저장
-                    if (price.compareTo(BigDecimal.ZERO) >= 0) {
-                        String priceKey = "prod:prices:" + productId;
-                        log.info("Saving lowest price to Redis. Key: {}, Field: {}, Value: {}", priceKey, optionId, price);
-                        redisTemplate.opsForHash().put(priceKey, optionId.toString(), price.toString());
-                        redisTemplate.expire(priceKey, Duration.ofMinutes(30));
-                    }
-
-                    return price;
-                } catch (Exception e) {
-                    log.warn("Trade 최저가 조회 실패. productId={}, optionId={}", productId, optionId, e);
-                    return BigDecimal.ZERO;
-                }
+    private BigDecimal getPriceFromMap(Map<Object, Object> prices, UUID optionId) {
+        Object val = prices.get(optionId.toString());
+        if (val == null) return BigDecimal.ZERO;
+        try {
+            return new BigDecimal(String.valueOf(val));
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
         }
-
+    }
         // ✅ 브랜드 전체 조회
         @Override
         public List<BrandListResponseDto> getAllBrands() {

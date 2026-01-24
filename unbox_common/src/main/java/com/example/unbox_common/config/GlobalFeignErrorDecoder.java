@@ -32,7 +32,7 @@ public class GlobalFeignErrorDecoder implements ErrorDecoder {
         } catch (IOException e) {
             log.error("Feign Error Reading Failed: {}", e.getMessage());
         } catch (Exception e) {
-            log.error("Feign Error Response Parsing Failed. Body: {}", bodyStr);
+            log.error("Feign Error Response Parsing Failed. Body: {}, Error: {}", bodyStr, e.getMessage());
         }
 
         // 파싱 실패 또는 예상치 못한 에러 시 기본 예외

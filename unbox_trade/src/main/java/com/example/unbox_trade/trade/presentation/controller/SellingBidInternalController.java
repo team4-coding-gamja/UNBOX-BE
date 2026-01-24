@@ -90,4 +90,10 @@ public class SellingBidInternalController {
             @PathVariable UUID productOptionId) {
         return sellingBidService.getLowestPrice(productOptionId);
     }
+
+    @Operation(summary = "상품 옵션별 최저가 조회 (배치)", description = "여러 상품 옵션 ID로 LIVE 상태인 판매 입찰 중 최저가를 조회합니다.")
+    @PostMapping("/product-options/lowest-prices")
+    public java.util.List<LowestPriceResponseDto> getLowestPrices(@RequestBody java.util.List<UUID> productOptionIds) {
+        return sellingBidService.getLowestPrices(productOptionIds);
+    }
 }

@@ -115,6 +115,7 @@ public class ProductServiceImpl implements ProductService {
                                     }
                                 })
                                 .filter(Objects::nonNull)
+                                .filter(p -> p.compareTo(BigDecimal.ZERO) > 0)
                                 .min(BigDecimal::compareTo)
                                 .orElse(BigDecimal.ZERO);
 
@@ -218,6 +219,7 @@ public class ProductServiceImpl implements ProductService {
         try {
             return new BigDecimal(String.valueOf(val));
         } catch (NumberFormatException e) {
+            log.warn("Invalid price in Redis. optionId={}, value={}", optionId, val, e);        
             return BigDecimal.ZERO;
         }
     }

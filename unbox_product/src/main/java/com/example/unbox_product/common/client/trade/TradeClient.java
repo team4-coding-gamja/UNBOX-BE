@@ -3,9 +3,12 @@ package com.example.unbox_product.common.client.trade;
 import com.example.unbox_product.common.client.trade.dto.LowestPriceResponseDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.UUID;
+import java.util.List;
 
 @FeignClient(name = "unbox-trade", url = "${trade-service.url}")
 public interface TradeClient {
@@ -14,6 +17,6 @@ public interface TradeClient {
     @GetMapping("/internal/bids/selling/product-option/{productOptionId}/lowest-price")
     LowestPriceResponseDto getLowestPrice(@PathVariable("productOptionId") UUID productOptionId);
 
-    @org.springframework.web.bind.annotation.PostMapping("/internal/bids/selling/product-options/lowest-prices")
-    java.util.List<LowestPriceResponseDto> getLowestPrices(@org.springframework.web.bind.annotation.RequestBody java.util.List<UUID> productOptionIds);
+    @PostMapping("/internal/bids/selling/product-options/lowest-prices")
+    List<LowestPriceResponseDto> getLowestPrices(@RequestBody List<UUID> productOptionIds);
 }

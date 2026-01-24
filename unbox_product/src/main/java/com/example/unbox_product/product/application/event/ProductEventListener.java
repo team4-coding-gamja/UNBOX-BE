@@ -24,7 +24,7 @@ public class ProductEventListener {
         log.info("🔔 [Internal Event] Price Changed: {} -> {}", event.productId(), event.newLowestPrice());
 
         // Redis 업데이트 로직 (이전과 동일)
-        String key = "prod:prices:" + event.productId();
+        String key = "product:prices:" + event.productId();
 
         redisTemplate.opsForHash().put(
                 key,

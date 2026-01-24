@@ -57,7 +57,7 @@ public class SellingBidServiceImpl implements SellingBidService {
     // --- Helper Methods for Cache Eviction ---
     private void evictLowestPriceCache(UUID productOptionId) {
         if (productOptionId != null) {
-            Cache cache = cacheManager.getCache("lowestPrice");
+            Cache cache = cacheManager.getCache("trade:price:lowest");
             if (cache != null) {
                 cache.evict(productOptionId);
             }
@@ -66,7 +66,7 @@ public class SellingBidServiceImpl implements SellingBidService {
 
     private void evictSellingBidCache(UUID sellingBidId) {
         if (sellingBidId != null) {
-            Cache cache = cacheManager.getCache("sellingBidOrder");
+            Cache cache = cacheManager.getCache("trade:bid:order");
             if (cache != null) {
                 cache.evict(sellingBidId);
             }
@@ -218,7 +218,7 @@ public class SellingBidServiceImpl implements SellingBidService {
     // ✅ 판매 글 조회 (주문용) - 캐싱 적용 (읽기 병목 해결 핵심)
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "sellingBidOrder", key = "#sellingBidId", unless = "#result == null")
+    @Cacheable(value = "trade:bid:order", key = "#sellingBidId")
     public SellingBidForOrderInfoResponse getSellingBidForOrder(UUID sellingBidId) {
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
@@ -310,17 +310,19 @@ public class SellingBidServiceImpl implements SellingBidService {
         evictSellingBidCache(sellingBidId);
     }
 
+    private static final String UNKNOWN_OPTION_NAME = "Unknown Option";
+
     // ✅ 상품 옵션별 최저가 조회 (Internal) - 캐싱 적용!
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "lowestPrice", key = "#productOptionId", unless = "#result.productOptionName == 'Unknown Option'")
+    @Cacheable(value = "trade:price:lowest", key = "#productOptionId", unless = "#result.productOptionName == T(com.example.unbox_trade.trade.application.service.SellingBidServiceImpl).UNKNOWN_OPTION_NAME")
     public LowestPriceResponseDto getLowestPrice(UUID productOptionId) {
         // 1. 최저가 조회 (LIVE 상태만)
         BigDecimal minPrice = sellingBidRepository.findLowestPriceByOptionId(productOptionId)
                 .orElse(BigDecimal.ZERO);
 
         // 2. 상품 옵션 정보 조회 (이름이 필요함)
-        String optionName = "Unknown Option";
+        String optionName = UNKNOWN_OPTION_NAME;
         try {
             ProductOptionForSellingBidInfoResponse productInfo = productClient.getProductOptionForSellingBid(productOptionId);
             optionName = productInfo.getProductOptionName();

@@ -12,7 +12,7 @@ import java.util.UUID;
 
 // 조회 성능 최적화를 위해 Redis(캐시)에 저장하는 읽기 전용 데이터 모델
 
-// Redis Key: "prod:info:{id}"
+// Redis Key: "product:info:{id}"
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

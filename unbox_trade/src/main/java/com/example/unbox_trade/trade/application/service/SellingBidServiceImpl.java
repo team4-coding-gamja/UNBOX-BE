@@ -349,7 +349,7 @@ public class SellingBidServiceImpl implements SellingBidService {
                 .map(row -> LowestPriceResponseDto.builder()
                         .productOptionId((UUID) row[0])
                         .productOptionName(null) // Product Service already knows the name
-                        .lowestPrice((BigDecimal) row[1])
+                        .lowestPrice(row[1] != null ? (BigDecimal) row[1] : BigDecimal.ZERO)
                         .build())
                 .toList();
     }

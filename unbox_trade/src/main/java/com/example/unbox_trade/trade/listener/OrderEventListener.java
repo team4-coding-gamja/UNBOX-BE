@@ -2,6 +2,7 @@ package com.example.unbox_trade.trade.listener;
 
 import com.example.unbox_common.event.order.OrderCancelledEvent;
 import com.example.unbox_common.event.order.OrderExpiredEvent;
+import com.example.unbox_trade.trade.application.service.SellingBidService;
 import com.example.unbox_trade.trade.domain.entity.SellingBid;
 import com.example.unbox_trade.trade.domain.entity.SellingStatus;
 import com.example.unbox_trade.trade.domain.repository.SellingBidRepository;
@@ -13,6 +14,7 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 public class OrderEventListener {
 
     private final SellingBidRepository sellingBidRepository;
+    private final SellingBidService sellingBidService;
 
     @KafkaListener(topics = "order-events", groupId = "trade-group")
     @Transactional
@@ -38,7 +41,8 @@ public class OrderEventListener {
         }
     }
 
-    private void revertSellingBid(java.util.UUID sellingBidId, Acknowledgment ack) {
+    private void revertSellingBid(UUID sellingBidId, Acknowledgment ack) {
+        // 1. 조회 및 스마트 원복 검증 (Repository 사용)
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(sellingBidId)
                 .orElse(null);
 
@@ -48,25 +52,32 @@ public class OrderEventListener {
             return;
         }
 
-        // 스마트 원복 로직 (Smart Revert Strategy)
-        // 1. 상태가 RESERVED인지 확인
+        // 상태가 RESERVED가 아니면 건너뜀
         if (sellingBid.getStatus() != SellingStatus.RESERVED) {
             log.info("Skipping revert: SellingBid {} status is {}, not RESERVED.", sellingBid.getId(), sellingBid.getStatus());
             ack.acknowledge();
             return;
         }
 
-        // 2. 만료일 확인
+        // 만료일 지났으면 CANCELLED 처리
         if (sellingBid.getDeadline() != null && sellingBid.getDeadline().isBefore(LocalDateTime.now())) {
             log.info("Skipping revert: SellingBid {} has expired (deadline: {}). Setting status to CANCELLED.", sellingBid.getId(), sellingBid.getDeadline());
             sellingBid.updateStatus(SellingStatus.CANCELLED);
             ack.acknowledge();
             return;
         }
-
-        // 3. 상태 원복 (RESERVED -> LIVE)
-        sellingBid.updateStatus(SellingStatus.LIVE);
-        log.info("Successfully reverted SellingBid {} status to LIVE.", sellingBid.getId());
+        
+        // 2. 상태 원복 및 캐시 갱신 (Service 위임)
+        // Service 내부에서 캐시 무효화(evict) 및 가격 변동 이벤트 발행을 수행함
+        try {
+            sellingBidService.liveSellingBid(sellingBidId, "SYSTEM_EVENT");
+            log.info("Successfully reverted SellingBid {} status to LIVE via Service.", sellingBidId);
+        } catch (Exception e) {
+            log.error("Failed to revert SellingBid {} via Service.", sellingBidId, e);
+            // 여기서 예외를 던지면 Kafka 재시도(Retry)가 동작함. 
+            // 단, 이미 위에서 검증했으므로 비즈니스 로직 오류 가능성은 낮음.
+            throw e; 
+        }
 
         ack.acknowledge();
     }

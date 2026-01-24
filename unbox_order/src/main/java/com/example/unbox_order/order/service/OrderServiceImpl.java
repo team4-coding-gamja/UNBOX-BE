@@ -103,7 +103,18 @@ public class OrderServiceImpl implements OrderService {
         // 7) 결제 만료 타이머 설정 (Redis) - Standardized Key Naming Policy 적용
         // Key Format: order:expiration:{orderId}:{sellingBidId}
         String expirationKey = "order:expiration:" + order.getId() + ":" + order.getSellingBidId();
-        redisTemplate.opsForValue().set(expirationKey, "PENDING", Duration.ofMinutes(paymentTimeoutMinutes));
+        
+        try {
+            // setIfAbsent 사용 (혹시 모를 키 중복 방지 및 원자성 확보)
+            Boolean result = redisTemplate.opsForValue().setIfAbsent(expirationKey, "PENDING", Duration.ofMinutes(paymentTimeoutMinutes));
+            if (Boolean.FALSE.equals(result)) {
+                log.warn("Expiration key already exists: {}", expirationKey);
+            }
+        } catch (Exception e) {
+            log.error("Failed to set expiration timer for order: {}. Rolling back transaction.", order.getId(), e);
+            // Redis 저장 실패 시 주문 생성 자체를 롤백 (데이터 정합성 보장)
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR); // REDIS_OPERATION_FAILED가 없다면 적절한 에러코드로 대체
+        }
         
         log.info("Order created successfully. Expiration timer set for {} minutes. Key: {}", paymentTimeoutMinutes, expirationKey);
 
@@ -253,5 +264,10 @@ public class OrderServiceImpl implements OrderService {
 
         // 상태 변경 (내부에서 PAYMENT_PENDING 검증)
         order.updateStatusAfterPayment();
+
+        // 🟢 결제 완료 후 만료 타이머 제거 (불필요한 이벤트 발행 방지)
+        String expirationKey = "order:expiration:" + orderId + ":" + order.getSellingBidId();
+        redisTemplate.delete(expirationKey);
+        log.info("Deleted expiration timer for paid order: {}", orderId);
     }
 }

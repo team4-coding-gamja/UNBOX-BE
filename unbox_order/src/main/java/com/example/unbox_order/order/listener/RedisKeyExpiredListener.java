@@ -56,6 +56,8 @@ public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
             OrderExpiredEvent event = OrderExpiredEvent.of(orderId, sellingBidId);
             orderEventProducer.publishOrderExpired(event);
 
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid UUID in expired key: {}", expiredKey, e);
         } catch (Exception e) {
             log.error("Failed to handle expired key: {}", expiredKey, e);
         }

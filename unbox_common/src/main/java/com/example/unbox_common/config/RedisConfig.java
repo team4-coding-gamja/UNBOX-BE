@@ -11,6 +11,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 @Configuration
 @EnableCaching // Spring Boot의 캐싱 기능 활성화
@@ -47,8 +48,8 @@ public class RedisConfig {
                 .build();
     }
     @Bean
-    public org.springframework.data.redis.listener.RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory connectionFactory) {
-        org.springframework.data.redis.listener.RedisMessageListenerContainer container = new org.springframework.data.redis.listener.RedisMessageListenerContainer();
+    public RedisMessageListenerContainer redisMessageListenerContainer(RedisConnectionFactory connectionFactory) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
         return container;
     }

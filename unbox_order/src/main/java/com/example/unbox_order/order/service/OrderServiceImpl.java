@@ -112,8 +112,17 @@ public class OrderServiceImpl implements OrderService {
             }
         } catch (Exception e) {
             log.error("Failed to set expiration timer for order: {}. Rolling back transaction.", order.getId(), e);
+            
+            // 보상 트랜잭션: 이미 선점(RESERVED)된 입찰을 되돌려야 함 (분산 트랜잭션 보상)
+            try {
+                tradeClient.liveSellingBid(order.getSellingBidId(), "ORDER_ROLLBACK");
+            } catch (Exception rollbackEx) {
+                log.error("Failed to rollback SellingBid reservation for bid: {}. Data inconsistency risk!", order.getSellingBidId(), rollbackEx);
+                // 이 로그는 모니터링 시스템에서 Critical Alert로 잡아야 함
+            }
+            
             // Redis 저장 실패 시 주문 생성 자체를 롤백 (데이터 정합성 보장)
-            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR); // REDIS_OPERATION_FAILED가 없다면 적절한 에러코드로 대체
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
         
         log.info("Order created successfully. Expiration timer set for {} minutes. Key: {}", paymentTimeoutMinutes, expirationKey);

@@ -149,7 +149,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // 3️⃣ [Cache Miss] 없으면 DB 조회
-        if (!productRepository.existsById(productId)) {
+        if (!productRepository.existsByIdAndDeletedAtIsNull(productId)) {
             throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
         }
 
@@ -177,12 +177,25 @@ public class ProductServiceImpl implements ProductService {
             List<LowestPriceResponseDto> fetched = tradeClient.getLowestPrices(missingIds);
 
             Map<String, String> newPrices = new java.util.HashMap<>();
+            java.util.Set<String> returnedIds = new java.util.HashSet<>();
 
             for (LowestPriceResponseDto dto : fetched) {
                 BigDecimal price = dto.getLowestPrice() != null ? dto.getLowestPrice() : BigDecimal.ZERO;
                 String val = price.toString();
-                prices.put(dto.getProductOptionId().toString(), val);
-                newPrices.put(dto.getProductOptionId().toString(), val);
+                String optionIdStr = dto.getProductOptionId().toString();
+                
+                prices.put(optionIdStr, val);
+                newPrices.put(optionIdStr, val);
+                returnedIds.add(optionIdStr);
+            }
+
+            // Trade 서비스에서 응답이 오지 않은(즉, 입찰 내역이 아예 없는) 옵션들도 0원으로 캐싱
+            for (UUID id : missingIds) {
+                String key = id.toString();
+                if (!returnedIds.contains(key)) {
+                    prices.put(key, BigDecimal.ZERO.toString());
+                    newPrices.put(key, BigDecimal.ZERO.toString());
+                }
             }
 
             // Redis Multi-set (Cache-aside)

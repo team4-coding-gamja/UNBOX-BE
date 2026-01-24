@@ -3,6 +3,7 @@ package com.example.unbox_common.error;
 import com.example.unbox_common.error.exception.CustomAuthenticationException;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
+import com.example.unbox_common.error.exception.FeignClientException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -55,10 +56,19 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(errorCode.getStatus().value(), errorCode.getMessage()));
     }
 
+    
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException ex) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(ErrorResponse.of(404, ex.getMessage()));
+    }
+
+    // FeignClientException 처리
+    @ExceptionHandler(FeignClientException.class)
+    public ResponseEntity<ErrorResponse> handleFeignClientException(FeignClientException ex) {
+        return ResponseEntity
+                .status(ex.getStatus())
+                .body(ErrorResponse.of(ex.getStatus(), ex.getMessage(), ex.getData()));
     }
 }

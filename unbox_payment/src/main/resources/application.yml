@@ -28,6 +28,19 @@ spring:
   jwt:
     secret: ${SPRING_JWT_SECRET}
 
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: BASIC
+            connectTimeout: 1000
+            readTimeout: 3000
+
+logging:
+  level:
+    com.example.unbox_payment.common.client: INFO
+
 # Feign Client URLs
 user-service:
   url: ${USER_SERVICE_URL:http://localhost:8081}

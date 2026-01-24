@@ -29,6 +29,23 @@ spring:
   jwt:
     secret: ${SPRING_JWT_SECRET}
 
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: BASIC
+            connectTimeout: 1000
+            readTimeout: 3000
+          unbox-user:
+            readTimeout: 5000
+          product-service:
+            readTimeout: 5000
+
+logging:
+  level:
+    com.example.unbox_trade.common.client: INFO
+
 # Custom Feign Client URLs
 product-service:
   url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
@@ -37,7 +54,7 @@ user-service:
   url: ${USER_SERVICE_URL:http://localhost:8081}
 
 payment-service:
-  url: ${TRADE_SERVICE_URL:http://localhost:8085}
+  url: ${PAYMENT_SERVICE_URL:http://localhost:8085}
 
 order-service:
   url: ${ORDER_SERVICE_URL:http://localhost:8084}

@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "[내부] 유저 관리", description = "내부 시스템용 유저 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/internal/users")
@@ -22,6 +26,7 @@ public class UserInternalController {
 
     private final UserRepository userRepository;
 
+    @Operation(summary = "판매 입찰용 유저 정보 조회", description = "판매 입찰 시 필요한 유저 정보를 조회합니다.")
     @GetMapping("/{userId}/for-selling-bid")
     public UserInfoForSellingBidResponse getUserInfoForSellingBid(@PathVariable("userId") Long userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
@@ -37,6 +42,7 @@ public class UserInternalController {
 
     private final AddressRepository addressRepository;
 
+    @Operation(summary = "주문용 유저 정보 조회", description = "주문 시 필요한 유저 및 배송지 정보를 조회합니다.")
     @GetMapping("/{userId}/for-order")
     public UserInfoForOrderResponse getUserInfoForOrder(@PathVariable("userId") Long userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)

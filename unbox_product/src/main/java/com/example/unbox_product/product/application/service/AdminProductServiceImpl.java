@@ -99,7 +99,7 @@ public class AdminProductServiceImpl implements AdminProductService {
                                 requestDto.getProductImageUrl());
 
                 // 캐시 삭제 (정보만)
-                redisTemplate.delete("prod:info:" + productId);
+                redisTemplate.delete("product:info:" + productId);
 
                 return adminProductMapper.toAdminProductUpdateResponseDto(product);
         }
@@ -120,8 +120,8 @@ public class AdminProductServiceImpl implements AdminProductService {
                 product.softDelete(deletedBy);
 
                 // 삭제된 상품이니 정보, 가격 삭제
-                redisTemplate.delete("prod:info:" + productId);
-                redisTemplate.delete("prod:prices:" + productId);
+                redisTemplate.delete("product:info:" + productId);
+                redisTemplate.delete("product:prices:" + productId);
 
                 // 상품 삭제 이벤트 발행
                 eventPublisher.publishEvent(new ProductDeletedEvent(productId, deletedOptionIds));

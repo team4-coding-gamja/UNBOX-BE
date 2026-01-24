@@ -21,7 +21,7 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
-        // Key는 String으로 저장 (예: "prod:info:uuid-1234")
+        // Key는 String으로 저장 (예: "product:info:uuid-1234")
         template.setKeySerializer(new StringRedisSerializer());
 
         // Value는 JSON으로 저장 (DTO 객체가 JSON 문자열로 변환됨)

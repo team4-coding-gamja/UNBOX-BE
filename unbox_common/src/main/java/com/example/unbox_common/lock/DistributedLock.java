@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
+@java.lang.annotation.Documented
 public @interface DistributedLock {
 
     // 락의 이름 (Key - SpEL 사용 가능)

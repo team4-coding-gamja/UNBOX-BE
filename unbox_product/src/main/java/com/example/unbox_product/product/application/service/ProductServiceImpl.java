@@ -78,8 +78,8 @@ public class ProductServiceImpl implements ProductService {
         @Override
         @Transactional(readOnly = true)
         public ProductDetailResponseDto getProductDetail(UUID productId) {
-                String infoKey = "prod:info:" + productId;
-                String priceKey = "prod:prices:" + productId;
+                String infoKey = "product:info:" + productId;
+                String priceKey = "product:prices:" + productId;
 
                 // 1️⃣ [Redis] 상품 정보(Info) 조회 (먼저 찔러보기)
                 ProductRedisDto infoDto = (ProductRedisDto) redisTemplate.opsForValue().get(infoKey);
@@ -125,8 +125,8 @@ public class ProductServiceImpl implements ProductService {
         // ✅ 상품 옵션 조회 (옵션별 최저가 포함) - Batch Optimization Applied
     @Override
     public List<ProductOptionListResponseDto> getProductOptions(UUID productId) {
-        String infoKey = "prod:info:" + productId;
-        String priceKey = "prod:prices:" + productId;
+        String infoKey = "product:info:" + productId;
+        String priceKey = "product:prices:" + productId;
 
         // 1️⃣ [Redis] 가격 정보 조회 (항상 Redis에서 가져옴)
         Map<Object, Object> prices = redisTemplate.opsForHash().entries(priceKey);
@@ -179,16 +179,15 @@ public class ProductServiceImpl implements ProductService {
             Map<String, String> newPrices = new java.util.HashMap<>();
 
             for (LowestPriceResponseDto dto : fetched) {
-                if (dto.getLowestPrice() != null) {
-                    String val = dto.getLowestPrice().toString();
-                    prices.put(dto.getProductOptionId().toString(), val); // Update local map
-                    newPrices.put(dto.getProductOptionId().toString(), val);
-                }
+                BigDecimal price = dto.getLowestPrice() != null ? dto.getLowestPrice() : BigDecimal.ZERO;
+                String val = price.toString();
+                prices.put(dto.getProductOptionId().toString(), val);
+                newPrices.put(dto.getProductOptionId().toString(), val);
             }
 
             // Redis Multi-set (Cache-aside)
             if (!newPrices.isEmpty()) {
-                String priceKey = "prod:prices:" + productId;
+                String priceKey = "product:prices:" + productId;
                 redisTemplate.opsForHash().putAll(priceKey, newPrices);
                 redisTemplate.expire(priceKey, Duration.ofMinutes(30));
                 log.info("Batch updated prices for product {}, count: {}", productId, newPrices.size());

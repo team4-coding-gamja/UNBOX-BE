@@ -310,7 +310,7 @@ public class SellingBidServiceImpl implements SellingBidService {
         evictSellingBidCache(sellingBidId);
     }
 
-    private static final String UNKNOWN_OPTION_NAME = "Unknown Option";
+    public static final String UNKNOWN_OPTION_NAME = "Unknown Option";
 
     // ✅ 상품 옵션별 최저가 조회 (Internal) - 캐싱 적용!
     @Override

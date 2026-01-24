@@ -1,6 +1,7 @@
 package com.example.unbox_order.order.producer;
 
 import com.example.unbox_common.event.order.OrderCancelledEvent;
+import com.example.unbox_common.event.order.OrderExpiredEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -19,6 +20,12 @@ public class OrderEventProducer {
     public void publishOrderCancelled(OrderCancelledEvent event) {
         log.info("Publishing OrderCancelledEvent: orderId={}, sellingBidId={}", event.orderId(), event.sellingBidId());
         // 키(Key)를 지정하여 해당 입찰(sellingBid) 관련 이벤트가 항상 동일 파티션으로 가도록 보장
+        kafkaTemplate.send(TOPIC_ORDER, event.sellingBidId().toString(), event);
+    }
+
+    public void publishOrderExpired(OrderExpiredEvent event) {
+        log.info("Publishing OrderExpiredEvent: orderId={}, sellingBidId={}", event.orderId(), event.sellingBidId());
+        // 동일 토픽(order-events) 사용 -> 입찰 상태 변경 순서 보장을 위해
         kafkaTemplate.send(TOPIC_ORDER, event.sellingBidId().toString(), event);
     }
 }

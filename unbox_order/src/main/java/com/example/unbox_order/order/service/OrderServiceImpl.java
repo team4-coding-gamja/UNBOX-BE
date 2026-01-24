@@ -21,8 +21,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -44,9 +48,11 @@ public class OrderServiceImpl implements OrderService {
     private final SettlementService settlementService;
     private final OrderMapper orderMapper;
     private final OrderClientMapper orderClientMapper;
-    private final OrderEventProducer orderEventProducer; // Added
+    private final OrderEventProducer orderEventProducer;
+    private final RedisTemplate<String, Object> redisTemplate;
 
-    // ...
+    @Value("${order.payment-timeout-minutes:10}")
+    private long paymentTimeoutMinutes;
 
     // ✅ 주문 생성
     @Override
@@ -92,7 +98,16 @@ public class OrderServiceImpl implements OrderService {
                 .receiverZipCode(requestDto.getReceiverZipCode())
                 .build();
 
-        return orderRepository.save(order).getId();
+        order = orderRepository.save(order);
+        
+        // 7) 결제 만료 타이머 설정 (Redis) - Standardized Key Naming Policy 적용
+        // Key Format: order:expiration:{orderId}:{sellingBidId}
+        String expirationKey = "order:expiration:" + order.getId() + ":" + order.getSellingBidId();
+        redisTemplate.opsForValue().set(expirationKey, "PENDING", Duration.ofMinutes(paymentTimeoutMinutes));
+        
+        log.info("Order created successfully. Expiration timer set for {} minutes. Key: {}", paymentTimeoutMinutes, expirationKey);
+
+        return order.getId();
     }
 
     // ✅ 내 구매 내역 조회 (페이징)

@@ -16,8 +16,8 @@ public @interface DistributedLock {
     // 락 획득 대기 시간 (기본 5초)
     long waitTime() default 5L;
 
-    // 락 점유 시간 (기본 3초)
-    long leaseTime() default 3L;
+    // 락 점유 시간 (기본 0초 - 0 설정 시 Watchdog 자동 연장 활성화)
+    long leaseTime() default 0L;
 
     // 시간 단위
     TimeUnit timeUnit() default TimeUnit.SECONDS;

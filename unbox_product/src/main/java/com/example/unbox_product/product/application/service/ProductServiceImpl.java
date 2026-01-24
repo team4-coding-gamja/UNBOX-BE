@@ -38,6 +38,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -106,7 +107,14 @@ public class ProductServiceImpl implements ProductService {
 
                 // 최저가 계산
                 BigDecimal lowestPrice = prices.values().stream()
-                                .map(v -> new BigDecimal(String.valueOf(v)))
+                                .map(v -> {
+                                    try {
+                                        return new BigDecimal(String.valueOf(v));
+                                    } catch (NumberFormatException e) {
+                                        return null;
+                                    }
+                                })
+                                .filter(Objects::nonNull)
                                 .min(BigDecimal::compareTo)
                                 .orElse(BigDecimal.ZERO);
 

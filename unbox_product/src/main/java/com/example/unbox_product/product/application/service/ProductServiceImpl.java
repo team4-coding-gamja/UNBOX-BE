@@ -173,6 +173,8 @@ public class ProductServiceImpl implements ProductService {
                 .toList();
     }
 
+
+
     private void fillMissingPrices(Map<Object, Object> prices, List<UUID> optionIds, UUID productId) {
         List<UUID> missingIds = optionIds.stream()
                 .filter(id -> !prices.containsKey(id.toString()))

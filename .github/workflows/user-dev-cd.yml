@@ -53,75 +53,50 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Get AWS Account ID
-        id: account-id
+      - name: Get current task definition
+        id: get-task-def
         run: |
-          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          echo "account_id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
-
-      - name: Get DB and Redis endpoints
-        id: get-endpoints
-        run: |
-          # RDS 엔드포인트 가져오기
-          DB_ENDPOINT=$(aws rds describe-db-instances \
-            --db-instance-identifier unbox-dev-user-db \
-            --query 'DBInstances[0].Endpoint.Address' \
+          # 현재 실행 중인 Task Definition 가져오기
+          TASK_DEF_ARN=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].taskDefinition' \
             --output text)
-          echo "db_endpoint=$DB_ENDPOINT" >> $GITHUB_OUTPUT
           
-          # Redis 엔드포인트 가져오기
-          REDIS_ENDPOINT=$(aws elasticache describe-cache-clusters \
-            --cache-cluster-id unbox-dev-user-redis \
-            --show-cache-node-info \
-            --query 'CacheClusters[0].CacheNodes[0].Endpoint.Address' \
-            --output text)
-          echo "redis_endpoint=$REDIS_ENDPOINT" >> $GITHUB_OUTPUT
-
-      - name: Get Secrets ARNs
-        id: get-secrets
-        run: |
-          # DB 비밀번호 Secret ARN
-          DB_SECRET_ARN=$(aws secretsmanager list-secrets \
-            --filters Key=name,Values=unbox-dev-user-db-password \
-            --query 'SecretList[0].ARN' \
-            --output text)
-          echo "db_secret_arn=$DB_SECRET_ARN" >> $GITHUB_OUTPUT
+          echo "current-task-def=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
           
-          # JWT Secret ARN
-          JWT_SECRET_ARN=$(aws secretsmanager list-secrets \
-            --filters Key=name,Values=unbox-dev-jwt-secret \
-            --query 'SecretList[0].ARN' \
-            --output text)
-          echo "jwt_secret_arn=$JWT_SECRET_ARN" >> $GITHUB_OUTPUT
+          # Task Definition JSON 다운로드
+          aws ecs describe-task-definition \
+            --task-definition $TASK_DEF_ARN \
+            --query 'taskDefinition' > task-def.json
 
-      - name: Render task definition
-        id: render-task-def
+      - name: Update task definition with new image
+        id: update-task-def
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
-          ACCOUNT_ID: ${{ steps.account-id.outputs.account_id }}
-          DB_ENDPOINT: ${{ steps.get-endpoints.outputs.db_endpoint }}
-          REDIS_ENDPOINT: ${{ steps.get-endpoints.outputs.redis_endpoint }}
-          DB_PASSWORD_SECRET_ARN: ${{ steps.get-secrets.outputs.db_secret_arn }}
-          JWT_SECRET_ARN: ${{ steps.get-secrets.outputs.jwt_secret_arn }}
         run: |
-          sed -e "s|<IMAGE_TAG>|$IMAGE_TAG|g" \
-              -e "s|ACCOUNT_ID|$ACCOUNT_ID|g" \
-              -e "s|DB_ENDPOINT|$DB_ENDPOINT|g" \
-              -e "s|REDIS_ENDPOINT|$REDIS_ENDPOINT|g" \
-              -e "s|DB_PASSWORD_SECRET_ARN|$DB_PASSWORD_SECRET_ARN|g" \
-              -e "s|JWT_SECRET_ARN|$JWT_SECRET_ARN|g" \
-            task-definitions/dev-user-service.json > task-def-rendered.json
-          cat task-def-rendered.json
+          # 새 이미지 URI 생성
+          NEW_IMAGE="${ECR_REGISTRY}/unbox-dev-user-repo:${IMAGE_TAG}"
+          
+          # Task Definition에서 불필요한 필드 제거 및 이미지 업데이트
+          cat task-def.json | jq --arg IMAGE "$NEW_IMAGE" '
+            del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy) |
+            .containerDefinitions[0].image = $IMAGE
+          ' > task-def-updated.json
+          
+          echo "Updated task definition:"
+          cat task-def-updated.json
 
-      - name: Register task definition
+      - name: Register new task definition
         id: register-task-def
         run: |
           TASK_DEF_ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://task-def-rendered.json \
+            --cli-input-json file://task-def-updated.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
           echo "task-def-arn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+          echo "Registered new task definition: $TASK_DEF_ARN"
 
       - name: Update ECS service
         run: |

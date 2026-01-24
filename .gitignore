@@ -61,7 +61,6 @@ UNBOX-INFRA/
 logs/
 *.log
 
-*.md
 .spec
 docs/
 

@@ -20,7 +20,7 @@ env:
   ECS_CLUSTER: unbox-prod-cluster
   CODEDEPLOY_APP: unbox-prod-app
   CODEDEPLOY_GROUP: unbox-prod-order-deployment-group
-  SERVICE_NAME: order-service
+  SERVICE_NAME: order
 
 jobs:
   approval:

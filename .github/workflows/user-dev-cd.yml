@@ -18,8 +18,8 @@ env:
   AWS_REGION: ap-northeast-2
   ECS_SERVICE: unbox-dev-user
   ECS_CLUSTER: unbox-dev-cluster
-  TASK_DEFINITION_FAMILY: unbox-dev-user-service
-  SERVICE_NAME: user-service
+  TASK_DEFINITION_FAMILY: unbox-dev-user
+  SERVICE_NAME: user
 
 jobs:
   deploy:
@@ -59,15 +59,58 @@ jobs:
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           echo "account_id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
 
+      - name: Get DB and Redis endpoints
+        id: get-endpoints
+        run: |
+          # RDS 엔드포인트 가져오기
+          DB_ENDPOINT=$(aws rds describe-db-instances \
+            --db-instance-identifier unbox-dev-user-db \
+            --query 'DBInstances[0].Endpoint.Address' \
+            --output text)
+          echo "db_endpoint=$DB_ENDPOINT" >> $GITHUB_OUTPUT
+          
+          # Redis 엔드포인트 가져오기
+          REDIS_ENDPOINT=$(aws elasticache describe-cache-clusters \
+            --cache-cluster-id unbox-dev-user-redis \
+            --show-cache-node-info \
+            --query 'CacheClusters[0].CacheNodes[0].Endpoint.Address' \
+            --output text)
+          echo "redis_endpoint=$REDIS_ENDPOINT" >> $GITHUB_OUTPUT
+
+      - name: Get Secrets ARNs
+        id: get-secrets
+        run: |
+          # DB 비밀번호 Secret ARN
+          DB_SECRET_ARN=$(aws secretsmanager list-secrets \
+            --filters Key=name,Values=unbox-dev-user-db-password \
+            --query 'SecretList[0].ARN' \
+            --output text)
+          echo "db_secret_arn=$DB_SECRET_ARN" >> $GITHUB_OUTPUT
+          
+          # JWT Secret ARN
+          JWT_SECRET_ARN=$(aws secretsmanager list-secrets \
+            --filters Key=name,Values=unbox-dev-jwt-secret \
+            --query 'SecretList[0].ARN' \
+            --output text)
+          echo "jwt_secret_arn=$JWT_SECRET_ARN" >> $GITHUB_OUTPUT
+
       - name: Render task definition
         id: render-task-def
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
           ACCOUNT_ID: ${{ steps.account-id.outputs.account_id }}
+          DB_ENDPOINT: ${{ steps.get-endpoints.outputs.db_endpoint }}
+          REDIS_ENDPOINT: ${{ steps.get-endpoints.outputs.redis_endpoint }}
+          DB_PASSWORD_SECRET_ARN: ${{ steps.get-secrets.outputs.db_secret_arn }}
+          JWT_SECRET_ARN: ${{ steps.get-secrets.outputs.jwt_secret_arn }}
         run: |
           sed -e "s|<IMAGE_TAG>|$IMAGE_TAG|g" \
               -e "s|ACCOUNT_ID|$ACCOUNT_ID|g" \
+              -e "s|DB_ENDPOINT|$DB_ENDPOINT|g" \
+              -e "s|REDIS_ENDPOINT|$REDIS_ENDPOINT|g" \
+              -e "s|DB_PASSWORD_SECRET_ARN|$DB_PASSWORD_SECRET_ARN|g" \
+              -e "s|JWT_SECRET_ARN|$JWT_SECRET_ARN|g" \
             task-definitions/dev-user-service.json > task-def-rendered.json
           cat task-def-rendered.json
 

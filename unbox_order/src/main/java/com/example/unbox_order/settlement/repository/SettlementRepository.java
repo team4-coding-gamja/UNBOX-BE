@@ -1,11 +1,9 @@
 package com.example.unbox_order.settlement.repository;
 
 import com.example.unbox_order.settlement.entity.Settlement;
-import com.example.unbox_order.settlement.entity.SettlementStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 

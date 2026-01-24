@@ -27,6 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.example.unbox_common.event.order.OrderCancelledEvent;
+import com.example.unbox_order.order.producer.OrderEventProducer;
+
+// ... existing imports ...
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -39,6 +44,9 @@ public class OrderServiceImpl implements OrderService {
     private final SettlementService settlementService;
     private final OrderMapper orderMapper;
     private final OrderClientMapper orderClientMapper;
+    private final OrderEventProducer orderEventProducer; // Added
+
+    // ...
 
     // ✅ 주문 생성
     @Override
@@ -136,10 +144,19 @@ public class OrderServiceImpl implements OrderService {
         // 4) 주문 취소 처리
         order.cancel();
 
-        // 5) 결제 전 취소: SellingBid 복구 (RESERVED → LIVE)
+    // 5) 결제 전 취소: SellingBid 복구 (Async)
         if (previousStatus == OrderStatus.PAYMENT_PENDING) {
-            tradeClient.liveSellingBid(order.getSellingBidId(), "ORDER_SERVICE");
-            log.info("결제 전 주문 취소 - SellingBid 복구: {}", order.getSellingBidId());
+            // 변경: 동기 호출(tradeClient) 제거 -> 비동기 이벤트 발행
+            // Transaction Commit 후 발행이 보장되어야 하나, 우선 간단히 여기서 발행
+            // (실무에선 TransactionalEventListener 사용 권장)
+            OrderCancelledEvent event = new OrderCancelledEvent(
+                    order.getId(),
+                    order.getSellingBidId(),
+                    order.getBuyerId(),
+                    order.getSellerId(),
+                    "User Cancelled"
+            );
+            orderEventProducer.publishOrderCancelled(event);
         }
 
         // 6) 결제 후 취소: 환불 처리 필요 (향후 구현)

@@ -58,7 +58,6 @@ redis_data/
 logs/
 *.log
 
-*.md
 .spec
 docs/
 

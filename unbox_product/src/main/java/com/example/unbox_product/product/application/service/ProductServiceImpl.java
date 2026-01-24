@@ -104,6 +104,12 @@ public class ProductServiceImpl implements ProductService {
 
                 // 3️⃣ [Redis] 가격 조회 (가격은 항상 Redis에서 Hash 구조로 조회)
                 Map<Object, Object> prices = redisTemplate.opsForHash().entries(priceKey);
+                
+                // 캐시가 비어있거나 일부 누락된 경우를 대비해 채워넣기 시도
+                List<UUID> optionIds = infoDto.getOptions().stream()
+                        .map(ProductRedisDto.ProductOptionDto::getOptionId)
+                        .toList();
+                fillMissingPrices(prices, optionIds, productId);
 
                 // 최저가 계산
                 BigDecimal lowestPrice = prices.values().stream()

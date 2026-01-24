@@ -1,5 +1,6 @@
 name: Payment Service - Dev CD
 
+# Terraform 기반 Task Definition 사용
 on:
   workflow_run:
     workflows: ["Payment Service - Dev CI"]

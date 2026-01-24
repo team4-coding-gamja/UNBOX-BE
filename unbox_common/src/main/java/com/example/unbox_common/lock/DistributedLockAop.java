@@ -39,7 +39,14 @@ public class DistributedLockAop {
         RLock rLock = redissonClient.getLock(key);
 
         try {
-            boolean available = rLock.tryLock(distributedLock.waitTime(), distributedLock.leaseTime(), distributedLock.timeUnit());
+            boolean available;
+            if (distributedLock.leaseTime() == 0L) {
+                // leaseTime이 0이면 Watchdog 활성화 (자동 연장)
+                available = rLock.tryLock(distributedLock.waitTime(), distributedLock.timeUnit());
+            } else {
+                // leaseTime이 설정되어 있으면 해당 시간 후 자동 해제
+                available = rLock.tryLock(distributedLock.waitTime(), distributedLock.leaseTime(), distributedLock.timeUnit());
+            }
             if (!available) {
                 log.warn("Redisson Lock Acquisition Failed/Timeout. Key: {}", key);
                 // 락 획득 실패 시 false 반환 또는 예외 던짐. 

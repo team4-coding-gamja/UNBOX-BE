@@ -38,6 +38,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.List;
+import java.util.Collections;
 
 @Slf4j
 @Service
@@ -243,9 +245,11 @@ public class SellingBidServiceImpl implements SellingBidService {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        // updatedBy 기록 (선택사항)
+        // updatedBy 기록
         if (updatedBy != null) {
-            sellingBid.updateModifiedBy(updatedBy);
+            SellingBid refreshed = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+            refreshed.updateModifiedBy(updatedBy);
         }
 
         // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화 (상태가 변했으니 최저가도 변했을 수 있음)
@@ -332,12 +336,12 @@ public class SellingBidServiceImpl implements SellingBidService {
     }
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<LowestPriceResponseDto> getLowestPrices(java.util.List<UUID> productOptionIds) {
+    public List<LowestPriceResponseDto> getLowestPrices(List<UUID> productOptionIds) {
         if (productOptionIds == null || productOptionIds.isEmpty()) {
-            return java.util.Collections.emptyList();
+            return Collections.emptyList();
         }
 
-        java.util.List<Object[]> results = sellingBidRepository.findLowestPricesByProductOptionIds(productOptionIds);
+        List<Object[]> results = sellingBidRepository.findLowestPricesByProductOptionIds(productOptionIds);
 
         return results.stream()
                 .map(row -> LowestPriceResponseDto.builder()

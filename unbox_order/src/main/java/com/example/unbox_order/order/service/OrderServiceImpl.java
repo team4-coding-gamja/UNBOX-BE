@@ -107,8 +107,9 @@ public class OrderServiceImpl implements OrderService {
         try {
             // setIfAbsent 사용 (혹시 모를 키 중복 방지 및 원자성 확보)
             Boolean result = redisTemplate.opsForValue().setIfAbsent(expirationKey, "PENDING", Duration.ofMinutes(paymentTimeoutMinutes));
-            if (Boolean.FALSE.equals(result)) {
-                log.warn("Expiration key already exists: {}", expirationKey);
+            if (!Boolean.TRUE.equals(result)) {
+                log.error("Failed to set expiration key (already exists or error): {}", expirationKey);
+                throw new IllegalStateException("Failed to set expiration key");
             }
         } catch (Exception e) {
             log.error("Failed to set expiration timer for order: {}. Rolling back transaction.", order.getId(), e);

@@ -21,8 +21,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -44,9 +48,11 @@ public class OrderServiceImpl implements OrderService {
     private final SettlementService settlementService;
     private final OrderMapper orderMapper;
     private final OrderClientMapper orderClientMapper;
-    private final OrderEventProducer orderEventProducer; // Added
+    private final OrderEventProducer orderEventProducer;
+    private final RedisTemplate<String, Object> redisTemplate;
 
-    // ...
+    @Value("${order.payment-timeout-minutes:10}")
+    private long paymentTimeoutMinutes;
 
     // ✅ 주문 생성
     @Override
@@ -92,7 +98,37 @@ public class OrderServiceImpl implements OrderService {
                 .receiverZipCode(requestDto.getReceiverZipCode())
                 .build();
 
-        return orderRepository.save(order).getId();
+        order = orderRepository.save(order);
+        
+        // 7) 결제 만료 타이머 설정 (Redis) - Standardized Key Naming Policy 적용
+        // Key Format: order:expiration:{orderId}:{sellingBidId}
+        String expirationKey = "order:expiration:" + order.getId() + ":" + order.getSellingBidId();
+        
+        try {
+            // setIfAbsent 사용 (혹시 모를 키 중복 방지 및 원자성 확보)
+            Boolean result = redisTemplate.opsForValue().setIfAbsent(expirationKey, "PENDING", Duration.ofMinutes(paymentTimeoutMinutes));
+            if (!Boolean.TRUE.equals(result)) {
+                log.error("Failed to set expiration key (already exists or error): {}", expirationKey);
+                throw new IllegalStateException("Failed to set expiration key");
+            }
+        } catch (Exception e) {
+            log.error("Failed to set expiration timer for order: {}. Rolling back transaction.", order.getId(), e);
+            
+            // 보상 트랜잭션: 이미 선점(RESERVED)된 입찰을 되돌려야 함 (분산 트랜잭션 보상)
+            try {
+                tradeClient.liveSellingBid(order.getSellingBidId(), "ORDER_ROLLBACK");
+            } catch (Exception rollbackEx) {
+                log.error("Failed to rollback SellingBid reservation for bid: {}. Data inconsistency risk!", order.getSellingBidId(), rollbackEx);
+                // 이 로그는 모니터링 시스템에서 Critical Alert로 잡아야 함
+            }
+            
+            // Redis 저장 실패 시 주문 생성 자체를 롤백 (데이터 정합성 보장)
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        
+        log.info("Order created successfully. Expiration timer set for {} minutes. Key: {}", paymentTimeoutMinutes, expirationKey);
+
+        return order.getId();
     }
 
     // ✅ 내 구매 내역 조회 (페이징)
@@ -238,5 +274,23 @@ public class OrderServiceImpl implements OrderService {
 
         // 상태 변경 (내부에서 PAYMENT_PENDING 검증)
         order.updateStatusAfterPayment();
+        
+        // 🔄 Trade 서비스 상태 동기화 (RESERVED -> SOLD)
+        // 결제가 완료되었으므로 입찰 상태를 SOLD로 확정해야 함. 
+        // 이를 통해 추후 도착할 수도 있는 만료 이벤트(OrderExpiredEvent)가 무시되도록 보장함.
+        tradeClient.soldSellingBid(order.getSellingBidId(), "ORDER_SERVICE");
+
+        // 🟢 결제 완료 후 만료 타이머 제거 (불필요한 이벤트 발행 방지)
+        String expirationKey = "order:expiration:" + orderId + ":" + order.getSellingBidId();
+        try {
+            Boolean deleted = redisTemplate.delete(expirationKey);
+            if (Boolean.TRUE.equals(deleted)) {
+                log.info("Deleted expiration timer for paid order: {}", orderId);
+            } else {
+                log.warn("Expiration key not found for paid order: {} (may have already expired)", orderId);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to delete expiration timer for paid order: {}. Event may fire unnecessarily.", orderId, e);
+        }
     }
 }

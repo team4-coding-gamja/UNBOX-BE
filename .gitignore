@@ -54,6 +54,9 @@ redis_data/
 # macOS 시스템 파일
 .DS_Store
 
+# UNBOX-INFRA 레포 (별도 관리)
+UNBOX-INFRA/
+
 ### Logs ###
 logs/
 *.log

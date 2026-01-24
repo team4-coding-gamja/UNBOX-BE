@@ -18,8 +18,8 @@ env:
   AWS_REGION: ap-northeast-2
   ECS_SERVICE: unbox-dev-trade
   ECS_CLUSTER: unbox-dev-cluster
-  TASK_DEFINITION_FAMILY: unbox-dev-trade-service
-  SERVICE_NAME: trade-service
+  TASK_DEFINITION_FAMILY: unbox-dev-trade
+  SERVICE_NAME: trade
 
 jobs:
   deploy:
@@ -53,32 +53,50 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Get AWS Account ID
-        id: account-id
+      - name: Get current task definition
+        id: get-task-def
         run: |
-          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          echo "account_id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
+          # 현재 실행 중인 Task Definition 가져오기
+          TASK_DEF_ARN=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].taskDefinition' \
+            --output text)
+          
+          echo "current-task-def=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+          
+          # Task Definition JSON 다운로드
+          aws ecs describe-task-definition \
+            --task-definition $TASK_DEF_ARN \
+            --query 'taskDefinition' > task-def.json
 
-      - name: Render task definition
-        id: render-task-def
+      - name: Update task definition with new image
+        id: update-task-def
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
-          ACCOUNT_ID: ${{ steps.account-id.outputs.account_id }}
         run: |
-          sed -e "s|<IMAGE_TAG>|$IMAGE_TAG|g" \
-              -e "s|ACCOUNT_ID|$ACCOUNT_ID|g" \
-            task-definitions/dev-trade-service.json > task-def-rendered.json
-          cat task-def-rendered.json
+          # 새 이미지 URI 생성
+          NEW_IMAGE="${ECR_REGISTRY}/unbox-dev-trade-repo:${IMAGE_TAG}"
+          
+          # Task Definition에서 불필요한 필드 제거 및 이미지 업데이트
+          cat task-def.json | jq --arg IMAGE "$NEW_IMAGE" '
+            del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy) |
+            .containerDefinitions[0].image = $IMAGE
+          ' > task-def-updated.json
+          
+          echo "Updated task definition:"
+          cat task-def-updated.json
 
-      - name: Register task definition
+      - name: Register new task definition
         id: register-task-def
         run: |
           TASK_DEF_ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://task-def-rendered.json \
+            --cli-input-json file://task-def-updated.json \
             --query 'taskDefinition.taskDefinitionArn' \
             --output text)
           echo "task-def-arn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+          echo "Registered new task definition: $TASK_DEF_ARN"
 
       - name: Update ECS service
         run: |

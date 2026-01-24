@@ -45,6 +45,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
             // Swagger 등 허용
             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
+            .requestMatchers("/actuator/**").permitAll()
             // Internal API (Feign) 허용
             .requestMatchers("/internal/**").permitAll()
             // 관리자 API 권한 설정 (Authority 명시)

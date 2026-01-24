@@ -69,3 +69,9 @@ springdoc:
     tags-sorter: alpha
     operations-sorter: alpha
     custom-path: /css/swagger-custom.css
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

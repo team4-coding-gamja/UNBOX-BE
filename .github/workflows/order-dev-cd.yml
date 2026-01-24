@@ -18,8 +18,8 @@ env:
   AWS_REGION: ap-northeast-2
   ECS_SERVICE: unbox-dev-order
   ECS_CLUSTER: unbox-dev-cluster
-  TASK_DEFINITION_FAMILY: unbox-dev-order-service
-  SERVICE_NAME: order-service
+  TASK_DEFINITION_FAMILY: unbox-dev-order
+  SERVICE_NAME: order
 
 jobs:
   deploy:

@@ -10,6 +10,7 @@ import com.example.unbox_order.settlement.dto.response.SettlementResponseDto;
 import com.example.unbox_order.settlement.entity.Settlement;
 import com.example.unbox_order.settlement.entity.SettlementStatus;
 import com.example.unbox_order.settlement.mapper.SettlementClientMapper;
+import com.example.unbox_order.settlement.mapper.SettlementMapper;
 import com.example.unbox_order.settlement.repository.SettlementRepository;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
@@ -34,6 +35,7 @@ public class SettlementService {
     private final SettlementRepository settlementRepository;
     private final PaymentClient paymentClient;
     private final SettlementClientMapper settlementClientMapper;
+    private final SettlementMapper settlementMapper;
 
     // ✅ 정산 생성
     @Transactional
@@ -67,27 +69,28 @@ public class SettlementService {
                 .sellerId(order.getSellerId())
                 .totalAmount(totalAmount)
                 .feesAmount(fees)
-                .settlementAmount(settlementAmount)
-                .settlementStatus(SettlementStatus.PENDING) // 초기 상태
+                .payOutAmount(settlementAmount)
+                .status(SettlementStatus.PENDING)
                 .build();
 
         Settlement savedSettlement = settlementRepository.save(settlement);
-        return SettlementResponseDto.from(savedSettlement);
+        return settlementMapper.toSettlementResponseDto(savedSettlement);
     }
 
+    // 정산 확정
     @Transactional
     public SettlementResponseDto confirmSettlement(UUID orderId) {
         Settlement settlement = settlementRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SETTLEMENT_NOT_FOUND));
-        if (settlement.getSettlementStatus() != SettlementStatus.PENDING) {
-            // 이미 DONE이면 ALREADY_DONE, 그 외(CANCELLED 등)면 INVALID_STATUS
-            if (settlement.getSettlementStatus() == SettlementStatus.CONFIRMED) {
+        if (settlement.getStatus() != SettlementStatus.PENDING) {
+            // 이미 PAID_OUT이면 ALREADY_DONE, 그 외(CANCELLED 등)면 INVALID_STATUS
+            if (settlement.getStatus() == SettlementStatus.PAID_OUT) {
                 throw new CustomException(ErrorCode.SETTLEMENT_ALREADY_DONE);
             }
             throw new CustomException(ErrorCode.INVALID_SETTLEMENT_STATUS);
         }
-        settlement.updateStatus(SettlementStatus.CONFIRMED);
-        return SettlementResponseDto.from(settlement);
+        settlement.updateStatus(SettlementStatus.PAID_OUT); // PAID_OUT으로 변경
+        return settlementMapper.toSettlementResponseDto(settlement);
     }
 
     // ========================================
@@ -131,8 +134,8 @@ public class SettlementService {
                 .sellerId(paymentInfo.getSellerId())
                 .totalAmount(totalAmount)
                 .feesAmount(fees)
-                .settlementAmount(settlementAmount)
-                .settlementStatus(SettlementStatus.PENDING)
+                .payOutAmount(settlementAmount)
+                .status(SettlementStatus.PENDING)
                 .build();
 
         Settlement savedSettlement = settlementRepository.save(settlement);

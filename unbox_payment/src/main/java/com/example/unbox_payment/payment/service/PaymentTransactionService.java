@@ -15,8 +15,11 @@ import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -29,6 +32,63 @@ public class PaymentTransactionService {
     private final PgTransactionMapper pgTransactionMapper;
     private final TradeClient tradeClient;
     private final OrderClient orderClient;
+
+    private static final Set<String> PAYABLE_STATUSES = Set.of("PAYMENT_PENDING");
+
+    /**
+     * ✅ 결제 승인 준비 (Transaction 1)
+     * - 전파 레벨 REQUIRES_NEW를 사용하여 물리적으로 독립된 트랜잭션에서 실행
+     * - 즉시 커밋되어 다른 스레드에서 IN_PROGRESS 상태를 볼 수 있게 함
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Payment prepareForConfirm(Long userId, UUID paymentId, BigDecimal amountFromFront) {
+        log.info("[PaymentTransaction] 결제 승인 준비 시작 - paymentId: {}", paymentId);
+
+        // 1. 결제 정보 조회
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // 2. 상태 검증
+        if (payment.getStatus() == PaymentStatus.DONE) {
+            throw new CustomException(ErrorCode.PAYMENT_ALREADY_EXISTS);
+        }
+        if (payment.getStatus() == PaymentStatus.IN_PROGRESS) {
+            throw new CustomException(ErrorCode.PAYMENT_IN_PROGRESS);
+        }
+        if (payment.getStatus() != PaymentStatus.READY) {
+            log.warn("[PaymentTransaction] 결제 가능한 상태가 아닙니다. - paymentId: {}, status: {}", paymentId,
+                    payment.getStatus());
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        // 3. 타임아웃 검증 (10분)
+        if (payment.isExpired()) {
+            log.warn("[PaymentTransaction] 결제 유효 시간 만료 - paymentId: {}, readyAt: {}", paymentId, payment.getReadyAt());
+            throw new CustomException(ErrorCode.PAYMENT_EXPIRED);
+        }
+
+        // 4. 금액 검증 (DB vs Front)
+        if (payment.getAmount().compareTo(amountFromFront) != 0) {
+            log.error("[PaymentTransaction] 금액 불일치! DB: {}, Front: {}", payment.getAmount(), amountFromFront);
+            throw new CustomException(ErrorCode.AMOUNT_MISMATCH);
+        }
+
+        // 4. 주문 정보 조회 및 검증
+        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
+        if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
+            throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
+        }
+        if (!PAYABLE_STATUSES.contains(orderInfo.getStatus())) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        // 5. 상태 변경 및 커밋 (낙관적 락 발동 지점)
+        payment.changeStatus(PaymentStatus.IN_PROGRESS);
+        paymentRepository.saveAndFlush(payment);
+
+        log.info("[PaymentTransaction] 결제 준비 완료 (IN_PROGRESS) - paymentId: {}", paymentId);
+        return payment;
+    }
 
     // ✅ 결제 승인 성공 처리
     @Transactional

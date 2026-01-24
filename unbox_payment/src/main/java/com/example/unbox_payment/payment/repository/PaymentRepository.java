@@ -29,4 +29,7 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     // ✅ 완료된 결제 내역 조회 (주문 ID 기준)
     @Query("select p from Payment p where p.orderId = :orderId and p.status = 'DONE' and p.deletedAt is null")
     Optional<Payment> findDonePaymentByOrderId(@Param("orderId") UUID orderId);
+
+    // ✅ 구매자 ID로 결제 목록 조회
+    java.util.List<Payment> findAllByBuyerIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long buyerId);
 }

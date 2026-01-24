@@ -47,6 +47,9 @@ services:
       - PAYMENT_SERVICE_URL=http://unbox-payment:8080
       - TRADE_SERVICE_URL=http://unbox-trade:8080
       - USER_SERVICE_URL=http://unbox-user:8080
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
     depends_on:
       - db
       - redis
@@ -99,6 +102,8 @@ services:
       - USER_SERVICE_URL=http://unbox-user:8080
       - TRADE_SERVICE_URL=http://unbox-trade:8080
       - ORDER_SERVICE_URL=http://unbox-order:8080
+      - TOSS_SECRET_KEY=${TOSS_SECRET_KEY}
+      - TOSS_SECURITY_KEY=${TOSS_SECURITY_KEY}
     depends_on:
       - db
       - redis

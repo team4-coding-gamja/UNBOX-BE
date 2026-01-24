@@ -20,6 +20,8 @@ public class TossConfirmResponse {
     private String requestedAt;
     private String approveNo;
     private String approvedAt;
+    private String errorCode; // 추가
+    private String errorMessage; // 추가
     private String rawJson;
 
     // setter 대신 가독성 좋은 메서드명 사용

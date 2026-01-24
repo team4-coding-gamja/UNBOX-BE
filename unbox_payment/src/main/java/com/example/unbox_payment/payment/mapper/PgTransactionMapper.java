@@ -26,7 +26,6 @@ public interface PgTransactionMapper {
     @Mapping(target = "currency", constant = "KRW")
     @Mapping(target = "receiptUrl", ignore = true)
     @Mapping(target = "useEscrow", constant = "false")
-    @Mapping(target = "rawResponse", source = "response.rawJson")
     PgTransaction toSuccessEntity(Payment payment, TossConfirmResponse response);
 
     // ✅ 결제 실패 시 PgTransaction Entity 생성
@@ -38,12 +37,11 @@ public interface PgTransactionMapper {
     @Mapping(target = "method", source = "response.method")
     @Mapping(target = "customerKey", expression = "java(generateCustomerKey(payment.getBuyerId()))")
     @Mapping(target = "status", constant = "FAILED")
-    @Mapping(target = "amount", source = "response.totalAmount")
+    @Mapping(target = "amount", expression = "java(response != null && response.getTotalAmount() != null ? response.getTotalAmount() : payment.getAmount())")
     @Mapping(target = "transactionAt", expression = "java(java.time.LocalDateTime.now())")
     @Mapping(target = "currency", constant = "KRW")
     @Mapping(target = "receiptUrl", ignore = true)
     @Mapping(target = "useEscrow", constant = "false")
-    @Mapping(target = "rawResponse", expression = "java(response != null && response.getRawJson() != null ? response.getRawJson() : \"API Response is Null\")")
     PgTransaction toFailedEntity(Payment payment, TossConfirmResponse response);
 
     // ✅ Helper 메서드들

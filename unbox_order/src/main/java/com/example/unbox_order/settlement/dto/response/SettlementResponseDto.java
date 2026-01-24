@@ -1,10 +1,9 @@
 package com.example.unbox_order.settlement.dto.response;
 
-import com.example.unbox_order.settlement.entity.Settlement;
-import com.example.unbox_order.settlement.entity.SettlementStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -14,21 +13,12 @@ import java.util.UUID;
 public class SettlementResponseDto {
     private UUID settlementId;
     private UUID orderId;
-    private BigDecimal totalAmount;
+    private UUID paymentId;
     private Long sellerId;
+    private BigDecimal totalAmount;
     private BigDecimal settlementAmount;
     private BigDecimal feesAmount;
-    private SettlementStatus settlementStatus;
-
-    public static SettlementResponseDto from(Settlement settlement) {
-        return SettlementResponseDto.builder()
-                .settlementId(settlement.getId())
-                .orderId(settlement.getOrderId())
-                .sellerId(settlement.getSellerId())
-                .totalAmount(settlement.getTotalAmount())
-                .settlementAmount(settlement.getSettlementAmount())
-                .feesAmount(settlement.getFeesAmount())
-                .settlementStatus(settlement.getSettlementStatus())
-                .build();
-    }
+    private String settlementStatus;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

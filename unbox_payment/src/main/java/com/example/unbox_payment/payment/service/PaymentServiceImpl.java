@@ -5,6 +5,7 @@ import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResp
 import com.example.unbox_payment.payment.dto.internal.PaymentForSettlementResponse;
 import com.example.unbox_payment.payment.dto.internal.PaymentStatusResponse;
 import com.example.unbox_payment.common.client.settlement.SettlementClient;
+import com.example.unbox_payment.payment.dto.response.PaymentHistoryResponseDto;
 import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
 import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
 import com.example.unbox_payment.payment.entity.Payment;
@@ -21,9 +22,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +42,16 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentClientMapper paymentClientMapper;
     private final OrderClient orderClient;
     private final SettlementClient settlementClient;
+
+    // ✅ 결제 이력 조회
+    @Override
+    @Transactional(readOnly = true)
+    public List<PaymentHistoryResponseDto> getPaymentHistory(Long userId) {
+        return paymentRepository.findAllByBuyerIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(paymentMapper::toHistoryResponseDto)
+                .collect(Collectors.toList());
+    }
 
     // ✅ 결제 준비 (초기 레코드 생성)
     @Override
@@ -59,7 +72,6 @@ public class PaymentServiceImpl implements PaymentService {
 
         // 주문 금액 검증
         if (orderInfo.getPrice() == null || orderInfo.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            log.error("주문 금액 정보가 올바르지 않습니다. OrderID: {}", orderInfo.getOrderId());
             throw new CustomException(ErrorCode.INVALID_BID_PRICE);
         }
 
@@ -96,71 +108,47 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentMapper.toReadyResponseDto(savedPayment, orderInfo);
     }
 
-    // ✅ 결제 승인 처리
+    // ✅ 결제 승인 처리 (결제 입력 완료 후)
     @Override
-    @Transactional
-    public TossConfirmResponse confirmPayment(Long userId, UUID paymentId, String paymentKeyFromFront) {
-        // 결제 정보 조회
-        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
-                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+    public TossConfirmResponse confirmPayment(Long userId, UUID paymentId, String paymentKeyFromFront,
+            BigDecimal amountFromFront) {
+        log.info("[PaymentConfirm] 결제 승인 프로세스 시작 (트랜잭션 분리) - paymentId: {}, userId: {}", paymentId, userId);
 
-        // 이미 완료된 결제인지 확인
-        if (payment.getStatus() == PaymentStatus.DONE) {
-            throw new CustomException(ErrorCode.PAYMENT_ALREADY_EXISTS);
-        }
+        // 검증 및 상태 변경 - IN_PROGRES (물리적으로 분리된 트랜잭션에서 실행되어 즉시 커밋됨 (커넥션 점유 해제))
+        Payment payment = paymentTransactionService.prepareForConfirm(userId, paymentId, amountFromFront);
 
-        // 주문 정보 조회
-        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
-
-        // 구매자 존재 여부 및 본인 확인
-        if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
-            throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
-        }
-
-        // 주문 금액 검증
-        if (orderInfo.getPrice() == null || orderInfo.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CustomException(ErrorCode.INVALID_BID_PRICE);
-        }
-
-        // 주문 상태 검증 (결제 가능한 상태인지)
-        if (!PAYABLE_STATUSES.contains(orderInfo.getStatus())) {
-            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
-        }
-
-        // 결제 금액 추출
-        BigDecimal amount = payment.getAmount();
-
-        // PG 결제 키 생성 (프론트에서 받은 키 또는 Mock 키)
+        // PG 결제 키 준비
         String finalPaymentKey = (paymentKeyFromFront == null || paymentKeyFromFront.isBlank())
                 ? "mock_key_" + UUID.randomUUID().toString().substring(0, 8)
                 : paymentKeyFromFront;
 
-        // PG사 승인 API 호출
-        TossConfirmResponse response = tossApiService.confirm(finalPaymentKey, amount);
+        // 외부 API 호출(이 구간에서 지연이 발생해도 DB Connection Pool을 점유하지 않음!)
+        log.info("[PaymentConfirm] Toss API 호출 시도 (트랜잭션 없음) - paymentId: {}", paymentId);
+        TossConfirmResponse response = tossApiService.confirm(finalPaymentKey, payment.getOrderId(),
+                payment.getAmount(), paymentId.toString());
 
-        // 승인 결과에 따른 처리
         if (response.isSuccess()) {
-            // 승인 성공 시 처리
+            log.info("[PaymentConfirm] Toss 승인 성공 - 후속 작업 진행 (트랜잭션 시작) - paymentId: {}", paymentId);
             try {
-                // 결제 트랜잭션 성공 처리
+                // 성공 처리 (DONE 변경 등 분리된 트랜잭션에서 처리)
                 paymentTransactionService.processSuccessfulPayment(paymentId, response);
 
-                // 정산 정보 생성
+                // 정산 정보 생성 (비동기 처리 등이 권장되지만 현재는 동기 유지)
                 settlementClient.createSettlementForPayment(paymentId);
 
+                log.info("[PaymentConfirm] 전체 결제 프로세스 완료 - paymentId: {}", paymentId);
             } catch (Exception e) {
-                // 예외 발생 시 로그 기록
-                log.error("결제 승인 후 서버 내부 처리 중 에러 발생 - 자동 취소 시도: {}", finalPaymentKey);
-
+                log.error("[PaymentConfirm] 결제 성공 후 시스템 처리 중 오류 발생 - 자동 취소 시도 - paymentId: {}, error: {}", paymentId,
+                        e.getMessage());
                 // PG사에 결제 취소 요청
-                tossApiService.cancel(finalPaymentKey, "서버 내부 오류로 인한 자동 취소");
-
-                // 예외 재발생
+                tossApiService.cancel(finalPaymentKey, "서버 내부 오류로 인한 자동 취소", paymentId.toString());
                 throw e;
             }
             return response;
         } else {
-            // 승인 실패 시 처리
+            log.error("[PaymentConfirm] Toss 승인 실패 - 실패 처리 진행 (트랜잭션 시작) - paymentId: {}, code: {}, message: {}",
+                    paymentId, response.getErrorCode(), response.getErrorMessage());
+            // 실패 처리 (상태 변경 등 분리된 트랜잭션에서 처리)
             paymentTransactionService.processFailedPayment(paymentId, response);
             throw new CustomException(ErrorCode.PAYMENT_CONFIRM_FAILED);
         }

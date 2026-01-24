@@ -16,7 +16,7 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECS_SERVICE: unbox-dev-order-service
+  ECS_SERVICE: unbox-dev-order
   ECS_CLUSTER: unbox-dev-cluster
   TASK_DEFINITION_FAMILY: unbox-dev-order-service
   SERVICE_NAME: order-service
@@ -26,6 +26,9 @@ jobs:
     name: Deploy to Dev
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout code
@@ -43,7 +46,7 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "tag=${{ github.event.inputs.image-tag }}" >> $GITHUB_OUTPUT
           else
-            echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "tag=dev-${{ github.sha }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Login to Amazon ECR

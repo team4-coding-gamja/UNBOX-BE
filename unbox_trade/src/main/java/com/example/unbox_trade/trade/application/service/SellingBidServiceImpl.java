@@ -11,6 +11,7 @@ import com.example.unbox_trade.trade.presentation.dto.response.SellingBidCreateR
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidDetailResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidListResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.SellingBidsPriceUpdateResponseDto;
+import com.example.unbox_trade.trade.presentation.dto.internal.LowestPriceResponseDto;
 import com.example.unbox_trade.trade.domain.entity.SellingBid;
 import com.example.unbox_trade.trade.domain.entity.SellingStatus;
 import com.example.unbox_trade.trade.presentation.mapper.SellingBidMapper;
@@ -19,19 +20,28 @@ import com.example.unbox_trade.trade.presentation.mapper.TradeClientMapper;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import com.example.unbox_common.event.trade.TradePriceChangedEvent;
+import com.example.unbox_common.lock.DistributedLock;
+
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.Cache;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.CacheManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.List;
+import java.util.Collections;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SellingBidServiceImpl implements SellingBidService {
@@ -42,6 +52,27 @@ public class SellingBidServiceImpl implements SellingBidService {
     private final UserClient userClient;
     private final TradeClientMapper tradeClientMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final CacheManager cacheManager;
+
+    // --- Helper Methods for Cache Eviction ---
+    private void evictLowestPriceCache(UUID productOptionId) {
+        if (productOptionId != null) {
+            Cache cache = cacheManager.getCache("trade:price:lowest");
+            if (cache != null) {
+                cache.evict(productOptionId);
+            }
+        }
+    }
+
+    private void evictSellingBidCache(UUID sellingBidId) {
+        if (sellingBidId != null) {
+            Cache cache = cacheManager.getCache("trade:bid:order");
+            if (cache != null) {
+                cache.evict(sellingBidId);
+            }
+        }
+    }
+    // -----------------------------------------
 
     // ✅ 판매 입찰 생성
     @Override
@@ -64,8 +95,9 @@ public class SellingBidServiceImpl implements SellingBidService {
 
         SellingBid savedBid = sellingBidRepository.save(sellingBid);
 
-        // 🔔 최저가 갱신 이벤트 발행
+        // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
         publishPriceEvent(savedBid.getProductId(), savedBid.getProductOptionId());
+        evictLowestPriceCache(savedBid.getProductOptionId());
 
         return sellingBidMapper.toCreateResponseDto(savedBid);
     }
@@ -94,8 +126,10 @@ public class SellingBidServiceImpl implements SellingBidService {
             sellingBid.updateModifiedBy(deletedBy);
         }
 
-        // 🔔 최저가 갱신 이벤트 발행
+        // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
         publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
+        evictLowestPriceCache(sellingBid.getProductOptionId());
+        evictSellingBidCache(sellingId);
     }
 
     // ✅ 판매 입찰 가격 수정
@@ -125,8 +159,10 @@ public class SellingBidServiceImpl implements SellingBidService {
         // 엔티티 가격 업데이트 (JPA dirty checking으로 반영)
         sellingBid.updatePrice(requestDto.getNewPrice(), userId, "SYSTEM");
 
-        // 🔔 최저가 갱신 이벤트 발행
+        // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
         publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
+        evictLowestPriceCache(sellingBid.getProductOptionId());
+        evictSellingBidCache(sellingId);
 
         return sellingBidMapper.toPriceUpdateResponseDto(sellingId, requestDto.getNewPrice());
     }
@@ -179,9 +215,10 @@ public class SellingBidServiceImpl implements SellingBidService {
         return tradeClientMapper.toSellingBidForCartInfoResponse(sellingBid);
     }
 
-    // ✅ 판매 글 조회 (주문용)
+    // ✅ 판매 글 조회 (주문용) - 캐싱 적용 (읽기 병목 해결 핵심)
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "trade:bid:order", key = "#sellingBidId")
     public SellingBidForOrderInfoResponse getSellingBidForOrder(UUID sellingBidId) {
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
@@ -191,29 +228,34 @@ public class SellingBidServiceImpl implements SellingBidService {
     // ✅ 판매 입찰 선점 (주문용: LIVE → RESERVED)
     @Override
     @Transactional
+    @DistributedLock(key = "#sellingBidId", waitTime = 0)
     public void reserveSellingBid(UUID sellingBidId, String updatedBy) {
         // 존재 여부 확인
-        sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+        
         // 동시성 제어 업데이트 (LIVE 상태인 것만 RESERVED로 변경)
         int updated = sellingBidRepository.updateStatusIfReserved(
                 sellingBidId,
                 SellingStatus.LIVE,
                 SellingStatus.RESERVED);
+        
         // 업데이트 실패 시 예외 발생
         if (updated == 0) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        SellingBid sellingBid = sellingBidRepository.findById(sellingBidId)
-                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
-        // updatedBy 기록 (선택사항)
+        // updatedBy 기록
         if (updatedBy != null) {
-            sellingBid.updateModifiedBy(updatedBy);
+            SellingBid refreshed = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+            refreshed.updateModifiedBy(updatedBy);
         }
 
-        // 🔔 최저가 갱신 이벤트 발행
+        // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화 (상태가 변했으니 최저가도 변했을 수 있음)
         publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
+        evictLowestPriceCache(sellingBid.getProductOptionId());
+        evictSellingBidCache(sellingBidId);
     }
 
     // ✅ 판매 입찰 완료 처리 (결제 완료용: RESERVED → SOLD)
@@ -233,8 +275,10 @@ public class SellingBidServiceImpl implements SellingBidService {
             sellingBid.updateModifiedBy(updatedBy);
         }
 
-        // 🔔 최저가 갱신 이벤트 발행
+        // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
         publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
+        evictLowestPriceCache(sellingBid.getProductOptionId());
+        evictSellingBidCache(sellingBidId);
     }
 
     private void publishPriceEvent(UUID productId, UUID optionId) {
@@ -259,5 +303,54 @@ public class SellingBidServiceImpl implements SellingBidService {
         if (updatedBy != null) {
             sellingBid.updateModifiedBy(updatedBy);
         }
+        
+        // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
+        publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
+        evictLowestPriceCache(sellingBid.getProductOptionId());
+        evictSellingBidCache(sellingBidId);
+    }
+
+    public static final String UNKNOWN_OPTION_NAME = "Unknown Option";
+
+    // ✅ 상품 옵션별 최저가 조회 (Internal) - 캐싱 적용!
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "trade:price:lowest", key = "#productOptionId", unless = "#result.productOptionName == T(com.example.unbox_trade.trade.application.service.SellingBidServiceImpl).UNKNOWN_OPTION_NAME")
+    public LowestPriceResponseDto getLowestPrice(UUID productOptionId) {
+        // 1. 최저가 조회 (LIVE 상태만)
+        BigDecimal minPrice = sellingBidRepository.findLowestPriceByOptionId(productOptionId)
+                .orElse(BigDecimal.ZERO);
+
+        // 2. 상품 옵션 정보 조회 (이름이 필요함)
+        String optionName = UNKNOWN_OPTION_NAME;
+        try {
+            ProductOptionForSellingBidInfoResponse productInfo = productClient.getProductOptionForSellingBid(productOptionId);
+            optionName = productInfo.getProductOptionName();
+        } catch (Exception e) {
+            log.warn("Product 서비스 호출 실패 - productOptionId: {}, error: {}", productOptionId, e.getMessage());
+        }
+
+        return LowestPriceResponseDto.builder()
+                .productOptionId(productOptionId)
+                .productOptionName(optionName)
+                .lowestPrice(minPrice)
+                .build();
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public List<LowestPriceResponseDto> getLowestPrices(List<UUID> productOptionIds) {
+        if (productOptionIds == null || productOptionIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Object[]> results = sellingBidRepository.findLowestPricesByProductOptionIds(productOptionIds);
+
+        return results.stream()
+                .map(row -> LowestPriceResponseDto.builder()
+                        .productOptionId((UUID) row[0])
+                        .productOptionName(null) // Product Service already knows the name
+                        .lowestPrice(row[1] != null ? (BigDecimal) row[1] : BigDecimal.ZERO)
+                        .build())
+                .toList();
     }
 }

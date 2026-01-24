@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -12,7 +13,7 @@ import java.util.UUID;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class SellingBidForOrderInfoResponse {
+public class SellingBidForOrderInfoResponse implements Serializable {
     private UUID sellingBidId;
     private Long sellerId;
     private UUID productOptionId;

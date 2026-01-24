@@ -28,6 +28,19 @@ spring:
   jwt:
     secret: ${SPRING_JWT_SECRET}
 
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: BASIC
+            connectTimeout: 1000
+            readTimeout: 3000
+
+logging:
+  level:
+    com.example.unbox_payment.common.client: INFO
+
 # Feign Client URLs
 user-service:
   url: ${USER_SERVICE_URL:http://localhost:8081}
@@ -53,9 +66,14 @@ springdoc:
     operations-sorter: alpha
     custom-path: /css/swagger-custom.css
 
-# Payment Toss Settings
 payment:
   toss:
     secret-key: ${TOSS_SECRET_KEY}
     security-key: ${TOSS_SECURITY_KEY}
     confirm-url: https://api.tosspayments.com/v1/payments/confirm
+    
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

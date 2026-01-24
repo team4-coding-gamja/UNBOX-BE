@@ -1,5 +1,6 @@
 package com.example.unbox_user.cart.controller;
 
+import com.example.unbox_user.cart.controller.api.CartApi;
 import com.example.unbox_user.cart.dto.request.CartCreateRequestDto;
 import com.example.unbox_user.cart.dto.response.CartCreateResponseDto;
 import com.example.unbox_user.cart.dto.response.CartListResponseDto;
@@ -16,7 +17,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/carts")
 @RequiredArgsConstructor
-public class CartController {
+public class CartController implements CartApi {
 
     private final CartService cartService;
 

@@ -1,12 +1,12 @@
 name: User Service - Dev CD
 
 on:
-  # workflow_run:
-  #   workflows: ["User Service - Dev CI"]
-  #   types:
-  #     - completed
-  #   branches:
-  #     - develop
+  workflow_run:
+    workflows: ["User Service - Dev CI"]
+    types:
+      - completed
+    branches:
+      - develop
 
   workflow_dispatch:
     inputs:
@@ -16,7 +16,7 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECS_SERVICE: unbox-dev-user-service
+  ECS_SERVICE: unbox-dev-user
   ECS_CLUSTER: unbox-dev-cluster
   TASK_DEFINITION_FAMILY: unbox-dev-user-service
   SERVICE_NAME: user-service
@@ -26,6 +26,9 @@ jobs:
     name: Deploy to Dev
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout code
@@ -43,7 +46,7 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "tag=${{ github.event.inputs.image-tag }}" >> $GITHUB_OUTPUT
           else
-            echo "tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "tag=dev-${{ github.sha }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Login to Amazon ECR

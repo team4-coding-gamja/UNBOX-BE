@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "회원 관리", description = "회원 정보 조회 / 수정 / 탈퇴 API")
+@Tag(name = "[사용자] 회원 관리", description = "회원 정보 조회 / 수정 / 탈퇴 API")
 @RequestMapping("/api/users")
 public interface UserApi {
 

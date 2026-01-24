@@ -1,19 +1,19 @@
 {
-  "_comment": "Dev 환경은 비용 최적화를 위해서 Fargate Spot (100%) 사용합니다.",
   "family": "unbox-dev-trade-service",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/unbox-dev-ecs-task-execution-role",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/unbox-dev-ecs-task-role",
   "containerDefinitions": [
     {
-      "name": "trade-service",
-      "image": "ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/unbox-trade-service:<IMAGE_TAG>",
+      "name": "trade",
+      "image": "ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/unbox-dev-trade-repo:<IMAGE_TAG>",
       "portMappings": [
         {
-          "containerPort": 8083,
+          "name": "http",
+          "containerPort": 80,
           "protocol": "tcp"
         }
       ],
@@ -24,13 +24,7 @@
         },
         {
           "name": "SERVER_PORT",
-          "value": "8083"
-        }
-      ],
-      "secrets": [
-        {
-          "name": "SPRING_DATASOURCE_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:ACCOUNT_ID:secret:dev/trade-db-password"
+          "value": "80"
         }
       ],
       "logConfiguration": {
@@ -44,7 +38,7 @@
       "healthCheck": {
         "command": [
           "CMD-SHELL",
-          "curl -f http://localhost:8083/actuator/health || exit 1"
+          "curl -f http://localhost:80/actuator/health || exit 1"
         ],
         "interval": 30,
         "timeout": 5,

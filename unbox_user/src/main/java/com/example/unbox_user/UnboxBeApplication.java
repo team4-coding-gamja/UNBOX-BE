@@ -1,5 +1,6 @@
 package com.example.unbox_user;
 
+// CI Test: 2026-01-23!!!!!!!!!
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -19,5 +20,8 @@ public class UnboxBeApplication {
 
         SpringApplication.run(UnboxBeApplication.class, args);
         log.info("=== UNBOX 서버가 정상적으로 실행되었습니다! ===");
+        log.info("=== CD 자동 배포 테스트 중입니다 ===");
+        log.info("=== 이미지 재빌드 테스트 ===");
+        log.info("=== Spring Boot 이미지 재빌드 - 포트 80 ===");
     }
 }

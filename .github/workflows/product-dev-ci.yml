@@ -13,7 +13,7 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: unbox-product-service
+  ECR_REPOSITORY: unbox-dev-product-repo
   SERVICE_NAME: product-service
   SERVICE_PATH: unbox_product
 

@@ -45,12 +45,12 @@ class ProductServiceImplTest {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(redisTemplate.opsForHash()).thenReturn(hashOperations);
 
-        when(valueOperations.get("prod:info:" + productId)).thenReturn(infoDto);
+        when(valueOperations.get("product:info:" + productId)).thenReturn(infoDto);
 
         Map<Object, Object> prices = new HashMap<>();
         prices.put("option1", "15000");
         prices.put("option2", "10000");
-        when(hashOperations.entries("prod:prices:" + productId)).thenReturn(prices);
+        when(hashOperations.entries("product:prices:" + productId)).thenReturn(prices);
 
         // When
         productService.getProductDetail(productId);
@@ -75,11 +75,11 @@ class ProductServiceImplTest {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(redisTemplate.opsForHash()).thenReturn(hashOperations);
 
-        when(valueOperations.get("prod:info:" + productId)).thenReturn(infoDto);
+        when(valueOperations.get("product:info:" + productId)).thenReturn(infoDto);
 
         Map<Object, Object> prices = new HashMap<>();
         prices.put(optionId1.toString(), "20000");
-        when(hashOperations.entries("prod:prices:" + productId)).thenReturn(prices);
+        when(hashOperations.entries("product:prices:" + productId)).thenReturn(prices);
 
         // When
         productService.getProductOptions(productId);

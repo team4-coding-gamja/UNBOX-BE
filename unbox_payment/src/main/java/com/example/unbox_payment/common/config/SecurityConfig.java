@@ -43,14 +43,16 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 // Swagger
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
+                .requestMatchers("/actuator/**").permitAll()
                 // Internal API (Feign)
                 .requestMatchers("/internal/**").permitAll()
-                // ⭐ OPTIONS 요청 허용 (CORS Preflight)
+                // OPTIONS 요청 허용 (CORS Preflight)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Admin API
                 .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_MASTER", "ROLE_MANAGER")
                 // Base Authenticated
                 .anyRequest().authenticated());
+        );
 
         http.addFilterBefore(new JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
 

@@ -51,7 +51,7 @@ public class SecurityConfig {
                 // Admin API
                 .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_MASTER", "ROLE_MANAGER")
                 // Base Authenticated
-                .anyRequest().authenticated());
+                .anyRequest().authenticated()
         );
 
         http.addFilterBefore(new JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);

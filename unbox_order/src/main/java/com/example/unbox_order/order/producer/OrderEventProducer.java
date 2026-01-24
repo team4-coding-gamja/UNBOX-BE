@@ -26,6 +26,15 @@ public class OrderEventProducer {
     public void publishOrderExpired(OrderExpiredEvent event) {
         log.info("Publishing OrderExpiredEvent: orderId={}, sellingBidId={}", event.orderId(), event.sellingBidId());
         // 동일 토픽(order-events) 사용 -> 입찰 상태 변경 순서 보장을 위해
-        kafkaTemplate.send(TOPIC_ORDER, event.sellingBidId().toString(), event);
+        kafkaTemplate.send(TOPIC_ORDER, event.sellingBidId().toString(), event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        // Kafka 전송 실패: 브로커 장애 등이 원인이므로 DLT 전송도 불가능함.
+                        // 따라서 ERROR 레벨 로그를 남겨 모니터링 시스템(Sentry, ELK 등)이 감지하도록 함.
+                        log.error("Failed to publish OrderExpiredEvent for orderId: {}", event.orderId(), ex);
+                    } else {
+                        log.debug("Successfully published OrderExpiredEvent: {}", result.getRecordMetadata());
+                    }
+                });
     }
 }

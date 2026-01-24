@@ -264,10 +264,23 @@ public class OrderServiceImpl implements OrderService {
 
         // 상태 변경 (내부에서 PAYMENT_PENDING 검증)
         order.updateStatusAfterPayment();
+        
+        // 🔄 Trade 서비스 상태 동기화 (RESERVED -> SOLD)
+        // 결제가 완료되었으므로 입찰 상태를 SOLD로 확정해야 함. 
+        // 이를 통해 추후 도착할 수도 있는 만료 이벤트(OrderExpiredEvent)가 무시되도록 보장함.
+        tradeClient.soldSellingBid(order.getSellingBidId(), "ORDER_SERVICE");
 
         // 🟢 결제 완료 후 만료 타이머 제거 (불필요한 이벤트 발행 방지)
         String expirationKey = "order:expiration:" + orderId + ":" + order.getSellingBidId();
-        redisTemplate.delete(expirationKey);
-        log.info("Deleted expiration timer for paid order: {}", orderId);
+        try {
+            Boolean deleted = redisTemplate.delete(expirationKey);
+            if (Boolean.TRUE.equals(deleted)) {
+                log.info("Deleted expiration timer for paid order: {}", orderId);
+            } else {
+                log.warn("Expiration key not found for paid order: {} (may have already expired)", orderId);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to delete expiration timer for paid order: {}. Event may fire unnecessarily.", orderId, e);
+        }
     }
 }

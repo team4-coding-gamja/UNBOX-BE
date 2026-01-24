@@ -32,24 +32,12 @@ module "security_group" {
   vpc_id       = module.vpc.vpc_id
 }
 
-module "common" {
-  source = "git::https://github.com/team4-coding-gamja/UNBOX-INFRA.git//modules/common?ref=main"
-  
-  env                  = var.env
-  project_name         = var.project_name
-  service_config       = local.service_config
-  vpc_id               = module.vpc.vpc_id
-  cloudtrail_bucket_id = module.s3.cloudtrail_bucket_id
-  users                = var.users
-  kms_key_arn          = data.aws_kms_alias.infra_key.target_key_arn
-}
-
 module "s3" {
   source = "git::https://github.com/team4-coding-gamja/UNBOX-INFRA.git//modules/s3?ref=main"
   
   env          = var.env
   project_name = var.project_name
-  kms_key_arn  = module.common.kms_key_arn
+  kms_key_arn  = data.aws_kms_alias.infra_key.target_key_arn
 }
 
 module "alb" {
@@ -61,6 +49,18 @@ module "alb" {
   public_subnet_ids = module.vpc.public_subnet_ids
   alb_sg_id         = module.security_group.alb_sg_id
   service_config    = local.service_config
+}
+
+module "common" {
+  source = "git::https://github.com/team4-coding-gamja/UNBOX-INFRA.git//modules/common?ref=main"
+  
+  env                  = var.env
+  project_name         = var.project_name
+  service_config       = local.service_config
+  vpc_id               = module.vpc.vpc_id
+  cloudtrail_bucket_id = module.s3.cloudtrail_bucket_id
+  users                = var.users
+  kms_key_arn          = data.aws_kms_alias.infra_key.target_key_arn
 }
 
 data "aws_ssm_parameter" "db_password" {

@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.List;
+
 @Tag(name = "[사용자] 결제 관리", description = "결제 관리 API")
 @RequestMapping("/api/payment")
 public interface PaymentApi {

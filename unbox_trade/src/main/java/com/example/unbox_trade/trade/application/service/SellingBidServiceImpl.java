@@ -22,6 +22,7 @@ import com.example.unbox_common.error.exception.ErrorCode;
 import com.example.unbox_common.event.trade.TradePriceChangedEvent;
 import com.example.unbox_common.lock.DistributedLock;
 
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +39,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SellingBidServiceImpl implements SellingBidService {
@@ -307,7 +309,7 @@ public class SellingBidServiceImpl implements SellingBidService {
     // ✅ 상품 옵션별 최저가 조회 (Internal) - 캐싱 적용!
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "lowestPrice", key = "#productOptionId", unless = "#result == null")
+    @Cacheable(value = "lowestPrice", key = "#productOptionId", unless = "#result.productOptionName == 'Unknown Option'")
     public LowestPriceResponseDto getLowestPrice(UUID productOptionId) {
         // 1. 최저가 조회 (LIVE 상태만)
         BigDecimal minPrice = sellingBidRepository.findLowestPriceByOptionId(productOptionId)
@@ -319,7 +321,7 @@ public class SellingBidServiceImpl implements SellingBidService {
             ProductOptionForSellingBidInfoResponse productInfo = productClient.getProductOptionForSellingBid(productOptionId);
             optionName = productInfo.getProductOptionName();
         } catch (Exception e) {
-            // Product 서비스 호출 실패 시 기본값 유지 (최저가는 반환해야 함)
+            log.warn("Product 서비스 호출 실패 - productOptionId: {}, error: {}", productOptionId, e.getMessage());
         }
 
         return LowestPriceResponseDto.builder()
@@ -327,5 +329,22 @@ public class SellingBidServiceImpl implements SellingBidService {
                 .productOptionName(optionName)
                 .lowestPrice(minPrice)
                 .build();
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<LowestPriceResponseDto> getLowestPrices(java.util.List<UUID> productOptionIds) {
+        if (productOptionIds == null || productOptionIds.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        java.util.List<Object[]> results = sellingBidRepository.findLowestPricesByProductOptionIds(productOptionIds);
+
+        return results.stream()
+                .map(row -> LowestPriceResponseDto.builder()
+                        .productOptionId((UUID) row[0])
+                        .productOptionName(null) // Product Service already knows the name
+                        .lowestPrice((BigDecimal) row[1])
+                        .build())
+                .toList();
     }
 }

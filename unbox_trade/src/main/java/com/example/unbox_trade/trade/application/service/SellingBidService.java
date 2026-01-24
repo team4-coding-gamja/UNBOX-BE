@@ -65,4 +65,9 @@ public interface SellingBidService {
      * 상품 옵션별 최저가 조회 (Internal)
      */
     LowestPriceResponseDto getLowestPrice(UUID productOptionId);
+
+    /**
+     * 상품 옵션별 최저가 조회 (배치)
+     */
+    java.util.List<LowestPriceResponseDto> getLowestPrices(java.util.List<UUID> productOptionIds);
 }

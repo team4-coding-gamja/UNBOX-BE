@@ -31,7 +31,11 @@ public class DistributedLockAop {
         DistributedLock distributedLock = method.getAnnotation(DistributedLock.class);
 
         // Key 파싱 (SpEL)
-        String key = REDISSON_LOCK_PREFIX + CustomSpringELParser.getDynamicValue(signature.getParameterNames(), joinPoint.getArgs(), distributedLock.key()).toString();
+        Object dynamicValue = CustomSpringELParser.getDynamicValue(signature.getParameterNames(), joinPoint.getArgs(), distributedLock.key());
+        if (dynamicValue == null) {
+            throw new IllegalArgumentException("Distributed lock key cannot be null. Expression: " + distributedLock.key());
+        }
+        String key = REDISSON_LOCK_PREFIX + dynamicValue;
         RLock rLock = redissonClient.getLock(key);
 
         try {

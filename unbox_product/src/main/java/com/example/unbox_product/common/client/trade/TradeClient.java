@@ -13,4 +13,7 @@ public interface TradeClient {
     // ✅ 상품 옵션별 최저가 조회 (Internal)
     @GetMapping("/internal/bids/selling/product-option/{productOptionId}/lowest-price")
     LowestPriceResponseDto getLowestPrice(@PathVariable("productOptionId") UUID productOptionId);
+
+    @org.springframework.web.bind.annotation.PostMapping("/internal/bids/selling/product-options/lowest-prices")
+    java.util.List<LowestPriceResponseDto> getLowestPrices(@org.springframework.web.bind.annotation.RequestBody java.util.List<UUID> productOptionIds);
 }

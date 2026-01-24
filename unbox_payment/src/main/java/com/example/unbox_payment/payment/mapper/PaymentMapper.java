@@ -1,6 +1,7 @@
 package com.example.unbox_payment.payment.mapper;
 
 import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
+import com.example.unbox_payment.payment.dto.response.PaymentHistoryResponseDto;
 import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
 import com.example.unbox_payment.payment.entity.Payment;
 import com.example.unbox_payment.payment.entity.PaymentMethod;
@@ -19,6 +20,7 @@ public interface PaymentMapper {
     @Mapping(target = "amount", source = "orderInfo.price")
     @Mapping(target = "method", source = "method")
     @Mapping(target = "status", constant = "READY")
+    @Mapping(target = "readyAt", expression = "java(java.time.LocalDateTime.now())")
     @Mapping(target = "paymentKey", ignore = true)
     @Mapping(target = "approvedAt", ignore = true)
     @Mapping(target = "version", ignore = true)
@@ -29,4 +31,8 @@ public interface PaymentMapper {
     @Mapping(target = "orderId", source = "orderInfo.orderId")
     @Mapping(target = "price", source = "orderInfo.price")
     PaymentReadyResponseDto toReadyResponseDto(Payment payment, OrderForPaymentInfoResponse orderInfo);
+
+    // ✅ Payment → PaymentHistoryResponseDto
+    @Mapping(target = "paymentId", source = "id")
+    PaymentHistoryResponseDto toHistoryResponseDto(Payment payment);
 }

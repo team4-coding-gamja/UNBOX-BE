@@ -15,13 +15,13 @@ public interface OrderClient {
 
     // 주문 조회 (리뷰용)
     @GetMapping("/internal/orders/{id}/for-review")
-    OrderForReviewInfoResponse getOrderForReview (@PathVariable("id") UUID id);
+    OrderForReviewInfoResponse getOrderForReview(@PathVariable("id") UUID id);
 
     // 주문 조회 (결제용)
     @GetMapping("/internal/orders/{id}/for-payment")
-    OrderForPaymentInfoResponse getOrderForPayment (@PathVariable("id") UUID id);
+    OrderForPaymentInfoResponse getOrderForPayment(@PathVariable("id") UUID id);
 
     // 주문 상태 변경 (결제 완료용: PAYMENT_PENDING → PENDING_SHIPMENT)
     @PostMapping("/internal/orders/{id}/pending-shipment")
-    void pendingShipmentOrder (@PathVariable("id") UUID id, @RequestParam("updatedBy") String updatedBy);
+    void pendingShipmentOrder(@PathVariable("id") UUID id, @RequestParam("updatedBy") String updatedBy);
 }

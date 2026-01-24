@@ -22,22 +22,4 @@ public interface PgTransactionRepository extends JpaRepository<PgTransaction, UU
     order by pt.createdAt desc
 """)
     List<PgTransaction> findAllByPaymentId(@Param("paymentId") UUID paymentId);
-
-    // ✅ 2. PG사 승인 번호(pgPaymentKey / transactionKey)로 조회
-    // 결제 취소나 환불 시 해당 영수증 정보를 정확히 찾기 위해 사용합니다.
-    Optional<PgTransaction> findByPgPaymentKeyAndDeletedAtIsNull(String pgPaymentKey);
-
-    // ✅ 3. 특정 결제의 가장 최근 성공(DONE) 트랜잭션만
-    @Query("""
-    select pt from PgTransaction pt
-    where pt.payment.id = :paymentId
-      and pt.eventStatus = com.example.unbox_payment.payment.entity.PgTransactionStatus.DONE
-      and pt.deletedAt is null
-    order by pt.createdAt desc
-    limit 1
-""")
-    Optional<PgTransaction> findLatestSuccessTransaction(@Param("paymentId") UUID paymentId);
-
-    // ✅ 4. 결제 건당 트랜잭션 존재 여부 확인
-    boolean existsByPayment_IdAndDeletedAtIsNull(UUID paymentId);
 }

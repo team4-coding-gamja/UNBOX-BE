@@ -18,8 +18,8 @@ env:
   AWS_REGION: ap-northeast-2
   ECS_SERVICE: unbox-dev-payment
   ECS_CLUSTER: unbox-dev-cluster
-  TASK_DEFINITION_FAMILY: unbox-dev-payment-service
-  SERVICE_NAME: payment-service
+  TASK_DEFINITION_FAMILY: unbox-dev-payment
+  SERVICE_NAME: payment
 
 jobs:
   deploy:

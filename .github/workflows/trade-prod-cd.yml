@@ -20,7 +20,7 @@ env:
   ECS_CLUSTER: unbox-prod-cluster
   CODEDEPLOY_APP: unbox-prod-app
   CODEDEPLOY_GROUP: unbox-prod-trade-deployment-group
-  SERVICE_NAME: trade-service
+  SERVICE_NAME: trade
 
 jobs:
   approval:

@@ -24,8 +24,8 @@ public class Payment extends BaseEntity {
     private UUID id;
 
     // ======================= 토스 페이먼츠 필수 필드 =======================
-    @Column(name = "payment_key", unique = true, nullable = false, length = 200)
-    private String paymentKey; // 토스 결제 키 (고유)
+    @Column(name = "payment_key", unique = true, nullable = true, length = 200)
+    private String paymentKey;
 
     @Column(name = "order_id", nullable = false)
     private UUID orderId; // 주문 ID
@@ -52,10 +52,31 @@ public class Payment extends BaseEntity {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt; // 결제 승인 시각
 
+    @Column(name = "ready_at")
+    private LocalDateTime readyAt; // 결제 준비 시각 (타임아웃 체크용)
+
     @Version
     private Long version; // 낙관적 락
 
     // ======================= 비즈니스 로직 메서드 =======================
+
+    /**
+     * 결제 타임아웃 체크 (토스 결제 인증 유효 시간: 10분)
+     */
+    public boolean isExpired() {
+        if (readyAt == null) {
+            return false;
+        }
+        return LocalDateTime.now().isAfter(readyAt.plusMinutes(10));
+    }
+
+    /**
+     * 결제 준비 완료 처리
+     */
+    public void markAsReady() {
+        this.status = PaymentStatus.READY;
+        this.readyAt = LocalDateTime.now();
+    }
 
     /**
      * 결제 승인 완료 처리
@@ -93,7 +114,7 @@ public class Payment extends BaseEntity {
      * 결제 상태 변경
      */
     public void changeStatus(PaymentStatus nextStatus) {
-        // 완료된 결제는 취소만 가능
+        // 이미 완료된 결제는 취소만 가능
         if (this.status == PaymentStatus.DONE && nextStatus != PaymentStatus.CANCELED) {
             throw new IllegalStateException("이미 완료된 결제는 상태를 변경할 수 없습니다.");
         }

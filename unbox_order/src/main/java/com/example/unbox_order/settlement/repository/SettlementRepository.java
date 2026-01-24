@@ -16,9 +16,6 @@ public interface SettlementRepository extends JpaRepository<Settlement, UUID> {
     // 주문 ID로 정산 내역 하나를 가져온다.
     Optional<Settlement> findByOrderId(UUID orderId);
 
-    // 특정 판매자의 특정 상태인 정산 내역들을 모두 가져온다.
-    List<Settlement> findAllBySellerIdAndSettlementStatusAndDeletedAtIsNull(Long sellerId, SettlementStatus status);
-
     boolean existsByOrderId(UUID orderId);
 
     Optional<Settlement> findByPaymentId(UUID paymentId);

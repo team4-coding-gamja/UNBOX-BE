@@ -71,39 +71,7 @@ public class PgTransaction extends BaseEntity {
     private Boolean useEscrow; // 에스크로 사용 여부
 
     // ======================= 감사 로그 =======================
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "raw_response", columnDefinition = "jsonb")
-    private String rawResponse; // 토스 응답 원본 (JSON)
-
-    // ======================= 비즈니스 로직 메서드 =======================
-
-    /**
-     * 거래 생성 (정적 팩토리 메서드)
-     */
-    public static PgTransaction createTransaction(
-            Payment payment,
-            String transactionKey,
-            String paymentKey,
-            UUID orderId,
-            String method,
-            String customerKey,
-            PgTransactionStatus status,
-            BigDecimal amount,
-            LocalDateTime transactionAt,
-            String rawResponse) {
-        return PgTransaction.builder()
-                .payment(payment)
-                .transactionKey(transactionKey)
-                .paymentKey(paymentKey)
-                .orderId(orderId)
-                .method(method)
-                .customerKey(customerKey)
-                .status(status)
-                .amount(amount)
-                .transactionAt(transactionAt)
-                .currency("KRW")
-                .useEscrow(false)
-                .rawResponse(rawResponse)
-                .build();
-    }
+//    @JdbcTypeCode(SqlTypes.JSON)
+//    @Column(name = "raw_response", columnDefinition = "jsonb")
+//    private String rawResponse; // 토스 응답 원본 (JSON)
 }

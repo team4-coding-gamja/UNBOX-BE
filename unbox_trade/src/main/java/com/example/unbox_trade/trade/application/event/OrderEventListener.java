@@ -1,4 +1,4 @@
-package com.example.unbox_trade.trade.listener;
+package com.example.unbox_trade.trade.application.event;
 
 import com.example.unbox_common.event.order.OrderCancelledEvent;
 import com.example.unbox_common.event.order.OrderExpiredEvent;

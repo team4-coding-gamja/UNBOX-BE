@@ -265,6 +265,15 @@ public class SellingBidServiceImpl implements SellingBidService {
         // 입찰 조회
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+        // 멱등성 보장: 이미 SOLD 상태라면 캐시/이벤트만 갱신하고 종료
+        if (sellingBid.getStatus() == SellingStatus.SOLD) {
+            log.info("SellingBid {} is already SOLD. Refreshing cache/events and skipping update.", sellingBidId);
+            publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
+            evictLowestPriceCache(sellingBid.getProductOptionId());
+            evictSellingBidCache(sellingBidId);
+            return;
+        }
+
         // 상태 검증 (RESERVED 상태만 SOLD로 변경 가능)
         if (sellingBid.getStatus() != SellingStatus.RESERVED) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
@@ -274,6 +283,42 @@ public class SellingBidServiceImpl implements SellingBidService {
         if (updatedBy != null) {
             sellingBid.updateModifiedBy(updatedBy);
         }
+
+        // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
+        publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
+        evictLowestPriceCache(sellingBid.getProductOptionId());
+        evictSellingBidCache(sellingBidId);
+    }
+
+    // ✅ 판매 입찰 만료 처리 (주문 취소 시 만료된 경우: RESERVED → CANCELLED)
+    @Transactional
+    @Override
+    public void expireSellingBid(UUID sellingBidId) {
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
+                .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+
+        // 이미 완료/취소된 건은 무시 (멱등성) 지만 캐시/이벤트 갱신은 수행
+        if (sellingBid.getStatus() == SellingStatus.SOLD || sellingBid.getStatus() == SellingStatus.CANCELLED) {
+            log.info("SellingBid {} already in terminal state ({}). Refreshing cache/events only.",
+                    sellingBidId, sellingBid.getStatus());
+            publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
+            evictLowestPriceCache(sellingBid.getProductOptionId());
+            evictSellingBidCache(sellingBidId);
+            return;
+        }
+
+        // 상태 검증 (RESERVED 상태만 만료 처리 가능)
+        if (sellingBid.getStatus() != SellingStatus.RESERVED) {
+            log.warn("SellingBid {} is in {} state, cannot expire. Only RESERVED bids can be expired.",
+                    sellingBidId, sellingBid.getStatus());
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        // 상태 변경
+        sellingBid.updateStatus(SellingStatus.CANCELLED); // 혹은 EXPIRED 상태가 별도로 있다면 그것 사용
+        sellingBid.updateModifiedBy("SYSTEM_EXPIRATION");
+        
+        log.info("Expired SellingBid {} due to timeout.", sellingBidId);
 
         // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
         publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());

@@ -1,4 +1,4 @@
-package com.example.unbox_trade.trade.listener;
+package com.example.unbox_trade.trade.application.event;
 
 import com.example.unbox_common.event.order.OrderCancelledEvent;
 import com.example.unbox_common.event.order.OrderExpiredEvent;
@@ -29,6 +29,12 @@ public class OrderEventListener {
     public void handleOrderEvent(org.apache.kafka.clients.consumer.ConsumerRecord<String, Object> record, Acknowledgment ack) {
         Object event = record.value();
         
+        if (event == null) {
+            log.warn("Received null event in OrderEventListener. Key: {}", record.key());
+            ack.acknowledge();
+            return;
+        }
+
         if (event instanceof OrderCancelledEvent cancelledEvent) {
             log.info("Received OrderCancelledEvent for Order ID: {}, SellingBid ID: {}", cancelledEvent.orderId(), cancelledEvent.sellingBidId());
             revertSellingBid(cancelledEvent.sellingBidId(), ack);
@@ -59,14 +65,14 @@ public class OrderEventListener {
             return;
         }
 
-        // 만료일 지났으면 CANCELLED 처리
+        // 만료일 지났으면 CANCELLED 처리 (Service 위임하여 캐시 무효화 포함)
         if (sellingBid.getDeadline() != null && sellingBid.getDeadline().isBefore(LocalDateTime.now())) {
-            log.info("Skipping revert: SellingBid {} has expired (deadline: {}). Setting status to CANCELLED.", sellingBid.getId(), sellingBid.getDeadline());
-            sellingBid.updateStatus(SellingStatus.CANCELLED);
+            log.info("SellingBid {} has expired (deadline: {}). Expiring via service.", sellingBid.getId(), sellingBid.getDeadline());
+            sellingBidService.expireSellingBid(sellingBidId);
             ack.acknowledge();
             return;
         }
-        
+
         // 2. 상태 원복 및 캐시 갱신 (Service 위임)
         // Service 내부에서 캐시 무효화(evict) 및 가격 변동 이벤트 발행을 수행함
         try {

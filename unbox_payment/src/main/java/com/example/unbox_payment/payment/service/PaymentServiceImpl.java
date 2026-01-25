@@ -13,6 +13,8 @@ import com.example.unbox_payment.payment.entity.PaymentMethod;
 import com.example.unbox_payment.payment.entity.PaymentStatus;
 import com.example.unbox_payment.payment.mapper.PaymentClientMapper;
 import com.example.unbox_payment.payment.mapper.PaymentMapper;
+import com.example.unbox_common.event.payment.PaymentCompletedEvent;
+import com.example.unbox_payment.payment.producer.PaymentEventProducer;
 import com.example.unbox_payment.payment.repository.PaymentRepository;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
@@ -42,6 +44,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentClientMapper paymentClientMapper;
     private final OrderClient orderClient;
     private final SettlementClient settlementClient;
+    private final PaymentEventProducer paymentEventProducer;
 
     // ✅ 결제 이력 조회
     @Override
@@ -135,6 +138,13 @@ public class PaymentServiceImpl implements PaymentService {
 
                 // 정산 정보 생성 (비동기 처리 등이 권장되지만 현재는 동기 유지)
                 settlementClient.createSettlementForPayment(paymentId);
+                
+                // 🔄 결제 완료 이벤트 발행 (비동기 - Trade, Notification Service)
+                // Trade Service: RESERVED -> SOLD 상태 변경
+                // Order Service: PAYMENT_PENDING -> PENDING_SHIPMENT (현재는 동기 호출이 없지만 추후 전환 가능)
+                paymentEventProducer.publishPaymentCompleted(
+                        PaymentCompletedEvent.of(finalPaymentKey, payment.getOrderId(), payment.getSellingBidId(), payment.getAmount())
+                );
 
                 log.info("[PaymentConfirm] 전체 결제 프로세스 완료 - paymentId: {}", paymentId);
             } catch (Exception e) {

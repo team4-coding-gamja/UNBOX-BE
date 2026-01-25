@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import com.example.unbox_common.event.order.OrderCancelledEvent;
+import com.example.unbox_common.event.order.OrderConfirmedEvent;
 import com.example.unbox_order.order.producer.OrderEventProducer;
 
 // ... existing imports ...
@@ -236,10 +237,13 @@ public class OrderServiceImpl implements OrderService {
         // 2) 구매 확정 처리 (userId 기반)
         order.confirm(userId);
 
-        // 3) 정산 확정 처리
+        // 3) 정산 확정 처리 (기존 동기 호출 유지 - 추후 제거 가능)
         settlementService.confirmSettlement(orderId);
 
-        // 4) DTO 변환 및 반환
+        // 4) 구매 확정 이벤트 발행 (비동기 - 정산, 통계 서비스 등)
+        orderEventProducer.publishOrderConfirmed(OrderConfirmedEvent.of(orderId, userId));
+
+        // 5) DTO 변환 및 반환
         return orderMapper.toDetailResponseDto(order);
     }
 

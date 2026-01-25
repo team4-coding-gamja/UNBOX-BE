@@ -18,6 +18,7 @@ public interface PaymentMapper {
     @Mapping(target = "buyerId", source = "orderInfo.buyerId")
     @Mapping(target = "sellerId", source = "orderInfo.sellerId")
     @Mapping(target = "amount", source = "orderInfo.price")
+    @Mapping(target = "sellingBidId", source = "orderInfo.sellingBidId")
     @Mapping(target = "method", source = "method")
     @Mapping(target = "status", constant = "READY")
     @Mapping(target = "readyAt", expression = "java(java.time.LocalDateTime.now())")

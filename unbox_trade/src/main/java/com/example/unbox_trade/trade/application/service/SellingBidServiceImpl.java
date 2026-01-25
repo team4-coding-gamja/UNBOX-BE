@@ -307,6 +307,13 @@ public class SellingBidServiceImpl implements SellingBidService {
             return;
         }
 
+        // 상태 검증 (RESERVED 상태만 만료 처리 가능)
+        if (sellingBid.getStatus() != SellingStatus.RESERVED) {
+            log.warn("SellingBid {} is in {} state, cannot expire. Only RESERVED bids can be expired.",
+                    sellingBidId, sellingBid.getStatus());
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
         // 상태 변경
         sellingBid.updateStatus(SellingStatus.CANCELLED); // 혹은 EXPIRED 상태가 별도로 있다면 그것 사용
         sellingBid.updateModifiedBy("SYSTEM_EXPIRATION");

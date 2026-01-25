@@ -265,6 +265,12 @@ public class SellingBidServiceImpl implements SellingBidService {
         // 입찰 조회
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
+        // 멱등성 보장: 이미 SOLD 상태라면 정상 처리로 간주하고 종료
+        if (sellingBid.getStatus() == SellingStatus.SOLD) {
+            log.info("SellingBid {} is already SOLD. Skipping update.", sellingBidId);
+            return;
+        }
+
         // 상태 검증 (RESERVED 상태만 SOLD로 변경 가능)
         if (sellingBid.getStatus() != SellingStatus.RESERVED) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);

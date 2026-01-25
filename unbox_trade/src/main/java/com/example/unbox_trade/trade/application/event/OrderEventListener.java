@@ -29,6 +29,12 @@ public class OrderEventListener {
     public void handleOrderEvent(org.apache.kafka.clients.consumer.ConsumerRecord<String, Object> record, Acknowledgment ack) {
         Object event = record.value();
         
+        if (event == null) {
+            log.warn("Received null event in OrderEventListener. Key: {}", record.key());
+            ack.acknowledge();
+            return;
+        }
+
         if (event instanceof OrderCancelledEvent cancelledEvent) {
             log.info("Received OrderCancelledEvent for Order ID: {}, SellingBid ID: {}", cancelledEvent.orderId(), cancelledEvent.sellingBidId());
             revertSellingBid(cancelledEvent.sellingBidId(), ack);
@@ -66,7 +72,7 @@ public class OrderEventListener {
             ack.acknowledge();
             return;
         }
-        
+
         // 2. 상태 원복 및 캐시 갱신 (Service 위임)
         // Service 내부에서 캐시 무효화(evict) 및 가격 변동 이벤트 발행을 수행함
         try {

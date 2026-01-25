@@ -34,6 +34,12 @@ public class TradeEventListener {
     public void handlePaymentEvent(ConsumerRecord<String, Object> record, Acknowledgment ack) {
         Object event = record.value();
 
+        if (event == null) {
+            log.warn("Received null event in TradeEventListener. Key: {}", record.key());
+            ack.acknowledge();
+            return;
+        }
+
         if (event instanceof PaymentCompletedEvent paymentCompletedEvent) {
             log.info("Received PaymentCompletedEvent for Order ID: {}, SellingBid ID: {}", 
                     paymentCompletedEvent.orderId(), paymentCompletedEvent.sellingBidId());

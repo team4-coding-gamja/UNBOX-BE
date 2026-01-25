@@ -30,7 +30,6 @@ public class TradeEventListener {
      * Payment 서비스에서 결제가 완료되면 입찰 상태를 SOLD로 변경합니다.
      */
     @KafkaListener(topics = "payment-events", groupId = "trade-group")
-    @Transactional
     public void handlePaymentEvent(ConsumerRecord<String, Object> record, Acknowledgment ack) {
         Object event = record.value();
 

@@ -65,10 +65,10 @@ public class OrderEventListener {
             return;
         }
 
-        // 만료일 지났으면 CANCELLED 처리
+        // 만료일 지났으면 CANCELLED 처리 (Service 위임하여 캐시 무효화 포함)
         if (sellingBid.getDeadline() != null && sellingBid.getDeadline().isBefore(LocalDateTime.now())) {
-            log.info("Skipping revert: SellingBid {} has expired (deadline: {}). Setting status to CANCELLED.", sellingBid.getId(), sellingBid.getDeadline());
-            sellingBid.updateStatus(SellingStatus.CANCELLED);
+            log.info("SellingBid {} has expired (deadline: {}). Expiring via service.", sellingBid.getId(), sellingBid.getDeadline());
+            sellingBidService.expireSellingBid(sellingBidId);
             ack.acknowledge();
             return;
         }

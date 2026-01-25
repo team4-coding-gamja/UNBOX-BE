@@ -1,6 +1,7 @@
 package com.example.unbox_order.order.producer;
 
 import com.example.unbox_common.event.order.OrderCancelledEvent;
+import com.example.unbox_common.event.order.OrderConfirmedEvent;
 import com.example.unbox_common.event.order.OrderExpiredEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,17 @@ public class OrderEventProducer {
                         log.error("Failed to publish OrderExpiredEvent for orderId: {}", event.orderId(), ex);
                     } else {
                         log.debug("Successfully published OrderExpiredEvent: {}", result.getRecordMetadata());
+                    }
+                });
+    }
+    
+    public void publishOrderConfirmed(OrderConfirmedEvent event) {
+        log.info("Publishing OrderConfirmedEvent: orderId={}, userId={}", event.orderId(), event.userId());
+        // 구매 확정은 주문(Order) 라이프사이클의 종료이므로 OrderId를 키로 사용
+        kafkaTemplate.send(TOPIC_ORDER, event.orderId().toString(), event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Failed to publish OrderConfirmedEvent for orderId: {}", event.orderId(), ex);
                     }
                 });
     }

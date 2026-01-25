@@ -297,8 +297,13 @@ public class SellingBidServiceImpl implements SellingBidService {
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
 
-        // 이미 완료/취소된 건은 무시 (멱등성)
+        // 이미 완료/취소된 건은 무시 (멱등성) 지만 캐시/이벤트 갱신은 수행
         if (sellingBid.getStatus() == SellingStatus.SOLD || sellingBid.getStatus() == SellingStatus.CANCELLED) {
+            log.info("SellingBid {} already in terminal state ({}). Refreshing cache/events only.",
+                    sellingBidId, sellingBid.getStatus());
+            publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
+            evictLowestPriceCache(sellingBid.getProductOptionId());
+            evictSellingBidCache(sellingBidId);
             return;
         }
 

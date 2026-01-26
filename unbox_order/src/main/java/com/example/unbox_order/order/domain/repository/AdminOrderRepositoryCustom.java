@@ -1,7 +1,7 @@
-package com.example.unbox_order.order.repository;
+package com.example.unbox_order.order.domain.repository;
 
-import com.example.unbox_order.order.dto.OrderSearchCondition;
-import com.example.unbox_order.order.entity.Order;
+import com.example.unbox_order.order.presentation.dto.OrderSearchCondition;
+import com.example.unbox_order.order.domain.entity.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

@@ -1,10 +1,10 @@
-package com.example.unbox_order.order.service;
+package com.example.unbox_order.order.application.service;
 
 import com.example.unbox_order.common.client.order.dto.OrderForPaymentInfoResponse;
 import com.example.unbox_order.common.client.order.dto.OrderForReviewInfoResponse;
-import com.example.unbox_order.order.dto.request.OrderCreateRequestDto;
-import com.example.unbox_order.order.dto.response.OrderDetailResponseDto;
-import com.example.unbox_order.order.dto.response.OrderResponseDto;
+import com.example.unbox_order.order.presentation.dto.request.OrderCreateRequestDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderDetailResponseDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -84,4 +84,14 @@ public interface OrderService {
      * 주문 상태 변경 (결제 완료용: PAYMENT_PENDING → PENDING_SHIPMENT)
      */
     void pendingShipmentOrder(UUID orderId, String updatedBy);
+
+    // ========================================
+    // ✅ 검수 시스템 연동 (Inspection System Integration)
+    // ========================================
+
+    void startInspection(UUID orderId);
+
+    void passedInspection(UUID orderId);
+
+    void failedInspection(UUID orderId);
 }

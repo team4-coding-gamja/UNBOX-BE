@@ -1,4 +1,4 @@
-package com.example.unbox_order.order.controller;
+package com.example.unbox_order.order.presentation.controller;
 
 import com.example.unbox_order.common.client.order.dto.OrderForPaymentInfoResponse;
 import com.example.unbox_order.common.client.order.dto.OrderForReviewInfoResponse;

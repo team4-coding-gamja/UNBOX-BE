@@ -1,4 +1,4 @@
-package com.example.unbox_order.settlement.dto.response;
+package com.example.unbox_order.settlement.presentation.dto.response;
 
 import lombok.*;
 

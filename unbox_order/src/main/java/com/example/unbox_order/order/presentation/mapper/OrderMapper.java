@@ -1,8 +1,8 @@
-package com.example.unbox_order.order.mapper;
+package com.example.unbox_order.order.presentation.mapper;
 
-import com.example.unbox_order.order.dto.response.OrderDetailResponseDto;
-import com.example.unbox_order.order.dto.response.OrderResponseDto;
-import com.example.unbox_order.order.entity.Order;
+import com.example.unbox_order.order.presentation.dto.response.OrderDetailResponseDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderResponseDto;
+import com.example.unbox_order.order.domain.entity.Order;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

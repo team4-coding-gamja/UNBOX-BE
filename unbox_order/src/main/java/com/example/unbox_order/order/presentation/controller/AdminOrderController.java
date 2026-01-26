@@ -1,11 +1,11 @@
-package com.example.unbox_order.order.controller;
+package com.example.unbox_order.order.presentation.controller;
 
-import com.example.unbox_order.order.controller.api.AdminOrderApi;
-import com.example.unbox_order.order.dto.OrderSearchCondition;
+import com.example.unbox_order.order.presentation.controller.api.AdminOrderApi;
+import com.example.unbox_order.order.presentation.dto.OrderSearchCondition;
 import com.example.unbox_order.order.application.service.AdminOrderService;
-import com.example.unbox_order.order.dto.request.OrderStatusUpdateRequestDto;
-import com.example.unbox_order.order.dto.response.OrderDetailResponseDto;
-import com.example.unbox_order.order.dto.response.OrderResponseDto;
+import com.example.unbox_order.order.presentation.dto.request.OrderStatusUpdateRequestDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderDetailResponseDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderResponseDto;
 import com.example.unbox_common.pagination.PageSizeLimiter;
 import com.example.unbox_common.response.CustomApiResponse;
 import jakarta.validation.Valid;

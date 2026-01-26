@@ -1,6 +1,6 @@
-package com.example.unbox_order.order.dto.request;
+package com.example.unbox_order.order.presentation.dto.request;
 
-import com.example.unbox_order.order.entity.OrderStatus;
+import com.example.unbox_order.order.domain.entity.OrderStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

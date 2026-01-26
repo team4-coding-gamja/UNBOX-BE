@@ -1,4 +1,4 @@
-package com.example.unbox_order.order.entity;
+package com.example.unbox_order.order.domain.entity;
 
 import com.example.unbox_common.entity.BaseEntity;
 import com.example.unbox_common.error.exception.CustomException;
@@ -162,12 +162,36 @@ public class Order extends BaseEntity {
         updateStatus(OrderStatus.SHIPPED_TO_CENTER);
     }
 
+    // ✅ 검수 시작
+    public void startInspection() {
+        if (this.status != OrderStatus.ARRIVED_AT_CENTER) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+        updateStatus(OrderStatus.IN_INSPECTION);
+    }
+
+    // ✅ 검수 합격
+    public void passedInspection() {
+        if (this.status != OrderStatus.IN_INSPECTION) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+        updateStatus(OrderStatus.INSPECTION_PASSED);
+    }
+
+    // ✅ 검수 불합격
+    public void failedInspection() {
+        if (this.status != OrderStatus.IN_INSPECTION) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS_TRANSITION);
+        }
+        updateStatus(OrderStatus.INSPECTION_FAILED);
+    }
+
     // ✅ 관리자 상태 변경 (검수 프로세스)
     public void updateAdminStatus(OrderStatus newStatus, String finalTrackingNumber) {
         // 상태 전이 유효성 검증
         validateAdminStatusTransition(this.status, newStatus);
 
-        // 구매자 배송 시작 시 운송장 필수
+        // ... 나머지 로직 유지 ...
         if (newStatus == OrderStatus.SHIPPED_TO_BUYER) {
             if (finalTrackingNumber == null || finalTrackingNumber.isBlank()) {
                 throw new CustomException(ErrorCode.TRACKING_NUMBER_REQUIRED);

@@ -1,6 +1,6 @@
-package com.example.unbox_order.order.repository;
+package com.example.unbox_order.order.domain.repository;
 
-import com.example.unbox_order.order.entity.Order;
+import com.example.unbox_order.order.domain.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.lang.NonNull;
 

@@ -1,4 +1,4 @@
-package com.example.unbox_order.order.application.event.listener;
+package com.example.unbox_order.order.listener;
 
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
 import com.example.unbox_order.order.application.service.OrderService;

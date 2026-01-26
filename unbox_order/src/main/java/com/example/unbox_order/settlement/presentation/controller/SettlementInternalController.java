@@ -1,8 +1,8 @@
-package com.example.unbox_order.settlement.controller;
+package com.example.unbox_order.settlement.presentation.controller;
 
 import com.example.unbox_order.common.client.settlement.dto.SettlementForPaymentResponse;
 import com.example.unbox_order.common.client.settlement.dto.SettlementCreateResponse;
-import com.example.unbox_order.settlement.service.SettlementService;
+import com.example.unbox_order.settlement.application.service.SettlementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

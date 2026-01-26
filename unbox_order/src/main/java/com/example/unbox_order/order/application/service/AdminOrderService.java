@@ -1,9 +1,9 @@
-package com.example.unbox_order.order.service;
+package com.example.unbox_order.order.application.service;
 
-import com.example.unbox_order.order.dto.OrderSearchCondition;
-import com.example.unbox_order.order.dto.request.OrderStatusUpdateRequestDto;
-import com.example.unbox_order.order.dto.response.OrderDetailResponseDto;
-import com.example.unbox_order.order.dto.response.OrderResponseDto;
+import com.example.unbox_order.order.presentation.dto.OrderSearchCondition;
+import com.example.unbox_order.order.presentation.dto.request.OrderStatusUpdateRequestDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderDetailResponseDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

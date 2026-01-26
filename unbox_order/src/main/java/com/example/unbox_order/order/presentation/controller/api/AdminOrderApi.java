@@ -1,9 +1,9 @@
-package com.example.unbox_order.order.controller.api;
+package com.example.unbox_order.order.presentation.controller.api;
 
-import com.example.unbox_order.order.dto.OrderSearchCondition;
-import com.example.unbox_order.order.dto.request.OrderStatusUpdateRequestDto;
-import com.example.unbox_order.order.dto.response.OrderDetailResponseDto;
-import com.example.unbox_order.order.dto.response.OrderResponseDto;
+import com.example.unbox_order.order.presentation.dto.OrderSearchCondition;
+import com.example.unbox_order.order.presentation.dto.request.OrderStatusUpdateRequestDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderDetailResponseDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderResponseDto;
 import com.example.unbox_common.response.CustomApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

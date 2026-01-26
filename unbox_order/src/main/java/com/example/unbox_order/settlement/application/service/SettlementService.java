@@ -1,17 +1,17 @@
-package com.example.unbox_order.settlement.service;
+package com.example.unbox_order.settlement.application.service;
 
 import com.example.unbox_order.common.client.payment.PaymentClient;
 import com.example.unbox_order.common.client.payment.dto.PaymentForSettlementResponse;
 import com.example.unbox_order.common.client.settlement.dto.SettlementCreateResponse;
 import com.example.unbox_order.common.client.settlement.dto.SettlementForPaymentResponse;
-import com.example.unbox_order.order.entity.Order;
-import com.example.unbox_order.order.repository.OrderRepository;
-import com.example.unbox_order.settlement.dto.response.SettlementResponseDto;
-import com.example.unbox_order.settlement.entity.Settlement;
-import com.example.unbox_order.settlement.entity.SettlementStatus;
-import com.example.unbox_order.settlement.mapper.SettlementClientMapper;
-import com.example.unbox_order.settlement.mapper.SettlementMapper;
-import com.example.unbox_order.settlement.repository.SettlementRepository;
+import com.example.unbox_order.order.domain.entity.Order;
+import com.example.unbox_order.order.domain.repository.OrderRepository;
+import com.example.unbox_order.settlement.presentation.dto.response.SettlementResponseDto;
+import com.example.unbox_order.settlement.domain.entity.Settlement;
+import com.example.unbox_order.settlement.domain.entity.SettlementStatus;
+import com.example.unbox_order.settlement.presentation.mapper.SettlementClientMapper;
+import com.example.unbox_order.settlement.presentation.mapper.SettlementMapper;
+import com.example.unbox_order.settlement.domain.repository.SettlementRepository;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;

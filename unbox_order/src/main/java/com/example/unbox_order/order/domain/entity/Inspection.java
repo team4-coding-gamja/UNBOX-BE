@@ -1,4 +1,4 @@
-package com.example.unbox_order.order.entity;
+package com.example.unbox_order.order.domain.entity;
 
 import com.example.unbox_common.entity.BaseEntity;
 import com.example.unbox_common.error.exception.CustomException;

@@ -1,4 +1,4 @@
-package com.example.unbox_order.settlement.entity;
+package com.example.unbox_order.settlement.domain.entity;
 
 public enum SettlementStatus {
 

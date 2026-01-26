@@ -1,8 +1,8 @@
-package com.example.unbox_order.settlement.mapper;
+package com.example.unbox_order.settlement.presentation.mapper;
 
 import com.example.unbox_order.common.client.settlement.dto.SettlementCreateResponse;
 import com.example.unbox_order.common.client.settlement.dto.SettlementForPaymentResponse;
-import com.example.unbox_order.settlement.entity.Settlement;
+import com.example.unbox_order.settlement.domain.entity.Settlement;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

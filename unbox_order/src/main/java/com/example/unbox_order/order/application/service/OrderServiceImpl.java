@@ -1,4 +1,4 @@
-package com.example.unbox_order.order.service;
+package com.example.unbox_order.order.application.service;
 
 import com.example.unbox_order.common.client.order.dto.OrderForPaymentInfoResponse;
 import com.example.unbox_order.common.client.order.dto.OrderForReviewInfoResponse;
@@ -6,15 +6,15 @@ import com.example.unbox_order.common.client.trade.dto.SellingBidForOrderRespons
 import com.example.unbox_order.common.client.trade.TradeClient;
 import com.example.unbox_order.common.client.user.UserClient;
 import com.example.unbox_order.common.client.user.dto.UserInfoForOrderResponse;
-import com.example.unbox_order.order.mapper.OrderClientMapper;
-import com.example.unbox_order.order.dto.request.OrderCreateRequestDto;
-import com.example.unbox_order.order.dto.response.OrderDetailResponseDto;
-import com.example.unbox_order.order.dto.response.OrderResponseDto;
-import com.example.unbox_order.order.entity.Order;
-import com.example.unbox_order.order.entity.OrderStatus;
-import com.example.unbox_order.order.mapper.OrderMapper;
-import com.example.unbox_order.order.repository.OrderRepository;
-import com.example.unbox_order.settlement.service.SettlementService;
+import com.example.unbox_order.order.presentation.mapper.OrderClientMapper;
+import com.example.unbox_order.order.presentation.dto.request.OrderCreateRequestDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderDetailResponseDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderResponseDto;
+import com.example.unbox_order.order.domain.entity.Order;
+import com.example.unbox_order.order.domain.entity.OrderStatus;
+import com.example.unbox_order.order.presentation.mapper.OrderMapper;
+import com.example.unbox_order.order.domain.repository.OrderRepository;
+import com.example.unbox_order.settlement.application.service.SettlementService;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ import java.util.UUID;
 
 import com.example.unbox_common.event.order.OrderCancelledEvent;
 import com.example.unbox_common.event.order.OrderConfirmedEvent;
-import com.example.unbox_order.order.producer.OrderEventProducer;
+import com.example.unbox_order.order.application.event.producer.OrderEventProducer;
 
 @Slf4j
 @Service
@@ -293,5 +293,35 @@ public class OrderServiceImpl implements OrderService {
         } catch (Exception e) {
             log.warn("Failed to delete expiration timer for paid order: {}. Event may fire unnecessarily.", orderId, e);
         }
+    }
+    // ========================================
+    // ✅ 검수 시스템 연동 (Inspection System Integration)
+    // ========================================
+
+    // ✅ 검수 시작 (ARRIVED_AT_CENTER -> IN_INSPECTION)
+    @Override
+    @Transactional
+    public void startInspection(UUID orderId) {
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        order.startInspection();
+    }
+
+    // ✅ 검수 합격 (IN_INSPECTION -> INSPECTION_PASSED)
+    @Override
+    @Transactional
+    public void passedInspection(UUID orderId) {
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        order.passedInspection();
+    }
+
+    // ✅ 검수 불합격 (IN_INSPECTION -> INSPECTION_FAILED)
+    @Override
+    @Transactional
+    public void failedInspection(UUID orderId) {
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        order.failedInspection();
     }
 }

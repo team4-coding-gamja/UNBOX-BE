@@ -1,6 +1,6 @@
-package com.example.unbox_order.settlement.repository;
+package com.example.unbox_order.settlement.domain.repository;
 
-import com.example.unbox_order.settlement.entity.Settlement;
+import com.example.unbox_order.settlement.domain.entity.Settlement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

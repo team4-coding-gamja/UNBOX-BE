@@ -1,12 +1,12 @@
-package com.example.unbox_order.order.service;
+package com.example.unbox_order.order.application.service;
 
-import com.example.unbox_order.order.dto.OrderSearchCondition;
-import com.example.unbox_order.order.repository.AdminOrderRepository;
-import com.example.unbox_order.order.dto.request.OrderStatusUpdateRequestDto;
-import com.example.unbox_order.order.dto.response.OrderDetailResponseDto;
-import com.example.unbox_order.order.dto.response.OrderResponseDto;
-import com.example.unbox_order.order.entity.Order;
-import com.example.unbox_order.order.mapper.OrderMapper;
+import com.example.unbox_order.order.presentation.dto.OrderSearchCondition;
+import com.example.unbox_order.order.domain.repository.AdminOrderRepository;
+import com.example.unbox_order.order.presentation.dto.request.OrderStatusUpdateRequestDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderDetailResponseDto;
+import com.example.unbox_order.order.presentation.dto.response.OrderResponseDto;
+import com.example.unbox_order.order.domain.entity.Order;
+import com.example.unbox_order.order.presentation.mapper.OrderMapper;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;

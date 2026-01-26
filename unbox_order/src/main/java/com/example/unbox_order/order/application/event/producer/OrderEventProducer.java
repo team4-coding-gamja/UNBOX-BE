@@ -1,4 +1,4 @@
-package com.example.unbox_order.order.producer;
+package com.example.unbox_order.order.application.event.producer;
 
 import com.example.unbox_common.event.order.OrderCancelledEvent;
 import com.example.unbox_common.event.order.OrderConfirmedEvent;

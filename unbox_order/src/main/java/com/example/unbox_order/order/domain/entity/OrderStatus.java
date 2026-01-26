@@ -1,4 +1,4 @@
-package com.example.unbox_order.order.entity;
+package com.example.unbox_order.order.domain.entity;
 
 public enum OrderStatus {
 

@@ -1,7 +1,7 @@
-package com.example.unbox_order.order.listener;
+package com.example.unbox_order.order.application.event.listener;
 
 import com.example.unbox_common.event.order.OrderExpiredEvent;
-import com.example.unbox_order.order.producer.OrderEventProducer;
+import com.example.unbox_order.order.application.event.producer.OrderEventProducer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.listener.KeyExpirationEventMessageListener;

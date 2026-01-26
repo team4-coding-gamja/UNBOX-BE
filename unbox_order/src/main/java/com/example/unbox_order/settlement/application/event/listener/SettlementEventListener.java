@@ -1,8 +1,8 @@
-package com.example.unbox_order.settlement.listener;
+package com.example.unbox_order.settlement.application.event.listener;
 
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
 
-import com.example.unbox_order.settlement.service.SettlementService;
+import com.example.unbox_order.settlement.application.service.SettlementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

@@ -1,4 +1,4 @@
-package com.example.unbox_order.order.dto.request;
+package com.example.unbox_order.order.presentation.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

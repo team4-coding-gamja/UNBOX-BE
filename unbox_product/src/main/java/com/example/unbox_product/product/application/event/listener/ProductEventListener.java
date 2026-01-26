@@ -1,4 +1,4 @@
-package com.example.unbox_product.product.application.event;
+package com.example.unbox_product.product.application.event.listener;
 
 import com.example.unbox_common.event.trade.TradePriceChangedEvent;
 import lombok.RequiredArgsConstructor;

@@ -35,8 +35,6 @@ import com.example.unbox_common.event.order.OrderCancelledEvent;
 import com.example.unbox_common.event.order.OrderConfirmedEvent;
 import com.example.unbox_order.order.producer.OrderEventProducer;
 
-// ... existing imports ...
-
 @Slf4j
 @Service
 @RequiredArgsConstructor

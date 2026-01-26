@@ -135,6 +135,7 @@ public class SettlementService {
                 .totalAmount(totalAmount)
                 .feesAmount(fees)
                 .payOutAmount(settlementAmount)
+                .paymentKey(paymentInfo.getPaymentKey() != null ? paymentInfo.getPaymentKey() : "UNKNOWN")
                 .status(SettlementStatus.PENDING)
                 .build();
 

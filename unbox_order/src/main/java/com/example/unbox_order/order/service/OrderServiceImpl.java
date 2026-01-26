@@ -278,9 +278,8 @@ public class OrderServiceImpl implements OrderService {
         order.updateStatusAfterPayment();
         
         // 🔄 Trade 서비스 상태 동기화 (RESERVED -> SOLD)
-        // 결제가 완료되었으므로 입찰 상태를 SOLD로 확정해야 함. 
-        // 이를 통해 추후 도착할 수도 있는 만료 이벤트(OrderExpiredEvent)가 무시되도록 보장함.
-        tradeClient.soldSellingBid(order.getSellingBidId(), "ORDER_SERVICE");
+        // 비동기 이벤트(PaymentCompletedEvent)로 Trade 서비스에서 처리하므로 동기 호출 제거
+        // tradeClient.soldSellingBid(order.getSellingBidId(), "ORDER_SERVICE");
 
         // 🟢 결제 완료 후 만료 타이머 제거 (불필요한 이벤트 발행 방지)
         String expirationKey = "order:expiration:" + orderId + ":" + order.getSellingBidId();

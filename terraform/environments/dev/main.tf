@@ -113,7 +113,7 @@ module "ecs" {
   service_config              = local.service_config
   service_names               = ["user", "product", "trade", "order", "payment"]
   target_group_arns           = module.alb.target_group_arns
-  ecs_sg_id                   = module.security_group.app_sg_ids["user"]
+  ecs_sg_ids                  = module.security_group.app_sg_ids
   ecs_task_execution_role_arn = module.common.ecs_task_execution_role_arn
   ecs_task_role_arn           = module.common.ecs_task_role_arn
   cloud_map_namespace_arn     = module.common.cloud_map_namespace_arn

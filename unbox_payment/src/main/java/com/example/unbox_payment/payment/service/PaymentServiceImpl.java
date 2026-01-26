@@ -83,8 +83,8 @@ public class PaymentServiceImpl implements PaymentService {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        // 기존 결제 내역 확인
-        Optional<Payment> existingPayment = paymentRepository.findByOrderIdAndDeletedAtIsNull(orderId);
+        // 기존 결제 내역 확인 (가장 최근 것 조회)
+        Optional<Payment> existingPayment = paymentRepository.findTopByOrderIdAndDeletedAtIsNullOrderByCreatedAtDesc(orderId);
 
         // 기존 결제가 존재하는 경우 처리
         if (existingPayment.isPresent()) {
@@ -98,6 +98,18 @@ public class PaymentServiceImpl implements PaymentService {
             // 준비 상태인 경우 기존 정보 반환
             if (payment.getStatus() == PaymentStatus.READY) {
                 return paymentMapper.toReadyResponseDto(payment, orderInfo);
+            }
+
+            // 그 외 상태(IN_PROGRESS, FAILED 등)이거나 데이터가 꼬인 경우
+            // -> 기존의 모든 Active Payment를 Soft Delete 처리하고 새로 생성 (Clean Up)
+            List<Payment> stuckPayments = paymentRepository.findAllByOrderIdAndDeletedAtIsNull(orderId);
+            if (!stuckPayments.isEmpty()) {
+                log.warn("Cleaning up {} stuck payments for orderId: {}", stuckPayments.size(), orderId);
+                stuckPayments.forEach(p -> {
+                    p.softDelete("SYSTEM_CLEANUP");
+                });
+                paymentRepository.saveAll(stuckPayments);
+                paymentRepository.flush();
             }
         }
 
@@ -206,7 +218,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional(readOnly = true)
     public PaymentStatusResponse getPaymentStatus(UUID orderId) {
-        return paymentRepository.findByOrderIdAndDeletedAtIsNull(orderId)
+        return paymentRepository.findTopByOrderIdAndDeletedAtIsNullOrderByCreatedAtDesc(orderId)
                 .map(payment -> PaymentStatusResponse.builder()
                         .orderId(payment.getOrderId())
                         .status(payment.getStatus().name())

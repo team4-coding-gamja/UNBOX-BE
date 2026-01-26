@@ -49,6 +49,9 @@ logging:
   level:
     com.example.unbox_payment.common.client: INFO
 
+server:
+  port: ${SERVER_PORT:8080}
+
 # Feign Client URLs
 user-service:
   url: ${USER_SERVICE_URL:http://localhost:8081}

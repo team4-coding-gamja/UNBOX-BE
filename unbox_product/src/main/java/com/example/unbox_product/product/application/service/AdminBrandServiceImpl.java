@@ -1,6 +1,5 @@
 package com.example.unbox_product.product.application.service;
 
-import com.example.unbox_common.event.product.ProductDeletedEvent;
 import com.example.unbox_product.product.application.event.producer.ProductEventProducer;
 import com.example.unbox_product.product.presentation.dto.request.AdminBrandCreateRequestDto;
 import com.example.unbox_product.product.presentation.dto.request.AdminBrandUpdateRequestDto;
@@ -19,7 +18,6 @@ import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import com.example.unbox_common.event.product.BrandDeletedEvent;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;

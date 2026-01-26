@@ -15,7 +15,7 @@ public interface AdminSellingBidService {
     // 판매 입찰 삭제
     void deleteSellingBid(UUID sellingId, String deletedBy);
 
-    void deleteSellingBidsByOptionIds(List<UUID> optionIds);
+    void deleteSellingBidsByOptionIds(List<UUID> optionIds, String deletedBy);
 
-    void deleteSellingBidByOptionId(UUID optionId);
+    void deleteSellingBidByOptionId(UUID optionId, String deletedBy);
 }

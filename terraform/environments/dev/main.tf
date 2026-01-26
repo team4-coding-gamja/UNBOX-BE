@@ -124,14 +124,9 @@ module "ecs" {
     common = module.rds.db_endpoints["common"]  # dev는 공유 RDS 1개
   }
   redis_endpoint = "${module.redis.redis_primary_endpoint}:6379"
-  jwt_secret_arn = var.jwt_secret_arn
-  db_password_secret_arns = {
-    user    = var.user_db_password_secret_arn
-    product = var.product_db_password_secret_arn
-    trade   = var.trade_db_password_secret_arn
-    order   = var.order_db_password_secret_arn
-    payment = var.payment_db_password_secret_arn
-  }
+  
+  # Dev 환경: SSM만 사용 (jwt_secret_arn은 prod에서만 필요)
+  
   container_name_suffix = false
   health_check_path = "/actuator/health"
 }
@@ -140,7 +135,7 @@ module "ecs" {
 # GitHub Actions OIDC 추가 권한
 # ============================================
 
-# GitHub Actions가 ECS 서비스를 업데이트할 수 있도록 권한 추가
+# GitHub Actions가 ECS 서비스를 배포할 수 있도록 권한 추가
 resource "aws_iam_role_policy" "github_actions_ecs_cd" {
   name = "${var.project_name}-${var.env}-github-ecs-cd-policy"
   role = "github-actions-ecr-role"  # common 모듈에서 생성한 role
@@ -151,9 +146,11 @@ resource "aws_iam_role_policy" "github_actions_ecs_cd" {
       {
         Effect = "Allow"
         Action = [
-          "ecs:UpdateService",
-          "ecs:DescribeServices",
-          "ecs:DescribeClusters"
+          "ecs:DescribeServices",        # 현재 서비스 상태 조회
+          "ecs:DescribeTaskDefinition",  # 현재 Task Definition 조회
+          "ecs:RegisterTaskDefinition",  # 새 Task Definition 등록
+          "ecs:UpdateService",           # 서비스 업데이트
+          "ecs:DescribeClusters"         # 클러스터 정보 조회
         ]
         Resource = "*"
       },
@@ -170,3 +167,4 @@ resource "aws_iam_role_policy" "github_actions_ecs_cd" {
   
   depends_on = [module.common]
 }
+

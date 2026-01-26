@@ -159,6 +159,7 @@ public class AdminBrandServiceImpl implements AdminBrandService {
         // 4. [필수] 캐시 삭제 (TransactionSynchronizationManager)
         // ==========================================
         List<UUID> finalDeletedProductIds = deletedProductIds; // 람다에서 쓰기 위해 사실상 final
+        List<UUID> finalDeletedOptionIds = deletedOptionIds;
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
@@ -169,15 +170,17 @@ public class AdminBrandServiceImpl implements AdminBrandService {
                     redisTemplate.delete("product:info:" + prodId);
                     redisTemplate.delete("product:prices:" + prodId);
                 }
+
+                // 5. 이벤트 발행
+                BrandDeletedEvent event = new BrandDeletedEvent(
+                        brand.getId(),
+                        finalDeletedProductIds,
+                        finalDeletedOptionIds
+                );
+                productEventProducer.publishBrandDeleted(event);
             }
         });
 
-        // 5. 이벤트 발행
-        BrandDeletedEvent event = new BrandDeletedEvent(
-                brand.getId(),
-                deletedProductIds,
-                deletedOptionIds
-        );
-        productEventProducer.publishBrandDeleted(event);
+
     }
 }

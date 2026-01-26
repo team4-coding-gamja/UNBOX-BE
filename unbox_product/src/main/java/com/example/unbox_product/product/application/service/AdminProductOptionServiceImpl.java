@@ -100,10 +100,12 @@ public class AdminProductOptionServiceImpl implements AdminProductOptionService 
                 // 상품 상세 정보, 가격 정보 캐시 날리기
                 redisTemplate.delete("product:info:" + productId);
                 redisTemplate.delete("product:prices:" + productId);
+
+                ProductOptionDeletedEvent event = new ProductOptionDeletedEvent(optionId);
+                productEventProducer.publishProductOptionDeleted(event);
             }
         });
 
-        ProductOptionDeletedEvent event = new ProductOptionDeletedEvent(optionId);
-        productEventProducer.publishProductOptionDeleted(event);
+
     }
 }

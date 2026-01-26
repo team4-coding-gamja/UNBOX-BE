@@ -137,14 +137,16 @@ public class AdminProductServiceImpl implements AdminProductService {
                         public void afterCommit() {
                                 redisTemplate.delete("product:info:" + productId);
                                 redisTemplate.delete("product:prices:" + productId);
+
+                                // 6. 상품 삭제 이벤트 발행
+                                ProductDeletedEvent event = new ProductDeletedEvent(
+                                        product.getId(),
+                                        deletedOptionIds
+                                );
+                                productEventProducer.publishProductDeleted(event);
                         }
                 });
 
-                // 6. 상품 삭제 이벤트 발행
-                ProductDeletedEvent event = new ProductDeletedEvent(
-                        product.getId(),
-                        deletedOptionIds
-                );
-                productEventProducer.publishProductDeleted(event);
+
         }
 }

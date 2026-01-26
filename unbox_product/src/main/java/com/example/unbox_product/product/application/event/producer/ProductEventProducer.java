@@ -28,7 +28,7 @@ public class ProductEventProducer {
     }
 
     public void publishProductOptionDeleted(ProductOptionDeletedEvent event) {
-        log.info("Publishing ProductDeletedEvent: productOptionId={}", event.productOptionId());
+        log.info("Publishing ProductOptionDeletedEvent: productOptionId={}", event.productOptionId());
         kafkaTemplate.send(TOPIC_PRODUCT, event.productOptionId().toString(), event);
     }
 }

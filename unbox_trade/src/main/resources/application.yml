@@ -54,6 +54,9 @@ logging:
   level:
     com.example.unbox_trade.common.client: INFO
 
+server:
+  port: ${SERVER_PORT:8080}
+
 # Custom Feign Client URLs
 product-service:
   url: ${PRODUCT_SERVICE_URL:http://localhost:8082}

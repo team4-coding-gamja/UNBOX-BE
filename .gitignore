@@ -91,3 +91,16 @@ docker-compose.test.yml
 
 ### Test ###
 tests/
+
+### SSH Keys (절대 커밋하지 말 것!) ###
+*.pem
+*.key
+.ssh/
+
+### Database Setup Scripts (임시 파일) ###
+create_remaining_users.sql
+run_db_setup.sh
+lambda_create_db_users.py
+manual_db_setup.md
+DB_SETUP_INSTRUCTIONS.md
+connect_via_bastion.md

@@ -57,6 +57,20 @@ redis_data/
 # UNBOX-INFRA 레포 (별도 관리)
 UNBOX-INFRA/
 
+# Terraform
+*.tfplan
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+### Scripts (일회성/로컬 유틸리티) ###
+scripts/lambda-db-setup.py
+scripts/setup-rds-databases.sh
+scripts/start-dev-resources.sh
+scripts/stop-dev-resources.sh
+create_databases.sql
+
 ### Logs ###
 logs/
 *.log

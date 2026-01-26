@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-import static com.example.unbox_order.order.entity.QOrder.order;
+import static com.example.unbox_order.order.domain.entity.QOrder.order;
 
 @Repository
 @RequiredArgsConstructor

@@ -17,11 +17,11 @@ public interface AdminSellingBidRepository extends JpaRepository<SellingBid, UUI
 
     // ✅ [Bulk Update] 여러 옵션 ID에 해당하는 입찰 내역 일괄 Soft Delete
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE SellingBid sb SET sb.deletedAt = NOW(), sb.deletedBy = :deletedBy WHERE sb.productOption.id IN :optionIds AND sb.deletedAt IS NULL")
+    @Query("UPDATE SellingBid sb SET sb.deletedAt = CURRENT_TIMESTAMP, sb.deletedBy = :deletedBy WHERE sb.productOptionId IN :optionIds AND sb.deletedAt IS NULL")
     void softDeleteByOptionIds(@Param("optionIds") List<UUID> optionIds, @Param("deletedBy") String deletedBy);
 
     // ✅ [Bulk Update] 단건 옵션 ID에 해당하는 입찰 내역 일괄 Soft Delete
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE SellingBid sb SET sb.deletedAt = NOW(), sb.deletedBy = :deletedBy WHERE sb.productOption.id = :optionId AND sb.deletedAt IS NULL")
+    @Query("UPDATE SellingBid sb SET sb.deletedAt = CURRENT_TIMESTAMP, sb.deletedBy = :deletedBy WHERE sb.productOptionId = :optionId AND sb.deletedAt IS NULL")
     void softDeleteByOptionId(@Param("optionId") UUID optionId, @Param("deletedBy") String deletedBy);
 }

@@ -132,15 +132,11 @@ public class PaymentTransactionService {
         Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        // 주문 정보 조회
-
-
         // 결제 상태를 FAILED로 변경
         payment.failPayment();
 
-        // 판매 입찰 상태 복구 (RESERVED → LIVE)
-        // TODO: 실패 시에도 비동기 이벤트로 처리 필요 (현재는 주석 처리하여 트랜잭션 롤백 방지)
-        // tradeClient.liveSellingBid(orderInfo.getSellingBidId(), "payment-service");
+        // 정책 변경: 결제 실패 시 즉시 복구하지 않음 (다른 수단 재시도 허용).
+        // 10분 타임아웃(OrderExpiredEvent) 시점에 일괄 복구됨.
 
         // PG 트랜잭션 로그 저장 (실패)
         PgTransaction transaction = pgTransactionMapper.toFailedEntity(payment, response);

@@ -6,7 +6,7 @@ import com.example.unbox_order.order.dto.request.OrderCreateRequestDto;
 import com.example.unbox_order.order.dto.request.OrderTrackingRequestDto;
 import com.example.unbox_order.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_order.order.dto.response.OrderResponseDto;
-import com.example.unbox_order.order.service.OrderService;
+import com.example.unbox_order.order.application.service.OrderService;
 import com.example.unbox_common.pagination.PageSizeLimiter;
 import com.example.unbox_common.response.CustomApiResponse;
 import com.example.unbox_common.security.auth.CustomUserDetails;

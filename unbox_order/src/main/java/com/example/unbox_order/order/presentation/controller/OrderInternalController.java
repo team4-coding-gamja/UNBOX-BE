@@ -2,7 +2,7 @@ package com.example.unbox_order.order.controller;
 
 import com.example.unbox_order.common.client.order.dto.OrderForPaymentInfoResponse;
 import com.example.unbox_order.common.client.order.dto.OrderForReviewInfoResponse;
-import com.example.unbox_order.order.service.OrderService;
+import com.example.unbox_order.order.application.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

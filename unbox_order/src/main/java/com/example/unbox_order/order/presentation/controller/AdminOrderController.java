@@ -2,7 +2,7 @@ package com.example.unbox_order.order.controller;
 
 import com.example.unbox_order.order.controller.api.AdminOrderApi;
 import com.example.unbox_order.order.dto.OrderSearchCondition;
-import com.example.unbox_order.order.service.AdminOrderService;
+import com.example.unbox_order.order.application.service.AdminOrderService;
 import com.example.unbox_order.order.dto.request.OrderStatusUpdateRequestDto;
 import com.example.unbox_order.order.dto.response.OrderDetailResponseDto;
 import com.example.unbox_order.order.dto.response.OrderResponseDto;

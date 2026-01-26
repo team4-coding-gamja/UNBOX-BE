@@ -5,11 +5,17 @@ spring:
   config:
     import: "optional:file:.env[.properties]"
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: trade-group
+      auto-offset-reset: earliest
+
   datasource:
-    driver-class-name: ${DB_DRIVER_CLASS_NAME:org.postgresql.Driver}
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: ${DB_DRIVER_CLASS_NAME}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
@@ -25,6 +31,8 @@ spring:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:redis}
       port: ${SPRING_DATA_REDIS_PORT:6379}
+      ssl:
+        enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:false}
 
   jwt:
     secret: ${SPRING_JWT_SECRET}
@@ -45,6 +53,9 @@ spring:
 logging:
   level:
     com.example.unbox_trade.common.client: INFO
+
+server:
+  port: ${SERVER_PORT:8080}
 
 # Custom Feign Client URLs
 product-service:

@@ -5,6 +5,9 @@ import com.example.unbox_product.product.domain.entity.ProductOption;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,4 +40,12 @@ public interface ProductOptionRepository extends JpaRepository<ProductOption, UU
 
     // 전체 옵션 목록 조회 (페이징)
     Page<ProductOption> findAllByDeletedAtIsNull(Pageable pageable);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE ProductOption po SET po.deletedAt = CURRENT_TIMESTAMP, po.deletedBy = :deletedBy WHERE po.product.id IN :productIds AND po.deletedAt IS NULL")
+    void deleteByProductIdsIn(@Param("productIds") List<UUID> productIds, @Param("deletedBy") String deletedBy);
+
+    @Modifying(clearAutomatically = true) // 중요: 쿼리 실행 후 영속성 컨텍스트 비우기
+    @Query("UPDATE ProductOption po SET po.deletedAt = CURRENT_TIMESTAMP, po.deletedBy = :deletedBy WHERE po.product.id = :productId AND po.deletedAt IS NULL")
+    void deleteByProductId(@Param("productId") UUID productId, @Param("deletedBy") String deletedBy);
 }

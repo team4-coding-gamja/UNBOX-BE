@@ -18,4 +18,5 @@ public class PaymentForSettlementResponse {
     private Long sellerId;
     private BigDecimal amount;
     private String status;
+    private String paymentKey;
 }

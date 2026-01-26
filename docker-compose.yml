@@ -10,9 +10,9 @@ services:
       - "8081:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_user
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - DB_URL=jdbc:postgresql://db:5432/unbox_user
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
@@ -21,6 +21,7 @@ services:
       - PAYMENT_SERVICE_URL=http://unbox-payment:8080
       - TRADE_SERVICE_URL=http://unbox-trade:8080
       - PRODUCT_SERVICE_URL=http://unbox-product:8080
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - db
       - redis
@@ -36,9 +37,9 @@ services:
       - "8082:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_product
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - DB_URL=jdbc:postgresql://db:5432/unbox_product
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
@@ -50,6 +51,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - db
       - redis
@@ -65,9 +67,9 @@ services:
       - "8083:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_trade
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - DB_URL=jdbc:postgresql://db:5432/unbox_trade
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
@@ -76,6 +78,7 @@ services:
       - USER_SERVICE_URL=http://unbox-user:8080
       - ORDER_SERVICE_URL=http://unbox-order:8080
       - PAYMENT_SERVICE_URL=http://unbox-payment:8080
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - db
       - redis
@@ -91,9 +94,9 @@ services:
       - "8085:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_payment
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - DB_URL=jdbc:postgresql://db:5432/unbox_payment
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
@@ -104,6 +107,7 @@ services:
       - ORDER_SERVICE_URL=http://unbox-order:8080
       - TOSS_SECRET_KEY=${TOSS_SECRET_KEY}
       - TOSS_SECURITY_KEY=${TOSS_SECURITY_KEY}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - db
       - redis
@@ -119,9 +123,9 @@ services:
       - "8084:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/unbox_order
-      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - DB_URL=jdbc:postgresql://db:5432/unbox_order
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
@@ -130,6 +134,7 @@ services:
       - TRADE_SERVICE_URL=http://unbox-trade:8080
       - PAYMENT_SERVICE_URL=http://unbox-payment:8080
       - PRODUCT_SERVICE_URL=http://unbox-product:8080
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       - db
       - redis
@@ -138,7 +143,7 @@ services:
   db:
     image: postgres:16.11-alpine
     container_name: unbox-postgres
-    platform: linux/amd64  # 기존 유지 (잘 하셨습니다)
+    platform: linux/amd64
     ports:
       - "5432:5432"
     environment:
@@ -158,3 +163,39 @@ services:
       - "6379:6379"
     volumes:
       - ./redis_data:/data
+
+  # 8. Kafka (KRaft Mode) - Lightweight
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: unbox-kafka
+    platform: linux/amd64
+    ports:
+      - "9092:9092"
+    environment:
+      # KRaft Settings
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_INTERNAL://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
+
+  # 9. Kafka UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: unbox-kafka-ui
+    platform: linux/amd64
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: unbox-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: PLAINTEXT
+    depends_on:
+      - kafka

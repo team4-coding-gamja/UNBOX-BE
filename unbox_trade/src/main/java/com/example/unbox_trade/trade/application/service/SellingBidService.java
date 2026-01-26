@@ -56,6 +56,11 @@ public interface SellingBidService {
      * 판매 입찰 완료 처리 (결제 완료용: RESERVED → SOLD)
      */
     void soldSellingBid(UUID sellingBidId, String updatedBy);
+
+    /**
+     * 판매 입찰 만료 처리
+     */
+    void expireSellingBid(UUID sellingBidId);
     /**
      * 판매 입찰 복구 (결제 실패/취소용: RESERVED → LIVE)
      */

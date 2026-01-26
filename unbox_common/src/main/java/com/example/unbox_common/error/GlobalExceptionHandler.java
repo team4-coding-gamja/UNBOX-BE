@@ -64,6 +64,22 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(404, ex.getMessage()));
     }
 
+    // 데이터 무결성 예외 처리 (Unique Key 중복 등)
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of(409, "데이터 처리 중 충돌이 발생했습니다. (중복된 데이터 등)"));
+    }
+
+    // 결과가 유일하지 않은 경우 (데이터 꼬임)
+    @ExceptionHandler(jakarta.persistence.NonUniqueResultException.class)
+    public ResponseEntity<ErrorResponse> handleNonUniqueResult(jakarta.persistence.NonUniqueResultException ex) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorResponse.of(500, "서버 내부 데이터 오류가 발생했습니다. (중복된 결과)"));
+    }
+
     // FeignClientException 처리
     @ExceptionHandler(FeignClientException.class)
     public ResponseEntity<ErrorResponse> handleFeignClientException(FeignClientException ex) {

@@ -9,7 +9,7 @@ import com.example.unbox_payment.payment.entity.PgTransaction;
 import com.example.unbox_payment.payment.mapper.PgTransactionMapper;
 import com.example.unbox_payment.payment.repository.PaymentRepository;
 import com.example.unbox_payment.payment.repository.PgTransactionRepository;
-import com.example.unbox_payment.common.client.trade.TradeClient;
+
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,6 @@ public class PaymentTransactionService {
     private final PaymentRepository paymentRepository;
     private final PgTransactionRepository pgTransactionRepository;
     private final PgTransactionMapper pgTransactionMapper;
-    private final TradeClient tradeClient;
     private final OrderClient orderClient;
 
     private static final Set<String> PAYABLE_STATUSES = Set.of("PAYMENT_PENDING");
@@ -104,9 +103,6 @@ public class PaymentTransactionService {
             throw new CustomException(ErrorCode.PG_PROCESSED_ALREADY_EXISTS);
         }
 
-        // 주문 정보 조회
-        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
-
         // 결제 금액 검증
         if (payment.getAmount().compareTo(response.getTotalAmount()) != 0) {
             throw new CustomException(ErrorCode.PRICE_MISMATCH);
@@ -116,10 +112,12 @@ public class PaymentTransactionService {
         payment.completePayment(response.getPaymentKey());
 
         // 판매 입찰 상태 변경 (RESERVED → SOLD)
-        tradeClient.soldSellingBid(orderInfo.getSellingBidId(), "payment-service");
+        // 비동기 이벤트(PaymentCompletedEvent)로 Trade 서비스에서 처리하므로 주석 처리
+        // tradeClient.soldSellingBid(orderInfo.getSellingBidId(), "payment-service");
 
         // 주문 상태 변경 (PAYMENT_PENDING → PENDING_SHIPMENT)
-        orderClient.pendingShipmentOrder(orderInfo.getOrderId(), "payment-service");
+        // 비동기 이벤트(PaymentCompletedEvent)로 Order 서비스에서 처리하므로 주석 처리
+        // orderClient.pendingShipmentOrder(orderInfo.getOrderId(), "payment-service");
 
         // PG 트랜잭션 로그 저장 (성공)
         PgTransaction transaction = pgTransactionMapper.toSuccessEntity(payment, response);
@@ -134,14 +132,11 @@ public class PaymentTransactionService {
         Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        // 주문 정보 조회
-        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
-
         // 결제 상태를 FAILED로 변경
         payment.failPayment();
 
-        // 판매 입찰 상태 복구 (RESERVED → LIVE)
-        tradeClient.liveSellingBid(orderInfo.getSellingBidId(), "payment-service");
+        // 정책 변경: 결제 실패 시 즉시 복구하지 않음 (다른 수단 재시도 허용).
+        // 10분 타임아웃(OrderExpiredEvent) 시점에 일괄 복구됨.
 
         // PG 트랜잭션 로그 저장 (실패)
         PgTransaction transaction = pgTransactionMapper.toFailedEntity(payment, response);

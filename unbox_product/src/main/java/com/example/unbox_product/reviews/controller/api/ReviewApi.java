@@ -20,6 +20,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import org.springdoc.core.annotations.ParameterObject;
 
 @Tag(name = "[사용자] 리뷰 관리", description = "리뷰 관리 API")
 @RequestMapping("/api/reviews")
@@ -45,12 +46,14 @@ public interface ReviewApi {
             @RequestBody @Valid ReviewCreateRequestDto requestDto
     );
 
+
+
     // ✅ 내 리뷰 목록 조회
     @Operation(summary = "내 리뷰 목록 조회", description = "내가 작성한 리뷰 목록을 페이징하여 조회합니다.")
     @GetMapping("/my-reviews")
     CustomApiResponse<Page<ReviewListResponseDto>> getMyReviews(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Parameter(description = "페이지 정보") Pageable pageable
+            @ParameterObject @Parameter(description = "페이지 정보") Pageable pageable
     );
 
     // ✅ 리뷰 상세 조회

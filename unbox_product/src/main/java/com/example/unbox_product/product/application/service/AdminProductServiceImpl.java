@@ -1,5 +1,6 @@
 package com.example.unbox_product.product.application.service;
 
+import com.example.unbox_product.product.application.event.producer.ProductEventProducer;
 import com.example.unbox_product.product.presentation.dto.request.AdminProductCreateRequestDto;
 import com.example.unbox_product.product.presentation.dto.request.AdminProductUpdateRequestDto;
 import com.example.unbox_product.product.presentation.dto.request.ProductSearchCondition;
@@ -18,13 +19,14 @@ import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import com.example.unbox_common.event.product.ProductDeletedEvent;
 import lombok.AllArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.UUID;
@@ -37,7 +39,7 @@ public class AdminProductServiceImpl implements AdminProductService {
         private final BrandRepository brandRepository;
         private final ProductOptionRepository productOptionRepository;
         private final AdminProductMapper adminProductMapper;
-        private final ApplicationEventPublisher eventPublisher; // 이벤트 발행기
+        private final ProductEventProducer productEventProducer;
         private final RedisTemplate<String, Object> redisTemplate;
 
 
@@ -104,26 +106,45 @@ public class AdminProductServiceImpl implements AdminProductService {
                 return adminProductMapper.toAdminProductUpdateResponseDto(product);
         }
 
-        // ✅ 상품 삭제
         @Override
         @Transactional
         @PreAuthorize("hasAnyRole('MASTER','MANAGER')")
         public void deleteProduct(UUID productId, String deletedBy) {
+                // 1. 상품 조회
                 Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
-                                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+                        .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
 
+                // 2. 이벤트 발행을 위해 ID 목록은 필요하므로 조회
                 List<UUID> deletedOptionIds = productOptionRepository.findAllByProductIdAndDeletedAtIsNull(productId)
                         .stream()
                         .map(ProductOption::getId)
                         .toList();
 
+                // 3. 상품 삭제
                 product.softDelete(deletedBy);
 
-                // 삭제된 상품이니 정보, 가격 삭제
-                redisTemplate.delete("product:info:" + productId);
-                redisTemplate.delete("product:prices:" + productId);
+                // 4. 옵션 일괄 삭제 (쿼리 1번 실행)
+                // forEach 대신 repository 메서드 호출
+                if (!deletedOptionIds.isEmpty()) {
+                        productOptionRepository.deleteByProductId(productId, deletedBy);
+                }
 
-                // 상품 삭제 이벤트 발행
-                eventPublisher.publishEvent(new ProductDeletedEvent(productId, deletedOptionIds));
+                // 5. 캐시 삭제 (커밋 후 실행)
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                                redisTemplate.delete("product:info:" + productId);
+                                redisTemplate.delete("product:prices:" + productId);
+
+                                // 6. 상품 삭제 이벤트 발행
+                                ProductDeletedEvent event = new ProductDeletedEvent(
+                                        product.getId(),
+                                        deletedOptionIds
+                                );
+                                productEventProducer.publishProductDeleted(event);
+                        }
+                });
+
+
         }
 }

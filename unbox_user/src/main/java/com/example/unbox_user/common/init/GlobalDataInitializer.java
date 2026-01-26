@@ -71,7 +71,9 @@ public class GlobalDataInitializer implements ApplicationRunner {
             String phone,
             AdminRole role
     ) {
-        if (adminRepository.existsByEmailAndDeletedAtIsNull(email)) {
+        if (adminRepository.existsByEmail(email) || 
+            adminRepository.existsByNickname(nickname) || 
+            adminRepository.existsByPhone(phone)) {
             return;
         }
 
@@ -96,7 +98,7 @@ public class GlobalDataInitializer implements ApplicationRunner {
             String nickname,
             String phone
     ) {
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmail(email) || userRepository.existsByNickname(nickname)) {
             return;
         }
 

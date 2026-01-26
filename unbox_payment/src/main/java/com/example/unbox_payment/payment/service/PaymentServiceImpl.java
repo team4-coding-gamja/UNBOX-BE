@@ -4,7 +4,7 @@ import com.example.unbox_payment.common.client.order.OrderClient;
 import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
 import com.example.unbox_payment.payment.dto.internal.PaymentForSettlementResponse;
 import com.example.unbox_payment.payment.dto.internal.PaymentStatusResponse;
-import com.example.unbox_payment.common.client.settlement.SettlementClient;
+
 import com.example.unbox_payment.payment.dto.response.PaymentHistoryResponseDto;
 import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
 import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
@@ -43,7 +43,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMapper paymentMapper;
     private final PaymentClientMapper paymentClientMapper;
     private final OrderClient orderClient;
-    private final SettlementClient settlementClient;
+
     private final PaymentEventProducer paymentEventProducer;
 
     // ✅ 결제 이력 조회
@@ -142,12 +142,9 @@ public class PaymentServiceImpl implements PaymentService {
             // 성공 로직 수행
             paymentTransactionService.processSuccessfulPayment(paymentId, mockResponse);
 
-            // 정산 정보 생성
-            settlementClient.createSettlementForPayment(paymentId);
-
             // 결제 완료 이벤트 발행
             paymentEventProducer.publishPaymentCompleted(
-                    PaymentCompletedEvent.of(finalPaymentKey, payment.getOrderId(), payment.getSellingBidId(), payment.getAmount())
+                    PaymentCompletedEvent.of(paymentId, finalPaymentKey, payment.getOrderId(), payment.getSellingBidId(), payment.getAmount())
             );
 
             log.info("[PaymentConfirm] 테스트 결제 프로세스 완료 - paymentId: {}", paymentId);
@@ -164,15 +161,13 @@ public class PaymentServiceImpl implements PaymentService {
             try {
                 // 성공 처리 (DONE 변경 등 분리된 트랜잭션에서 처리)
                 paymentTransactionService.processSuccessfulPayment(paymentId, response);
-
-                // 정산 정보 생성 (비동기 처리 등이 권장되지만 현재는 동기 유지)
-                settlementClient.createSettlementForPayment(paymentId);
                 
-                // 🔄 결제 완료 이벤트 발행 (비동기 - Trade, Notification Service)
+                // 🔄 결제 완료 이벤트 발행 (비동기 - Trade, Notification, Settlement Service)
                 // Trade Service: RESERVED -> SOLD 상태 변경
-                // Order Service: PAYMENT_PENDING -> PENDING_SHIPMENT (현재는 동기 호출이 없지만 추후 전환 가능)
+                // Order Service: PAYMENT_PENDING -> PENDING_SHIPMENT
+                // Settlement Service: 정산 데이터 생성
                 paymentEventProducer.publishPaymentCompleted(
-                        PaymentCompletedEvent.of(finalPaymentKey, payment.getOrderId(), payment.getSellingBidId(), payment.getAmount())
+                        PaymentCompletedEvent.of(paymentId, finalPaymentKey, payment.getOrderId(), payment.getSellingBidId(), payment.getAmount())
                 );
 
                 log.info("[PaymentConfirm] 전체 결제 프로세스 완료 - paymentId: {}", paymentId);

@@ -75,6 +75,6 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     boolean existsByIdAndDeletedAtIsNull(UUID id);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Product p SET p.deletedAt = NOW(), p.deletedBy = :deletedBy WHERE p.brand.id = :brandId AND p.deletedAt IS NULL")
+    @Query("UPDATE Product p SET p.deletedAt = CURRENT_TIMESTAMP, p.deletedBy = :deletedBy WHERE p.brand.id = :brandId AND p.deletedAt IS NULL")
     void deleteByBrandId(@Param("brandId") UUID brandId, @Param("deletedBy") String deletedBy);
 }

@@ -125,6 +125,35 @@ public class PaymentServiceImpl implements PaymentService {
                 ? "mock_key_" + UUID.randomUUID().toString().substring(0, 8)
                 : paymentKeyFromFront;
 
+        // ✅ 테스트용 강제 승인 로직 (Development Only)
+        // paymentKey가 "test_success"로 시작하면 실제 PG 연동 없이 성공 처리
+        if (finalPaymentKey.startsWith("test_success")) {
+            log.info("[PaymentConfirm] 테스트용 강제 승인 처리 (Mock) - paymentId: {}", paymentId);
+
+            TossConfirmResponse mockResponse = TossConfirmResponse.builder()
+                    .paymentKey(finalPaymentKey)
+                    .orderId(payment.getOrderId().toString())
+                    .totalAmount(payment.getAmount())
+                    .method("CARD") // 테스트용 고정값
+                    .status("DONE")
+                    .approvedAt(java.time.LocalDateTime.now().toString())
+                    .build();
+
+            // 성공 로직 수행
+            paymentTransactionService.processSuccessfulPayment(paymentId, mockResponse);
+
+            // 정산 정보 생성
+            settlementClient.createSettlementForPayment(paymentId);
+
+            // 결제 완료 이벤트 발행
+            paymentEventProducer.publishPaymentCompleted(
+                    PaymentCompletedEvent.of(finalPaymentKey, payment.getOrderId(), payment.getSellingBidId(), payment.getAmount())
+            );
+
+            log.info("[PaymentConfirm] 테스트 결제 프로세스 완료 - paymentId: {}", paymentId);
+            return mockResponse;
+        }
+
         // 외부 API 호출(이 구간에서 지연이 발생해도 DB Connection Pool을 점유하지 않음!)
         log.info("[PaymentConfirm] Toss API 호출 시도 (트랜잭션 없음) - paymentId: {}", paymentId);
         TossConfirmResponse response = tossApiService.confirm(finalPaymentKey, payment.getOrderId(),

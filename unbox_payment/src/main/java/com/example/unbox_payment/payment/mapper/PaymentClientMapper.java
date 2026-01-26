@@ -14,5 +14,6 @@ public interface PaymentClientMapper {
     @Mapping(target = "orderId", source = "orderId")
     @Mapping(target = "sellerId", source = "sellerId")
     @Mapping(target = "amount", source = "amount")
+    @Mapping(target = "paymentKey", source = "paymentKey")
     PaymentForSettlementResponse toPaymentForSettlementResponse(Payment payment);
 }

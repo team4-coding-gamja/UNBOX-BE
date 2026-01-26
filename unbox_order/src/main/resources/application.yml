@@ -25,6 +25,16 @@ spring:
       hibernate:
         format_sql: true
 
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      ssl:
+        enabled: true
+
+  jwt:
+    secret: ${SPRING_JWT_SECRET}
+
   sql:
     init:
       mode: never
@@ -57,8 +67,6 @@ trade-service:
 
 payment-service:
   url: ${PAYMENT_SERVICE_URL:http://localhost:8085}
-
-
 
 logging:
   level:

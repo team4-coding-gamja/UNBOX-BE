@@ -10,8 +10,8 @@ import java.util.UUID;
 
 public interface CartRepository extends JpaRepository<Cart, UUID> {
 
-    // 중복 체크 (사용자 + 판매입찰)
-    boolean existsByUserAndSellingBidId(User user, UUID sellingBidId);
+    // 중복 체크 (사용자 + 판매입찰 + 삭제되지 않은 것만)
+    boolean existsByUserAndSellingBidIdAndDeletedAtIsNull(User user, UUID sellingBidId);
 
     // 내 장바구니 목록 조회 (상품 정보 Fetch Join)
     List<Cart> findAllByUserOrderByCreatedAtDesc(User user);

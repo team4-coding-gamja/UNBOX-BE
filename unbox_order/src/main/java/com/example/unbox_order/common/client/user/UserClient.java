@@ -10,4 +10,7 @@ public interface UserClient {
 
     @GetMapping("/internal/users/{userId}/for-order")
     UserInfoForOrderResponse getUserInfoForOrder(@PathVariable("userId") Long userId);
+
+    @GetMapping("/internal/users/{userId}/has-default-account")
+    boolean hasDefaultAccount(@PathVariable("userId") Long userId);
 }

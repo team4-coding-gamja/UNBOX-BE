@@ -71,7 +71,9 @@ public class GlobalDataInitializer implements ApplicationRunner {
             String phone,
             AdminRole role
     ) {
-        if (adminRepository.existsByEmailAndDeletedAtIsNull(email)) {
+        if (adminRepository.existsByEmailAndDeletedAtIsNull(email) || 
+            adminRepository.existsByNicknameAndDeletedAtIsNull(nickname) || 
+            adminRepository.existsByPhoneAndDeletedAtIsNull(phone)) {
             return;
         }
 

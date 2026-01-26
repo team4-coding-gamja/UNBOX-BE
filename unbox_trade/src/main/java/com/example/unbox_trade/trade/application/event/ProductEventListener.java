@@ -27,6 +27,13 @@ public class ProductEventListener {
     public void handleProductEvents(ConsumerRecord<String, Object> record, Acknowledgment ack) {
 
         Object event = record.value();
+
+        if (event == null) {
+            log.warn("[Trade] Received null event. Key: {}", record.key());
+            ack.acknowledge();
+            return;
+        }
+
         String eventType = event.getClass().getSimpleName();
 
         log.info("[Trade] Received Event: {}", eventType);

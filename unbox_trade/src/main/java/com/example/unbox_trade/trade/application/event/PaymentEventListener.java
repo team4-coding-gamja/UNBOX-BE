@@ -26,7 +26,7 @@ public class PaymentEventListener {
         Object event = record.value();
 
         if (event == null) {
-            log.warn("Received null event in ProductEventListener. Key: {}", record.key());
+            log.warn("Received null event in PaymentEventListener. Key: {}", record.key());
             ack.acknowledge();
             return;
         }

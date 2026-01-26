@@ -6,7 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -71,4 +73,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     //브랜드 ID로 삭제되지 않은 상품 '리스트' 조회 (페이징 아님)
     List<Product> findAllByBrandIdAndDeletedAtIsNull(UUID brandId);
     boolean existsByIdAndDeletedAtIsNull(UUID id);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Product p SET p.deletedAt = NOW(), p.deletedBy = :deletedBy WHERE p.brand.id = :brandId AND p.deletedAt IS NULL")
+    void deleteByBrandId(@Param("brandId") UUID brandId, @Param("deletedBy") String deletedBy);
 }

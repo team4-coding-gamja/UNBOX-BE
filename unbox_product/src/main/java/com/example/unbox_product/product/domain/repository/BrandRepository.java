@@ -32,4 +32,5 @@ public interface BrandRepository extends JpaRepository<Brand, UUID> {
         and lower(b.name) like lower(concat('%', :keyword, '%'))
       """)
   Page<Brand> searchByNameAndDeletedAtIsNull(@Param("keyword") String keyword, Pageable pageable);
+
 }

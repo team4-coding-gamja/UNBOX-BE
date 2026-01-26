@@ -16,8 +16,11 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Optional<Payment> findByIdAndDeletedAtIsNull(UUID id);
 
     // ✅ 주문 ID로 결제 내역 조회 (삭제된 데이터 제외)
-    @Query("select p from Payment p where p.orderId = :orderId and p.deletedAt is null")
-    Optional<Payment> findByOrderIdAndDeletedAtIsNull(@Param("orderId") UUID orderId);
+    // ✅ 주문 ID로 최신 결제 내역 조회 (삭제된 데이터 제외)
+    Optional<Payment> findTopByOrderIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID orderId);
+
+    // ✅ 주문 ID로 모든 결제 내역 조회 (삭제된 데이터 제외 - 정리용)
+    java.util.List<Payment> findAllByOrderIdAndDeletedAtIsNull(UUID orderId);
 
     // ✅ 주문 ID로 결제 존재 여부 확인 (중복 결제 방지용)
     boolean existsByOrderIdAndDeletedAtIsNull(UUID orderId);

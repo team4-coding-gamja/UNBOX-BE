@@ -37,4 +37,8 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
     Page<Admin> findAllByAdminRoleAndDeletedAtIsNull(AdminRole role, Pageable pageable);
 
     boolean existsByEmailAndDeletedAtIsNull(String email);
+    
+    boolean existsByNicknameAndDeletedAtIsNull(String nickname);
+
+    boolean existsByPhoneAndDeletedAtIsNull(String phone);
 }

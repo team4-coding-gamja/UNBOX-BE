@@ -20,6 +20,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import org.springdoc.core.annotations.ParameterObject;
 
 @Tag(name = "[사용자] 주문 관리", description = "주문 관리 API")
 public interface OrderApi {
@@ -50,10 +51,12 @@ public interface OrderApi {
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
     );
 
+
+
     @Operation(summary = "내 주문 목록 조회", description = "구매자가 자신의 주문 내역을 페이징 조회합니다.")
     CustomApiResponse<Page<OrderResponseDto>> getMyOrders(
             @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PageableDefault(size = 10) Pageable pageable
+            @ParameterObject @PageableDefault(size = 10) Pageable pageable
     );
 
     @Operation(summary = "주문 상세 조회", description = "주문의 상세 정보(배송지, 옵션 등)를 조회합니다.")

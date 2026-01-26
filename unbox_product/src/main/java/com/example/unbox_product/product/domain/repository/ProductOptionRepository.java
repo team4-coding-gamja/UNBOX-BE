@@ -42,10 +42,10 @@ public interface ProductOptionRepository extends JpaRepository<ProductOption, UU
     Page<ProductOption> findAllByDeletedAtIsNull(Pageable pageable);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE ProductOption po SET po.deletedAt = NOW(), po.deletedBy = :deletedBy WHERE po.product.id IN :productIds AND po.deletedAt IS NULL")
+    @Query("UPDATE ProductOption po SET po.deletedAt = CURRENT_TIMESTAMP, po.deletedBy = :deletedBy WHERE po.product.id IN :productIds AND po.deletedAt IS NULL")
     void deleteByProductIdsIn(@Param("productIds") List<UUID> productIds, @Param("deletedBy") String deletedBy);
 
     @Modifying(clearAutomatically = true) // 중요: 쿼리 실행 후 영속성 컨텍스트 비우기
-    @Query("UPDATE ProductOption po SET po.deletedAt = NOW(), po.deletedBy = :deletedBy WHERE po.product.id = :productId AND po.deletedAt IS NULL")
+    @Query("UPDATE ProductOption po SET po.deletedAt = CURRENT_TIMESTAMP, po.deletedBy = :deletedBy WHERE po.product.id = :productId AND po.deletedAt IS NULL")
     void deleteByProductId(@Param("productId") UUID productId, @Param("deletedBy") String deletedBy);
 }

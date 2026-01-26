@@ -46,13 +46,15 @@ public class CartServiceImpl implements CartService {
         }
 
         // 3. 중복 검증
-        if (cartRepository.existsByUserAndSellingBidId(user, sellingBidInfo.getSellingId())) {
+        if (cartRepository.existsByUserAndSellingBidIdAndDeletedAtIsNull(user, sellingBidInfo.getSellingId())) {
             throw new CustomException(ErrorCode.CART_ALREADY_EXISTS);
         }
          // product 스냅샷 추가 필요
         Cart cart = Cart.builder()
                 .user(user)
                 .sellingBidId(sellingBidInfo.getSellingId())
+                .productId(sellingBidInfo.getProductId())
+                .productOptionId(sellingBidInfo.getProductOptionId())
                 .productName(sellingBidInfo.getProductName())
                 .productOptionName(sellingBidInfo.getProductOptionName())
                 .productImageUrl(sellingBidInfo.getProductImageUrl())
@@ -60,6 +62,7 @@ public class CartServiceImpl implements CartService {
                 .build();
 
         Cart save = cartRepository.save(cart);
+        
         return CartCreateResponseDto.builder()
                 .sellingBidId(save.getSellingBidId())
                 .build();

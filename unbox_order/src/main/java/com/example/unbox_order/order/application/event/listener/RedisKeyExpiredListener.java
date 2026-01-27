@@ -21,6 +21,9 @@ public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
     public RedisKeyExpiredListener(RedisMessageListenerContainer listenerContainer, OrderEventProducer orderEventProducer) {
         super(listenerContainer);
         this.orderEventProducer = orderEventProducer;
+        // AWS ElastiCache에서는 CONFIG 명령어가 비활성화되어 있으므로 건너뜀
+        // ElastiCache 파라미터 그룹에서 notify-keyspace-events = "Ex" 로 직접 설정 필요
+        setKeyspaceNotificationsConfigParameter("");
     }
 
     /**

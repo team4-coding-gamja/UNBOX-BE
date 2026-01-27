@@ -14,3 +14,15 @@ spring:
       sasl.jaas.config: software.amazon.msk.auth.iam.IAMLoginModule required;
       # IAM 콜백 핸들러
       sasl.client.callback.handler.class: software.amazon.msk.auth.iam.IAMClientCallbackHandler
+      
+      # 재연결 설정 (메모리 절약)
+      reconnect.backoff.ms: 5000  # 재연결 대기 시간 5초
+      reconnect.backoff.max.ms: 60000  # 최대 재연결 대기 시간 60초
+      retry.backoff.ms: 3000  # 재시도 대기 시간 3초
+      
+      # 메타데이터 갱신 간격 늘리기
+      metadata.max.age.ms: 300000  # 5분
+      
+      # 연결 타임아웃 설정
+      request.timeout.ms: 30000
+      session.timeout.ms: 30000

@@ -1,6 +1,6 @@
 package com.example.unbox_user;
 
-// CI/CD Deploy: 2026-01-27 - Monitoring System Integration
+// CI/CD Deploy: 2026-01-27 - Kafka MSK Integration Complete - Full Stack Test
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

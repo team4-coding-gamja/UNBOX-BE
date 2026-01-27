@@ -48,7 +48,7 @@ public class UserInternalController {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        Address defaultAddress = addressRepository.findByUserIdAndIsDefaultTrueAndDeletedAtIsNull(userId)
+        Address defaultAddress = addressRepository.findByUserIdAndIsDefaultTrue(userId)
                 .orElse(null);
 
         return UserInfoForOrderResponse.builder()
@@ -60,5 +60,12 @@ public class UserInternalController {
                 .receiverAddress(defaultAddress != null ? defaultAddress.getAddress() + " " + defaultAddress.getDetailAddress() : null)
                 .receiverZipCode(defaultAddress != null ? defaultAddress.getZipCode() : null)
                 .build();
+    }
+    private final com.example.unbox_user.user.repository.AccountRepository accountRepository;
+
+    @Operation(summary = "기본 계좌 존재 여부 확인", description = "유저가 기본 정산 계좌를 가지고 있는지 확인합니다.")
+    @GetMapping("/{userId}/has-default-account")
+    public boolean hasDefaultAccount(@PathVariable("userId") Long userId) {
+        return accountRepository.existsByUserIdAndIsDefaultTrue(userId);
     }
 }

@@ -7,5 +7,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface AddressRepository extends JpaRepository<Address, UUID> {
-    Optional<Address> findByUserIdAndIsDefaultTrueAndDeletedAtIsNull(Long userId);
+    Optional<Address> findByUserIdAndIsDefaultTrue(Long userId);
+    
+    java.util.List<Address> findAllByUserIdAndDeletedAtIsNull(Long userId);
+
+    Optional<Address> findByIdAndUserId(UUID id, Long userId);
 }

@@ -99,6 +99,7 @@ public enum ErrorCode {
     SETTLEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 주문의 정산 내용을 찾을 수 없습니다."),
     SETTLEMENT_ALREADY_DONE(HttpStatus.BAD_REQUEST, "이미 정산이 완료된 주문입니다."),
     INVALID_SETTLEMENT_STATUS(HttpStatus.BAD_REQUEST, "정산 상태를 바꿀 수 없는 상태입니다."),
+    SETTLEMENT_ACCOUNT_NOT_FOUND(HttpStatus.BAD_REQUEST, "판매자의 정산 계좌가 존재하지 않습니다."),
 
     // 검수
     INSPECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 검수가 진행 중이거나 완료되었습니다."),

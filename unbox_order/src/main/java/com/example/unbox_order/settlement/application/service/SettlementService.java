@@ -2,6 +2,7 @@ package com.example.unbox_order.settlement.application.service;
 
 import com.example.unbox_order.common.client.payment.PaymentClient;
 import com.example.unbox_order.common.client.payment.dto.PaymentForSettlementResponse;
+import com.example.unbox_order.common.client.user.UserClient;
 import com.example.unbox_order.common.client.settlement.dto.SettlementCreateResponse;
 import com.example.unbox_order.common.client.settlement.dto.SettlementForPaymentResponse;
 import com.example.unbox_order.order.domain.entity.Order;
@@ -34,6 +35,7 @@ public class SettlementService {
     private final OrderRepository orderRepository;
     private final SettlementRepository settlementRepository;
     private final PaymentClient paymentClient;
+    private final UserClient userClient;
     private final SettlementClientMapper settlementClientMapper;
     private final SettlementMapper settlementMapper;
 
@@ -89,6 +91,12 @@ public class SettlementService {
             }
             throw new CustomException(ErrorCode.INVALID_SETTLEMENT_STATUS);
         }
+
+        // ✅ 정산 계좌 존재 여부 확인
+        if (!userClient.hasDefaultAccount(settlement.getSellerId())) {
+            throw new CustomException(ErrorCode.SETTLEMENT_ACCOUNT_NOT_FOUND);
+        }
+
         settlement.updateStatus(SettlementStatus.PAID_OUT); // PAID_OUT으로 변경
         return settlementMapper.toSettlementResponseDto(settlement);
     }

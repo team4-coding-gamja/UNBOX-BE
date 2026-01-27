@@ -9,6 +9,9 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    // ✅ 닉네임 중복 체크 - 삭제 포함(주의)
+    boolean existsByNickname(String nickname);
+
     // ✅ 이메일 중복 체크 - 삭제 포함(주의)
     boolean existsByEmail(String email);
 

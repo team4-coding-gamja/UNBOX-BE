@@ -1,7 +1,6 @@
 package com.example.unbox_trade.trade.application.event;
 
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
-import com.example.unbox_trade.trade.application.service.AdminSellingBidService;
 import com.example.unbox_trade.trade.application.service.SellingBidService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

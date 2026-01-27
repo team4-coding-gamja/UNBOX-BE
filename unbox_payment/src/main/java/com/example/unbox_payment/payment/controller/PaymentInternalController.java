@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.UUID;
 
 @Tag(name = "[내부] 결제 관리", description = "내부 시스템용 결제 API")
@@ -24,9 +25,11 @@ public class PaymentInternalController {
 
     // ✅ 결제 조회 (정산용)
     @Operation(summary = "정산용 결제 정보 조회", description = "정산 처리를 위해 결제 정보를 조회합니다.")
-    @GetMapping("/{id}/for-settlement")
-    public PaymentForSettlementResponse getPaymentForSettlement(@PathVariable UUID id) {
-        return paymentService.getPaymentForSettlement(id);
+    @GetMapping("/{paymentId}/for-settlement")
+    public PaymentForSettlementResponse getPaymentForSettlement(
+            @Parameter(description = "결제 ID (UUID)", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+            @PathVariable UUID paymentId) {
+        return paymentService.getPaymentForSettlement(paymentId);
     }
 
     // ✅ 결제 상태 조회

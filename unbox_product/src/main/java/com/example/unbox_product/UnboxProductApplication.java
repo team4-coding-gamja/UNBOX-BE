@@ -1,6 +1,6 @@
 package com.example.unbox_product;
 
-// CI/CD Deploy: 2026-01-27 - Monitoring System Integration
+// CI/CD Deploy: 2026-01-27 - Kafka MSK Integration Complete - Full Stack Test
 import org.springframework.boot.SpringApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

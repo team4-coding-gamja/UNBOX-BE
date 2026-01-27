@@ -84,6 +84,9 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/", "/swagger-ui/**", "/swagger-ui.html",
                         "/v3/api-docs/**", "/api-docs/**", "/swagger-resources/**",
+                        // ALB prefix 경로 허용
+                        "/user/swagger-ui/**", "/user/swagger-ui.html",
+                        "/user/v3/api-docs/**", "/user/api-docs/**",
                         "/actuator/**"
                 ).permitAll()
                 .requestMatchers("/h2-console/**").permitAll()

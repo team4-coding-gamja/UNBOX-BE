@@ -1,5 +1,6 @@
 package com.example.unbox_order.settlement.application.event.listener;
 
+import com.example.unbox_common.event.order.OrderRefundRequestedEvent;
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
 
 import com.example.unbox_order.settlement.application.service.SettlementService;
@@ -52,4 +53,40 @@ public class SettlementEventListener {
 
         ack.acknowledge();
     }
+
+    /**
+     * ✅ 주문 환불 요청 이벤트 리스너 (정산 취소)
+     * Order 서비스에서 환불 요청 시 발행하는 이벤트(OrderRefundRequestedEvent)를 수신하여
+     * 정산(Settlement) 상태를 CANCELLED로 변경합니다.
+     */
+    @KafkaListener(topics = "order-events", groupId = "settlement-group")
+    public void handleOrderRefundEvent(ConsumerRecord<String, Object> record, Acknowledgment ack) {
+        Object event = record.value();
+
+        if (event == null) {
+            log.warn("Received null event in SettlementEventListener (order-events). Key: {}", record.key());
+            ack.acknowledge();
+            return;
+        }
+
+        if (event instanceof OrderRefundRequestedEvent refundEvent) {
+            log.info("Received OrderRefundRequestedEvent for Settlement Cancellation. Order ID: {}", 
+                    refundEvent.orderId());
+            
+            try {
+                settlementService.cancelSettlementByOrderId(refundEvent.orderId());
+                log.info("Successfully cancelled settlement for OrderId: {}", refundEvent.orderId());
+                
+            } catch (Exception e) {
+                log.error("Failed to cancel settlement for OrderRefundRequestedEvent. OrderId: {}", 
+                        refundEvent.orderId(), e);
+                throw e;
+            }
+        } else {
+            log.debug("Ignored event type in order-events: {}", event.getClass().getName());
+        }
+
+        ack.acknowledge();
+    }
 }
+

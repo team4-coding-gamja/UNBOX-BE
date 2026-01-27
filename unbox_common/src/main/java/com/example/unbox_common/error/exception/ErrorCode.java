@@ -73,6 +73,7 @@ public enum ErrorCode {
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태입니다."),
     INVALID_ORDER_STATUS_TRANSITION(HttpStatus.BAD_REQUEST, "유효하지 않은 주문 상태 변경입니다."),
     INVALID_ORDER_BUYER(HttpStatus.BAD_REQUEST, "유효하지 않은 주문의 구매자 입니다."),
+    REFUND_REQUIRED_FOR_PAID_ORDER(HttpStatus.BAD_REQUEST, "결제 완료된 주문은 환불 API(requestRefund)를 사용해주세요."),
 
     // 장바구니 (Cart)
     CART_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 장바구니에 담긴 상품입니다."),

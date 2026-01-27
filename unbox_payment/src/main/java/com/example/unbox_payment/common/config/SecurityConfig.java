@@ -43,6 +43,8 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 // Swagger
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
+                // ALB prefix 경로 Swagger 허용
+                .requestMatchers("/payment/v3/api-docs/**", "/payment/swagger-ui/**", "/payment/swagger-resources/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 // Internal API (Feign)
                 .requestMatchers("/internal/**").permitAll()

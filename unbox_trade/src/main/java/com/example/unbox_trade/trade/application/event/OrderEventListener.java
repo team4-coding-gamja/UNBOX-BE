@@ -43,8 +43,9 @@ public class OrderEventListener {
             log.info("Received OrderExpiredEvent for Order ID: {}, SellingBid ID: {}", expiredEvent.orderId(), expiredEvent.sellingBidId());
             revertSellingBid(expiredEvent.sellingBidId(), ack);
         } else if (event instanceof OrderRefundRequestedEvent refundEvent) {
-            log.info("Received OrderRefundRequestedEvent for Order ID: {}, SellingBid ID: {}", refundEvent.orderId(), refundEvent.sellingBidId());
-            handleRefund(refundEvent.sellingBidId(), ack);
+            log.info("Received OrderRefundRequestedEvent for Order ID: {}, SellingBid ID: {}, PreviousStatus: {}", 
+                    refundEvent.orderId(), refundEvent.sellingBidId(), refundEvent.previousStatus());
+            handleRefund(refundEvent.sellingBidId(), refundEvent.previousStatus(), ack);
         } else {
             log.warn("Unknown event type: {} (Value: {})", event.getClass().getName(), event);
             ack.acknowledge();
@@ -94,10 +95,10 @@ public class OrderEventListener {
 
     /**
      * 환불 요청 이벤트 처리
-     * 결제 후 취소된 경우, 입찰을 SOLD → CANCELLED로 변경
-     * (이미 거래 완료된 상품이므로 LIVE로 복구하지 않음)
+     * - PENDING_SHIPMENT (배송 전 취소): 입찰을 SOLD → LIVE로 복구 (판매자가 다시 올릴 필요 없음)
+     * - DELIVERED (배송 후 반품): 입찰을 SOLD → CANCELLED로 변경 (반품된 상품)
      */
-    private void handleRefund(UUID sellingBidId, Acknowledgment ack) {
+    private void handleRefund(UUID sellingBidId, String previousStatus, Acknowledgment ack) {
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(sellingBidId)
                 .orElse(null);
 
@@ -115,15 +116,22 @@ public class OrderEventListener {
         }
 
         try {
-            // 환불 시 입찰 취소 처리 (SOLD → CANCELLED + soft delete)
-            sellingBid.updateStatus(SellingStatus.CANCELLED);
-            sellingBid.softDelete("REFUND_EVENT");
-            log.info("Successfully cancelled SellingBid {} due to refund.", sellingBidId);
+            if ("PENDING_SHIPMENT".equals(previousStatus)) {
+                // 배송 전 취소: LIVE로 복구 (판매자가 다시 올릴 필요 없음)
+                sellingBid.updateStatus(SellingStatus.LIVE);
+                log.info("SellingBid {} reverted to LIVE (pre-shipment refund).", sellingBidId);
+            } else {
+                // 배송 후 취소 (DELIVERED 등): CANCELLED로 변경
+                sellingBid.updateStatus(SellingStatus.CANCELLED);
+                sellingBid.softDelete("REFUND_EVENT");
+                log.info("SellingBid {} cancelled (post-delivery refund).", sellingBidId);
+            }
         } catch (Exception e) {
-            log.error("Failed to cancel SellingBid {} for refund.", sellingBidId, e);
+            log.error("Failed to process refund for SellingBid {}.", sellingBidId, e);
             throw e;
         }
 
         ack.acknowledge();
     }
 }
+

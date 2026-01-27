@@ -101,6 +101,34 @@ public class SettlementService {
         return settlementMapper.toSettlementResponseDto(settlement);
     }
 
+    // ✅ 정산 취소 (환불 시)
+    @Transactional
+    public void cancelSettlementByOrderId(UUID orderId) {
+        Settlement settlement = settlementRepository.findByOrderId(orderId)
+                .orElse(null);
+        
+        // 정산이 없으면 무시 (결제 직후 바로 취소된 경우 등)
+        if (settlement == null) {
+            log.warn("정산 없음, 취소 생략 - orderId: {}", orderId);
+            return;
+        }
+
+        // 이미 취소된 경우 멱등성 보장
+        if (settlement.getStatus() == SettlementStatus.CANCELLED) {
+            log.warn("이미 취소된 정산 - settlementId: {}", settlement.getId());
+            return;
+        }
+
+        // 이미 지급 완료된 경우 (관리자 개입 필요)
+        if (settlement.getStatus() == SettlementStatus.PAID_OUT) {
+            log.error("이미 지급 완료된 정산, 수동 처리 필요 - settlementId: {}", settlement.getId());
+            return;
+        }
+
+        settlement.cancel();
+        log.info("정산 취소 완료 - settlementId: {}, orderId: {}", settlement.getId(), orderId);
+    }
+
     // ========================================
     // ✅ 내부 시스템용 API (Internal API)
     // ========================================

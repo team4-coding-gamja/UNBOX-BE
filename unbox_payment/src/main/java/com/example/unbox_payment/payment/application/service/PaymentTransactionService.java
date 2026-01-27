@@ -142,4 +142,61 @@ public class PaymentTransactionService {
         PgTransaction transaction = pgTransactionMapper.toFailedEntity(payment, response);
         pgTransactionRepository.save(transaction);
     }
+
+    // ========================================
+    // ✅ 환불 처리용 메서드 (트랜잭션 분리)
+    // ========================================
+
+    /**
+     * ✅ 환불 준비 (Transaction 1)
+     * - 결제 정보 검증 및 상태 반환 (아직 상태 변경 X)
+     * - REQUIRES_NEW로 독립 트랜잭션에서 실행하여 빠르게 커밋
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    public Payment prepareForRefund(UUID paymentId) {
+        log.info("[RefundTransaction] 환불 준비 시작 - paymentId: {}", paymentId);
+
+        // 1. 결제 정보 조회
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> {
+                    log.error("[RefundTransaction] 결제 정보 없음 - paymentId: {}", paymentId);
+                    return new CustomException(ErrorCode.PAYMENT_NOT_FOUND);
+                });
+
+        // 2. 이미 취소된 결제인지 확인 (멱등성)
+        if (payment.getStatus() == PaymentStatus.CANCELED) {
+            log.warn("[RefundTransaction] 이미 취소된 결제 - paymentId: {}", paymentId);
+            return null; // null 반환 시 호출자가 처리 중단
+        }
+
+        // 3. 완료된 결제만 취소 가능
+        if (payment.getStatus() != PaymentStatus.DONE) {
+            log.error("[RefundTransaction] 취소 불가 상태 - paymentId: {}, status: {}", paymentId, payment.getStatus());
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        log.info("[RefundTransaction] 환불 준비 완료 - paymentId: {}, paymentKey: {}", paymentId, payment.getPaymentKey());
+        return payment;
+    }
+
+    /**
+     * ✅ 환불 완료 처리 (Transaction 2)
+     * - 결제 상태를 CANCELED로 변경
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void completeRefund(UUID paymentId) {
+        log.info("[RefundTransaction] 환불 완료 처리 시작 - paymentId: {}", paymentId);
+
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // 이미 취소된 경우 멱등성 보장
+        if (payment.getStatus() == PaymentStatus.CANCELED) {
+            log.warn("[RefundTransaction] 이미 취소됨 (멱등성) - paymentId: {}", paymentId);
+            return;
+        }
+
+        payment.cancelPayment();
+        log.info("[RefundTransaction] 환불 완료 - paymentId: {}", paymentId);
+    }
 }

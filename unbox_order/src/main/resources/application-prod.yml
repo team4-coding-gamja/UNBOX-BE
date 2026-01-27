@@ -6,10 +6,8 @@ spring:
     import: "optional:file:.env[.properties]"
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    consumer:
-      group-id: order-group
-      auto-offset-reset: earliest
+    # bootstrap-servers와 producer/consumer 설정은 application.yml에서 상속
+    # 여기서는 MSK Serverless 인증만 추가
     properties:
       security.protocol: SASL_SSL
       sasl.mechanism: AWS_MSK_IAM

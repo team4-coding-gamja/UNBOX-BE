@@ -1,87 +1,46 @@
 package com.example.unbox_common.config;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.core.*;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.util.backoff.FixedBackOff;
 
-import java.util.HashMap;
-import java.util.Map;
-
+/**
+ * Kafka 설정
+ * 
+ * ProducerFactory, ConsumerFactory, KafkaTemplate은 Spring Boot Auto Configuration이
+ * application.yml 기반으로 자동 생성합니다.
+ * 
+ * MSK Serverless 인증 설정은 application-prod.yml의 spring.kafka.properties.*에서 관리:
+ * - security.protocol: SASL_SSL
+ * - sasl.mechanism: AWS_MSK_IAM
+ * - sasl.jaas.config: ...
+ */
 @Configuration
 public class KafkaConfig {
 
-    @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
-    private String bootstrapServers;
-
-    @Value("${spring.kafka.consumer.group-id:default-group}")
-    private String groupId;
-
-    // --- Producer Configuration ---
-    @Bean
-    public ProducerFactory<String, Object> producerFactory() {
-        Map<String, Object> config = new HashMap<>();
-        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-
-        // Idempotence & Reliability
-        config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true); // 멱등성 보장
-        config.put(ProducerConfig.ACKS_CONFIG, "all"); // 모든 리플리카 승인 대기
-        config.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5); // 순서 보장 한도 내 최대값
-
-        // Batch & Throughput
-        config.put(ProducerConfig.LINGER_MS_CONFIG, 5); // 5ms 대기
-        config.put(ProducerConfig.BATCH_SIZE_CONFIG, 32768); // 32KB 배치 크기
-
-        return new DefaultKafkaProducerFactory<>(config);
-    }
-
-    @Bean
-    public KafkaTemplate<String, Object> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
-    }
-
-    // --- Consumer Configuration ---
-    @Bean
-    public ConsumerFactory<String, Object> consumerFactory() {
-        Map<String, Object> config = new HashMap<>();
-        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        config.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        
-        // Offset & Commit
-        config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false); // 수동 커밋
-        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); // 처음부터 읽기
-
-        // Tuning
-        config.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 50); // 배치 처리 갯수 제한 (타임아웃 방지)
-
-        // Trusted Packages
-        config.put(JsonDeserializer.TRUSTED_PACKAGES, "*"); // 모든 패키지 허용 (보안상 구체적 패키지 권장)
-        
-        return new DefaultKafkaConsumerFactory<>(config);
-    }
-
+    /**
+     * Consumer 리스너 컨테이너 팩토리
+     * - Manual Immediate Ack Mode (데이터 정합성 최우선)
+     * - Error Handling & Recovery (Retry + DLT)
+     * 
+     * @param consumerFactory Spring Boot가 자동 생성한 ConsumerFactory (application.yml 설정 적용됨)
+     * @param kafkaTemplate Spring Boot가 자동 생성한 KafkaTemplate (application.yml 설정 적용됨)
+     */
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(
+            ConsumerFactory<String, Object> consumerFactory,
             KafkaTemplate<String, Object> kafkaTemplate) {
         
-        ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
+        ConcurrentKafkaListenerContainerFactory<String, Object> factory = 
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory);
         
         // Manual Immediate Ack Mode (데이터 정합성 최우선)
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
@@ -97,3 +56,4 @@ public class KafkaConfig {
         return factory;
     }
 }
+

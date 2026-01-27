@@ -44,9 +44,9 @@ public class SecurityConfig {
         // product 서비스 특성상 조회(GET)은 열어둘 수도 있으나, 일단 unbox_be 정책을 따름.
         http.authorizeHttpRequests(auth -> auth
             // Swagger 등 허용
-            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
+            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger-resources/**").permitAll()
             // ALB prefix 경로 Swagger 허용
-            .requestMatchers("/product/v3/api-docs/**", "/product/swagger-ui/**", "/product/swagger-resources/**").permitAll()
+            .requestMatchers("/product/v3/api-docs/**", "/product/swagger-ui/**", "/product/swagger-ui.html", "/product/swagger-resources/**").permitAll()
             .requestMatchers("/actuator/**").permitAll()
             // Internal API (Feign) 허용
             .requestMatchers("/internal/**").permitAll()

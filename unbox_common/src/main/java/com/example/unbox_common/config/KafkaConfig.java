@@ -1,8 +1,10 @@
 package com.example.unbox_common.config;
 
+import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ContainerProperties;
@@ -21,9 +23,18 @@ import org.springframework.util.backoff.FixedBackOff;
  * - security.protocol: SASL_SSL
  * - sasl.mechanism: AWS_MSK_IAM
  * - sasl.jaas.config: ...
+ * 
+ * 토픽 자동 생성:
+ * - 애플리케이션 시작 시 NewTopic Bean들이 자동으로 토픽 생성
+ * - 이미 존재하는 토픽은 스킵
+ * - MSK Serverless에서 UNKNOWN_TOPIC_OR_PARTITION 경고 방지
  */
 @Configuration
 public class KafkaConfig {
+
+    // =========================================================
+    // Consumer/Producer 설정
+    // =========================================================
 
     /**
      * Consumer 리스너 컨테이너 팩토리
@@ -54,6 +65,58 @@ public class KafkaConfig {
         factory.setCommonErrorHandler(errorHandler);
 
         return factory;
+    }
+
+    // =========================================================
+    // 토픽 자동 생성 설정
+    // =========================================================
+
+    /**
+     * Order Events 토픽
+     * - 주문 생성, 취소, 환불 등 주문 관련 이벤트
+     */
+    @Bean
+    public NewTopic orderEventsTopic() {
+        return TopicBuilder.name("order-events")
+                .partitions(3)
+                .replicas(2)
+                .build();
+    }
+
+    /**
+     * Payment Events 토픽
+     * - 결제 승인, 실패, 환불 등 결제 관련 이벤트
+     */
+    @Bean
+    public NewTopic paymentEventsTopic() {
+        return TopicBuilder.name("payment-events")
+                .partitions(3)
+                .replicas(2)
+                .build();
+    }
+
+    /**
+     * Product Events 토픽
+     * - 상품 등록, 수정, 재고 변경 등 상품 관련 이벤트
+     */
+    @Bean
+    public NewTopic productEventsTopic() {
+        return TopicBuilder.name("product-events")
+                .partitions(3)
+                .replicas(2)
+                .build();
+    }
+
+    /**
+     * Trade Events 토픽
+     * - 거래 체결, 입찰 등 거래 관련 이벤트
+     */
+    @Bean
+    public NewTopic tradeEventsTopic() {
+        return TopicBuilder.name("trade-events")
+                .partitions(3)
+                .replicas(2)
+                .build();
     }
 }
 

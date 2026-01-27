@@ -74,48 +74,48 @@ public class KafkaConfig {
     /**
      * Order Events 토픽
      * - 주문 생성, 취소, 환불 등 주문 관련 이벤트
+     * - MSK Serverless는 레플리카를 자동으로 관리 (최소 2개)
      */
     @Bean
     public NewTopic orderEventsTopic() {
         return TopicBuilder.name("order-events")
                 .partitions(3)
-                .replicas(2)
                 .build();
     }
 
     /**
      * Payment Events 토픽
      * - 결제 승인, 실패, 환불 등 결제 관련 이벤트
+     * - MSK Serverless는 레플리카를 자동으로 관리 (최소 2개)
      */
     @Bean
     public NewTopic paymentEventsTopic() {
         return TopicBuilder.name("payment-events")
                 .partitions(3)
-                .replicas(2)
                 .build();
     }
 
     /**
      * Product Events 토픽
      * - 상품 등록, 수정, 재고 변경 등 상품 관련 이벤트
+     * - MSK Serverless는 레플리카를 자동으로 관리 (최소 2개)
      */
     @Bean
     public NewTopic productEventsTopic() {
         return TopicBuilder.name("product-events")
                 .partitions(3)
-                .replicas(2)
                 .build();
     }
 
     /**
      * Trade Events 토픽
      * - 거래 체결, 입찰 등 거래 관련 이벤트
+     * - MSK Serverless는 레플리카를 자동으로 관리 (최소 2개)
      */
     @Bean
     public NewTopic tradeEventsTopic() {
         return TopicBuilder.name("trade-events")
                 .partitions(3)
-                .replicas(2)
                 .build();
     }
 }

@@ -66,7 +66,7 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
   servlet:
-    context-path: /order
+    context-path: /order  # ALB routing path prefix
 
 # Feign Client URLs
 user-service:

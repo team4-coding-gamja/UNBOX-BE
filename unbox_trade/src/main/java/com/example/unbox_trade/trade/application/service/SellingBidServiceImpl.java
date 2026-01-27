@@ -3,6 +3,7 @@ package com.example.unbox_trade.trade.application.service;
 import com.example.unbox_trade.common.client.product.ProductClient;
 import com.example.unbox_trade.common.client.product.dto.ProductOptionForSellingBidInfoResponse;
 import com.example.unbox_trade.common.client.user.UserClient;
+import com.example.unbox_trade.trade.application.event.producer.TradeEventProducer;
 import com.example.unbox_trade.trade.presentation.dto.internal.SellingBidForCartInfoResponse;
 import com.example.unbox_trade.trade.presentation.dto.internal.SellingBidForOrderInfoResponse;
 import com.example.unbox_trade.trade.presentation.dto.request.SellingBidCreateRequestDto;
@@ -24,7 +25,6 @@ import com.example.unbox_common.lock.DistributedLock;
 
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -32,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.Cache;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.CacheManager;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -51,7 +53,8 @@ public class SellingBidServiceImpl implements SellingBidService {
     private final ProductClient productClient;
     private final UserClient userClient;
     private final TradeClientMapper tradeClientMapper;
-    private final ApplicationEventPublisher eventPublisher;
+    // private final ApplicationEventPublisher eventPublisher;
+    private final TradeEventProducer tradeEventProducer;
     private final CacheManager cacheManager;
 
     // --- Helper Methods for Cache Eviction ---
@@ -326,10 +329,29 @@ public class SellingBidServiceImpl implements SellingBidService {
         evictSellingBidCache(sellingBidId);
     }
 
+    // ----------------------------------------------------
+    // ✅ Kafka 이벤트 발행 메서드 (수정됨)
+    // ----------------------------------------------------
+
     private void publishPriceEvent(UUID productId, UUID optionId) {
+        // 쿼리는 트랜잭션 내에서 수행 (데이터 일관성 유지)
         BigDecimal minPrice = sellingBidRepository.findLowestPriceByOptionId(optionId)
                 .orElse(BigDecimal.ZERO);
-        eventPublisher.publishEvent(new TradePriceChangedEvent(productId, optionId, minPrice));
+
+        TradePriceChangedEvent event = new TradePriceChangedEvent(productId, optionId, minPrice);
+
+        // Kafka 발행은 트랜잭션 커밋이 성공한 직후에 수행
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    tradeEventProducer.publishTradePriceChanged(event);
+                }
+            });
+        } else {
+            // 트랜잭션이 없는 경우 즉시 발행
+            tradeEventProducer.publishTradePriceChanged(event);
+        }
     }
 
     // ✅ 판매 입찰 복구 (결제 실패/취소용: RESERVED → LIVE)
@@ -348,7 +370,7 @@ public class SellingBidServiceImpl implements SellingBidService {
         if (updatedBy != null) {
             sellingBid.updateModifiedBy(updatedBy);
         }
-        
+
         // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
         publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
         evictLowestPriceCache(sellingBid.getProductOptionId());

@@ -29,7 +29,7 @@ public class ProductEventListener {
         Object event = record.value();
 
         if (event == null) {
-            log.warn("[Trade] Received null event. Key: {}", record.key());
+            log.warn("[Product->Trade] Received null event. Key: {}", record.key());
             ack.acknowledge();
             return;
         }

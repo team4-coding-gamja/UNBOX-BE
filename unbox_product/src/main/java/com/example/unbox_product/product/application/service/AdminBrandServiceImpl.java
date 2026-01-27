@@ -151,7 +151,7 @@ public class AdminBrandServiceImpl implements AdminBrandService {
         productRepository.deleteByBrandId(brandId, deletedBy);
 
         // 3-3. 브랜드 삭제
-        brand.softDelete(deletedBy);
+        brandRepository.softDeleteById(brandId, deletedBy);
 
         // ==========================================
         // 4. [필수] 캐시 삭제 (TransactionSynchronizationManager)

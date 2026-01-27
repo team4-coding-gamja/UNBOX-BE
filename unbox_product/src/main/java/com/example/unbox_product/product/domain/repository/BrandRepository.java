@@ -4,6 +4,7 @@ import com.example.unbox_product.product.domain.entity.Brand;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -33,4 +34,7 @@ public interface BrandRepository extends JpaRepository<Brand, UUID> {
       """)
   Page<Brand> searchByNameAndDeletedAtIsNull(@Param("keyword") String keyword, Pageable pageable);
 
+  @Modifying(clearAutomatically = true)
+  @Query("UPDATE Brand b SET b.deletedAt = CURRENT_TIMESTAMP, b.deletedBy = :deletedBy WHERE b.id = :brandId")
+  void softDeleteById(@Param("brandId") UUID brandId, @Param("deletedBy") String deletedBy);
 }

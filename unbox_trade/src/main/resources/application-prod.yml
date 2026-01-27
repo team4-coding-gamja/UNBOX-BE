@@ -1,0 +1,93 @@
+spring:
+  application:
+    name: unbox_trade
+  
+  config:
+    import: "optional:file:.env[.properties]"
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: trade-group
+      auto-offset-reset: earliest
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: AWS_MSK_IAM
+      sasl.jaas.config: software.amazon.msk.auth.iam.IAMLoginModule required;
+      sasl.client.callback.handler.class: software.amazon.msk.auth.iam.IAMClientCallbackHandler
+
+  datasource:
+    driver-class-name: ${DB_DRIVER_CLASS_NAME}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    defer-datasource-initialization: true
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Redis
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      ssl:
+        enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:false}
+
+  jwt:
+    secret: ${SPRING_JWT_SECRET}
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: BASIC
+            connectTimeout: 1000
+            readTimeout: 3000
+          unbox-user:
+            readTimeout: 5000
+          product-service:
+            readTimeout: 5000
+
+logging:
+  level:
+    com.example.unbox_trade.common.client: INFO
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# Custom Feign Client URLs
+product-service:
+  url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+
+user-service:
+  url: ${USER_SERVICE_URL:http://localhost:8081}
+
+payment-service:
+  url: ${PAYMENT_SERVICE_URL:http://localhost:8085}
+
+order-service:
+  url: ${ORDER_SERVICE_URL:http://localhost:8084}
+
+cors:
+  allowed-origins:
+    - "${CORS_ALLOWED_ORIGINS:http://localhost:5173}"
+
+springdoc:
+  swagger-ui:
+    doc-expansion: none
+    tags-sorter: alpha
+    operations-sorter: alpha
+    custom-path: /css/swagger-custom.css
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

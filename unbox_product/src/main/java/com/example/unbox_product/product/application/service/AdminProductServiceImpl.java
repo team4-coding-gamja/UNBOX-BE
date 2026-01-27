@@ -121,7 +121,7 @@ public class AdminProductServiceImpl implements AdminProductService {
                         .toList();
 
                 // 3. 상품 삭제
-                product.softDelete(deletedBy);
+                productRepository.softDeleteById(productId, deletedBy);
 
                 // 4. 옵션 일괄 삭제 (쿼리 1번 실행)
                 // forEach 대신 repository 메서드 호출

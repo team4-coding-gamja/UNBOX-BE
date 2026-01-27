@@ -1,15 +1,17 @@
 # Dev 환경 전용 설정 (application.yml 오버라이드)
-# Kafka IAM 인증 설정만 추가
+# AWS MSK Serverless IAM 인증을 위한 Kafka 설정
+# - MSK Serverless는 SASL_SSL + IAM 인증 필수
+# - nested YAML 형식으로 작성하여 Spring Boot가 올바르게 인식하도록 함
 spring:
   kafka:
     properties:
       security:
-        protocol: SASL_SSL
+        protocol: SASL_SSL  # MSK Serverless 보안 프로토콜
       sasl:
-        mechanism: AWS_MSK_IAM
+        mechanism: AWS_MSK_IAM  # AWS IAM 인증 메커니즘
         jaas:
-          config: software.amazon.msk.auth.iam.IAMLoginModule required;
+          config: software.amazon.msk.auth.iam.IAMLoginModule required;  # IAM 로그인 모듈
         client:
           callback:
             handler:
-              class: software.amazon.msk.auth.iam.IAMClientCallbackHandler
+              class: software.amazon.msk.auth.iam.IAMClientCallbackHandler  # IAM 콜백 핸들러

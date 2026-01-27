@@ -67,6 +67,17 @@ public interface OrderService {
      */
     OrderDetailResponseDto confirmOrder(UUID orderId, Long userId);
 
+    /**
+     * 환불 요청 (결제 후, 구매자만)
+     * PENDING_SHIPMENT 또는 DELIVERED 상태에서만 가능
+     * 
+     * @param orderId 주문 UUID
+     * @param reason  취소 사유
+     * @param userId  구매자 ID (본인 확인용)
+     * @return 취소된 주문 정보
+     */
+    OrderDetailResponseDto requestRefund(UUID orderId, String reason, Long userId);
+
     // ========================================
     // ✅ 내부 시스템용 API (Internal API)
     // ========================================
@@ -83,7 +94,7 @@ public interface OrderService {
     /**
      * 주문 상태 변경 (결제 완료용: PAYMENT_PENDING → PENDING_SHIPMENT)
      */
-    void pendingShipmentOrder(UUID orderId, String updatedBy);
+    void pendingShipmentOrder(UUID orderId, UUID paymentId, String updatedBy);
 
     // ========================================
     // ✅ 검수 시스템 연동 (Inspection System Integration)

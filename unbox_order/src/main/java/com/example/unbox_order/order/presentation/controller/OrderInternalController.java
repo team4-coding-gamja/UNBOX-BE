@@ -36,8 +36,11 @@ public class OrderInternalController {
     // ✅ 주문 상태 변경 (결제 완료용: PAYMENT_PENDING → PENDING_SHIPMENT)
     @Operation(summary = "주문 상태 변경 (발송 대기)", description = "결제 완료 후 주문 상태를 발송 대기로 변경합니다.")
     @PostMapping("{id}/pending-shipment")
-    public ResponseEntity<Void> pendingShipmentOrder (@PathVariable UUID id, @RequestParam String updatedBy) {
-        orderService.pendingShipmentOrder(id, updatedBy);
+    public ResponseEntity<Void> pendingShipmentOrder (
+            @PathVariable UUID id,
+            @RequestParam UUID paymentId,
+            @RequestParam String updatedBy) {
+        orderService.pendingShipmentOrder(id, paymentId, updatedBy);
         return ResponseEntity.ok().build();
     }
 }

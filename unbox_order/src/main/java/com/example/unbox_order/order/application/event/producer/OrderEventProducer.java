@@ -3,6 +3,7 @@ package com.example.unbox_order.order.application.event.producer;
 import com.example.unbox_common.event.order.OrderCancelledEvent;
 import com.example.unbox_common.event.order.OrderConfirmedEvent;
 import com.example.unbox_common.event.order.OrderExpiredEvent;
+import com.example.unbox_common.event.order.OrderRefundRequestedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -46,6 +47,21 @@ public class OrderEventProducer {
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Failed to publish OrderConfirmedEvent for orderId: {}", event.orderId(), ex);
+                    }
+                });
+    }
+
+    public void publishRefundRequested(OrderRefundRequestedEvent event) {
+        log.info("Publishing OrderRefundRequestedEvent: orderId={}, sellingBidId={}, paymentId={}", 
+                event.orderId(), event.sellingBidId(), event.paymentId());
+        // 환불 요청은 Payment/Trade 서비스가 수신하여 처리
+        // sellingBidId를 키로 사용하여 입찰 관련 이벤트 순서 보장
+        kafkaTemplate.send(TOPIC_ORDER, event.sellingBidId().toString(), event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Failed to publish OrderRefundRequestedEvent for orderId: {}", event.orderId(), ex);
+                    } else {
+                        log.debug("Successfully published OrderRefundRequestedEvent: {}", result.getRecordMetadata());
                     }
                 });
     }

@@ -87,4 +87,13 @@ public class OrderController implements OrderApi {
         OrderDetailResponseDto response = orderService.confirmOrder(orderId, userDetails.getUserId());
         return CustomApiResponse.success(response);
     }
+
+    @PatchMapping("/{orderId}/refund")
+    public CustomApiResponse<OrderDetailResponseDto> requestRefund(
+            @PathVariable UUID orderId,
+            @RequestParam(defaultValue = "사용자 취소 요청") String reason,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        OrderDetailResponseDto response = orderService.requestRefund(orderId, reason, userDetails.getUserId());
+        return CustomApiResponse.success(response);
+    }
 }

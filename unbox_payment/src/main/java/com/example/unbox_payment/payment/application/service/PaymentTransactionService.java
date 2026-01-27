@@ -1,0 +1,219 @@
+package com.example.unbox_payment.payment.application.service;
+
+import com.example.unbox_payment.common.client.order.OrderClient;
+import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
+import com.example.unbox_payment.payment.presentation.dto.response.TossConfirmResponse;
+import com.example.unbox_payment.payment.domain.entity.Payment;
+import com.example.unbox_payment.payment.domain.entity.PaymentStatus;
+import com.example.unbox_payment.payment.domain.entity.PgTransaction;
+import com.example.unbox_payment.payment.presentation.mapper.PgTransactionMapper;
+import com.example.unbox_payment.payment.domain.repository.PaymentRepository;
+import com.example.unbox_payment.payment.domain.repository.PgTransactionRepository;
+
+import com.example.unbox_common.error.exception.CustomException;
+import com.example.unbox_common.error.exception.ErrorCode;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.Set;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PaymentTransactionService {
+
+    private final PaymentRepository paymentRepository;
+    private final PgTransactionRepository pgTransactionRepository;
+    private final PgTransactionMapper pgTransactionMapper;
+    private final OrderClient orderClient;
+
+    private static final Set<String> PAYABLE_STATUSES = Set.of("PAYMENT_PENDING");
+
+    /**
+     * ✅ 결제 승인 준비 (Transaction 1)
+     * - 전파 레벨 REQUIRES_NEW를 사용하여 물리적으로 독립된 트랜잭션에서 실행
+     * - 즉시 커밋되어 다른 스레드에서 IN_PROGRESS 상태를 볼 수 있게 함
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Payment prepareForConfirm(Long userId, UUID paymentId, BigDecimal amountFromFront) {
+        log.info("[PaymentTransaction] 결제 승인 준비 시작 - paymentId: {}", paymentId);
+
+        // 1. 결제 정보 조회
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // 2. 상태 검증
+        if (payment.getStatus() == PaymentStatus.DONE) {
+            throw new CustomException(ErrorCode.PAYMENT_ALREADY_EXISTS);
+        }
+        if (payment.getStatus() == PaymentStatus.IN_PROGRESS) {
+            throw new CustomException(ErrorCode.PAYMENT_IN_PROGRESS);
+        }
+        if (payment.getStatus() != PaymentStatus.READY) {
+            log.warn("[PaymentTransaction] 결제 가능한 상태가 아닙니다. - paymentId: {}, status: {}", paymentId,
+                    payment.getStatus());
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        // 3. 타임아웃 검증 (10분)
+        if (payment.isExpired()) {
+            log.warn("[PaymentTransaction] 결제 유효 시간 만료 - paymentId: {}, readyAt: {}", paymentId, payment.getReadyAt());
+            throw new CustomException(ErrorCode.PAYMENT_EXPIRED);
+        }
+
+        // 4. 금액 검증 (DB vs Front)
+        if (payment.getAmount().compareTo(amountFromFront) != 0) {
+            log.error("[PaymentTransaction] 금액 불일치! DB: {}, Front: {}", payment.getAmount(), amountFromFront);
+            throw new CustomException(ErrorCode.AMOUNT_MISMATCH);
+        }
+
+        // 4. 주문 정보 조회 및 검증
+        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
+        if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
+            throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
+        }
+        if (!PAYABLE_STATUSES.contains(orderInfo.getStatus())) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        // 5. 상태 변경 및 커밋 (낙관적 락 발동 지점)
+        payment.changeStatus(PaymentStatus.IN_PROGRESS);
+        paymentRepository.saveAndFlush(payment);
+
+        log.info("[PaymentTransaction] 결제 준비 완료 (IN_PROGRESS) - paymentId: {}", paymentId);
+        return payment;
+    }
+
+    // ✅ 결제 승인 성공 처리
+    @Transactional
+    public void processSuccessfulPayment(UUID paymentId, TossConfirmResponse response) {
+
+        // 결제 정보 조회
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // 중복 결제 승인 차단
+        if (payment.getStatus() == PaymentStatus.DONE) {
+            log.warn("중복 결제 승인 시도 차단 - paymentId: {}", paymentId);
+            throw new CustomException(ErrorCode.PG_PROCESSED_ALREADY_EXISTS);
+        }
+
+        // 결제 금액 검증
+        if (payment.getAmount().compareTo(response.getTotalAmount()) != 0) {
+            throw new CustomException(ErrorCode.PRICE_MISMATCH);
+        }
+
+        // 결제 완료 처리 (paymentKey만 전달)
+        payment.completePayment(response.getPaymentKey());
+
+        // 판매 입찰 상태 변경 (RESERVED → SOLD)
+        // 비동기 이벤트(PaymentCompletedEvent)로 Trade 서비스에서 처리하므로 주석 처리
+        // tradeClient.soldSellingBid(orderInfo.getSellingBidId(), "payment-service");
+
+        // 주문 상태 변경 (PAYMENT_PENDING → PENDING_SHIPMENT)
+        // 비동기 이벤트(PaymentCompletedEvent)로 Order 서비스에서 처리하므로 주석 처리
+        // orderClient.pendingShipmentOrder(orderInfo.getOrderId(), "payment-service");
+
+        // PG 트랜잭션 로그 저장 (성공)
+        PgTransaction transaction = pgTransactionMapper.toSuccessEntity(payment, response);
+        pgTransactionRepository.save(transaction);
+    }
+
+    // ✅ 결제 승인 실패 처리
+    @Transactional
+    public void processFailedPayment(UUID paymentId, TossConfirmResponse response) {
+
+        // 결제 정보 조회
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // 결제 상태를 FAILED로 변경
+        payment.failPayment();
+
+        // 정책 변경: 결제 실패 시 즉시 복구하지 않음 (다른 수단 재시도 허용).
+        // 10분 타임아웃(OrderExpiredEvent) 시점에 일괄 복구됨.
+
+        // PG 트랜잭션 로그 저장 (실패)
+        PgTransaction transaction = pgTransactionMapper.toFailedEntity(payment, response);
+        pgTransactionRepository.save(transaction);
+    }
+
+    // ========================================
+    // ✅ 환불 처리용 메서드 (트랜잭션 분리)
+    // ========================================
+
+    /**
+     * ✅ 환불 준비 (Transaction 1)
+     * - 결제 정보 검증 및 DONE → REFUND_IN_PROGRESS 원자적 상태 전이
+     * - REQUIRES_NEW로 독립 트랜잭션에서 실행하여 빠르게 커밋
+     * - 동시 요청 시 두 번째 요청은 상태 검사에서 걸림 (중복 PG 호출 방지)
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Payment prepareForRefund(UUID paymentId) {
+        log.info("[RefundTransaction] 환불 준비 시작 - paymentId: {}", paymentId);
+
+        // 1. 결제 정보 조회
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> {
+                    log.error("[RefundTransaction] 결제 정보 없음 - paymentId: {}", paymentId);
+                    return new CustomException(ErrorCode.PAYMENT_NOT_FOUND);
+                });
+
+        // 2. 이미 취소되었거나 환불 진행 중인 경우 (멱등성 + 동시성)
+        if (payment.getStatus() == PaymentStatus.CANCELED) {
+            log.warn("[RefundTransaction] 이미 취소된 결제 - paymentId: {}", paymentId);
+            return null; // null 반환 시 호출자가 처리 중단
+        }
+        if (payment.getStatus() == PaymentStatus.REFUND_IN_PROGRESS) {
+            log.warn("[RefundTransaction] 이미 환불 진행 중 - paymentId: {}", paymentId);
+            return null; // 동시 요청 방지
+        }
+
+        // 3. 완료된 결제만 취소 가능
+        if (payment.getStatus() != PaymentStatus.DONE) {
+            log.error("[RefundTransaction] 취소 불가 상태 - paymentId: {}, status: {}", paymentId, payment.getStatus());
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        // 4. 원자적 상태 전이: DONE → REFUND_IN_PROGRESS (낙관적 락 발동)
+        payment.changeStatus(PaymentStatus.REFUND_IN_PROGRESS);
+        paymentRepository.saveAndFlush(payment);
+
+        log.info("[RefundTransaction] 환불 준비 완료 (REFUND_IN_PROGRESS) - paymentId: {}, paymentKey: {}", 
+                paymentId, payment.getPaymentKey());
+        return payment;
+    }
+
+    /**
+     * ✅ 환불 완료 처리 (Transaction 2)
+     * - 결제 상태를 CANCELED로 변경
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void completeRefund(UUID paymentId) {
+        log.info("[RefundTransaction] 환불 완료 처리 시작 - paymentId: {}", paymentId);
+
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // 이미 취소된 경우 멱등성 보장
+        if (payment.getStatus() == PaymentStatus.CANCELED) {
+            log.warn("[RefundTransaction] 이미 취소됨 (멱등성) - paymentId: {}", paymentId);
+            return;
+        }
+
+        // REFUND_IN_PROGRESS 상태만 환불 완료 가능 (prepareForRefund 거친 요청만)
+        if (payment.getStatus() != PaymentStatus.REFUND_IN_PROGRESS) {
+            log.error("[RefundTransaction] 환불 완료 허용되지 않는 상태 - paymentId: {}, status: {}", 
+                    paymentId, payment.getStatus());
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        payment.cancelPayment();
+        log.info("[RefundTransaction] 환불 완료 - paymentId: {}", paymentId);
+    }
+}

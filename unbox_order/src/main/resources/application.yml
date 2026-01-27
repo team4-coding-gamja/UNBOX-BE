@@ -5,11 +5,8 @@ spring:
   config:
     import: "optional:file:.env[.properties]"
 
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    consumer:
-      group-id: order-group
-      auto-offset-reset: earliest
+  # Kafka 설정은 프로파일별 설정 파일(application-dev.yml, application-prod.yml)에서 관리
+  # 환경별로 다른 인증 방식(로컬: PLAINTEXT, AWS: SASL_SSL/IAM)을 사용하기 위함
 
   datasource:
     driver-class-name: ${DB_DRIVER_CLASS_NAME}

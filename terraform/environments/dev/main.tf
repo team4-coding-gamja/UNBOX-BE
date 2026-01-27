@@ -131,6 +131,26 @@ module "ecs" {
   health_check_path = "/actuator/health"
 }
 
+# CloudWatch Logs 모니터링 (ERROR/WARNING → Discord)
+module "monitoring" {
+  source = "git::https://github.com/team4-coding-gamja/UNBOX-INFRA.git//modules/monitoring?ref=main"
+  
+  project_name        = var.project_name
+  env                 = var.env
+  aws_region          = data.aws_region.current.name
+  account_id          = data.aws_caller_identity.current.account_id
+  service_names       = ["user", "product", "trade", "order", "payment"]
+  discord_webhook_url = data.aws_ssm_parameter.discord_webhook.value
+  kms_key_arn         = module.common.kms_key_arn
+  
+  depends_on = [module.ecs]
+}
+
+# Discord Webhook URL 가져오기
+data "aws_ssm_parameter" "discord_webhook" {
+  name = "/${var.project_name}/${var.env}/common/DISCORD_WEBHOOK_URL"
+}
+
 # ============================================
 # GitHub Actions OIDC 추가 권한
 # ============================================

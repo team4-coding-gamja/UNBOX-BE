@@ -104,3 +104,8 @@ lambda_create_db_users.py
 manual_db_setup.md
 DB_SETUP_INSTRUCTIONS.md
 connect_via_bastion.md
+
+### Environment Info (민감 정보 포함) ###
+DEV_ENVIRONMENT_INFO.md
+PROD_ENVIRONMENT_INFO.md
+*_CREDENTIALS.md

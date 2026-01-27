@@ -146,7 +146,7 @@ public class SecurityConfig {
                 objectMapper
         );
         adminLoginFilter.setFilterProcessesUrl("/api/admin/auth/login");
-        http.addFilterAt(adminLoginFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(adminLoginFilter, LoginFilter.class);
 
         // 4. JWT 검증 필터 (공통 모듈 사용)
         http.addFilterAfter(new JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);

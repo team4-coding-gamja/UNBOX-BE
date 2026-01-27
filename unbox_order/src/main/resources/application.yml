@@ -52,6 +52,8 @@ spring:
 
   cloud:
     openfeign:
+      circuitbreaker:
+        enabled: true                  # Feign에서 Circuit Breaker 활성화
       client:
         config:
           default:
@@ -62,6 +64,8 @@ spring:
             readTimeout: 10000
           unbox-user:
             readTimeout: 5000
+          unbox-trade:
+            readTimeout: 5000          # Trade 서비스도 명시적 timeout 설정
 
 server:
   port: ${SERVER_PORT:8080}
@@ -84,6 +88,8 @@ payment-service:
 logging:
   level:
     com.example.unbox_order.common.client: INFO
+    io.github.resilience4j: INFO
+    org.springframework.cloud.circuitbreaker: INFO
 
 cors:
   allowed-origins:
@@ -100,4 +106,39 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health, info, circuitbreakers, circuitbreakerevents
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+
+# ===============================
+# Resilience4j Circuit Breaker
+# ===============================
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true          # Actuator health에 서킷 상태 노출
+        slidingWindowType: COUNT_BASED         # 호출 횟수 기반 슬라이딩 윈도우
+        slidingWindowSize: 10                  # 최근 10회 호출 기준
+        minimumNumberOfCalls: 5                # 최소 5회 호출 후 평가 시작
+        permittedNumberOfCallsInHalfOpenState: 3  # HALF_OPEN에서 3회 시도
+        automaticTransitionFromOpenToHalfOpenEnabled: true  # OPEN→HALF_OPEN 자동 전환
+        waitDurationInOpenState: 10s           # OPEN 상태 유지 시간
+        failureRateThreshold: 50               # 실패율 50% 이상이면 OPEN
+        slowCallRateThreshold: 80              # 느린 호출 비율 80% 이상이면 OPEN
+        slowCallDurationThreshold: 3s          # 3초 이상 걸리면 느린 호출
+        eventConsumerBufferSize: 10            # 이벤트 버퍼 크기
+        recordExceptions:                      # 실패로 기록할 예외들
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+          - feign.FeignException
+        ignoreExceptions:                      # 무시할 예외들 (실패로 카운트 안함)
+          - com.example.unbox_common.error.exception.CustomException
+    instances:
+      unbox-trade:
+        baseConfig: default
+        waitDurationInOpenState: 15s           # Trade 서비스는 더 긴 대기 시간

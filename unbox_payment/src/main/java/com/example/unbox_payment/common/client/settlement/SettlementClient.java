@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.UUID;
 
-@FeignClient(name = "unbox-order", contextId = "settlementClient", url = "${order-service.url}")
+@FeignClient(name = "unbox-order", contextId = "settlementClient", url = "${order-service.url}", path = "/order")
 public interface SettlementClient {
 
     // ✅ 정산 조회 (결제용)

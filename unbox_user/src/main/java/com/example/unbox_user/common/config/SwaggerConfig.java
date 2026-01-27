@@ -3,6 +3,8 @@ package com.example.unbox_user.common.config;
 // ✅ 공통 모듈의 정렬 유틸 Import
 import com.example.unbox_common.config.SwaggerSortUtil;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -17,6 +19,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Configuration
+@OpenAPIDefinition(servers = {
+    @Server(url = "/user", description = "Local Server"),
+    @Server(url = "http://unbox-dev-alb-2003561066.ap-northeast-2.elb.amazonaws.com/user", description = "Dev Server (User)")
+})
 public class SwaggerConfig {
 
     // =========================================================

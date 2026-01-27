@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;
 
-@FeignClient(name = "unbox-payment", url = "${payment-service.url}")
+@FeignClient(name = "unbox-payment", url = "${payment-service.url}", path = "/payment")
 public interface PaymentClient {
 
     @GetMapping("/internal/payments/orders/{orderId}/status")

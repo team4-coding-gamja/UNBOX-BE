@@ -5,7 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "unbox-user", url = "${user-service.url}")
+@FeignClient(name = "unbox-user", url = "${user-service.url}", path = "/user")
 public interface UserClient {
 
     @GetMapping("/internal/users/{userId}/for-order")

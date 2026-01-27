@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.UUID;
 import java.util.List;
 
-@FeignClient(name = "unbox-trade", url = "${trade-service.url}")
+@FeignClient(name = "unbox-trade", url = "${trade-service.url}", path = "/trade")
 public interface TradeClient {
 
     // ✅ 상품 옵션별 최저가 조회 (Internal)

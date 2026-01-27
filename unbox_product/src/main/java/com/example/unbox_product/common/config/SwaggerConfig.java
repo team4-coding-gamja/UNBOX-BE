@@ -14,7 +14,7 @@ import java.util.Map;
 
 @Configuration
 @OpenAPIDefinition(servers = {
-        @Server(url = "/", description = "Default Server URL"),
+        @Server(url = "/product", description = "Local Server"),
         @Server(url = "http://unbox-dev-alb-2003561066.ap-northeast-2.elb.amazonaws.com/product", description = "Dev Server (Product)")
 })
 public class SwaggerConfig {

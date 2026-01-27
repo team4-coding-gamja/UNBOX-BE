@@ -1,5 +1,6 @@
 package com.example.unbox_trade;
 
+// CI/CD Deploy: 2026-01-27 - Monitoring System Integration
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
@@ -13,6 +14,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 public class UnboxTradeApplication {
 
     public static void main(String[] args) {
+        // Trade Service - Dev Environment
         SpringApplication.run(UnboxTradeApplication.class, args);
     }
 }

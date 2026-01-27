@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@FeignClient(name = "trade-service", url = "${trade-service.url}")
+@FeignClient(name = "trade-service", url = "${trade-service.url}", path = "/trade")
 public interface TradeClient {
 
     // ✅ 판매 글 조회 (장바구니용)

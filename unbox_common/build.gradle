@@ -110,6 +110,9 @@ dependencies {
     // Actuator
     api 'org.springframework.boot:spring-boot-starter-actuator'
 
+    // Resilience4j Circuit Breaker
+    api 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j'
+
     // Kafka
     api 'org.springframework.kafka:spring-kafka'
 

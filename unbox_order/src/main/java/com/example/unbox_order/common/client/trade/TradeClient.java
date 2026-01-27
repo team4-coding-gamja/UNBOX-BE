@@ -6,7 +6,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@FeignClient(name = "unbox-trade", url = "${trade-service.url}")
+@FeignClient(
+    name = "unbox-trade",
+    url = "${trade-service.url}",
+    fallback = TradeClientFallback.class,
+    path = "/trade"
+)
 public interface TradeClient {
 
     @GetMapping("/internal/bids/selling/{sellingBidId}/for-order")

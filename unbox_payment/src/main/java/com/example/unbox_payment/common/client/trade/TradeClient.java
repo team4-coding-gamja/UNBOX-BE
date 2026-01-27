@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.UUID;
 
-@FeignClient(name = "unbox-trade", url = "${trade-service.url}")
+@FeignClient(name = "unbox-trade", url = "${trade-service.url}", path = "/trade")
 public interface TradeClient {
 
     // ✅ 판매 입찰 완료 처리 (결제 완료용: RESERVED → SOLD)

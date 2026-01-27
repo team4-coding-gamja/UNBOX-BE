@@ -22,6 +22,7 @@ services:
       - TRADE_SERVICE_URL=http://unbox-trade:8080
       - PRODUCT_SERVICE_URL=http://unbox-product:8080
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
     depends_on:
       - db
       - redis
@@ -52,6 +53,7 @@ services:
       - OPENAI_MODEL=${OPENAI_MODEL}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
     depends_on:
       - db
       - redis
@@ -79,6 +81,7 @@ services:
       - ORDER_SERVICE_URL=http://unbox-order:8080
       - PAYMENT_SERVICE_URL=http://unbox-payment:8080
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
     depends_on:
       - db
       - redis
@@ -108,6 +111,7 @@ services:
       - TOSS_SECRET_KEY=${TOSS_SECRET_KEY}
       - TOSS_SECURITY_KEY=${TOSS_SECURITY_KEY}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
     depends_on:
       - db
       - redis
@@ -135,6 +139,7 @@ services:
       - PAYMENT_SERVICE_URL=http://unbox-payment:8080
       - PRODUCT_SERVICE_URL=http://unbox-product:8080
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
     depends_on:
       - db
       - redis
@@ -185,6 +190,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_NUM_PARTITIONS: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
 
   # 9. Kafka UI
   kafka-ui:

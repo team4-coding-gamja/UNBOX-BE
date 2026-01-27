@@ -1,8 +1,8 @@
-package com.example.unbox_payment.payment.service;
+package com.example.unbox_payment.payment.application.service;
 
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
-import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
+import com.example.unbox_payment.payment.presentation.dto.response.TossConfirmResponse;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;

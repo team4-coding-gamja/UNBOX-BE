@@ -1,4 +1,4 @@
-package com.example.unbox_payment.payment.entity;
+package com.example.unbox_payment.payment.domain.entity;
 
 import com.example.unbox_common.entity.BaseEntity;
 import jakarta.persistence.*;

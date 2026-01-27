@@ -1,9 +1,9 @@
-package com.example.unbox_payment.payment.controller;
+package com.example.unbox_payment.payment.presentation.controller;
 
 
-import com.example.unbox_payment.payment.dto.internal.PaymentForSettlementResponse;
-import com.example.unbox_payment.payment.dto.internal.PaymentStatusResponse;
-import com.example.unbox_payment.payment.service.PaymentService;
+import com.example.unbox_payment.payment.presentation.dto.internal.PaymentForSettlementResponse;
+import com.example.unbox_payment.payment.presentation.dto.internal.PaymentStatusResponse;
+import com.example.unbox_payment.payment.application.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

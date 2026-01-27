@@ -1,11 +1,11 @@
-package com.example.unbox_payment.payment.service;
+package com.example.unbox_payment.payment.application.service;
 
-import com.example.unbox_payment.payment.dto.internal.PaymentForSettlementResponse;
-import com.example.unbox_payment.payment.dto.internal.PaymentStatusResponse;
-import com.example.unbox_payment.payment.dto.response.PaymentHistoryResponseDto;
-import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
-import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
-import com.example.unbox_payment.payment.entity.PaymentMethod;
+import com.example.unbox_payment.payment.presentation.dto.internal.PaymentForSettlementResponse;
+import com.example.unbox_payment.payment.presentation.dto.internal.PaymentStatusResponse;
+import com.example.unbox_payment.payment.presentation.dto.response.PaymentHistoryResponseDto;
+import com.example.unbox_payment.payment.presentation.dto.response.PaymentReadyResponseDto;
+import com.example.unbox_payment.payment.presentation.dto.response.TossConfirmResponse;
+import com.example.unbox_payment.payment.domain.entity.PaymentMethod;
 
 import java.math.BigDecimal;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.example.unbox_payment.payment.entity;
+package com.example.unbox_payment.payment.domain.entity;
 
 public enum PaymentStatus {
     READY, // 결제 요청 대기

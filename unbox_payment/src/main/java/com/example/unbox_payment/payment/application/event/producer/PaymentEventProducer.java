@@ -1,4 +1,4 @@
-package com.example.unbox_payment.payment.producer;
+package com.example.unbox_payment.payment.application.event.producer;
 
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
 import lombok.RequiredArgsConstructor;

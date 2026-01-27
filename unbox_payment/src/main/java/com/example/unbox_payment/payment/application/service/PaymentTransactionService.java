@@ -1,14 +1,14 @@
-package com.example.unbox_payment.payment.service;
+package com.example.unbox_payment.payment.application.service;
 
 import com.example.unbox_payment.common.client.order.OrderClient;
 import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
-import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
-import com.example.unbox_payment.payment.entity.Payment;
-import com.example.unbox_payment.payment.entity.PaymentStatus;
-import com.example.unbox_payment.payment.entity.PgTransaction;
-import com.example.unbox_payment.payment.mapper.PgTransactionMapper;
-import com.example.unbox_payment.payment.repository.PaymentRepository;
-import com.example.unbox_payment.payment.repository.PgTransactionRepository;
+import com.example.unbox_payment.payment.presentation.dto.response.TossConfirmResponse;
+import com.example.unbox_payment.payment.domain.entity.Payment;
+import com.example.unbox_payment.payment.domain.entity.PaymentStatus;
+import com.example.unbox_payment.payment.domain.entity.PgTransaction;
+import com.example.unbox_payment.payment.presentation.mapper.PgTransactionMapper;
+import com.example.unbox_payment.payment.domain.repository.PaymentRepository;
+import com.example.unbox_payment.payment.domain.repository.PgTransactionRepository;
 
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;

@@ -1,7 +1,7 @@
-package com.example.unbox_payment.payment.listener;
+package com.example.unbox_payment.payment.application.event.listener;
 
 import com.example.unbox_common.event.order.OrderRefundRequestedEvent;
-import com.example.unbox_payment.payment.service.PaymentService;
+import com.example.unbox_payment.payment.application.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

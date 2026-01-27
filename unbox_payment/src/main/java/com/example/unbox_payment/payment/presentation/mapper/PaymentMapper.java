@@ -1,10 +1,10 @@
-package com.example.unbox_payment.payment.mapper;
+package com.example.unbox_payment.payment.presentation.mapper;
 
 import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
-import com.example.unbox_payment.payment.dto.response.PaymentHistoryResponseDto;
-import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
-import com.example.unbox_payment.payment.entity.Payment;
-import com.example.unbox_payment.payment.entity.PaymentMethod;
+import com.example.unbox_payment.payment.presentation.dto.response.PaymentHistoryResponseDto;
+import com.example.unbox_payment.payment.presentation.dto.response.PaymentReadyResponseDto;
+import com.example.unbox_payment.payment.domain.entity.Payment;
+import com.example.unbox_payment.payment.domain.entity.PaymentMethod;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

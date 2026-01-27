@@ -1,4 +1,4 @@
-package com.example.unbox_payment.payment.entity;
+package com.example.unbox_payment.payment.domain.entity;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

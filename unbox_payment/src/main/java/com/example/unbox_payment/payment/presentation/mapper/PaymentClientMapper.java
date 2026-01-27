@@ -1,7 +1,7 @@
-package com.example.unbox_payment.payment.mapper;
+package com.example.unbox_payment.payment.presentation.mapper;
 
-import com.example.unbox_payment.payment.dto.internal.PaymentForSettlementResponse;
-import com.example.unbox_payment.payment.entity.Payment;
+import com.example.unbox_payment.payment.presentation.dto.internal.PaymentForSettlementResponse;
+import com.example.unbox_payment.payment.domain.entity.Payment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

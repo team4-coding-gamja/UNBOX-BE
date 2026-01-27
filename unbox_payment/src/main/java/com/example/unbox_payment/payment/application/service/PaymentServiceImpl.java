@@ -1,21 +1,21 @@
-package com.example.unbox_payment.payment.service;
+package com.example.unbox_payment.payment.application.service;
 
 import com.example.unbox_payment.common.client.order.OrderClient;
 import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
-import com.example.unbox_payment.payment.dto.internal.PaymentForSettlementResponse;
-import com.example.unbox_payment.payment.dto.internal.PaymentStatusResponse;
+import com.example.unbox_payment.payment.presentation.dto.internal.PaymentForSettlementResponse;
+import com.example.unbox_payment.payment.presentation.dto.internal.PaymentStatusResponse;
 
-import com.example.unbox_payment.payment.dto.response.PaymentHistoryResponseDto;
-import com.example.unbox_payment.payment.dto.response.PaymentReadyResponseDto;
-import com.example.unbox_payment.payment.dto.response.TossConfirmResponse;
-import com.example.unbox_payment.payment.entity.Payment;
-import com.example.unbox_payment.payment.entity.PaymentMethod;
-import com.example.unbox_payment.payment.entity.PaymentStatus;
-import com.example.unbox_payment.payment.mapper.PaymentClientMapper;
-import com.example.unbox_payment.payment.mapper.PaymentMapper;
+import com.example.unbox_payment.payment.presentation.dto.response.PaymentHistoryResponseDto;
+import com.example.unbox_payment.payment.presentation.dto.response.PaymentReadyResponseDto;
+import com.example.unbox_payment.payment.presentation.dto.response.TossConfirmResponse;
+import com.example.unbox_payment.payment.domain.entity.Payment;
+import com.example.unbox_payment.payment.domain.entity.PaymentMethod;
+import com.example.unbox_payment.payment.domain.entity.PaymentStatus;
+import com.example.unbox_payment.payment.presentation.mapper.PaymentClientMapper;
+import com.example.unbox_payment.payment.presentation.mapper.PaymentMapper;
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
-import com.example.unbox_payment.payment.producer.PaymentEventProducer;
-import com.example.unbox_payment.payment.repository.PaymentRepository;
+import com.example.unbox_payment.payment.application.event.producer.PaymentEventProducer;
+import com.example.unbox_payment.payment.domain.repository.PaymentRepository;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;

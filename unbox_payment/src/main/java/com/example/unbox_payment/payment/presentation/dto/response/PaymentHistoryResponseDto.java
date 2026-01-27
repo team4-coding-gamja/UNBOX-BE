@@ -1,4 +1,4 @@
-package com.example.unbox_payment.payment.dto.response;
+package com.example.unbox_payment.payment.presentation.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

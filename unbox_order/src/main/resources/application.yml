@@ -5,8 +5,13 @@ spring:
   config:
     import: "optional:file:.env[.properties]"
 
-  # Kafka 설정은 프로파일별 설정 파일(application-dev.yml, application-prod.yml)에서 관리
-  # 환경별로 다른 인증 방식(로컬: PLAINTEXT, AWS: SASL_SSL/IAM)을 사용하기 위함
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: order-group
+      auto-offset-reset: earliest
+    # properties(인증 설정)는 프로파일별 파일에서 관리
+    # 로컬: 인증 없음(PLAINTEXT), dev/prod: application-dev.yml/application-prod.yml에서 SASL_SSL/IAM 설정
 
   datasource:
     driver-class-name: ${DB_DRIVER_CLASS_NAME}

@@ -82,7 +82,7 @@ jobs:
           
           # Task Definition에서 불필요한 필드 제거 및 이미지 업데이트
           cat task-def.json | jq --arg IMAGE "$NEW_IMAGE" '
-            del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy) |
+            del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt) |
             .containerDefinitions[0].image = $IMAGE
           ' > task-def-updated.json
           

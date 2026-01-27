@@ -2,6 +2,7 @@ package com.example.unbox_trade.trade.application.event;
 
 import com.example.unbox_common.event.order.OrderCancelledEvent;
 import com.example.unbox_common.event.order.OrderExpiredEvent;
+import com.example.unbox_common.event.order.OrderRefundRequestedEvent;
 import com.example.unbox_trade.trade.application.service.SellingBidService;
 import com.example.unbox_trade.trade.domain.entity.SellingBid;
 import com.example.unbox_trade.trade.domain.entity.SellingStatus;
@@ -41,6 +42,9 @@ public class OrderEventListener {
         } else if (event instanceof OrderExpiredEvent expiredEvent) {
             log.info("Received OrderExpiredEvent for Order ID: {}, SellingBid ID: {}", expiredEvent.orderId(), expiredEvent.sellingBidId());
             revertSellingBid(expiredEvent.sellingBidId(), ack);
+        } else if (event instanceof OrderRefundRequestedEvent refundEvent) {
+            log.info("Received OrderRefundRequestedEvent for Order ID: {}, SellingBid ID: {}", refundEvent.orderId(), refundEvent.sellingBidId());
+            handleRefund(refundEvent.sellingBidId(), ack);
         } else {
             log.warn("Unknown event type: {} (Value: {})", event.getClass().getName(), event);
             ack.acknowledge();
@@ -83,6 +87,41 @@ public class OrderEventListener {
             // 여기서 예외를 던지면 Kafka 재시도(Retry)가 동작함. 
             // 단, 이미 위에서 검증했으므로 비즈니스 로직 오류 가능성은 낮음.
             throw e; 
+        }
+
+        ack.acknowledge();
+    }
+
+    /**
+     * 환불 요청 이벤트 처리
+     * 결제 후 취소된 경우, 입찰을 SOLD → CANCELLED로 변경
+     * (이미 거래 완료된 상품이므로 LIVE로 복구하지 않음)
+     */
+    private void handleRefund(UUID sellingBidId, Acknowledgment ack) {
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(sellingBidId)
+                .orElse(null);
+
+        if (sellingBid == null) {
+            log.warn("SellingBid not found for refund: {}", sellingBidId);
+            ack.acknowledge();
+            return;
+        }
+
+        // SOLD 상태가 아니면 이미 처리되었거나 잘못된 이벤트 (멱등성)
+        if (sellingBid.getStatus() != SellingStatus.SOLD) {
+            log.info("Skipping refund: SellingBid {} status is {}, not SOLD.", sellingBid.getId(), sellingBid.getStatus());
+            ack.acknowledge();
+            return;
+        }
+
+        try {
+            // 환불 시 입찰 취소 처리 (SOLD → CANCELLED + soft delete)
+            sellingBid.updateStatus(SellingStatus.CANCELLED);
+            sellingBid.softDelete("REFUND_EVENT");
+            log.info("Successfully cancelled SellingBid {} due to refund.", sellingBidId);
+        } catch (Exception e) {
+            log.error("Failed to cancel SellingBid {} for refund.", sellingBidId, e);
+            throw e;
         }
 
         ack.acknowledge();

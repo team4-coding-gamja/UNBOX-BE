@@ -33,6 +33,7 @@ import java.util.UUID;
 
 import com.example.unbox_common.event.order.OrderCancelledEvent;
 import com.example.unbox_common.event.order.OrderConfirmedEvent;
+import com.example.unbox_common.event.order.OrderRefundRequestedEvent;
 import com.example.unbox_order.order.application.event.producer.OrderEventProducer;
 
 @Slf4j
@@ -245,6 +246,37 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.toDetailResponseDto(order);
     }
 
+    // ✅ 환불 요청 (결제 후, 구매자만)
+    @Override
+    @Transactional
+    public OrderDetailResponseDto requestRefund(UUID orderId, String reason, Long userId) {
+        // 1) 주문 조회
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 2) 환불 요청 처리 (상태 검증 + 본인 확인 + 상태 변경)
+        OrderStatus previousStatus = order.requestRefund(userId);
+
+        // 3) 환불 요청 이벤트 발행 (Payment → 환불 처리, Trade → 입찰 복구)
+        OrderRefundRequestedEvent event = OrderRefundRequestedEvent.of(
+                order.getId(),
+                order.getSellingBidId(),
+                order.getPaymentId(),
+                order.getBuyerId(),
+                order.getSellerId(),
+                order.getPrice(),
+                previousStatus.name(),
+                reason
+        );
+        orderEventProducer.publishRefundRequested(event);
+
+        log.info("Refund requested for Order {}: previousStatus={}, paymentId={}",
+                orderId, previousStatus, order.getPaymentId());
+
+        // 4) DTO 변환 및 반환
+        return orderMapper.toDetailResponseDto(order);
+    }
+
     // ========================================
     // ✅ 내부 시스템용 API (Internal API)
     // ========================================
@@ -270,12 +302,12 @@ public class OrderServiceImpl implements OrderService {
     // ✅ 주문 상태 변경 (결제 완료용: PAYMENT_PENDING → PENDING_SHIPMENT)
     @Override
     @Transactional
-    public void pendingShipmentOrder(UUID orderId, String updatedBy) {
+    public void pendingShipmentOrder(UUID orderId, UUID paymentId, String updatedBy) {
         Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
-        // 상태 변경 (내부에서 PAYMENT_PENDING 검증)
-        order.updateStatusAfterPayment();
+        // 상태 변경 (내부에서 PAYMENT_PENDING 검증) + paymentId 저장
+        order.updateStatusAfterPayment(paymentId);
         
         // 🔄 Trade 서비스 상태 동기화 (RESERVED -> SOLD)
         // 비동기 이벤트(PaymentCompletedEvent)로 Trade 서비스에서 처리하므로 동기 호출 제거

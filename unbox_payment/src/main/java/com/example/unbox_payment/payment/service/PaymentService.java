@@ -35,4 +35,12 @@ public interface PaymentService {
      * 결제 상태 조회
      */
     PaymentStatusResponse getPaymentStatus(UUID orderId);
+
+    /**
+     * 환불 처리 (결제 취소)
+     * 
+     * @param paymentId   결제 ID
+     * @param reason      취소 사유
+     */
+    void processRefund(UUID paymentId, String reason);
 }

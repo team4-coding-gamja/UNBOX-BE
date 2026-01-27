@@ -77,6 +77,10 @@ public class Order extends BaseEntity {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    // 결제 완료 시 저장되는 paymentId (환불 시 사용)
+    @Column(name = "payment_id")
+    private UUID paymentId;
+
     // ======================= 구매자 스냅샷 =======================
     // 구매자 닉네임 스냅샷 (리뷰 작성 시 사용)
     @Column(name = "buyer_name", nullable = false)
@@ -127,14 +131,15 @@ public class Order extends BaseEntity {
     // ======================= 비즈니스 로직 메서드 =======================
 
     // ✅ 결제 완료 후 상태 변경 (PAYMENT_PENDING → PENDING_SHIPMENT)
-    public void updateStatusAfterPayment() {
+    public void updateStatusAfterPayment(UUID paymentId) {
         if (this.status != OrderStatus.PAYMENT_PENDING) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
+        this.paymentId = paymentId;
         this.status = OrderStatus.PENDING_SHIPMENT;
     }
 
-    // ✅ 주문 취소
+    // ✅ 주문 취소 (결제 전)
     public void cancel() {
         // 배송 중이거나 완료된 주문은 취소 불가
         if (this.status == OrderStatus.SHIPPED_TO_CENTER
@@ -150,6 +155,32 @@ public class Order extends BaseEntity {
 
         this.status = OrderStatus.CANCELLED;
         this.cancelledAt = LocalDateTime.now();
+    }
+
+    // ✅ 환불 요청 (결제 후, 구매자만)
+    // 배송 대기(PENDING_SHIPMENT) 또는 배송 완료(DELIVERED) 상태에서만 가능
+    public OrderStatus requestRefund(Long requestUserId) {
+        // 본인 확인
+        if (!this.buyerId.equals(requestUserId)) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // 환불 가능 상태 확인 (배송 대기 또는 배송 완료)
+        if (this.status != OrderStatus.PENDING_SHIPMENT 
+                && this.status != OrderStatus.DELIVERED) {
+            throw new CustomException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+        }
+
+        // paymentId가 없으면 결제 완료 상태가 아님
+        if (this.paymentId == null) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        OrderStatus previousStatus = this.status;
+        this.status = OrderStatus.CANCELLED;
+        this.cancelledAt = LocalDateTime.now();
+        
+        return previousStatus; // 이전 상태 반환 (이벤트 발행용)
     }
 
     // ✅ 운송장 번호 등록 (판매자 → 센터)

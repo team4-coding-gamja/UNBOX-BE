@@ -36,9 +36,9 @@ public class OrderEventListener {
                     paymentCompletedEvent.orderId(), paymentCompletedEvent.sellingBidId());
             
             try {
-                // 주문 상태 변경 (PAYMENT_PENDING -> PENDING_SHIPMENT)
-                orderService.pendingShipmentOrder(paymentCompletedEvent.orderId(), "EVENT_LISTENER");
-                log.info("Successfully updated Order {} status to PENDING_SHIPMENT.", paymentCompletedEvent.orderId());
+                // 주문 상태 변경 (PAYMENT_PENDING -> PENDING_SHIPMENT) + paymentId 저장
+                orderService.pendingShipmentOrder(paymentCompletedEvent.orderId(), paymentCompletedEvent.paymentId(), "EVENT_LISTENER");
+                log.info("Successfully updated Order {} status to PENDING_SHIPMENT with paymentId {}.", paymentCompletedEvent.orderId(), paymentCompletedEvent.paymentId());
             } catch (Exception e) {
                 log.error("Failed to update Order {} status for PaymentCompletedEvent.", paymentCompletedEvent.orderId(), e);
                 // 예외를 던져서 Retry 매커니즘(DefaultErrorHandler)이 동작하도록 함

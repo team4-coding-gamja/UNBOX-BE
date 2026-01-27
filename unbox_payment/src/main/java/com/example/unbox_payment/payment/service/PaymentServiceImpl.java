@@ -228,4 +228,42 @@ public class PaymentServiceImpl implements PaymentService {
                         .status("NOT_FOUND")
                         .build());
     }
+
+    // ✅ 환불 처리 (결제 취소)
+    @Override
+    @Transactional
+    public void processRefund(UUID paymentId, String reason) {
+        log.info("[Refund] 환불 처리 시작 - paymentId: {}, reason: {}", paymentId, reason);
+
+        // 1) 결제 정보 조회
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> {
+                    log.error("[Refund] 결제 정보 없음 - paymentId: {}", paymentId);
+                    return new CustomException(ErrorCode.PAYMENT_NOT_FOUND);
+                });
+
+        // 2) 이미 취소된 결제인지 확인 (멱등성)
+        if (payment.getStatus() == PaymentStatus.CANCELED) {
+            log.warn("[Refund] 이미 취소된 결제 - paymentId: {}", paymentId);
+            return;
+        }
+
+        // 3) 완료된 결제만 취소 가능
+        if (payment.getStatus() != PaymentStatus.DONE) {
+            log.error("[Refund] 취소 불가 상태 - paymentId: {}, status: {}", paymentId, payment.getStatus());
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        // 4) 토스 API 취소 호출
+        String paymentKey = payment.getPaymentKey();
+        if (paymentKey != null && !paymentKey.startsWith("test_")) {
+            tossApiService.cancel(paymentKey, reason, paymentId.toString());
+        } else {
+            log.info("[Refund] 테스트 결제 - 토스 API 호출 생략");
+        }
+
+        // 5) 결제 상태 변경
+        payment.cancelPayment();
+        log.info("[Refund] 환불 처리 완료 - paymentId: {}, paymentKey: {}", paymentId, paymentKey);
+    }
 }

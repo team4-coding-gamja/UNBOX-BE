@@ -149,10 +149,11 @@ public class PaymentTransactionService {
 
     /**
      * ✅ 환불 준비 (Transaction 1)
-     * - 결제 정보 검증 및 상태 반환 (아직 상태 변경 X)
+     * - 결제 정보 검증 및 DONE → REFUND_IN_PROGRESS 원자적 상태 전이
      * - REQUIRES_NEW로 독립 트랜잭션에서 실행하여 빠르게 커밋
+     * - 동시 요청 시 두 번째 요청은 상태 검사에서 걸림 (중복 PG 호출 방지)
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Payment prepareForRefund(UUID paymentId) {
         log.info("[RefundTransaction] 환불 준비 시작 - paymentId: {}", paymentId);
 
@@ -163,10 +164,14 @@ public class PaymentTransactionService {
                     return new CustomException(ErrorCode.PAYMENT_NOT_FOUND);
                 });
 
-        // 2. 이미 취소된 결제인지 확인 (멱등성)
+        // 2. 이미 취소되었거나 환불 진행 중인 경우 (멱등성 + 동시성)
         if (payment.getStatus() == PaymentStatus.CANCELED) {
             log.warn("[RefundTransaction] 이미 취소된 결제 - paymentId: {}", paymentId);
             return null; // null 반환 시 호출자가 처리 중단
+        }
+        if (payment.getStatus() == PaymentStatus.REFUND_IN_PROGRESS) {
+            log.warn("[RefundTransaction] 이미 환불 진행 중 - paymentId: {}", paymentId);
+            return null; // 동시 요청 방지
         }
 
         // 3. 완료된 결제만 취소 가능
@@ -175,7 +180,12 @@ public class PaymentTransactionService {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        log.info("[RefundTransaction] 환불 준비 완료 - paymentId: {}, paymentKey: {}", paymentId, payment.getPaymentKey());
+        // 4. 원자적 상태 전이: DONE → REFUND_IN_PROGRESS (낙관적 락 발동)
+        payment.changeStatus(PaymentStatus.REFUND_IN_PROGRESS);
+        paymentRepository.saveAndFlush(payment);
+
+        log.info("[RefundTransaction] 환불 준비 완료 (REFUND_IN_PROGRESS) - paymentId: {}, paymentKey: {}", 
+                paymentId, payment.getPaymentKey());
         return payment;
     }
 

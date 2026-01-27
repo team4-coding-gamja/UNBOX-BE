@@ -195,10 +195,14 @@ public class OrderServiceImpl implements OrderService {
             orderEventProducer.publishOrderCancelled(event);
         }
 
-        // 6) 결제 후 취소: 환불 처리 필요 (향후 구현)
-        if (previousStatus == OrderStatus.PENDING_SHIPMENT) {
-            log.warn("결제 완료 후 주문 취소 - 환불 처리 필요: OrderID={}", orderId);
-            // TODO: paymentService.refundPayment(orderId);
+        // 6) 결제 완료된 주문은 cancelOrder가 아닌 requestRefund API 사용 안내
+        // (Order.cancel() 내부에서 이미 예외 발생하지만, 명확한 안내 위해 추가)
+        if (previousStatus == OrderStatus.PENDING_SHIPMENT 
+                || previousStatus == OrderStatus.DELIVERED) {
+            // 이 코드에 도달하지 않음 (Order.cancel()에서 예외 발생)
+            // 단, Order.cancel()이 해당 상태를 허용하도록 변경될 경우 대비
+            log.error("결제 완료된 주문 취소 시도 - requestRefund API 사용 필요: OrderID={}", orderId);
+            throw new CustomException(ErrorCode.REFUND_REQUIRED_FOR_PAID_ORDER);
         }
 
         // 7) DTO 변환 및 반환

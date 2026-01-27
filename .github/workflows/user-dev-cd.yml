@@ -108,9 +108,12 @@ jobs:
 
       - name: Wait for service stability
         run: |
+          # 15분 타임아웃 설정 (기본 10분에서 증가)
           aws ecs wait services-stable \
             --cluster ${{ env.ECS_CLUSTER }} \
-            --services ${{ env.ECS_SERVICE }}
+            --services ${{ env.ECS_SERVICE }} \
+            --cli-read-timeout 900 \
+            --cli-connect-timeout 900
 
       - name: Notify Discord - Deployment Success
         run: |

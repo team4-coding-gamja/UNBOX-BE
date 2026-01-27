@@ -8,11 +8,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@OpenAPIDefinition(
-    servers = {
-        @Server(url = "/", description = "Default Server URL")
-    }
-)
+@OpenAPIDefinition(servers = {
+        @Server(url = "/", description = "Default Server URL"),
+        @Server(url = "http://unbox-dev-alb-2003561066.ap-northeast-2.elb.amazonaws.com/trade", description = "Dev Server (Trade)")
+})
 public class SwaggerConfig {
 
     @Bean

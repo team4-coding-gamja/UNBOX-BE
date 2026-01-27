@@ -86,7 +86,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Java 17 설정 (Spring Boot 빌드용)
+      # Java 17 설정 (Spring Boot 빌드용).
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:

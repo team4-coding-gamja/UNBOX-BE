@@ -27,6 +27,11 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 5  # 기본 10 → 5로 줄임
+      minimum-idle: 2       # 최소 유지 연결
+      connection-timeout: 20000
+      idle-timeout: 300000
 
   jpa:
     hibernate:

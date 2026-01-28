@@ -94,18 +94,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST,
                         "/api/auth/signup",
                         "/api/auth/login",
-                        "/api/auth/reissue",
-                        // ALB prefix 경로 허용
-                        "/user/api/auth/signup",
-                        "/user/api/auth/login",
-                        "/user/api/auth/reissue"
+                        "/api/auth/reissue"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST,
                         "/api/admin/auth/login",
-                        "/api/admin/auth/reissue",
-                        // ALB prefix 경로 허용
-                        "/user/api/admin/auth/login",
-                        "/user/api/admin/auth/reissue"
+                        "/api/admin/auth/reissue"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST,
                         "/api/admin/auth/signup"
@@ -145,16 +138,6 @@ public class SecurityConfig {
         userLoginFilter.setFilterProcessesUrl("/api/auth/login");
         http.addFilterAt(userLoginFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // 2-1. 유저 로그인 필터 (ALB prefix 경로)
-        LoginFilter userLoginFilterWithPrefix = new LoginFilter(
-                authenticationManager(authenticationConfiguration),
-                jwtUtil,
-                refreshTokenRedisRepository,
-                objectMapper
-        );
-        userLoginFilterWithPrefix.setFilterProcessesUrl("/user/api/auth/login");
-        http.addFilterAfter(userLoginFilterWithPrefix, LoginFilter.class);
-
         // 3. 관리자 로그인 필터 (로컬)
         LoginFilter adminLoginFilter = new LoginFilter(
                 authenticationManager(authenticationConfiguration),
@@ -164,16 +147,6 @@ public class SecurityConfig {
         );
         adminLoginFilter.setFilterProcessesUrl("/api/admin/auth/login");
         http.addFilterAfter(adminLoginFilter, LoginFilter.class);
-
-        // 3-1. 관리자 로그인 필터 (ALB prefix 경로)
-        LoginFilter adminLoginFilterWithPrefix = new LoginFilter(
-                authenticationManager(authenticationConfiguration),
-                jwtUtil,
-                refreshTokenRedisRepository,
-                objectMapper
-        );
-        adminLoginFilterWithPrefix.setFilterProcessesUrl("/user/api/admin/auth/login");
-        http.addFilterAfter(adminLoginFilterWithPrefix, LoginFilter.class);
 
         // 4. JWT 검증 필터 (공통 모듈 사용)
         http.addFilterAfter(new JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);

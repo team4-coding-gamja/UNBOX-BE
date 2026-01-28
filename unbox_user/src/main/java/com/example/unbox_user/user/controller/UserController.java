@@ -19,6 +19,12 @@ public class UserController implements UserApi {
 
     private final UserService userService;
 
+    // ✅ 버전 정보 (Blue/Green 배포 테스트용)
+    @GetMapping("/version")
+    public CustomApiResponse<String> getVersion() {
+        return CustomApiResponse.success("User Service v2.0 - Blue/Green Deployment Test");
+    }
+
     // ✅ 내 정보 조회
     @GetMapping("/me")
     public CustomApiResponse<UserMeResponseDto> getUserMe(

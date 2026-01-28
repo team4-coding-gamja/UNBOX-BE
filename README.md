@@ -119,3 +119,4 @@ unbox_workspace/
 ├── .github/workflows/  # [DevOps] CI/CD 파이프라인 정의
 └── postgres_init/      # [DB] 데이터베이스 초기화 스크립트
 ```
+# CI/CD Test - Wed Jan 28 10:07:28 KST 2026

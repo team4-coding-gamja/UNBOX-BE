@@ -1,5 +1,5 @@
 name: Product Service - Dev CI
-# Test CI/CD pipeline - 2026-01-28 09:55
+# Test CI/CD pipeline - 2026-01-28 17:35 - vCPU 한도 문제 해결 후 재테스트
 
 on:
   push:

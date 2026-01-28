@@ -1,0 +1,19 @@
+package com.example.unbox_payment.payment.presentation.mapper;
+
+import com.example.unbox_payment.payment.presentation.dto.internal.PaymentForSettlementResponse;
+import com.example.unbox_payment.payment.domain.entity.Payment;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface PaymentClientMapper {
+
+    @Mapping(target = "paymentId", source = "id")
+    @Mapping(target = "status", expression = "java(payment.getStatus().name())")
+    @Mapping(target = "orderId", source = "orderId")
+    @Mapping(target = "sellerId", source = "sellerId")
+    @Mapping(target = "amount", source = "amount")
+    @Mapping(target = "paymentKey", source = "paymentKey")
+    PaymentForSettlementResponse toPaymentForSettlementResponse(Payment payment);
+}

@@ -1,0 +1,92 @@
+spring:
+  config:
+    import: "optional:file:.env[.properties]"
+
+  jwt:
+    secret: ${SPRING_JWT_SECRET}
+
+  datasource:
+    driver-class-name: ${DB_DRIVER_CLASS_NAME}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 5  # 기본 10 → 5로 줄임
+      minimum-idle: 2       # 최소 유지 연결
+      connection-timeout: 20000
+      idle-timeout: 300000
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    defer-datasource-initialization: true
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+#  sql:
+#    init:
+#      mode: always
+#      data-locations: classpath:data.sql
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      ssl:
+        enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:false}
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: BASIC
+            connectTimeout: 1000
+            readTimeout: 3000
+          payment-service:
+            readTimeout: 10000
+
+logging:
+  level:
+    com.example.unbox_user.common.client: INFO
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /user  # ALB routing path prefix
+
+cors:
+  allowed-origins:
+    - "${CORS_ALLOWED_ORIGINS:http://localhost:5173}"
+
+product-service:
+  url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+
+payment-service:
+  url: ${PAYMENT_SERVICE_URL:http://localhost:8085}
+
+trade-service:
+  url: ${TRADE_SERVICE_URL:http://localhost:8083}
+
+order-service:
+  url: ${ORDER_SERVICE_URL:http://localhost:8084}
+
+springdoc:
+  swagger-ui:
+    doc-expansion: none
+    tags-sorter: none
+    operations-sorter: alpha
+    custom-path: /css/swagger-custom.css
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

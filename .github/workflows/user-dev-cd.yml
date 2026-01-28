@@ -1,0 +1,143 @@
+name: User Service - Dev CD
+
+on:
+  workflow_run:
+    workflows: ["User Service - Dev CI"]
+    types:
+      - completed
+    branches:
+      - develop
+
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: 'Image tag to deploy (Git SHA)'
+        required: true
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECS_SERVICE: unbox-dev-user
+  ECS_CLUSTER: unbox-dev-cluster
+  TASK_DEFINITION_FAMILY: unbox-dev-user
+  SERVICE_NAME: user
+
+jobs:
+  deploy:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.DEV_IAM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get image tag
+        id: image-tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.image-tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=dev-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get current task definition
+        id: get-task-def
+        run: |
+          # 현재 실행 중인 Task Definition 가져오기
+          TASK_DEF_ARN=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].taskDefinition' \
+            --output text)
+          
+          echo "current-task-def=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+          
+          # Task Definition JSON 다운로드
+          aws ecs describe-task-definition \
+            --task-definition $TASK_DEF_ARN \
+            --query 'taskDefinition' > task-def.json
+
+      - name: Update task definition with new image
+        id: update-task-def
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
+        run: |
+          # 새 이미지 URI 생성
+          NEW_IMAGE="${ECR_REGISTRY}/unbox-dev-user-repo:${IMAGE_TAG}"
+          
+          # Task Definition에서 불필요한 필드 제거 및 이미지 업데이트
+          cat task-def.json | jq --arg IMAGE "$NEW_IMAGE" '
+            del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt) |
+            .containerDefinitions[0].image = $IMAGE
+          ' > task-def-updated.json
+          
+          echo "Updated task definition:"
+          cat task-def-updated.json
+
+      - name: Register new task definition
+        id: register-task-def
+        run: |
+          TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://task-def-updated.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          echo "task-def-arn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+          echo "Registered new task definition: $TASK_DEF_ARN"
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --task-definition ${{ steps.register-task-def.outputs.task-def-arn }} \
+            --force-new-deployment
+
+      - name: Wait for service stability
+        run: |
+          # 15분 타임아웃 설정 (기본 10분에서 증가)
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --cli-read-timeout 900 \
+            --cli-connect-timeout 900
+
+      - name: Notify Discord - Deployment Success
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "✅ Dev 배포 성공 - User 서비스",
+                "description": "**환경:** Dev\n**서비스:** user-service\n**커밋:** `${{ steps.image-tag.outputs.tag }}`\n**Task Definition:** `${{ steps.register-task-def.outputs.task-def-arn }}`",
+                "color": 3066993,
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+              }]
+            }'
+
+      - name: Notify Discord - Deployment Failed
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "❌ Dev 배포 실패 - User 서비스",
+                "description": "**환경:** Dev\n**서비스:** user-service\n**커밋:** `${{ steps.image-tag.outputs.tag }}`\n**실패 원인:** 배포 또는 헬스체크 실패",
+                "color": 15158332,
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+              }]
+            }'

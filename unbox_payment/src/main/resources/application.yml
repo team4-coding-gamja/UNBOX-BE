@@ -1,0 +1,108 @@
+spring:
+  application:
+    name: unbox-payment
+
+  config:
+    import: "optional:file:.env[.properties]"
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+    consumer:
+      group-id: payment-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    # properties(인증 설정)는 프로파일별 파일에서 관리
+    # 로컬: 인증 없음(PLAINTEXT), dev/prod: application-dev.yml/application-prod.yml에서 SASL_SSL/IAM 설정
+
+  datasource:
+    driver-class-name: ${DB_DRIVER_CLASS_NAME}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 5  # 기본 10 → 5로 줄임
+      minimum-idle: 2       # 최소 유지 연결
+      connection-timeout: 20000
+      idle-timeout: 300000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    defer-datasource-initialization: true
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      ssl:
+        enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:false}
+
+  jwt:
+    secret: ${SPRING_JWT_SECRET}
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: BASIC
+            connectTimeout: 1000
+            readTimeout: 3000
+
+logging:
+  level:
+    com.example.unbox_payment.common.client: INFO
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /payment  # ALB routing path prefix
+
+# Feign Client URLs
+user-service:
+  url: ${USER_SERVICE_URL:http://localhost:8081}
+
+product-service:
+  url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+
+trade-service:
+  url: ${TRADE_SERVICE_URL:http://localhost:8083}
+
+order-service:
+  url: ${ORDER_SERVICE_URL:http://localhost:8084}
+
+cors:
+  allowed-origins:
+    - "${CORS_ALLOWED_ORIGINS:http://localhost:5173}"
+    - "http://localhost:3000"
+
+springdoc:
+  swagger-ui:
+    doc-expansion: none
+    tags-sorter: alpha
+    operations-sorter: alpha
+    custom-path: /css/swagger-custom.css
+
+payment:
+  toss:
+    secret-key: ${TOSS_SECRET_KEY}
+    security-key: ${TOSS_SECURITY_KEY}
+    confirm-url: https://api.tosspayments.com/v1/payments/confirm
+    
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

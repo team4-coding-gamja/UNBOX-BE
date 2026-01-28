@@ -1,0 +1,93 @@
+spring:
+  application:
+    name: unbox-payment
+
+  config:
+    import: "optional:file:.env[.properties]"
+
+  kafka:
+    # bootstrap-servers와 producer/consumer 설정은 application.yml에서 상속
+    # 여기서는 MSK Serverless 인증만 추가
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: AWS_MSK_IAM
+      sasl.jaas.config: software.amazon.msk.auth.iam.IAMLoginModule required;
+      sasl.client.callback.handler.class: software.amazon.msk.auth.iam.IAMClientCallbackHandler
+
+  datasource:
+    driver-class-name: ${DB_DRIVER_CLASS_NAME}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    defer-datasource-initialization: true
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      ssl:
+        enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:false}
+
+  jwt:
+    secret: ${SPRING_JWT_SECRET}
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: BASIC
+            connectTimeout: 1000
+            readTimeout: 3000
+
+logging:
+  level:
+    com.example.unbox_payment.common.client: INFO
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# Feign Client URLs
+user-service:
+  url: ${USER_SERVICE_URL:http://localhost:8081}
+
+product-service:
+  url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+
+trade-service:
+  url: ${TRADE_SERVICE_URL:http://localhost:8083}
+
+order-service:
+  url: ${ORDER_SERVICE_URL:http://localhost:8084}
+
+cors:
+  allowed-origins:
+    - "${CORS_ALLOWED_ORIGINS:http://localhost:5173}"
+    - "http://localhost:3000"
+
+springdoc:
+  swagger-ui:
+    doc-expansion: none
+    tags-sorter: alpha
+    operations-sorter: alpha
+    custom-path: /css/swagger-custom.css
+
+payment:
+  toss:
+    secret-key: ${TOSS_SECRET_KEY}
+    security-key: ${TOSS_SECURITY_KEY}
+    confirm-url: https://api.tosspayments.com/v1/payments/confirm
+    
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

@@ -1,0 +1,24 @@
+# Dev 환경 전용 설정 (application.yml 오버라이드)
+# AWS MSK Serverless IAM 인증을 위한 Kafka 설정
+# - MSK Serverless는 SASL_SSL + IAM 인증 필수
+# - Kafka properties는 dot notation으로 설정해야 함
+spring:
+  kafka:
+    properties:
+      # MSK Serverless 보안 프로토콜
+      security.protocol: SASL_SSL
+      # AWS IAM 인증 메커니즘
+      sasl.mechanism: AWS_MSK_IAM
+      # IAM 로그인 모듈
+      sasl.jaas.config: software.amazon.msk.auth.iam.IAMLoginModule required;
+      # IAM 콜백 핸들러
+      sasl.client.callback.handler.class: software.amazon.msk.auth.iam.IAMClientCallbackHandler
+
+# --------------------------------------------------------
+# 2. [추가] 캐시 ON/OFF 스위치
+# spring: 과 같은 들여쓰기 레벨이어야 합니다!
+# --------------------------------------------------------
+app:
+  cache:
+    enabled: true  # 테스트 1 (Redis 포함): true
+    # 테스트 2 (DB만): false 로 변경 후 배포

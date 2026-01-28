@@ -1,0 +1,148 @@
+package com.example.unbox_product.reviews.service;
+
+import com.example.unbox_product.common.client.order.dto.OrderForReviewInfoResponse;
+import com.example.unbox_common.error.exception.CustomException;
+import com.example.unbox_common.error.exception.ErrorCode;
+import com.example.unbox_product.common.client.order.OrderClient;
+import com.example.unbox_product.reviews.dto.request.ReviewCreateRequestDto;
+import com.example.unbox_product.reviews.dto.request.ReviewUpdateRequestDto;
+import com.example.unbox_product.reviews.dto.response.ReviewCreateResponseDto;
+import com.example.unbox_product.reviews.dto.response.ReviewDetailResponseDto;
+import com.example.unbox_product.reviews.dto.response.ReviewUpdateResponseDto;
+import com.example.unbox_product.reviews.dto.response.ReviewListResponseDto;
+import com.example.unbox_product.reviews.entity.Review;
+import com.example.unbox_product.reviews.entity.ReviewProductSnapshot;
+import com.example.unbox_product.reviews.mapper.ReviewMapper;
+import com.example.unbox_product.reviews.repository.ReviewRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+@Service
+@RequiredArgsConstructor
+public class ReviewServiceImpl implements ReviewService {
+
+    private final ReviewRepository reviewRepository;
+    private final OrderClient orderClient;
+    private final ReviewMapper reviewMapper;
+
+    private static final String ORDER_STATUS_COMPLETED = "COMPLETED";
+
+    // ✅ 리뷰 생성
+    @Override
+    @Transactional
+    public ReviewCreateResponseDto createReview(Long userId, ReviewCreateRequestDto requestDto) {
+
+        UUID orderId = requestDto.getOrderId();
+
+        // 1) 중복 작성 방지 (1주문 1리뷰)
+        if (reviewRepository.existsByOrderIdAndDeletedAtIsNull(orderId)) {
+            throw new CustomException(ErrorCode.ALREADY_REVIEWED);
+        }
+
+        // 2) 주문(리뷰용 정보) 조회
+        OrderForReviewInfoResponse orderInfo = orderClient.getOrderForReview(orderId);
+
+        // 3) 주문 상태 검증
+        if (!ORDER_STATUS_COMPLETED.equals(orderInfo.getOrderStatus())) {
+            throw new CustomException(ErrorCode.ORDER_NOT_COMPLETED);
+        }
+
+        // 4) 작성 권한 검증 (구매자 본인)
+        if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // 5) Review 스냅샷 구성 (상품 정보만)
+        ReviewProductSnapshot snapshot = ReviewProductSnapshot.builder()
+                .productId(orderInfo.getProductId())
+                .productName(orderInfo.getProductName())
+                .modelNumber(orderInfo.getModelNumber())
+                .productImageUrl(orderInfo.getProductImageUrl())
+                .productOptionId(orderInfo.getProductOptionId())
+                .productOptionName(orderInfo.getProductOptionName())
+                .brandName(orderInfo.getBrandName())
+                .build();
+
+        // 6) 엔티티 생성
+        Review review = Review.createReview(
+                orderId,
+                orderInfo.getBuyerId(),
+                orderInfo.getBuyerNickname(), // 작성자 이름 스냅샷
+                requestDto.getContent(),
+                requestDto.getRating(),
+                requestDto.getReviewImageUrl(),
+                snapshot);
+
+        Review saved = reviewRepository.save(review);
+        return reviewMapper.toReviewCreateResponseDto(saved);
+    }
+
+    // ✅ 리뷰 조회
+    @Override
+    @Transactional(readOnly = true)
+    public ReviewDetailResponseDto getReview(UUID reviewId) {
+        Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
+                .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
+
+        return reviewMapper.toReviewDetailResponseDto(review);
+    }
+
+    // ✅ 리뷰 수정
+    @Override
+    @Transactional
+    public ReviewUpdateResponseDto updateReview(Long userId, UUID reviewId, ReviewUpdateRequestDto requestDto) {
+        Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
+                .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
+
+        // 권한 검증: review.orderId → 주문 조회 → buyerId 비교
+        OrderForReviewInfoResponse orderInfo = orderClient.getOrderForReview(review.getOrderId());
+        if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
+            throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
+        }
+
+        review.update(requestDto.getContent(), requestDto.getRating(), requestDto.getReviewImageUrl());
+        return reviewMapper.toReviewUpdateResponseDto(review);
+    }
+
+    // ✅ 리뷰 삭제
+    @Override
+    @Transactional
+    public void deleteReview(Long userId, UUID reviewId, String deletedBy) {
+        Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
+                .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
+
+        // 권한 검증
+        OrderForReviewInfoResponse orderInfo = orderClient.getOrderForReview(review.getOrderId());
+        if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
+            throw new CustomException(ErrorCode.NOT_REVIEW_OWNER);
+        }
+
+        review.softDelete(deletedBy);
+    }
+
+    // ✅ 상품별 리뷰 목록 조회 (AI 요약용)
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReviewListResponseDto> getReviewsByProduct(UUID productId) {
+        // productSnapshot.productId로 조회
+        return reviewRepository.findAllByProductSnapshotProductIdAndDeletedAtIsNull(productId).stream()
+                .map(reviewMapper::toReviewListResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    // ✅ 내가 쓴 리뷰 목록 조회
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReviewListResponseDto> getMyReviews(Long userId, Pageable pageable) {
+        return reviewRepository.findAllByBuyerIdAndDeletedAtIsNull(userId, pageable)
+                .map(reviewMapper::toReviewListResponseDto);
+    }
+}

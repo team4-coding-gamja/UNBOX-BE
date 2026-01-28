@@ -1,0 +1,207 @@
+services:
+  # 1. User Service (formerly unbox_be)
+  unbox-user:
+    build:
+      context: .
+      dockerfile: unbox_user/Dockerfile
+    platform: linux/amd64  # <--- 추가됨: Mac 호환성 해결
+    container_name: unbox-user
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_URL=jdbc:postgresql://db:5432/unbox_user
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
+      - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - ORDER_SERVICE_URL=http://unbox-order:8080
+      - PAYMENT_SERVICE_URL=http://unbox-payment:8080
+      - TRADE_SERVICE_URL=http://unbox-trade:8080
+      - PRODUCT_SERVICE_URL=http://unbox-product:8080
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
+    depends_on:
+      - db
+      - redis
+
+  # 2. Product Service
+  unbox-product:
+    build:
+      context: .
+      dockerfile: unbox_product/Dockerfile
+    platform: linux/amd64  # <--- 추가됨
+    container_name: unbox-product
+    ports:
+      - "8082:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_URL=jdbc:postgresql://db:5432/unbox_product
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
+      - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - ORDER_SERVICE_URL=http://unbox-order:8080
+      - PAYMENT_SERVICE_URL=http://unbox-payment:8080
+      - TRADE_SERVICE_URL=http://unbox-trade:8080
+      - USER_SERVICE_URL=http://unbox-user:8080
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
+    depends_on:
+      - db
+      - redis
+
+  # 3. Trade Service
+  unbox-trade:
+    build:
+      context: .
+      dockerfile: unbox_trade/Dockerfile
+    platform: linux/amd64  # <--- 추가됨
+    container_name: unbox-trade
+    ports:
+      - "8083:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_URL=jdbc:postgresql://db:5432/unbox_trade
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
+      - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - PRODUCT_SERVICE_URL=http://unbox-product:8080
+      - USER_SERVICE_URL=http://unbox-user:8080
+      - ORDER_SERVICE_URL=http://unbox-order:8080
+      - PAYMENT_SERVICE_URL=http://unbox-payment:8080
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
+    depends_on:
+      - db
+      - redis
+
+  # 4. Payment Service
+  unbox-payment:
+    build:
+      context: .
+      dockerfile: unbox_payment/Dockerfile
+    platform: linux/amd64  # <--- 추가됨
+    container_name: unbox-payment
+    ports:
+      - "8085:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_URL=jdbc:postgresql://db:5432/unbox_payment
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
+      - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - PRODUCT_SERVICE_URL=http://unbox-product:8080
+      - USER_SERVICE_URL=http://unbox-user:8080
+      - TRADE_SERVICE_URL=http://unbox-trade:8080
+      - ORDER_SERVICE_URL=http://unbox-order:8080
+      - TOSS_SECRET_KEY=${TOSS_SECRET_KEY}
+      - TOSS_SECURITY_KEY=${TOSS_SECURITY_KEY}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
+    depends_on:
+      - db
+      - redis
+
+  # 5. Order Service
+  unbox-order:
+    build:
+      context: .
+      dockerfile: unbox_order/Dockerfile
+    platform: linux/amd64  # <--- 추가됨
+    container_name: unbox-order
+    ports:
+      - "8084:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_URL=jdbc:postgresql://db:5432/unbox_order
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_JWT_SECRET=${SPRING_JWT_SECRET}
+      - DB_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - USER_SERVICE_URL=http://unbox-user:8080
+      - TRADE_SERVICE_URL=http://unbox-trade:8080
+      - PAYMENT_SERVICE_URL=http://unbox-payment:8080
+      - PRODUCT_SERVICE_URL=http://unbox-product:8080
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
+    depends_on:
+      - db
+      - redis
+
+  # 6. PostgreSQL
+  db:
+    image: postgres:16.11-alpine
+    container_name: unbox-postgres
+    platform: linux/amd64
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+      - ./postgres_init:/docker-entrypoint-initdb.d
+
+  # 7. Redis
+  redis:
+    image: redis:alpine
+    container_name: unbox-redis
+    # Redis는 보통 멀티 아키텍처를 지원하므로 platform 지정이 필수는 아니지만,
+    # 만약 에러가 난다면 여기에도 platform: linux/amd64를 추가하세요.
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis_data:/data
+
+  # 8. Kafka (KRaft Mode) - Lightweight
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: unbox-kafka
+    platform: linux/amd64
+    ports:
+      - "9092:9092"
+    environment:
+      # KRaft Settings
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_INTERNAL://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
+  # 9. Kafka UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: unbox-kafka-ui
+    platform: linux/amd64
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: unbox-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: PLAINTEXT
+    depends_on:
+      - kafka

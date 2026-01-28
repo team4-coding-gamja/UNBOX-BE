@@ -1,0 +1,28 @@
+# Dev 환경 전용 설정 (application.yml 오버라이드)
+# AWS MSK Serverless IAM 인증을 위한 Kafka 설정
+# - MSK Serverless는 SASL_SSL + IAM 인증 필수
+# - Kafka properties는 dot notation으로 설정해야 함
+# - 테스트: IAM 역할 trust policy 수정 후 재배포
+spring:
+  kafka:
+    properties:
+      # MSK Serverless 보안 프로토콜
+      security.protocol: SASL_SSL
+      # AWS IAM 인증 메커니즘
+      sasl.mechanism: AWS_MSK_IAM
+      # IAM 로그인 모듈
+      sasl.jaas.config: software.amazon.msk.auth.iam.IAMLoginModule required;
+      # IAM 콜백 핸들러
+      sasl.client.callback.handler.class: software.amazon.msk.auth.iam.IAMClientCallbackHandler
+      
+      # 재연결 설정 (메모리 절약)
+      reconnect.backoff.ms: 5000  # 재연결 대기 시간 5초
+      reconnect.backoff.max.ms: 60000  # 최대 재연결 대기 시간 60초
+      retry.backoff.ms: 3000  # 재시도 대기 시간 3초
+      
+      # 메타데이터 갱신 간격 늘리기
+      metadata.max.age.ms: 300000  # 5분
+      
+      # 연결 타임아웃 설정
+      request.timeout.ms: 30000
+      session.timeout.ms: 30000

@@ -1,9 +1,14 @@
 HELP.md
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+
+# 빌드 결과물
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+src/main/generated/
+
 
 ### STS ###
 .apt_generated
@@ -38,3 +43,69 @@ out/
 
 ### ENV ###
 .env
+# .env.example 파일은 템플릿이므로 버전 관리에 포함
+!.env.example
+
+# 도커 데이터 볼륨 (PostgreSQL 데이터 저장 폴더)
+postgres_data/
+postgres_init/
+redis_data/
+
+# macOS 시스템 파일
+.DS_Store
+
+# UNBOX-INFRA 레포 (별도 관리)
+UNBOX-INFRA/
+
+# Terraform
+*.tfplan
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+### Scripts (일회성/로컬 유틸리티) ###
+scripts/lambda-db-setup.py
+scripts/setup-rds-databases.sh
+scripts/start-dev-resources.sh
+scripts/stop-dev-resources.sh
+create_databases.sql
+
+### Logs ###
+logs/
+*.log
+
+.spec
+docs/
+
+### VS Code ###
+.vscode/
+
+### Local Docker Environment ###
+/docker/local/.env
+/docker/local/init-db/
+/docker/local/postgres_data/
+/docker/local/redis_data/
+/docker/local/.env.example
+docker-compose.test.yml
+
+### Test ###
+tests/
+
+### SSH Keys (절대 커밋하지 말 것!) ###
+*.pem
+*.key
+.ssh/
+
+### Database Setup Scripts (임시 파일) ###
+create_remaining_users.sql
+run_db_setup.sh
+lambda_create_db_users.py
+manual_db_setup.md
+DB_SETUP_INSTRUCTIONS.md
+connect_via_bastion.md
+
+### Environment Info (민감 정보 포함) ###
+DEV_ENVIRONMENT_INFO.md
+PROD_ENVIRONMENT_INFO.md
+*_CREDENTIALS.md

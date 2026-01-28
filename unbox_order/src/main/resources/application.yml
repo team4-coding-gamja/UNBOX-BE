@@ -1,0 +1,150 @@
+spring:
+  application:
+    name: unbox-order
+
+  config:
+    import: "optional:file:.env[.properties]"
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+    consumer:
+      group-id: order-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    # properties(인증 설정)는 프로파일별 파일에서 관리
+    # 로컬: 인증 없음(PLAINTEXT), dev/prod: application-dev.yml/application-prod.yml에서 SASL_SSL/IAM 설정
+
+  datasource:
+    driver-class-name: ${DB_DRIVER_CLASS_NAME}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    datasource:
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2       # 최소 유지 연결
+      connection-timeout: 20000
+      idle-timeout: 300000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      ssl:
+        enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:false}
+
+  jwt:
+    secret: ${SPRING_JWT_SECRET}
+
+  sql:
+    init:
+      mode: never
+
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true                  # Feign에서 Circuit Breaker 활성화
+      client:
+        config:
+          default:
+            loggerLevel: BASIC
+            connectTimeout: 1000
+            readTimeout: 3000
+          unbox-payment:
+            readTimeout: 10000
+          unbox-user:
+            readTimeout: 5000
+          unbox-trade:
+            readTimeout: 5000          # Trade 서비스도 명시적 timeout 설정
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /order  # ALB routing path prefix
+
+# Feign Client URLs
+user-service:
+  url: ${USER_SERVICE_URL:http://localhost:8081}
+
+product-service:
+  url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
+
+trade-service:
+  url: ${TRADE_SERVICE_URL:http://localhost:8083}
+
+payment-service:
+  url: ${PAYMENT_SERVICE_URL:http://localhost:8085}
+
+logging:
+  level:
+    com.example.unbox_order.common.client: INFO
+    io.github.resilience4j: INFO
+    org.springframework.cloud.circuitbreaker: INFO
+
+cors:
+  allowed-origins:
+    - "${CORS_ALLOWED_ORIGINS:http://localhost:5173}"
+
+springdoc:
+  swagger-ui:
+    doc-expansion: none
+    tags-sorter: alpha
+    operations-sorter: alpha
+    custom-path: /css/swagger-custom.css
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, circuitbreakers, circuitbreakerevents
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+
+# ===============================
+# Resilience4j Circuit Breaker
+# ===============================
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true          # Actuator health에 서킷 상태 노출
+        slidingWindowType: COUNT_BASED         # 호출 횟수 기반 슬라이딩 윈도우
+        slidingWindowSize: 10                  # 최근 10회 호출 기준
+        minimumNumberOfCalls: 5                # 최소 5회 호출 후 평가 시작
+        permittedNumberOfCallsInHalfOpenState: 3  # HALF_OPEN에서 3회 시도
+        automaticTransitionFromOpenToHalfOpenEnabled: true  # OPEN→HALF_OPEN 자동 전환
+        waitDurationInOpenState: 10s           # OPEN 상태 유지 시간
+        failureRateThreshold: 50               # 실패율 50% 이상이면 OPEN
+        slowCallRateThreshold: 80              # 느린 호출 비율 80% 이상이면 OPEN
+        slowCallDurationThreshold: 3s          # 3초 이상 걸리면 느린 호출
+        eventConsumerBufferSize: 10            # 이벤트 버퍼 크기
+        recordExceptions:                      # 실패로 기록할 예외들
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+          - feign.FeignException
+        ignoreExceptions:                      # 무시할 예외들 (실패로 카운트 안함)
+          - com.example.unbox_common.error.exception.CustomException
+    instances:
+      unbox-trade:
+        baseConfig: default
+        waitDurationInOpenState: 15s           # Trade 서비스는 더 긴 대기 시간

@@ -1,0 +1,284 @@
+name: Product Service - Dev CD
+
+on:
+  workflow_run:
+    workflows: ["Product Service - Dev CI"]
+    types:
+      - completed
+    branches:
+      - develop
+
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: 'Image tag to deploy (Git SHA)'
+        required: true
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECS_SERVICE: unbox-dev-product
+  ECS_CLUSTER: unbox-dev-cluster
+  TASK_DEFINITION_FAMILY: unbox-dev-product
+  SERVICE_NAME: product
+
+jobs:
+  deploy:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.DEV_IAM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get image tag
+        id: image-tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.image-tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=dev-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Get current task definition
+        id: get-task-def
+        run: |
+          # 현재 실행 중인 Task Definition 가져오기
+          TASK_DEF_ARN=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].taskDefinition' \
+            --output text)
+          
+          echo "current-task-def=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+          
+          # Task Definition JSON 다운로드
+          aws ecs describe-task-definition \
+            --task-definition $TASK_DEF_ARN \
+            --query 'taskDefinition' > task-def.json
+
+      - name: Update task definition with new image
+        id: update-task-def
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
+        run: |
+          # 새 이미지 URI 생성
+          NEW_IMAGE="${ECR_REGISTRY}/unbox-dev-product-repo:${IMAGE_TAG}"
+          
+          # Task Definition에서 불필요한 필드 제거 및 이미지 업데이트
+          cat task-def.json | jq --arg IMAGE "$NEW_IMAGE" '
+            del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt) |
+            .containerDefinitions[0].image = $IMAGE
+          ' > task-def-updated.json
+          
+          echo "Updated task definition:"
+          cat task-def-updated.json
+
+      - name: Register new task definition
+        id: register-task-def
+        run: |
+          TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://task-def-updated.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          echo "task-def-arn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+          echo "Registered new task definition: $TASK_DEF_ARN"
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --task-definition ${{ steps.register-task-def.outputs.task-def-arn }} \
+            --force-new-deployment
+
+      - name: Check deployment status
+        id: check-deployment
+        run: |
+          echo "🔍 ECS 서비스 상태 확인 중..."
+          
+          # 현재 서비스 상태 확인
+          aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].{status:status,runningCount:runningCount,desiredCount:desiredCount,deployments:deployments}' \
+            --output json | tee service-status.json
+          
+          # 최근 태스크 이벤트 확인
+          echo ""
+          echo "📋 최근 서비스 이벤트:"
+          aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].events[:5]' \
+            --output table
+          
+          # 실행 중인 태스크 확인
+          echo ""
+          echo "🏃 실행 중인 태스크 목록:"
+          TASK_ARNS=$(aws ecs list-tasks \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service-name ${{ env.ECS_SERVICE }} \
+            --query 'taskArns' \
+            --output text)
+          
+          if [ -n "$TASK_ARNS" ]; then
+            aws ecs describe-tasks \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --tasks $TASK_ARNS \
+              --query 'tasks[*].{taskArn:taskArn,lastStatus:lastStatus,healthStatus:healthStatus,containers:containers[*].{name:name,status:lastStatus,exitCode:exitCode,reason:reason}}' \
+              --output json | tee tasks-status.json
+          else
+            echo "⚠️ 실행 중인 태스크가 없습니다."
+          fi
+
+      - name: Wait for service stability
+        run: |
+          echo "⏳ ECS 서비스 안정화 대기 중 (최대 15분)..."
+          
+          # 15분 타임아웃 설정
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --cli-read-timeout 900 \
+            --cli-connect-timeout 900 || {
+            
+            echo "❌ 서비스 안정화 실패!"
+            echo ""
+            echo "🔍 실패 원인 분석:"
+            
+            # 실패한 태스크 로그 확인
+            STOPPED_TASKS=$(aws ecs list-tasks \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service-name ${{ env.ECS_SERVICE }} \
+              --desired-status STOPPED \
+              --query 'taskArns[:3]' \
+              --output text)
+            
+            if [ -n "$STOPPED_TASKS" ]; then
+              echo "⚠️ 중지된 태스크 정보:"
+              aws ecs describe-tasks \
+                --cluster ${{ env.ECS_CLUSTER }} \
+                --tasks $STOPPED_TASKS \
+                --query 'tasks[*].{taskArn:taskArn,stoppedReason:stoppedReason,containers:containers[*].{name:name,exitCode:exitCode,reason:reason}}' \
+                --output json
+            fi
+            
+            # 서비스 이벤트 재확인
+            echo ""
+            echo "📋 최신 서비스 이벤트:"
+            aws ecs describe-services \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --services ${{ env.ECS_SERVICE }} \
+              --query 'services[0].events[:10]' \
+              --output table
+            
+            exit 1
+          }
+          
+          echo "✅ 서비스가 안정화되었습니다!"
+
+      - name: Notify Discord - Deployment Success
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "✅ Dev 배포 성공 - Product 서비스",
+                "description": "**환경:** Dev\n**서비스:** product-service\n**커밋:** `${{ steps.image-tag.outputs.tag }}`\n**Task Definition:** `${{ steps.register-task-def.outputs.task-def-arn }}`",
+                "color": 3066993,
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+              }]
+            }'
+
+      - name: Collect failure diagnostics
+        if: failure()
+        id: diagnostics
+        run: |
+          echo "🔍 실패 진단 정보 수집 중..."
+          
+          # 서비스 상태
+          SERVICE_STATUS=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }} \
+            --query 'services[0].events[0].message' \
+            --output text 2>/dev/null || echo "상태 확인 불가")
+          
+          # 중지된 태스크 정보
+          STOPPED_REASON=$(aws ecs list-tasks \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service-name ${{ env.ECS_SERVICE }} \
+            --desired-status STOPPED \
+            --query 'taskArns[0]' \
+            --output text 2>/dev/null)
+          
+          if [ -n "$STOPPED_REASON" ] && [ "$STOPPED_REASON" != "None" ]; then
+            TASK_INFO=$(aws ecs describe-tasks \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --tasks $STOPPED_REASON \
+              --query 'tasks[0].{reason:stoppedReason,container:containers[0].reason}' \
+              --output json 2>/dev/null || echo '{}')
+            
+            STOP_REASON=$(echo "$TASK_INFO" | jq -r '.reason // "알 수 없음"')
+            CONTAINER_REASON=$(echo "$TASK_INFO" | jq -r '.container // "알 수 없음"')
+          else
+            STOP_REASON="태스크 정보 없음"
+            CONTAINER_REASON="N/A"
+          fi
+          
+          # 결과를 파일로 저장 (Discord 메시지용)
+          cat > failure-info.txt <<EOF
+          **서비스 상태:** ${SERVICE_STATUS}
+          **중지 이유:** ${STOP_REASON}
+          **컨테이너 상태:** ${CONTAINER_REASON}
+          EOF
+          
+          echo "service_status=${SERVICE_STATUS}" >> $GITHUB_OUTPUT
+          echo "stop_reason=${STOP_REASON}" >> $GITHUB_OUTPUT
+
+      - name: Notify Discord - Deployment Failed
+        if: failure()
+        run: |
+          # 진단 정보 읽기
+          if [ -f failure-info.txt ]; then
+            FAILURE_INFO=$(cat failure-info.txt)
+          else
+            FAILURE_INFO="**실패 원인:** 배포 또는 헬스체크 실패"
+          fi
+          
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "❌ Dev 배포 실패 - Product 서비스",
+                "description": "**환경:** Dev\n**서비스:** product-service\n**커밋:** `${{ steps.image-tag.outputs.tag }}`\n\n'"${FAILURE_INFO}"'\n\n**조치 방법:**\n1. CloudWatch Logs에서 애플리케이션 로그 확인\n2. ECS 콘솔에서 태스크 상태 확인\n3. ALB 헬스체크 설정 검토",
+                "color": 15158332,
+                "fields": [
+                  {
+                    "name": "🔗 CloudWatch Logs",
+                    "value": "[로그 확인](https://console.aws.amazon.com/cloudwatch/home?region=ap-northeast-2#logsV2:log-groups/log-group/$252Fecs$252Funbox-dev-product)",
+                    "inline": false
+                  },
+                  {
+                    "name": "🔗 ECS 서비스",
+                    "value": "[서비스 확인](https://console.aws.amazon.com/ecs/v2/clusters/unbox-dev-cluster/services/unbox-dev-product)",
+                    "inline": false
+                  }
+                ],
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+              }]
+            }'

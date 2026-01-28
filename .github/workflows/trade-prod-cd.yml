@@ -1,0 +1,94 @@
+name: Trade Service - Prod CD (Blue/Green)
+
+on:
+  workflow_run:
+    workflows: ["Trade Service - Prod CI"]
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy (e.g., prod-abc123)'
+        required: true
+        type: string
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECS_CLUSTER: unbox-prod-cluster
+  ECS_SERVICE: unbox-prod-trade
+  CODEDEPLOY_APP: unbox-prod-app
+  CODEDEPLOY_GROUP: unbox-prod-trade-dg
+  CONTAINER_NAME: trade
+  SERVICE_NAME: trade-service
+
+jobs:
+  approval:
+    name: Manual Approval Required
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    environment:
+      name: production-cd-approval
+    steps:
+      - run: |
+          IMAGE_TAG="${{ github.event.inputs.image_tag || 'prod-latest' }}"
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" -H "Content-Type: application/json" -d '{"embeds": [{"title": "⏸️ Prod CD 승인 대기 - Trade 서비스","description": "**환경:** Production\n**서비스:** trade-service\n**배포 방식:** Blue/Green (CodeDeploy)\n**이미지 태그:** `'"$IMAGE_TAG"'`\n\n**승인 필요:** GitHub Actions에서 수동 승인이 필요합니다.","color": 16776960,"timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}]}'
+
+  deploy:
+    name: Deploy with CodeDeploy
+    runs-on: ubuntu-latest
+    needs: approval
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.PROD_IAM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-TradeProdCD
+          audience: sts.amazonaws.com
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: login-ecr
+      - id: image-tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=prod-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+      - id: vpc-config
+        run: |
+          SUBNETS=$(aws ec2 describe-subnets --filters "Name=tag:Environment,Values=production" "Name=tag:Type,Values=private-app" --query 'Subnets[*].SubnetId' --output text | tr '\t' ',')
+          echo "subnets=$SUBNETS" >> $GITHUB_OUTPUT
+          SG=$(aws ec2 describe-security-groups --filters "Name=tag:Name,Values=unbox-production-trade-app-sg" --query 'SecurityGroups[0].GroupId' --output text)
+          echo "security_group=$SG" >> $GITHUB_OUTPUT
+      - id: current-task-def
+        run: |
+          TASK_DEF_ARN=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --query 'services[0].taskDefinition' --output text)
+          aws ecs describe-task-definition --task-definition $TASK_DEF_ARN --query 'taskDefinition' > task-definition.json
+      - id: task-def
+        run: |
+          cat task-definition.json | jq 'del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.compatibilities,.registeredAt,.registeredBy)' > task-def-clean.json
+          NEW_IMAGE="${{ steps.login-ecr.outputs.registry }}/unbox-prod-trade-repo:${{ steps.image-tag.outputs.tag }}"
+          cat task-def-clean.json | jq --arg IMAGE "$NEW_IMAGE" '.containerDefinitions[0].image = $IMAGE' > task-def-updated.json
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://task-def-updated.json --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "arn=$NEW_TASK_DEF_ARN" >> $GITHUB_OUTPUT
+      - run: |
+          IFS=',' read -ra SUBNET_ARRAY <<< "${{ steps.vpc-config.outputs.subnets }}"
+          LAMBDA_ARN=$(aws lambda get-function --function-name unbox-production-deployment-validator --query 'Configuration.FunctionArn' --output text)
+          sed -e "s|<TASK_DEFINITION>|${{ steps.task-def.outputs.arn }}|g" -e "s|<SUBNET_1>|${SUBNET_ARRAY[0]}|g" -e "s|<SUBNET_2>|${SUBNET_ARRAY[1]}|g" -e "s|<SECURITY_GROUP>|${{ steps.vpc-config.outputs.security_group }}|g" -e "s|<LAMBDA_FUNCTION_ARN>|$LAMBDA_ARN|g" appspecs/prod-trade-appspec.yaml > appspec.yaml
+      - id: deploy
+        run: |
+          DEPLOYMENT_ID=$(aws deploy create-deployment --application-name ${{ env.CODEDEPLOY_APP }} --deployment-group-name ${{ env.CODEDEPLOY_GROUP }} --revision revisionType=AppSpecContent,appSpecContent={content="$(cat appspec.yaml | base64)"} --description "Deploying ${{ steps.image-tag.outputs.tag }}" --query 'deploymentId' --output text)
+          echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+      - run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" -H "Content-Type: application/json" -d '{"embeds": [{"title": "🚀 Prod CD 시작 - Trade 서비스","description": "**환경:** Production\n**서비스:** trade-service\n**배포 방식:** Blue/Green\n**이미지:** `${{ steps.image-tag.outputs.tag }}`","color": 3447003,"timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}]}'
+      - run: aws deploy wait deployment-successful --deployment-id ${{ steps.deploy.outputs.deployment_id }}
+      - run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" -H "Content-Type: application/json" -d '{"embeds": [{"title": "✅ Prod CD 성공 - Trade 서비스","description": "**환경:** Production\n**서비스:** trade-service\n**이미지:** `${{ steps.image-tag.outputs.tag }}`","color": 3066993,"timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}]}'
+      - if: failure()
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" -H "Content-Type: application/json" -d '{"embeds": [{"title": "❌ Prod CD 실패 - Trade 서비스","description": "**환경:** Production\n**서비스:** trade-service","color": 15158332,"timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}]}'

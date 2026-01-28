@@ -1,0 +1,56 @@
+HELP.md
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+
+# 빌드 결과물
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+src/main/generated/
+
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### ENV ###
+.env
+
+# 도커 데이터 볼륨 (PostgreSQL 데이터 저장 폴더)
+postgres_data/
+redis_data/
+
+# macOS 시스템 파일
+.DS_Store
+
+### Logs ###
+logs/
+*.log

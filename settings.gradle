@@ -1,1 +1,8 @@
-rootProject.name = 'unbox_be'
+rootProject.name = 'unbox_workspace'
+
+include 'unbox_common'
+include 'unbox_user'    // User will rename unbox_be -> unbox_user
+include 'unbox_product'
+include 'unbox_trade'
+include 'unbox_payment'
+include 'unbox_order'

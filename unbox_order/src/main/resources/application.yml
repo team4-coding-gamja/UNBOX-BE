@@ -148,3 +148,4 @@ resilience4j:
       unbox-trade:
         baseConfig: default
         waitDurationInOpenState: 15s           # Trade 서비스는 더 긴 대기 시간
+        slowCallDurationThreshold: 2s          # 2초 이상 걸리면 느린 호출 (소수점 불가)

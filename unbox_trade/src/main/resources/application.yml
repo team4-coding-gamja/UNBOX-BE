@@ -19,6 +19,8 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+        max.poll.records: 50              # 한 번에 가져오는 레코드 수 제한 (기본값 500 → 50)
+        max.poll.interval.ms: 300000      # poll() 간격 제한 5분 (이 안에 처리 못하면 리밸런싱)
     # properties(인증 설정)는 프로파일별 파일에서 관리
     # 로컬: 인증 없음(PLAINTEXT), dev/prod: application-dev.yml/application-prod.yml에서 SASL_SSL/IAM 설정
 

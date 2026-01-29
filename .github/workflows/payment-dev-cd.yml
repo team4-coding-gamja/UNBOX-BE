@@ -47,7 +47,8 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "tag=${{ github.event.inputs.image-tag }}" >> $GITHUB_OUTPUT
           else
-            echo "tag=dev-${{ github.sha }}" >> $GITHUB_OUTPUT
+            # workflow_run 이벤트에서는 트리거한 워크플로우의 SHA 사용
+            echo "tag=dev-${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Login to Amazon ECR

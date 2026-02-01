@@ -86,15 +86,17 @@ public class Order extends BaseEntity {
     @Column(name = "buyer_name", nullable = false)
     private String buyerName;
 
-    // ======================= 상품 스냅샷 =======================
+    // 상품 스냅샷
     @Column(name = "product_name", nullable = false)
     private String productName;
+
+    @Column(name = "product_option_name", nullable = false)
+    private String productOptionName;
 
     @Column(name = "model_number", nullable = false)
     private String modelNumber;
 
-    @Column(name = "product_option_name", nullable = false)
-    private String productOptionName;
+
 
     @Column(name = "product_image_url")
     private String productImageUrl;

@@ -23,7 +23,6 @@ dependencyManagement {
 }
 
 dependencies {
-
     // Common Module
     implementation project(':unbox_common')
 

@@ -1,6 +1,6 @@
 spring:
   application:
-    name: unbox_product
+    name: unbox-product
   
   config:
     import: "optional:file:.env[.properties]"
@@ -107,4 +107,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health, prometheus
+  
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}

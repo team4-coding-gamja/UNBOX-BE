@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<included>
+    <property name="LOG_PATH" value="./logs"/>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="unbox-app"/>
+
+    <!-- Console Appender: Human Readable -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender: JSON format for Logstash/Fluent-Bit -->
+    <appender name="FILE_JSON" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}.json</file>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app_name":"${APP_NAME}"}</customFields>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}.%d{yyyy-MM-dd}.json</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- Profile Strategies -->
+
+    <!-- Local: DEBUG for application packages, INFO for root -->
+    <springProfile name="local">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE_JSON"/>
+        </root>
+        <!-- Enable DEBUG for our own code in local environment -->
+        <logger name="com.example" level="DEBUG"/>
+    </springProfile>
+
+    <!-- Dev/Prod: INFO only (Safe Default) -->
+    <springProfile name="dev,prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE_JSON"/>
+        </root>
+    </springProfile>
+
+    <!-- Default Fallback (if no profile active) -->
+    <springProfile name="!local &amp; !dev &amp; !prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE_JSON"/>
+        </root>
+    </springProfile>
+
+</included>

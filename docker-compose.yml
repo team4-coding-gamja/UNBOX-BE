@@ -23,6 +23,7 @@ services:
       - PRODUCT_SERVICE_URL=http://unbox-product:8080
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
+      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
     depends_on:
       - db
       - redis
@@ -54,6 +55,7 @@ services:
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
+      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
     depends_on:
       - db
       - redis
@@ -82,6 +84,7 @@ services:
       - PAYMENT_SERVICE_URL=http://unbox-payment:8080
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
+      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
     depends_on:
       - db
       - redis
@@ -112,6 +115,7 @@ services:
       - TOSS_SECURITY_KEY=${TOSS_SECURITY_KEY}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
+      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
     depends_on:
       - db
       - redis
@@ -140,6 +144,7 @@ services:
       - PRODUCT_SERVICE_URL=http://unbox-product:8080
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
+      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
     depends_on:
       - db
       - redis
@@ -205,3 +210,11 @@ services:
       KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: PLAINTEXT
     depends_on:
       - kafka
+
+  # 10. Zipkin (For Distributed Tracing)
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: unbox-zipkin
+    platform: linux/amd64
+    ports:
+      - "9411:9411"

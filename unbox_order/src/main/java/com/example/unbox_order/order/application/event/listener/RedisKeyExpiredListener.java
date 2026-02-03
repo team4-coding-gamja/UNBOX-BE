@@ -51,12 +51,17 @@ public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
             }
 
             UUID orderId = UUID.fromString(parts[2]);
-            UUID sellingBidId = UUID.fromString(parts[3]);
+            String type = parts[3]; // "SELLING" or "BUYING"
+            UUID bidId = UUID.fromString(parts[4]);
 
-            log.info("Triggering OrderExpiredEvent for Order: {}, SellingBid: {}", orderId, sellingBidId);
-            
-            // Kafka 이벤트 발행
-            OrderExpiredEvent event = OrderExpiredEvent.of(orderId, sellingBidId);
+            log.info("Triggering OrderExpiredEvent for Order: {}, Type: {}, Bid: {}", orderId, type, bidId);
+
+            OrderExpiredEvent event;
+            if ("BUYING".equals(type)) {
+                event = OrderExpiredEvent.ofBuying(orderId, bidId);
+            } else {
+                event = OrderExpiredEvent.ofSelling(orderId, bidId);
+            }
             orderEventProducer.publishOrderExpired(event);
 
         } catch (IllegalArgumentException e) {

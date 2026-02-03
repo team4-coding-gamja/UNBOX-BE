@@ -30,8 +30,11 @@ public class Payment extends BaseEntity {
     @Column(name = "order_id", nullable = false)
     private UUID orderId; // 주문 ID
 
-    @Column(name = "selling_bid_id", nullable = false)
+    @Column(name = "selling_bid_id")
     private UUID sellingBidId; // 판매 입찰 ID
+
+    @Column(name = "buying_bid_id")
+    private UUID buyingBidId;
 
     // ======================= 비즈니스 필수 필드 =======================
     @Column(name = "buyer_id", nullable = false)

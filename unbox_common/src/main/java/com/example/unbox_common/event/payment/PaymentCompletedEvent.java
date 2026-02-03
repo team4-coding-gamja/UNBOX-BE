@@ -9,10 +9,20 @@ public record PaymentCompletedEvent(
         String paymentKey,
         UUID orderId,
         UUID sellingBidId,
+        UUID buyingBidId,
         BigDecimal amount,
-        LocalDateTime completedAt
-) {
-    public static PaymentCompletedEvent of(UUID paymentId, String paymentKey, UUID orderId, UUID sellingBidId, BigDecimal amount) {
-        return new PaymentCompletedEvent(paymentId, paymentKey, orderId, sellingBidId, amount, LocalDateTime.now());
+        LocalDateTime completedAt) {
+
+    // 하위 호환성 유지 (기존 판매 입찰용)
+    public static PaymentCompletedEvent ofSelling(UUID paymentId, String paymentKey, UUID orderId, UUID sellingBidId,
+                                                  BigDecimal amount) {
+        return new PaymentCompletedEvent(paymentId, paymentKey, orderId, sellingBidId, null, amount,
+                LocalDateTime.now());
+    }
+
+    public static PaymentCompletedEvent ofBuying(UUID paymentId, String paymentKey, UUID orderId, UUID buyingBidId,
+                                                 BigDecimal amount) {
+        return new PaymentCompletedEvent(paymentId, paymentKey, orderId, null, buyingBidId, amount,
+                LocalDateTime.now());
     }
 }

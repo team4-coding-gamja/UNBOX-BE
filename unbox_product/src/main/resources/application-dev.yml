@@ -20,5 +20,5 @@ spring:
 # --------------------------------------------------------
 app:
   cache:
-    enabled: true  # 테스트 1 (Redis 포함): true
+    enabled: false  # 테스트 1 (Redis 포함): true
     # 테스트 2 (DB만): false 로 변경 후 배포

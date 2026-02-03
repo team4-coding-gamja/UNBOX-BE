@@ -1,10 +1,13 @@
 package com.example.unbox_payment.payment.application.event.producer;
 
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
+import com.example.unbox_common.event.payment.PaymentFailedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -15,16 +18,43 @@ public class PaymentEventProducer {
     private static final String TOPIC_PAYMENT = "payment-events";
 
     public void publishPaymentCompleted(PaymentCompletedEvent event) {
-        log.info("Publishing PaymentCompletedEvent: paymentKey={}, orderId={}, sellingBidId={}", 
-                event.paymentKey(), event.orderId(), event.sellingBidId());
-        
+        log.info("Publishing PaymentCompletedEvent: paymentKey={}, orderId={}, sellingBidId={}, buyingBidId={}",
+                event.paymentKey(), event.orderId(), event.sellingBidId(), event.buyingBidId());
+
+        // Key를 sellingBidId 또는 buyingBidId로 설정하여 Trade 서비스의 입찰 상태 변경 순서 보장 (Order 서비스와
+        // 동일 기준)
+        UUID keyId = (event.sellingBidId() != null) ? event.sellingBidId() : event.buyingBidId();
+        if (keyId == null) {
+            keyId = event.orderId(); // Fallback
+        }
+
         // Key를 sellingBidId로 설정하여 Trade 서비스의 입찰 상태 변경 순서 보장
-        kafkaTemplate.send(TOPIC_PAYMENT, event.sellingBidId().toString(), event)
+        kafkaTemplate.send(TOPIC_PAYMENT, keyId.toString(), event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("이벤트 발행 실패: {}", event.sellingBidId(), ex);
                     } else {
                         log.debug("이벤트 발행 성공: {}", result.getRecordMetadata());
+                    }
+                });
+    }
+
+    public void publishPaymentFailed(PaymentFailedEvent event) {
+        log.info("Publishing PaymentFailedEvent: paymentId={}, orderId={}, sellingBidId={}, buyingBidId={}",
+                event.paymentId(), event.orderId(), event.sellingBidId(), event.buyingBidId());
+
+        // Key를 sellingBidId 또는 buyingBidId로 설정
+        UUID keyId = (event.sellingBidId() != null) ? event.sellingBidId() : event.buyingBidId();
+        if (keyId == null) {
+            keyId = event.orderId(); // Fallback
+        }
+
+        kafkaTemplate.send(TOPIC_PAYMENT, keyId.toString(), event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Failed to publish PaymentFailedEvent for orderId: {}", event.orderId(), ex);
+                    } else {
+                        log.debug("Successfully published PaymentFailedEvent: {}", result.getRecordMetadata());
                     }
                 });
     }

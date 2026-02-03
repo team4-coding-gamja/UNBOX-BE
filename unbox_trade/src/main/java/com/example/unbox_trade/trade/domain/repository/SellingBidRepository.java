@@ -2,6 +2,7 @@ package com.example.unbox_trade.trade.domain.repository;
 
 import com.example.unbox_trade.trade.domain.entity.SellingBid;
 import com.example.unbox_trade.trade.domain.entity.SellingStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +44,7 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
 
   Optional<SellingBid> findByIdAndDeletedAtIsNull(UUID sellingId);
 
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select sb from SellingBid sb where sb.id = :sellingId and sb.deletedAt is null")
   Optional<SellingBid> findByIdAndDeletedAtIsNullForUpdate(@Param("sellingId") UUID sellingId);
 
@@ -83,8 +85,8 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
   @Modifying(clearAutomatically = true)
   @Query("UPDATE SellingBid s SET s.status = :toStatus WHERE s.id = :id AND s.status = :fromStatus")
   int updateStatusIfReserved(@Param("id") UUID id,
-                             @Param("fromStatus") SellingStatus fromStatus,
-                             @Param("toStatus") SellingStatus toStatus);
+      @Param("fromStatus") SellingStatus fromStatus,
+      @Param("toStatus") SellingStatus toStatus);
 
   @Query("SELECT MIN(sb.price) FROM SellingBid sb WHERE sb.productOptionId = :optionId AND sb.status = 'LIVE' AND sb.deletedAt IS NULL")
   Optional<java.math.BigDecimal> findLowestPriceByOptionId(@Param("optionId") UUID optionId);

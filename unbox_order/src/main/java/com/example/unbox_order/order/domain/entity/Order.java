@@ -27,8 +27,11 @@ public class Order extends BaseEntity {
     private UUID id;
 
     // ======================= 강한 ID 참조 =======================
-    @Column(name = "selling_bid_id", nullable = false)
+    @Column(name = "selling_bid_id")
     private UUID sellingBidId;
+
+    @Column(name = "buying_bid_id")
+    private UUID buyingBidId;
 
     @Column(name = "buyer_id", nullable = false)
     private Long buyerId;
@@ -86,17 +89,15 @@ public class Order extends BaseEntity {
     @Column(name = "buyer_name", nullable = false)
     private String buyerName;
 
-    // 상품 스냅샷
+    // ======================= 상품 스냅샷 =======================
     @Column(name = "product_name", nullable = false)
     private String productName;
-
-    @Column(name = "product_option_name", nullable = false)
-    private String productOptionName;
 
     @Column(name = "model_number", nullable = false)
     private String modelNumber;
 
-
+    @Column(name = "product_option_name", nullable = false)
+    private String productOptionName;
 
     @Column(name = "product_image_url")
     private String productImageUrl;
@@ -106,12 +107,13 @@ public class Order extends BaseEntity {
 
     // ======================= 생성자 =======================
     @Builder
-    public Order(UUID sellingBidId, Long buyerId, Long sellerId, String buyerName,
+    public Order(UUID sellingBidId, UUID buyingBidId, Long buyerId, Long sellerId, String buyerName,
             UUID productOptionId, UUID productId,
             String productName, String modelNumber, String productOptionName, String productImageUrl, String brandName,
             BigDecimal price, String receiverName, String receiverPhone, String receiverAddress,
             String receiverZipCode) {
         this.sellingBidId = sellingBidId;
+        this.buyingBidId = buyingBidId;
         this.buyerId = buyerId;
         this.sellerId = sellerId;
         this.buyerName = buyerName;
@@ -168,7 +170,7 @@ public class Order extends BaseEntity {
         }
 
         // 환불 가능 상태 확인 (배송 대기 또는 배송 완료)
-        if (this.status != OrderStatus.PENDING_SHIPMENT 
+        if (this.status != OrderStatus.PENDING_SHIPMENT
                 && this.status != OrderStatus.DELIVERED) {
             throw new CustomException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
         }
@@ -181,7 +183,7 @@ public class Order extends BaseEntity {
         OrderStatus previousStatus = this.status;
         this.status = OrderStatus.CANCELLED;
         this.cancelledAt = LocalDateTime.now();
-        
+
         return previousStatus; // 이전 상태 반환 (이벤트 발행용)
     }
 

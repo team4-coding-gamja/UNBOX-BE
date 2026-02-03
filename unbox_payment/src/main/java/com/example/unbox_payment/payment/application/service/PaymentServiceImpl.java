@@ -14,6 +14,7 @@ import com.example.unbox_payment.payment.domain.entity.PaymentStatus;
 import com.example.unbox_payment.payment.presentation.mapper.PaymentClientMapper;
 import com.example.unbox_payment.payment.presentation.mapper.PaymentMapper;
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
+import com.example.unbox_common.event.payment.PaymentFailedEvent;
 import com.example.unbox_payment.payment.application.event.producer.PaymentEventProducer;
 import com.example.unbox_payment.payment.domain.repository.PaymentRepository;
 import com.example.unbox_common.error.exception.CustomException;
@@ -84,7 +85,8 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // 기존 결제 내역 확인 (가장 최근 것 조회)
-        Optional<Payment> existingPayment = paymentRepository.findTopByOrderIdAndDeletedAtIsNullOrderByCreatedAtDesc(orderId);
+        Optional<Payment> existingPayment = paymentRepository
+                .findTopByOrderIdAndDeletedAtIsNullOrderByCreatedAtDesc(orderId);
 
         // 기존 결제가 존재하는 경우 처리
         if (existingPayment.isPresent()) {
@@ -155,9 +157,15 @@ public class PaymentServiceImpl implements PaymentService {
             paymentTransactionService.processSuccessfulPayment(paymentId, mockResponse);
 
             // 결제 완료 이벤트 발행
-            paymentEventProducer.publishPaymentCompleted(
-                    PaymentCompletedEvent.of(paymentId, finalPaymentKey, payment.getOrderId(), payment.getSellingBidId(), payment.getAmount())
-            );
+            PaymentCompletedEvent event;
+            if (payment.getBuyingBidId() != null) {
+                event = PaymentCompletedEvent.ofBuying(paymentId, finalPaymentKey, payment.getOrderId(),
+                        payment.getBuyingBidId(), payment.getAmount());
+            } else {
+                event = PaymentCompletedEvent.ofSelling(paymentId, finalPaymentKey, payment.getOrderId(),
+                        payment.getSellingBidId(), payment.getAmount());
+            }
+            paymentEventProducer.publishPaymentCompleted(event);
 
             log.info("[PaymentConfirm] 테스트 결제 프로세스 완료 - paymentId: {}", paymentId);
             return mockResponse;
@@ -173,14 +181,20 @@ public class PaymentServiceImpl implements PaymentService {
             try {
                 // 성공 처리 (DONE 변경 등 분리된 트랜잭션에서 처리)
                 paymentTransactionService.processSuccessfulPayment(paymentId, response);
-                
+
                 // 🔄 결제 완료 이벤트 발행 (비동기 - Trade, Notification, Settlement Service)
                 // Trade Service: RESERVED -> SOLD 상태 변경
                 // Order Service: PAYMENT_PENDING -> PENDING_SHIPMENT
                 // Settlement Service: 정산 데이터 생성
-                paymentEventProducer.publishPaymentCompleted(
-                        PaymentCompletedEvent.of(paymentId, finalPaymentKey, payment.getOrderId(), payment.getSellingBidId(), payment.getAmount())
-                );
+                PaymentCompletedEvent event;
+                if (payment.getBuyingBidId() != null) {
+                    event = PaymentCompletedEvent.ofBuying(paymentId, finalPaymentKey, payment.getOrderId(),
+                            payment.getBuyingBidId(), payment.getAmount());
+                } else {
+                    event = PaymentCompletedEvent.ofSelling(paymentId, finalPaymentKey, payment.getOrderId(),
+                            payment.getSellingBidId(), payment.getAmount());
+                }
+                paymentEventProducer.publishPaymentCompleted(event);
 
                 log.info("[PaymentConfirm] 전체 결제 프로세스 완료 - paymentId: {}", paymentId);
             } catch (Exception e) {
@@ -196,6 +210,20 @@ public class PaymentServiceImpl implements PaymentService {
                     paymentId, response.getErrorCode(), response.getErrorMessage());
             // 실패 처리 (상태 변경 등 분리된 트랜잭션에서 처리)
             paymentTransactionService.processFailedPayment(paymentId, response);
+
+            // 결제 실패 이벤트 발행 (Trade 서비스: LIVE 상태 복구용)
+            // payment.getPaymentKey() 대신 mock처리된 finalPaymentKey를 사용해야하나,
+            // processFailedPayment 시점엔 이미 confirmPayment 메서드 내 local variable인
+            // finalPaymentKey 접근 불가.
+            // 하지만 PaymentFailedEvent는 주로 'ID' 기반 처리를 하므로 paymentKey는 로깅용.
+            // response.getPaymentKey() 혹은 payment.getPaymentKey() 사용.
+            String currentPaymentKey = (payment.getPaymentKey() != null) ? payment.getPaymentKey() : "UNKNOWN";
+
+            paymentEventProducer.publishPaymentFailed(
+                    PaymentFailedEvent.of(paymentId, currentPaymentKey, payment.getOrderId(),
+                            payment.getSellingBidId(), payment.getBuyingBidId(),
+                            payment.getAmount(), response.getErrorCode(), response.getErrorMessage()));
+
             throw new CustomException(ErrorCode.PAYMENT_CONFIRM_FAILED);
         }
     }
@@ -237,7 +265,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         // 1) 환불 준비: 검증 (별도 트랜잭션에서 실행 후 즉시 커밋 - DB 커넥션 반환)
         Payment payment = paymentTransactionService.prepareForRefund(paymentId);
-        
+
         // null이면 이미 취소된 결제 (멱등성)
         if (payment == null) {
             log.info("[Refund] 이미 취소된 결제 - 처리 생략");

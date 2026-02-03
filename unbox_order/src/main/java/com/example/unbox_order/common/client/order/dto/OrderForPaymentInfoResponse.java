@@ -17,6 +17,7 @@ public class OrderForPaymentInfoResponse {
     private String status;
     private BigDecimal price;
     private UUID sellingBidId;
+    private UUID buyingBidId;
 
     // 구매자/판매자 ID
     private Long buyerId;

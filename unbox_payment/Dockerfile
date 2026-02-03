@@ -26,12 +26,12 @@ COPY unbox_payment/src ./src
 RUN gradle bootJar --no-daemon -x test
 
 # Stage 2: Runtime
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
 # Create non-root user
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN groupadd -r spring && useradd -r -g spring spring
 
 # Create logs directory and set permissions
 RUN mkdir -p logs && chown spring:spring logs

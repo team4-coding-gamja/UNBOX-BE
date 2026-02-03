@@ -1,0 +1,24 @@
+# k8s/database/redis/values-local.yaml
+
+# 1. 아키텍처: 단일 노드 (Sentinel/Cluster 끔)
+architecture: standalone
+
+# 2. 인증 정보
+auth:
+  enabled: true
+  password: "1234"
+
+# 3. 리소스 제한
+master:
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      memory: 128Mi
+
+# 4. 영속성 끄기 (선택사항)
+# 레디스는 보통 캐시로 쓰니까 껐다 켜면 날아가도 되면 false
+# 그래도 로컬 테스트 중 데이터 유지하고 싶으면 true
+master:
+  persistence:
+    enabled: false

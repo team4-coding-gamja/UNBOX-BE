@@ -56,7 +56,7 @@ public interface BuyingBidApi {
 
     @Operation(summary = "구매 입찰 취소", description = "로그인한 사용자가 본인의 구매 입찰을 취소합니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "구매 입찰 취소 성공"),
+            @ApiResponse(responseCode = "200", description = "구매 입찰 취소 성공"),
             @ApiResponse(responseCode = "401", description = "인증 실패", content = @Content),
             @ApiResponse(responseCode = "403", description = "권한 없음(본인 입찰 아님)", content = @Content),
             @ApiResponse(responseCode = "404", description = "구매 입찰을 찾을 수 없음", content = @Content)

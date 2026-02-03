@@ -66,7 +66,7 @@ public class BuyingBidInternalController {
 
     // ✅ 상품 옵션별 최고가 조회 (Internal)
     @Operation(summary = "상품 옵션별 최고가 조회 (배치)", description = "여러 상품 옵션의 최고가 구매 입찰 가격을 한꺼번에 조회합니다.")
-    @GetMapping("/product-options/highest-price")
+    @PostMapping("/product-options/highest-price")
     public List<HighestPriceResponseDto> getHighestPrices(@RequestBody List<UUID> productOptionIds) {
         return buyingBidInternalService.getHighestPrices(productOptionIds);
     }

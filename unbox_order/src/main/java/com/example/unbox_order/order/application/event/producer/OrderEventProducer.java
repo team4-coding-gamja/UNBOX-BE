@@ -1,9 +1,6 @@
 package com.example.unbox_order.order.application.event.producer;
 
-import com.example.unbox_common.event.order.OrderCancelledEvent;
-import com.example.unbox_common.event.order.OrderConfirmedEvent;
-import com.example.unbox_common.event.order.OrderExpiredEvent;
-import com.example.unbox_common.event.order.OrderRefundRequestedEvent;
+import com.example.unbox_common.event.order.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -62,6 +59,24 @@ public class OrderEventProducer {
                         log.error("Failed to publish OrderRefundRequestedEvent for orderId: {}", event.orderId(), ex);
                     } else {
                         log.debug("Successfully published OrderRefundRequestedEvent: {}", result.getRecordMetadata());
+                    }
+                });
+    }
+
+    public void publishShipmentExpired(OrderShipmentExpiredEvent event) {
+        log.info("Publishing OrderShipmentExpiredEvent: orderId={}, sellingBidId={}, paymentId={}",
+                event.orderId(), event.sellingBidId(), event.paymentId());
+
+        // 중요: Trade 서비스가 SellingBid 상태를 변경해야 하므로 sellingBidId를 Key로 사용
+        // Key가 null일 경우(방어 코드) orderId 사용
+        String key = (event.sellingBidId() != null) ? event.sellingBidId().toString() : event.orderId().toString();
+
+        kafkaTemplate.send(TOPIC_ORDER, key, event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Failed to publish OrderShipmentExpiredEvent for orderId: {}", event.orderId(), ex);
+                    } else {
+                        log.info("Successfully published OrderShipmentExpiredEvent. Offset: {}", result.getRecordMetadata().offset());
                     }
                 });
     }

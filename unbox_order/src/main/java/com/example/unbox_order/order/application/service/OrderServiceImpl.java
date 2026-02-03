@@ -1,5 +1,6 @@
 package com.example.unbox_order.order.application.service;
 
+import com.example.unbox_common.event.order.OrderShipmentExpiredEvent;
 import com.example.unbox_order.common.client.order.dto.OrderForPaymentInfoResponse;
 import com.example.unbox_order.common.client.order.dto.OrderForReviewInfoResponse;
 import com.example.unbox_order.common.client.trade.dto.BuyingBidForOrderResponse;
@@ -54,6 +55,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Value("${order.payment-timeout-minutes:10}")
     private long paymentTimeoutMinutes;
+
+    @Value("${order.shipment-timeout-days:1}") // 기본 1일
+    private long shipmentTimeoutDays;
+
+    // 상수로 관리하는 것이 좋으므로 클래스 상단이나 별도 상수 클래스에 정의 권장
+    private static final String REDIS_SHIPMENT_KEY_PREFIX = "order:shipment-deadline:";
 
     // ✅ 주문 생성 (판매 입찰 구매 OR 구매 입찰 판매)
     @Override
@@ -273,7 +280,22 @@ public class OrderServiceImpl implements OrderService {
         // 3) 운송장 등록 및 상태 변경
         order.registerTracking(trackingNumber);
 
-        // 4) DTO 변환 및 반환
+        // 4) [추가] 배송 기한 만료 타이머 제거 (Redis Key 삭제)
+        String shipmentDeadlineKey = REDIS_SHIPMENT_KEY_PREFIX + orderId;
+        try {
+            Boolean deleted = redisTemplate.delete(shipmentDeadlineKey);
+            if (Boolean.TRUE.equals(deleted)) {
+                log.info("Deleted shipment deadline timer for Order: {}", orderId);
+            } else {
+                // 이미 만료되었거나 키가 없는 경우 (큰 문제 아님)
+                log.debug("Shipment deadline timer not found for Order: {}", orderId);
+            }
+        } catch (Exception e) {
+            // Redis 에러가 나더라도 운송장 등록 로직 자체(DB 트랜잭션)는 성공해야 하므로 로그만 남김
+            log.warn("Failed to delete shipment timer for Order: {}. Event may fire unnecessarily.", orderId, e);
+        }
+
+        // 5) DTO 변환 및 반환
         return orderMapper.toDetailResponseDto(order);
     }
 
@@ -365,19 +387,19 @@ public class OrderServiceImpl implements OrderService {
         // 비동기 이벤트(PaymentCompletedEvent)로 Trade 서비스에서 처리하므로 동기 호출 제거
         // tradeClient.soldSellingBid(order.getSellingBidId(), "ORDER_SERVICE");
 
-        // 🟢 결제 완료 후 만료 타이머 제거 (불필요한 이벤트 발행 방지)
-        UUID refId = (order.getSellingBidId() != null) ? order.getSellingBidId() : order.getBuyingBidId();
-        String type = (order.getBuyingBidId() != null) ? "BUYING" : "SELLING";
-        String expirationKey = "order:expiration:" + orderId + ":" + type + ":" + refId;
+        // 3. [추가] 배송 기한 타이머 설정 (Redis Shadow Key)
+        // Key 예시: "order:shipment-deadline:{orderId}"
+        String shipmentDeadlineKey = "order:shipment-deadline:" + orderId;
         try {
-            Boolean deleted = redisTemplate.delete(expirationKey);
-            if (Boolean.TRUE.equals(deleted)) {
-                log.info("Deleted expiration timer for paid order: {}", orderId);
-            } else {
-                log.warn("Expiration key not found for paid order: {} (may have already expired)", orderId);
-            }
+            redisTemplate.opsForValue().set(
+                    shipmentDeadlineKey,
+                    "PENDING",
+                    Duration.ofDays(shipmentTimeoutDays) // 예: 2일 뒤 만료
+            );
+            log.info("Set shipment deadline for Order {}: {} days", orderId, shipmentTimeoutDays);
         } catch (Exception e) {
-            log.warn("Failed to delete expiration timer for paid order: {}. Event may fire unnecessarily.", orderId, e);
+            log.error("Failed to set shipment timer for order: {}", orderId, e);
+            // 중요: 여기서 에러가 나도 트랜잭션을 롤백할지, 알람만 보낼지 결정 필요 (보통 알람 후 수동 처리 권장)
         }
     }
     // ========================================
@@ -410,4 +432,39 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
         order.failedInspection();
     }
+
+    @Override
+    @Transactional
+    public void processShipmentOverdue(UUID orderId) {
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+
+        // 이미 배송했거나 취소된 건인지 동시성 검증
+        if (order.getStatus() != OrderStatus.PENDING_SHIPMENT) {
+            log.warn("Shipment timeout trigger ignored. Order {} is status {}", orderId, order.getStatus());
+            return;
+        }
+
+        // 1. 주문 상태 변경 (PENDING_SHIPMENT -> CANCELLED)
+        order.cancel();
+
+        // 2. 이벤트 객체 생성 (SHIPMENT_CANCELLED)
+        // 필요한 모든 서비스가 처리할 수 있도록 충분한 정보를 담습니다.
+        OrderShipmentExpiredEvent event = OrderShipmentExpiredEvent.of(
+                order.getId(),
+                order.getSellingBidId(), // Trade: 판매 입찰 취소/페널티용
+                order.getBuyingBidId(),
+                order.getPaymentId(),    // Payment: 환불용
+                order.getBuyerId(),
+                order.getSellerId(),     // Settlement: 페널티 부과 대상
+                order.getPrice()
+        );
+
+        // 3. [핵심] 이벤트 발행
+        // 각 서비스(Trade, Payment, Settlement)가 이 토픽을 구독합니다.
+        orderEventProducer.publishShipmentExpired(event);
+
+        log.info("Processed shipment overdue for Order {}. Event published.", orderId);
+    }
+
 }

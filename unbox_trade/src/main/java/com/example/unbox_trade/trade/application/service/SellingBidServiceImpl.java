@@ -53,29 +53,12 @@ public class SellingBidServiceImpl implements SellingBidService {
     private final ProductClient productClient;
     private final UserClient userClient;
     private final TradeClientMapper tradeClientMapper;
-    // private final ApplicationEventPublisher eventPublisher;
     private final TradeEventProducer tradeEventProducer;
     private final CacheManager cacheManager;
 
-    // --- Helper Methods for Cache Eviction ---
-    private void evictLowestPriceCache(UUID productOptionId) {
-        if (productOptionId != null) {
-            Cache cache = cacheManager.getCache("trade:price:lowest");
-            if (cache != null) {
-                cache.evict(productOptionId);
-            }
-        }
-    }
-
-    private void evictSellingBidCache(UUID sellingBidId) {
-        if (sellingBidId != null) {
-            Cache cache = cacheManager.getCache("trade:bid:order");
-            if (cache != null) {
-                cache.evict(sellingBidId);
-            }
-        }
-    }
-    // -----------------------------------------
+    // ========================================
+    // ✅ Public Service Methods (User API)
+    // ========================================
 
     // ✅ 판매 입찰 생성
     @Override
@@ -89,7 +72,8 @@ public class SellingBidServiceImpl implements SellingBidService {
             throw new CustomException(ErrorCode.INVALID_BID_PRICE);
         }
 
-        ProductOptionForSellingBidInfoResponse productInfo = productClient.getProductOptionForSellingBid(requestDto.getProductOptionId());
+        ProductOptionForSellingBidInfoResponse productInfo = productClient
+                .getProductOptionForSellingBid(requestDto.getProductOptionId());
 
         // 만료일(deadline) 30일 뒤 00시로 설정
         LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();
@@ -205,6 +189,51 @@ public class SellingBidServiceImpl implements SellingBidService {
         });
     }
 
+    public static final String UNKNOWN_OPTION_NAME = "Unknown Option";
+
+    // ✅ 상품 옵션별 최저가 조회 (Internal) - 캐싱 적용!
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "trade:price:lowest", key = "#productOptionId", unless = "#result.productOptionName == T(com.example.unbox_trade.trade.application.service.SellingBidServiceImpl).UNKNOWN_OPTION_NAME")
+    public LowestPriceResponseDto getLowestPrice(UUID productOptionId) {
+        // 1. 최저가 조회 (LIVE 상태만)
+        BigDecimal minPrice = sellingBidRepository.findLowestPriceByOptionId(productOptionId).orElse(BigDecimal.ZERO);
+
+        // 2. 상품 옵션 정보 조회 (이름이 필요함)
+        String optionName = UNKNOWN_OPTION_NAME;
+        try {
+            ProductOptionForSellingBidInfoResponse productInfo = productClient
+                    .getProductOptionForSellingBid(productOptionId);
+            optionName = productInfo.getProductOptionName();
+        } catch (Exception e) {
+            log.warn("Product 서비스 호출 실패 - productOptionId: {}, error: {}", productOptionId, e.getMessage());
+        }
+
+        return LowestPriceResponseDto.builder()
+                .productOptionId(productOptionId)
+                .productOptionName(optionName)
+                .lowestPrice(minPrice)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<LowestPriceResponseDto> getLowestPrices(List<UUID> productOptionIds) {
+        if (productOptionIds == null || productOptionIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Object[]> results = sellingBidRepository.findLowestPricesByProductOptionIds(productOptionIds);
+
+        return results.stream()
+                .map(row -> LowestPriceResponseDto.builder()
+                        .productOptionId((UUID) row[0])
+                        .productOptionName(null) // Product Service already knows the name
+                        .lowestPrice(row[1] != null ? (BigDecimal) row[1] : BigDecimal.ZERO)
+                        .build())
+                .toList();
+    }
+
     // ========================================
     // ✅ 내부 시스템용 API (Internal API)
     // ========================================
@@ -236,13 +265,13 @@ public class SellingBidServiceImpl implements SellingBidService {
         // 존재 여부 확인
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SELLING_BID_NOT_FOUND));
-        
+
         // 동시성 제어 업데이트 (LIVE 상태인 것만 RESERVED로 변경)
         int updated = sellingBidRepository.updateStatusIfReserved(
                 sellingBidId,
                 SellingStatus.LIVE,
                 SellingStatus.RESERVED);
-        
+
         // 업데이트 실패 시 예외 발생
         if (updated == 0) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
@@ -320,38 +349,13 @@ public class SellingBidServiceImpl implements SellingBidService {
         // 상태 변경
         sellingBid.updateStatus(SellingStatus.CANCELLED); // 혹은 EXPIRED 상태가 별도로 있다면 그것 사용
         sellingBid.updateModifiedBy("SYSTEM_EXPIRATION");
-        
+
         log.info("Expired SellingBid {} due to timeout.", sellingBidId);
 
         // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
         publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
         evictLowestPriceCache(sellingBid.getProductOptionId());
         evictSellingBidCache(sellingBidId);
-    }
-
-    // ----------------------------------------------------
-    // ✅ Kafka 이벤트 발행 메서드 (수정됨)
-    // ----------------------------------------------------
-
-    private void publishPriceEvent(UUID productId, UUID optionId) {
-        // 쿼리는 트랜잭션 내에서 수행 (데이터 일관성 유지)
-        BigDecimal minPrice = sellingBidRepository.findLowestPriceByOptionId(optionId)
-                .orElse(BigDecimal.ZERO);
-
-        TradePriceChangedEvent event = new TradePriceChangedEvent(productId, optionId, minPrice);
-
-        // Kafka 발행은 트랜잭션 커밋이 성공한 직후에 수행
-        if (TransactionSynchronizationManager.isActualTransactionActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    tradeEventProducer.publishTradePriceChanged(event);
-                }
-            });
-        } else {
-            // 트랜잭션이 없는 경우 즉시 발행
-            tradeEventProducer.publishTradePriceChanged(event);
-        }
     }
 
     // ✅ 판매 입찰 복구 (결제 실패/취소용: RESERVED → LIVE)
@@ -377,47 +381,47 @@ public class SellingBidServiceImpl implements SellingBidService {
         evictSellingBidCache(sellingBidId);
     }
 
-    public static final String UNKNOWN_OPTION_NAME = "Unknown Option";
+    // ========================================
+    // ✅ Private Helper Methods (Event & Cache)
+    // ========================================
 
-    // ✅ 상품 옵션별 최저가 조회 (Internal) - 캐싱 적용!
-    @Override
-    @Transactional(readOnly = true)
-    @Cacheable(value = "trade:price:lowest", key = "#productOptionId", unless = "#result.productOptionName == T(com.example.unbox_trade.trade.application.service.SellingBidServiceImpl).UNKNOWN_OPTION_NAME")
-    public LowestPriceResponseDto getLowestPrice(UUID productOptionId) {
-        // 1. 최저가 조회 (LIVE 상태만)
-        BigDecimal minPrice = sellingBidRepository.findLowestPriceByOptionId(productOptionId)
+    private void evictLowestPriceCache(UUID productOptionId) {
+        if (productOptionId != null) {
+            Cache cache = cacheManager.getCache("trade:price:lowest");
+            if (cache != null) {
+                cache.evict(productOptionId);
+            }
+        }
+    }
+
+    private void evictSellingBidCache(UUID sellingBidId) {
+        if (sellingBidId != null) {
+            Cache cache = cacheManager.getCache("trade:bid:order");
+            if (cache != null) {
+                cache.evict(sellingBidId);
+            }
+        }
+    }
+
+    // ✅ Kafka 이벤트 발행 메서드
+    private void publishPriceEvent(UUID productId, UUID optionId) {
+        // 쿼리는 트랜잭션 내에서 수행 (데이터 일관성 유지)
+        BigDecimal minPrice = sellingBidRepository.findLowestPriceByOptionId(optionId)
                 .orElse(BigDecimal.ZERO);
 
-        // 2. 상품 옵션 정보 조회 (이름이 필요함)
-        String optionName = UNKNOWN_OPTION_NAME;
-        try {
-            ProductOptionForSellingBidInfoResponse productInfo = productClient.getProductOptionForSellingBid(productOptionId);
-            optionName = productInfo.getProductOptionName();
-        } catch (Exception e) {
-            log.warn("Product 서비스 호출 실패 - productOptionId: {}, error: {}", productOptionId, e.getMessage());
+        TradePriceChangedEvent event = new TradePriceChangedEvent(productId, optionId, minPrice);
+
+        // Kafka 발행은 트랜잭션 커밋이 성공한 직후에 수행
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    tradeEventProducer.publishTradePriceChanged(event);
+                }
+            });
+        } else {
+            // 트랜잭션이 없는 경우 즉시 발행
+            tradeEventProducer.publishTradePriceChanged(event);
         }
-
-        return LowestPriceResponseDto.builder()
-                .productOptionId(productOptionId)
-                .productOptionName(optionName)
-                .lowestPrice(minPrice)
-                .build();
-    }
-    @Override
-    @Transactional(readOnly = true)
-    public List<LowestPriceResponseDto> getLowestPrices(List<UUID> productOptionIds) {
-        if (productOptionIds == null || productOptionIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<Object[]> results = sellingBidRepository.findLowestPricesByProductOptionIds(productOptionIds);
-
-        return results.stream()
-                .map(row -> LowestPriceResponseDto.builder()
-                        .productOptionId((UUID) row[0])
-                        .productOptionName(null) // Product Service already knows the name
-                        .lowestPrice(row[1] != null ? (BigDecimal) row[1] : BigDecimal.ZERO)
-                        .build())
-                .toList();
     }
 }

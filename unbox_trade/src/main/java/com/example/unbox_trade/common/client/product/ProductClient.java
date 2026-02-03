@@ -11,5 +11,9 @@ import java.util.UUID;
 public interface ProductClient {
 
     @GetMapping("/internal/products/options/{id}/for-selling-bid")
-    ProductOptionForSellingBidInfoResponse getProductOptionForSellingBid (@PathVariable UUID id);
+    ProductOptionForSellingBidInfoResponse getProductOptionForSellingBid(@PathVariable UUID id);
+
+    @GetMapping("/internal/products/options/{id}/for-buying-bid")
+    com.example.unbox_trade.common.client.product.dto.ProductOptionForBuyingBidInfoResponse getProductOptionForBuyingBid(
+            @PathVariable UUID id);
 }

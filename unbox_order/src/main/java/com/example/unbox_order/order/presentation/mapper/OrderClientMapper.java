@@ -28,6 +28,7 @@ public interface OrderClientMapper {
     @Mapping(target = "status", expression = "java(order.getStatus().name())")
     @Mapping(target = "price", source = "price")
     @Mapping(target = "sellingBidId", source = "sellingBidId")
+    @Mapping(target = "buyingBidId", source = "buyingBidId")
     @Mapping(target = "buyerId", source = "buyerId")
     @Mapping(target = "sellerId", source = "sellerId")
     OrderForPaymentInfoResponse toOrderForPaymentInfoResponse(Order order);

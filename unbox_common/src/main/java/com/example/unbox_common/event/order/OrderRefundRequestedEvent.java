@@ -10,36 +10,36 @@ import java.util.UUID;
  * - Consumer: Payment(환불 처리), Trade(입찰 상태 복구)
  */
 public record OrderRefundRequestedEvent(
-    UUID orderId,
-    UUID sellingBidId,
-    UUID paymentId,           // 환불 대상 결제
-    Long buyerId,
-    Long sellerId,
-    BigDecimal refundAmount,   // 환불 금액
-    String previousStatus,     // PENDING_SHIPMENT or DELIVERED
-    String reason,             // 취소 사유
-    LocalDateTime requestedAt
-) {
+        UUID orderId,
+        UUID sellingBidId,
+        UUID buyingBidId,
+        UUID paymentId, // 환불 대상 결제
+        Long buyerId,
+        Long sellerId,
+        BigDecimal refundAmount, // 환불 금액
+        String previousStatus, // PENDING_SHIPMENT or DELIVERED
+        String reason, // 취소 사유
+        LocalDateTime requestedAt) {
     public static OrderRefundRequestedEvent of(
             UUID orderId,
             UUID sellingBidId,
+            UUID buyingBidId,
             UUID paymentId,
             Long buyerId,
             Long sellerId,
             BigDecimal refundAmount,
             String previousStatus,
-            String reason
-    ) {
+            String reason) {
         return new OrderRefundRequestedEvent(
                 orderId,
                 sellingBidId,
+                buyingBidId,
                 paymentId,
                 buyerId,
                 sellerId,
                 refundAmount,
                 previousStatus,
                 reason,
-                LocalDateTime.now()
-        );
+                LocalDateTime.now());
     }
 }

@@ -2,6 +2,7 @@ package com.example.unbox_order.order.application.service;
 
 import com.example.unbox_order.common.client.order.dto.OrderForPaymentInfoResponse;
 import com.example.unbox_order.common.client.order.dto.OrderForReviewInfoResponse;
+import com.example.unbox_order.common.client.trade.dto.BuyingBidForOrderResponse;
 import com.example.unbox_order.common.client.trade.dto.SellingBidForOrderResponse;
 import com.example.unbox_order.common.client.trade.TradeClient;
 import com.example.unbox_order.common.client.user.UserClient;
@@ -54,79 +55,131 @@ public class OrderServiceImpl implements OrderService {
     @Value("${order.payment-timeout-minutes:10}")
     private long paymentTimeoutMinutes;
 
-    // ✅ 주문 생성
+    // ✅ 주문 생성 (판매 입찰 구매 OR 구매 입찰 판매)
     @Override
     @Transactional
     public UUID createOrder(OrderCreateRequestDto requestDto, Long buyerId) {
-        // 1) 구매자 조회 (스냅샷 저장을 위해)
-        UserInfoForOrderResponse buyer = userClient.getUserInfoForOrder(buyerId);
+        Order order;
+        UUID bidIdForRollback;
+        boolean isBuyingBidTrade = false;
 
-        // 2) 판매 입찰 정보 조회
-        SellingBidForOrderResponse sellingBidInfo = tradeClient
-                .getSellingBidForOrder(requestDto.getSellingBidId());
+        // CASE 1: 판매 입찰 기반 주문 (User = Buyer, Target = SellingBid)
+        if (requestDto.getSellingBidId() != null) {
+            bidIdForRollback = requestDto.getSellingBidId();
 
-        // 3) 자기 자신의 상품 구매 방지
-        if (Objects.equals(sellingBidInfo.getSellerId(), buyerId)) {
-            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+            // 1) 구매자(Caller) 조회
+            UserInfoForOrderResponse buyer = userClient.getUserInfoForOrder(buyerId);
+
+            // 2) 판매 입찰 정보 조회
+            SellingBidForOrderResponse sellingBidInfo = tradeClient.getSellingBidForOrder(requestDto.getSellingBidId());
+
+            // 3) 자기 자신의 상품 구매 방지
+            if (Objects.equals(sellingBidInfo.getSellerId(), buyerId)) {
+                throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+            }
+
+            // 4) 상품 옵션 존재 여부 확인
+            if (sellingBidInfo.getProductOptionId() == null) {
+                throw new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+            }
+
+            // 5) 판매 입찰 선점 (LIVE → RESERVED)
+            tradeClient.reserveSellingBid(sellingBidInfo.getSellingBidId(), "ORDER_SERVICE");
+
+            // 6) 주문 객체 생성
+            order = Order.builder()
+                    .sellingBidId(sellingBidInfo.getSellingBidId())
+                    .buyerId(buyerId)
+                    .sellerId(sellingBidInfo.getSellerId())
+                    .buyerName(buyer.getNickname())
+                    .productOptionId(sellingBidInfo.getProductOptionId())
+                    .productId(sellingBidInfo.getProductId())
+                    .productName(sellingBidInfo.getProductName())
+                    .modelNumber(sellingBidInfo.getModelNumber())
+                    .productOptionName(sellingBidInfo.getProductOptionName())
+                    .productImageUrl(sellingBidInfo.getProductImageUrl())
+                    .brandName(sellingBidInfo.getBrandName())
+                    .price(sellingBidInfo.getPrice())
+                    .receiverName(requestDto.getReceiverName())
+                    .receiverPhone(requestDto.getReceiverPhone())
+                    .receiverAddress(requestDto.getReceiverAddress())
+                    .receiverZipCode(requestDto.getReceiverZipCode())
+                    .build();
         }
+        // CASE 2: 구매 입찰 기반 주문 (User = Seller, Target = BuyingBid)
+        else if (requestDto.getBuyingBidId() != null) {
+            isBuyingBidTrade = true;
+            bidIdForRollback = requestDto.getBuyingBidId();
 
-        // 4) 상품 옵션 존재 여부 확인
-        if (sellingBidInfo.getProductOptionId() == null) {
-            throw new CustomException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+            // 1) 구매 입찰 정보 조회
+            BuyingBidForOrderResponse buyingBidInfo = tradeClient.getBuyingBidForOrder(requestDto.getBuyingBidId());
+
+            // 2) 실제 구매자(Bidder) 조회 (Snapshot용)
+            UserInfoForOrderResponse buyer = userClient.getUserInfoForOrder(buyingBidInfo.getBuyerId());
+
+            // 3) 자전 거래 방지 (Caller = Seller)
+            if (Objects.equals(buyingBidInfo.getBuyerId(), buyerId)) {
+                throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+            }
+
+            // 4) 구매 입찰 선점 (LIVE → RESERVED)
+            tradeClient.reserveBuyingBid(buyingBidInfo.getBuyingBidId(), "ORDER_SERVICE");
+
+            // 5) 주문 객체 생성
+            order = Order.builder()
+                    .buyingBidId(buyingBidInfo.getBuyingBidId())
+                    .buyerId(buyingBidInfo.getBuyerId()) // Bidder is Buyer
+                    .sellerId(buyerId) // Caller is Seller
+                    .buyerName(buyer.getNickname())
+                    .productOptionId(buyingBidInfo.getProductOptionId())
+                    .productId(buyingBidInfo.getProductId())
+                    .productName(buyingBidInfo.getProductName())
+                    .modelNumber(buyingBidInfo.getModelNumber())
+                    .productOptionName(buyingBidInfo.getProductOptionName())
+                    .productImageUrl(buyingBidInfo.getProductImageUrl())
+                    .brandName(buyingBidInfo.getBrandName())
+                    .price(buyingBidInfo.getPrice())
+                    .receiverName(requestDto.getReceiverName())
+                    .receiverPhone(requestDto.getReceiverPhone())
+                    .receiverAddress(requestDto.getReceiverAddress())
+                    .receiverZipCode(requestDto.getReceiverZipCode())
+                    .build();
+        } else {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
-
-        // 5) 판매 입찰 선점 (LIVE → RESERVED)
-        tradeClient.reserveSellingBid(sellingBidInfo.getSellingBidId(), "ORDER_SERVICE");
-
-        // 6) 주문 생성 (스냅샷 저장)
-        Order order = Order.builder()
-                .sellingBidId(sellingBidInfo.getSellingBidId())
-                .buyerId(buyerId)
-                .sellerId(sellingBidInfo.getSellerId())
-                .buyerName(buyer.getNickname()) // 구매자 닉네임 스냅샷
-                .productOptionId(sellingBidInfo.getProductOptionId())
-                .productId(sellingBidInfo.getProductId())
-                .productName(sellingBidInfo.getProductName())
-                .modelNumber(sellingBidInfo.getModelNumber())
-                .productOptionName(sellingBidInfo.getProductOptionName())
-                .productImageUrl(sellingBidInfo.getProductImageUrl())
-                .brandName(sellingBidInfo.getBrandName())
-                .price(sellingBidInfo.getPrice())
-                .receiverName(requestDto.getReceiverName())
-                .receiverPhone(requestDto.getReceiverPhone())
-                .receiverAddress(requestDto.getReceiverAddress())
-                .receiverZipCode(requestDto.getReceiverZipCode())
-                .build();
 
         order = orderRepository.save(order);
-        
-        // 7) 결제 만료 타이머 설정 (Redis) - Standardized Key Naming Policy 적용
-        // Key Format: order:expiration:{orderId}:{sellingBidId}
-        String expirationKey = "order:expiration:" + order.getId() + ":" + order.getSellingBidId();
-        
+
+        // 7) 결제 만료 타이머 설정 (Redis)
+        String type = isBuyingBidTrade ? "BUYING" : "SELLING";
+        String expirationKey = "order:expiration:" + order.getId() + ":" + type + ":" + bidIdForRollback;
+
         try {
-            // setIfAbsent 사용 (혹시 모를 키 중복 방지 및 원자성 확보)
-            Boolean result = redisTemplate.opsForValue().setIfAbsent(expirationKey, "PENDING", Duration.ofMinutes(paymentTimeoutMinutes));
+            Boolean result = redisTemplate.opsForValue().setIfAbsent(expirationKey, "PENDING",
+                    Duration.ofMinutes(paymentTimeoutMinutes));
             if (!Boolean.TRUE.equals(result)) {
                 log.error("Failed to set expiration key (already exists or error): {}", expirationKey);
                 throw new IllegalStateException("Failed to set expiration key");
             }
         } catch (Exception e) {
             log.error("Failed to set expiration timer for order: {}. Rolling back transaction.", order.getId(), e);
-            
-            // 보상 트랜잭션: 이미 선점(RESERVED)된 입찰을 되돌려야 함 (분산 트랜잭션 보상)
+
+            // 보상 트랜잭션: 선점된 입찰 복구
             try {
-                tradeClient.liveSellingBid(order.getSellingBidId(), "ORDER_ROLLBACK");
+                if (isBuyingBidTrade) {
+                    tradeClient.liveBuyingBid(bidIdForRollback, "ORDER_ROLLBACK");
+                } else {
+                    tradeClient.liveSellingBid(bidIdForRollback, "ORDER_ROLLBACK");
+                }
             } catch (Exception rollbackEx) {
-                log.error("Failed to rollback SellingBid reservation for bid: {}. Data inconsistency risk!", order.getSellingBidId(), rollbackEx);
-                // 이 로그는 모니터링 시스템에서 Critical Alert로 잡아야 함
+                log.error("Failed to rollback bid reservation for bid: {}. Data inconsistency risk!", bidIdForRollback,
+                        rollbackEx);
             }
-            
-            // Redis 저장 실패 시 주문 생성 자체를 롤백 (데이터 정합성 보장)
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
-        
-        log.info("Order created successfully. Expiration timer set for {} minutes. Key: {}", paymentTimeoutMinutes, expirationKey);
+
+        log.info("Order created successfully. Expiration timer set for {} minutes. Key: {}", paymentTimeoutMinutes,
+                expirationKey);
 
         return order.getId();
     }
@@ -180,27 +233,22 @@ public class OrderServiceImpl implements OrderService {
         // 4) 주문 취소 처리
         order.cancel();
 
-    // 5) 결제 전 취소: SellingBid 복구 (Async)
+        // 5) 결제 전 취소: SellingBid 복구 (Async)
         if (previousStatus == OrderStatus.PAYMENT_PENDING) {
             // 변경: 동기 호출(tradeClient) 제거 -> 비동기 이벤트 발행
-            // Transaction Commit 후 발행이 보장되어야 하나, 우선 간단히 여기서 발행
-            // (실무에선 TransactionalEventListener 사용 권장)
-            OrderCancelledEvent event = new OrderCancelledEvent(
+            OrderCancelledEvent event = OrderCancelledEvent.of(
                     order.getId(),
                     order.getSellingBidId(),
+                    order.getBuyingBidId(),
                     order.getBuyerId(),
                     order.getSellerId(),
-                    "User Cancelled"
-            );
+                    "User Cancelled");
             orderEventProducer.publishOrderCancelled(event);
         }
 
         // 6) 결제 완료된 주문은 cancelOrder가 아닌 requestRefund API 사용 안내
-        // (Order.cancel() 내부에서 이미 예외 발생하지만, 명확한 안내 위해 추가)
-        if (previousStatus == OrderStatus.PENDING_SHIPMENT 
+        if (previousStatus == OrderStatus.PENDING_SHIPMENT
                 || previousStatus == OrderStatus.DELIVERED) {
-            // 이 코드에 도달하지 않음 (Order.cancel()에서 예외 발생)
-            // 단, Order.cancel()이 해당 상태를 허용하도록 변경될 경우 대비
             log.error("결제 완료된 주문 취소 시도 - requestRefund API 사용 필요: OrderID={}", orderId);
             throw new CustomException(ErrorCode.REFUND_REQUIRED_FOR_PAID_ORDER);
         }
@@ -265,13 +313,13 @@ public class OrderServiceImpl implements OrderService {
         OrderRefundRequestedEvent event = OrderRefundRequestedEvent.of(
                 order.getId(),
                 order.getSellingBidId(),
+                order.getBuyingBidId(),
                 order.getPaymentId(),
                 order.getBuyerId(),
                 order.getSellerId(),
                 order.getPrice(),
                 previousStatus.name(),
-                reason
-        );
+                reason);
         orderEventProducer.publishRefundRequested(event);
 
         log.info("Refund requested for Order {}: previousStatus={}, paymentId={}",
@@ -312,13 +360,15 @@ public class OrderServiceImpl implements OrderService {
 
         // 상태 변경 (내부에서 PAYMENT_PENDING 검증) + paymentId 저장
         order.updateStatusAfterPayment(paymentId);
-        
+
         // 🔄 Trade 서비스 상태 동기화 (RESERVED -> SOLD)
         // 비동기 이벤트(PaymentCompletedEvent)로 Trade 서비스에서 처리하므로 동기 호출 제거
         // tradeClient.soldSellingBid(order.getSellingBidId(), "ORDER_SERVICE");
 
         // 🟢 결제 완료 후 만료 타이머 제거 (불필요한 이벤트 발행 방지)
-        String expirationKey = "order:expiration:" + orderId + ":" + order.getSellingBidId();
+        UUID refId = (order.getSellingBidId() != null) ? order.getSellingBidId() : order.getBuyingBidId();
+        String type = (order.getBuyingBidId() != null) ? "BUYING" : "SELLING";
+        String expirationKey = "order:expiration:" + orderId + ":" + type + ":" + refId;
         try {
             Boolean deleted = redisTemplate.delete(expirationKey);
             if (Boolean.TRUE.equals(deleted)) {

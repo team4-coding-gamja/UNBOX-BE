@@ -28,12 +28,13 @@ public class PaymentEventProducer {
             keyId = event.orderId(); // Fallback
         }
 
+        // Key를 sellingBidId로 설정하여 Trade 서비스의 입찰 상태 변경 순서 보장
         kafkaTemplate.send(TOPIC_PAYMENT, keyId.toString(), event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
-                        log.error("Failed to publish PaymentCompletedEvent for orderId: {}", event.orderId(), ex);
+                        log.error("이벤트 발행 실패: {}", event.sellingBidId(), ex);
                     } else {
-                        log.debug("Successfully published PaymentCompletedEvent: {}", result.getRecordMetadata());
+                        log.debug("이벤트 발행 성공: {}", result.getRecordMetadata());
                     }
                 });
     }

@@ -1,13 +1,15 @@
 package com.example.unbox_common.error;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor  // Jackson 역직렬화용 기본 생성자
 public class ErrorResponse {
 
-    private final int status;
-    private final String message;
-    private final Object data;
+    private int status;
+    private String message;
+    private Object data;
 
     public ErrorResponse(int status, String message) {
         this(status, message, null);

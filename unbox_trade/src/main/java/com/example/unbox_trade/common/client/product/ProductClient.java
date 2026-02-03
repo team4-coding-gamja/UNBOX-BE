@@ -14,6 +14,5 @@ public interface ProductClient {
     ProductOptionForSellingBidInfoResponse getProductOptionForSellingBid(@PathVariable UUID id);
 
     @GetMapping("/internal/products/options/{id}/for-buying-bid")
-    com.example.unbox_trade.common.client.product.dto.ProductOptionForBuyingBidInfoResponse getProductOptionForBuyingBid(
-            @PathVariable UUID id);
+    ProductOptionForSellingBidInfoResponse getProductOptionForBuyingBid(@PathVariable UUID id);
 }

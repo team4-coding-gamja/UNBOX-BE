@@ -44,18 +44,20 @@ public class BuyingBidService {
     // ✅ 구매 입찰 생성
     @Transactional
     public BuyingBidCreateResponseDto createBuyingBid(Long userId, BuyingBidCreateRequestDto requestDto) {
-        if (requestDto.getPrice() == null || requestDto.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CustomException(ErrorCode.INVALID_BID_PRICE);
-        }
+        log.info("Creating buying bid for userId={}, productOptionId={}, price={}",
+                userId, requestDto.getProductOptionId(), requestDto.getPrice());
 
         ProductOptionForSellingBidInfoResponse productInfo = productClient
-                .getProductOptionForSellingBid(requestDto.getProductOptionId());
+                .getProductOptionForBuyingBid(requestDto.getProductOptionId());
 
         // Default deadline: 30 days
         LocalDateTime deadline = LocalDate.now().plusDays(30).atStartOfDay();
 
         BuyingBid buyingBid = buyingBidMapper.toEntity(requestDto, userId, deadline, productInfo);
         BuyingBid savedBid = buyingBidRepository.save(buyingBid);
+
+        log.info("Successfully created buying bid: buyingBidId={}, userId={}, price={}",
+                savedBid.getId(), userId, savedBid.getPrice());
 
         // 🔔 가격 갱신 이벤트 & 캐시 무효화
         publishPriceEvent(savedBid.getProductId(), savedBid.getProductOptionId());
@@ -67,6 +69,8 @@ public class BuyingBidService {
     // ✅ 구매 입찰 취소
     @Transactional
     public void cancelBuyingBid(UUID buyingId, Long userId, String deleteBy) {
+        log.info("Cancelling buying bid: buyingBidId={}, userId={}", buyingId, userId);
+
         BuyingBid buyingBid = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
@@ -83,6 +87,8 @@ public class BuyingBidService {
             buyingBid.updateModifiedBy(deleteBy);
         }
 
+        log.info("Successfully cancelled buying bid: buyingBidId={}, userId={}", buyingId, userId);
+
         // 🔔 가격 갱신 이벤트 & 캐시 무효화
         publishPriceEvent(buyingBid.getProductId(), buyingBid.getProductOptionId());
         evictHighestPriceCache(buyingBid.getProductOptionId());
@@ -93,6 +99,9 @@ public class BuyingBidService {
     @Transactional
     public BuyingBidsPriceUpdateResponseDto updateBuyingBidPrice(UUID buyingId,
             BuyingBidsPriceUpdateRequestDto requestDto, Long userId) {
+        log.info("Updating buying bid price: buyingBidId={}, userId={}, newPrice={}",
+                buyingId, userId, requestDto.getNewPrice());
+
         BuyingBid buyingBid = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
@@ -100,15 +109,15 @@ public class BuyingBidService {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        if (requestDto.getNewPrice() == null || requestDto.getNewPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CustomException(ErrorCode.INVALID_BID_PRICE);
-        }
-
         if (buyingBid.getStatus() != BuyingStatus.LIVE) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
+        BigDecimal oldPrice = buyingBid.getPrice();
         buyingBid.updatePrice(requestDto.getNewPrice(), userId, "SYSTEM");
+
+        log.info("Successfully updated buying bid price: buyingBidId={}, oldPrice={}, newPrice={}",
+                buyingId, oldPrice, requestDto.getNewPrice());
 
         // 🔔 가격 갱신 이벤트 & 캐시 무효화
         publishPriceEvent(buyingBid.getProductId(), buyingBid.getProductOptionId());

@@ -31,4 +31,11 @@ public class ProductInternalController {
     public ProductOptionForSellingBidInfoResponse getProductForSellingBid(@PathVariable UUID id) {
         return productService.getProductOptionForSellingBid(id);
     }
+
+    @Operation(summary = "구매 입찰용 상품 옵션 정보 조회", description = "구매 입찰 등록을 위해 상품 옵션 정보를 조회합니다.")
+    @GetMapping("/options/{id}/for-buying-bid")
+    public ProductOptionForSellingBidInfoResponse getProductForBuyingBid(@PathVariable UUID id) {
+        // 현재는 판매/구매 입찰용 정보가 동일하므로 같은 서비스 메서드 사용
+        return productService.getProductOptionForSellingBid(id);
+    }
 }

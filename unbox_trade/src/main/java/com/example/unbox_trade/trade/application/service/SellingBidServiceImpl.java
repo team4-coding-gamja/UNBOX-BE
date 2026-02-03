@@ -64,13 +64,11 @@ public class SellingBidServiceImpl implements SellingBidService {
     @Override
     @Transactional
     public SellingBidCreateResponseDto createSellingBid(Long sellerId, SellingBidCreateRequestDto requestDto) {
+        log.info("Creating selling bid for sellerId={}, productOptionId={}, price={}",
+                sellerId, requestDto.getProductOptionId(), requestDto.getPrice());
+
         // 1) 회원 검증 (API Call)
         userClient.getUserInfoForSellingBid(sellerId);
-
-        // 가격 유효성 검사
-        if (requestDto.getPrice() == null || requestDto.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CustomException(ErrorCode.INVALID_BID_PRICE);
-        }
 
         ProductOptionForSellingBidInfoResponse productInfo = productClient
                 .getProductOptionForSellingBid(requestDto.getProductOptionId());
@@ -81,6 +79,9 @@ public class SellingBidServiceImpl implements SellingBidService {
         SellingBid sellingBid = sellingBidMapper.toEntity(requestDto, sellerId, deadline, productInfo);
 
         SellingBid savedBid = sellingBidRepository.save(sellingBid);
+
+        log.info("Successfully created selling bid: sellingBidId={}, sellerId={}, price={}",
+                savedBid.getId(), sellerId, savedBid.getPrice());
 
         // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
         publishPriceEvent(savedBid.getProductId(), savedBid.getProductOptionId());
@@ -93,6 +94,8 @@ public class SellingBidServiceImpl implements SellingBidService {
     @Override
     @Transactional
     public void cancelSellingBid(UUID sellingId, Long userId, String deletedBy) {
+        log.info("Cancelling selling bid: sellingBidId={}, userId={}", sellingId, userId);
+
         // 입찰 조회
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
@@ -113,6 +116,8 @@ public class SellingBidServiceImpl implements SellingBidService {
             sellingBid.updateModifiedBy(deletedBy);
         }
 
+        log.info("Successfully cancelled selling bid: sellingBidId={}, userId={}", sellingId, userId);
+
         // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
         publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
         evictLowestPriceCache(sellingBid.getProductOptionId());
@@ -124,6 +129,9 @@ public class SellingBidServiceImpl implements SellingBidService {
     @Transactional
     public SellingBidsPriceUpdateResponseDto updateSellingBidPrice(UUID sellingId,
             SellingBidsPriceUpdateRequestDto requestDto, Long userId) {
+        log.info("Updating selling bid price: sellingBidId={}, userId={}, newPrice={}",
+                sellingId, userId, requestDto.getNewPrice());
+
         // 입찰 조회
         SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNull(sellingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
@@ -133,18 +141,17 @@ public class SellingBidServiceImpl implements SellingBidService {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
 
-        // 가격 유효성 검사
-        if (requestDto.getNewPrice() == null || requestDto.getNewPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CustomException(ErrorCode.INVALID_BID_PRICE);
-        }
-
         // LIVE 상태만 가격 변경 가능
         if (sellingBid.getStatus() != SellingStatus.LIVE) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
         // 엔티티 가격 업데이트 (JPA dirty checking으로 반영)
+        BigDecimal oldPrice = sellingBid.getPrice();
         sellingBid.updatePrice(requestDto.getNewPrice(), userId, "SYSTEM");
+
+        log.info("Successfully updated selling bid price: sellingBidId={}, oldPrice={}, newPrice={}",
+                sellingId, oldPrice, requestDto.getNewPrice());
 
         // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
         publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());

@@ -172,8 +172,7 @@ public class BuyingBidInternalService {
         // 2. 상품 옵션 정보 조회
         String optionName = UNKNOWN_OPTION_NAME;
         try {
-            // Use BuyingBid specific DTO and Client method
-            com.example.unbox_trade.common.client.product.dto.ProductOptionForBuyingBidInfoResponse productInfo = productClient
+            com.example.unbox_trade.common.client.product.dto.ProductOptionForSellingBidInfoResponse productInfo = productClient
                     .getProductOptionForBuyingBid(productOptionId);
             optionName = productInfo.getProductOptionName();
         } catch (Exception e) {

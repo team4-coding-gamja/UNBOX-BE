@@ -3,7 +3,6 @@ package com.example.unbox_trade.trade.presentation.controller;
 import com.example.unbox_common.pagination.PageSizeLimiter;
 import com.example.unbox_common.response.CustomApiResponse;
 import com.example.unbox_common.security.auth.CustomUserDetails;
-import com.example.unbox_trade.trade.application.service.BuyingBidInternalService;
 import com.example.unbox_trade.trade.application.service.BuyingBidService;
 import com.example.unbox_trade.trade.presentation.dto.request.BuyingBidCreateRequestDto;
 import com.example.unbox_trade.trade.presentation.dto.request.BuyingBidsPriceUpdateRequestDto;
@@ -11,6 +10,7 @@ import com.example.unbox_trade.trade.presentation.dto.response.BuyingBidCreateRe
 import com.example.unbox_trade.trade.presentation.dto.response.BuyingBidDetailResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.BuyingBidListResponseDto;
 import com.example.unbox_trade.trade.presentation.dto.response.BuyingBidsPriceUpdateResponseDto;
+import com.example.unbox_trade.trade.presentation.controller.api.BuyingBidApi;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -26,7 +26,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/bids/buying")
 @RequiredArgsConstructor
-public class BuyingBidController {
+public class BuyingBidController implements BuyingBidApi {
 
     private final BuyingBidService buyingBidService;
 
@@ -55,7 +55,8 @@ public class BuyingBidController {
             @PathVariable UUID buyingId,
             @Valid @RequestBody BuyingBidsPriceUpdateRequestDto requestDto,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        BuyingBidsPriceUpdateResponseDto response = buyingBidService.updateBuyingBidPrice(buyingId, requestDto, userDetails.getUserId());
+        BuyingBidsPriceUpdateResponseDto response = buyingBidService.updateBuyingBidPrice(buyingId, requestDto,
+                userDetails.getUserId());
         return CustomApiResponse.success(response);
     }
 

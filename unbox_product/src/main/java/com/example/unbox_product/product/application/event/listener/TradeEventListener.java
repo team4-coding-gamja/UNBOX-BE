@@ -32,7 +32,7 @@ public class TradeEventListener {
 
         try{
             if(event instanceof TradePriceChangedEvent tradePriceChangedEvent){
-                log.info("🔔 [Internal Event] Price Changed: {} -> {}", tradePriceChangedEvent.productId(), tradePriceChangedEvent.newLowestPrice());
+                log.info("🔔 [Internal Event] Price Changed: {} -> {}", tradePriceChangedEvent.productId(), tradePriceChangedEvent.price());
 
                 // Redis 업데이트 로직 (이전과 동일)
                 String key = "product:prices:" + tradePriceChangedEvent.productId();
@@ -40,7 +40,7 @@ public class TradeEventListener {
                 redisTemplate.opsForHash().put(
                         key,
                         tradePriceChangedEvent.optionId().toString(), // Field (옵션 ID)
-                        tradePriceChangedEvent.newLowestPrice().toString()  // Value (가격)
+                        tradePriceChangedEvent.price().toString()  // Value (가격)
                 );
 
             }

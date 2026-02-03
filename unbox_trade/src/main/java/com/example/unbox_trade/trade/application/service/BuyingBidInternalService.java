@@ -5,6 +5,7 @@ import com.example.unbox_trade.trade.domain.entity.BuyingBid;
 import com.example.unbox_trade.trade.domain.entity.BuyingStatus;
 import com.example.unbox_trade.trade.domain.repository.BuyingBidRepository;
 import com.example.unbox_trade.trade.presentation.dto.internal.BuyingBidForOrderInfoResponse;
+import com.example.unbox_trade.trade.presentation.dto.internal.HighestPriceResponseDto;
 import com.example.unbox_trade.trade.presentation.mapper.TradeClientMapper;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
@@ -21,7 +22,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -184,6 +185,52 @@ public class BuyingBidInternalService {
                 .productOptionName(optionName)
                 .highestPrice(maxPrice)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<HighestPriceResponseDto> getHighestPrices(List<UUID> productOptionIds) {
+        if (productOptionIds == null || productOptionIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Cache cache = cacheManager.getCache("trade:price:highest");
+        List<HighestPriceResponseDto> results = new ArrayList<>();
+        List<UUID> missingIds = new ArrayList<>();
+
+        // 1. 캐시에서 먼저 조회
+        for (UUID id : productOptionIds) {
+            HighestPriceResponseDto cached = (cache != null) ? cache.get(id, HighestPriceResponseDto.class) : null;
+            if (cached != null) {
+                results.add(cached);
+            } else {
+                missingIds.add(id);
+            }
+        }
+
+        // 2. 캐시에 없는 ID들만 한꺼번에 DB 조회
+        if (!missingIds.isEmpty()) {
+            List<Object[]> dbResults = buyingBidRepository.findHighestPricesByProductOptionIds(missingIds);
+
+            for (Object[] row : dbResults) {
+                UUID id = (UUID) row[0];
+                BigDecimal price = row[1] != null ? (BigDecimal) row[1] : BigDecimal.ZERO;
+
+                HighestPriceResponseDto dto = HighestPriceResponseDto.builder()
+                        .productOptionId(id)
+                        .productOptionName(null) // Product Service already knows the name
+                        .highestPrice(price)
+                        .build();
+
+                results.add(dto);
+
+                // 3. DB에서 가져온 데이터는 다음에 사용하기 위해 캐시에 저장
+                if (cache != null) {
+                    cache.put(id, dto);
+                }
+            }
+        }
+
+        return results;
     }
 
     // ========================================

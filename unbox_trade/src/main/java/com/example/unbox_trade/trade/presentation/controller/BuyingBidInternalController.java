@@ -45,15 +45,19 @@ public class BuyingBidInternalController {
 
     // ✅ 구매 입찰 복구 (결제 실패/취소용: RESERVED → LIVE)
     @PostMapping("/{buyingBidId}/live")
-    public void liveBuyingBid(@PathVariable UUID buyingBidId,
-            @RequestParam(value = "updatedBy", defaultValue = "SYSTEM") String updatedBy) {
+    public void liveBuyingBid(@PathVariable UUID buyingBidId, @RequestParam(value = "updatedBy", defaultValue = "SYSTEM") String updatedBy) {
         buyingBidInternalService.liveBuyingBid(buyingBidId, updatedBy);
     }
 
     // ✅ 상품 옵션별 최고가 조회 (Internal)
     @GetMapping("/product-option/{productOptionId}/highest-price")
-    public HighestPriceResponseDto getHighestPrice(
-            @PathVariable UUID productOptionId) {
+    public HighestPriceResponseDto getHighestPrice(@PathVariable UUID productOptionId) {
         return buyingBidInternalService.getHighestPrice(productOptionId);
+    }
+
+    // ✅ 상품 옵션별 최고가 조회 (Internal)
+    @GetMapping("/product-options/highest-price")
+    public List<HighestPriceResponseDto> getHighestPrices(@RequestBody List<UUID> productOptionIds) {
+        return buyingBidInternalService.getHighestPrices(productOptionIds);
     }
 }

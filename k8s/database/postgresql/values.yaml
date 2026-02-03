@@ -1,0 +1,27 @@
+# k8s/database/postgresql/values-local.yaml
+
+# 1. 아키텍처: 단일 노드 (Replication 없음)
+architecture: standalone
+
+# 2. 인증 정보 (로컬이니까 단순하게!)
+# 나중에 Spring Boot application.yml에 이 정보를 적으면 됩니다.
+auth:
+  username: unbox_admin
+  password: "1234"
+  database: unbox
+  postgresPassword: "1234" # 관리자 계정 비번
+
+# 3. 리소스 제한 (노트북 램 보호)
+primary:
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: 500m
+    requests:
+      memory: 256Mi
+      cpu: 250m
+
+# 4. 데이터 영속성 (껏다 켜도 데이터 유지)
+persistence:
+  enabled: true
+  size: 1Gi  # 로컬이니까 작게

@@ -6,6 +6,7 @@ import com.example.unbox_common.security.auth.CustomUserDetails;
 import com.example.unbox_trade.trade.application.service.AdminBuyingBidService;
 import com.example.unbox_trade.trade.presentation.dto.request.BuyingBidSearchCondition;
 import com.example.unbox_trade.trade.presentation.dto.response.AdminBuyingBidListResponseDto;
+import com.example.unbox_trade.trade.presentation.controller.api.AdminBuyingBidApi;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin/bids/buying")
 @RequiredArgsConstructor
-public class AdminBuyingBidController {
+public class AdminBuyingBidController implements AdminBuyingBidApi {
 
     private final AdminBuyingBidService adminBuyingBidService;
 

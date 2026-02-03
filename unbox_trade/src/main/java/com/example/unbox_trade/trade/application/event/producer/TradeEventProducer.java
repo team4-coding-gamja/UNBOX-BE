@@ -15,7 +15,8 @@ public class TradeEventProducer {
     private static final String TOPIC_TRADE = "trade-events";
 
     public void publishTradePriceChanged(TradePriceChangedEvent event) {
-        log.info("Publishing TradePriceChangedEvent: productId={}, productOptionId={}, newLowestPrice={}", event.productId(), event.optionId(), event.newLowestPrice());
-        kafkaTemplate.send(TOPIC_TRADE, event.optionId().toString(), event );
+        log.info("Publishing TradePriceChangedEvent: productId={}, productOptionId={}, price={}",
+                event.productId(), event.optionId(), event.price());
+        kafkaTemplate.send(TOPIC_TRADE, event.optionId().toString(), event);
     }
 }

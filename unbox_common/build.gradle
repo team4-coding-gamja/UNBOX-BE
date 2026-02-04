@@ -128,11 +128,11 @@ dependencies {
     // Metrics (Prometheus)
     api 'io.micrometer:micrometer-registry-prometheus'
 
-    // Tracing (Micrometer Tracing + Brave)
-    api 'io.micrometer:micrometer-tracing-bridge-brave'
-    
-    // Zipkin Reporter (Brave)
-    api 'io.zipkin.reporter2:zipkin-reporter-brave'
+    // Tracing (Micrometer Tracing + OpenTelemetry)
+    api 'io.micrometer:micrometer-tracing-bridge-otel'
+
+    // Zipkin Exporter (OpenTelemetry)
+    api 'io.opentelemetry:opentelemetry-exporter-zipkin'
 
     // Feign Tracing
     api 'io.github.openfeign:feign-micrometer'

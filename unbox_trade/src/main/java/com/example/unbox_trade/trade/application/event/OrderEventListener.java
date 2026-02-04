@@ -3,6 +3,7 @@ package com.example.unbox_trade.trade.application.event;
 import com.example.unbox_common.event.order.OrderCancelledEvent;
 import com.example.unbox_common.event.order.OrderExpiredEvent;
 import com.example.unbox_common.event.order.OrderRefundRequestedEvent;
+import com.example.unbox_common.event.order.OrderShipmentExpiredEvent;
 import com.example.unbox_trade.trade.application.service.SellingBidService;
 import com.example.unbox_trade.trade.domain.entity.SellingBid;
 import com.example.unbox_trade.trade.domain.entity.SellingStatus;
@@ -67,6 +68,13 @@ public class OrderEventListener {
             } else {
                 ack.acknowledge();
             }
+        } else if (event instanceof OrderShipmentExpiredEvent expiredEvent) {
+            log.info("Received OrderShipmentExpiredEvent for Order ID: {}", expiredEvent.orderId());
+            if (expiredEvent.sellingBidId() != null) {
+                handleShipmentExpired(expiredEvent.sellingBidId(), ack);
+            } else {
+                ack.acknowledge();
+            }
         } else {
             log.warn("Unknown event type: {} (Value: {})", event.getClass().getName(), event);
             ack.acknowledge();
@@ -110,6 +118,41 @@ public class OrderEventListener {
             log.error("Failed to revert SellingBid {} via Service.", sellingBidId, e);
             // 여기서 예외를 던지면 Kafka 재시도(Retry)가 동작함.
             // 단, 이미 위에서 검증했으므로 비즈니스 로직 오류 가능성은 낮음.
+            throw e;
+        }
+
+        ack.acknowledge();
+    }
+
+    /**
+     * 배송 기한 만료 처리
+     * - SellingStatus: RESERVED/SOLD -> CANCELLED
+     * - 판매자가 기한 내 발송하지 않음 -> 패널티성 취소
+     */
+    private void handleShipmentExpired(UUID sellingBidId, Acknowledgment ack) {
+        SellingBid sellingBid = sellingBidRepository.findByIdAndDeletedAtIsNullForUpdate(sellingBidId)
+                .orElse(null);
+
+        if (sellingBid == null) {
+            log.warn("SellingBid not found for shipment expiration: {}", sellingBidId);
+            ack.acknowledge();
+            return;
+        }
+
+        // 이미 취소되었거나 완료된 상태 체크 (멱등성)
+        if (sellingBid.getStatus() == SellingStatus.CANCELLED) {
+            log.info("SellingBid {} is already CANCELLED. Skipping shipment expiration.", sellingBidId);
+            ack.acknowledge();
+            return;
+        }
+
+        try {
+            // 시스템에 의한 강제 취소 (패널티)
+            // -1L: System Admin
+            sellingBidService.cancelSellingBid(sellingBidId, -1L, "SHIPMENT_EXPIRATION");
+            log.info("SellingBid {} cancelled due to shipment expiration.", sellingBidId);
+        } catch (Exception e) {
+            log.error("Failed to process shipment expiration for SellingBid {}.", sellingBidId, e);
             throw e;
         }
 

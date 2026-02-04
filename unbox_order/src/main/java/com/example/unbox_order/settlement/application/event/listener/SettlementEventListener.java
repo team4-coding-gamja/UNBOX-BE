@@ -34,18 +34,20 @@ public class SettlementEventListener {
         }
 
         if (event instanceof PaymentCompletedEvent paymentCompletedEvent) {
-            log.info("Received PaymentCompletedEvent for Settlement Creation. Order ID: {}, Payment Key: {}", 
+            log.info("Received PaymentCompletedEvent for Settlement Creation. Order ID: {}, Payment Key: {}",
                     paymentCompletedEvent.orderId(), paymentCompletedEvent.paymentKey());
-            
+
             try {
                 // 비동기로 정산 생성
                 settlementService.createSettlementForPayment(paymentCompletedEvent.paymentId());
-                log.info("Successfully created settlement via event for PaymentId: {}", paymentCompletedEvent.paymentId());
-                
+                log.info("Successfully created settlement via event for PaymentId: {}",
+                        paymentCompletedEvent.paymentId());
+
             } catch (Exception e) {
-                log.error("Failed to create settlement for PaymentCompletedEvent. OrderId: {}", paymentCompletedEvent.orderId(), e);
+                log.error("Failed to create settlement for PaymentCompletedEvent. OrderId: {}",
+                        paymentCompletedEvent.orderId(), e);
                 // 재시도 대상 (일시적 DB 장애 등)
-                throw e; 
+                throw e;
             }
         } else {
             log.debug("Ignored event type: {}", event.getClass().getName());
@@ -59,8 +61,13 @@ public class SettlementEventListener {
      * Order 서비스에서 환불 요청 시 발행하는 이벤트(OrderRefundRequestedEvent)를 수신하여
      * 정산(Settlement) 상태를 CANCELLED로 변경합니다.
      */
+    /**
+     * ✅ 주문 이벤트 리스너 (정산 취소)
+     * - Refund Requested -> Settlement Cancel
+     * - Shipment Expired -> Settlement Cancel (Penalty)
+     */
     @KafkaListener(topics = "order-events", groupId = "settlement-group")
-    public void handleOrderRefundEvent(ConsumerRecord<String, Object> record, Acknowledgment ack) {
+    public void handleOrderEvent(ConsumerRecord<String, Object> record, Acknowledgment ack) {
         Object event = record.value();
 
         if (event == null) {
@@ -70,23 +77,29 @@ public class SettlementEventListener {
         }
 
         if (event instanceof OrderRefundRequestedEvent refundEvent) {
-            log.info("Received OrderRefundRequestedEvent for Settlement Cancellation. Order ID: {}", 
+            log.info("Received OrderRefundRequestedEvent for Settlement Cancellation. Order ID: {}",
                     refundEvent.orderId());
-            
-            try {
-                settlementService.cancelSettlementByOrderId(refundEvent.orderId());
-                log.info("Successfully cancelled settlement for OrderId: {}", refundEvent.orderId());
-                
-            } catch (Exception e) {
-                log.error("Failed to cancel settlement for OrderRefundRequestedEvent. OrderId: {}", 
-                        refundEvent.orderId(), e);
-                throw e;
-            }
+            cancelSettlement(refundEvent.orderId());
+
+        } else if (event instanceof com.example.unbox_common.event.order.OrderShipmentExpiredEvent expiredEvent) {
+            log.info("Received OrderShipmentExpiredEvent for Settlement Cancellation (Penalty). Order ID: {}",
+                    expiredEvent.orderId());
+            cancelSettlement(expiredEvent.orderId());
+
         } else {
             log.debug("Ignored event type in order-events: {}", event.getClass().getName());
         }
 
         ack.acknowledge();
     }
-}
 
+    private void cancelSettlement(java.util.UUID orderId) {
+        try {
+            settlementService.cancelSettlementByOrderId(orderId);
+            log.info("Successfully cancelled settlement for OrderId: {}", orderId);
+        } catch (Exception e) {
+            log.error("Failed to cancel settlement for OrderId: {}", orderId, e);
+            throw e;
+        }
+    }
+}

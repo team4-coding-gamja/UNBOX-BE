@@ -389,7 +389,7 @@ public class OrderServiceImpl implements OrderService {
 
         // 3. [추가] 배송 기한 타이머 설정 (Redis Shadow Key)
         // Key 예시: "order:shipment-deadline:{orderId}"
-        String shipmentDeadlineKey = "order:shipment-deadline:" + orderId;
+        String shipmentDeadlineKey = REDIS_SHIPMENT_KEY_PREFIX + orderId;
         try {
             redisTemplate.opsForValue().set(
                     shipmentDeadlineKey,

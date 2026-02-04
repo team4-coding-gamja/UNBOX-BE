@@ -131,8 +131,8 @@ dependencies {
     // Tracing (Micrometer Tracing + OpenTelemetry)
     api 'io.micrometer:micrometer-tracing-bridge-otel'
 
-    // Zipkin Exporter (OpenTelemetry)
-    api 'io.opentelemetry:opentelemetry-exporter-zipkin'
+    // OTLP Exporter for Tempo (OpenTelemetry)
+    api 'io.opentelemetry:opentelemetry-exporter-otlp'
 
     // Feign Tracing
     api 'io.github.openfeign:feign-micrometer'

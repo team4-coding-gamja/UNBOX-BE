@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <included>
-    <property name="LOG_PATH" value="./logs"/>
+    <!-- LOG_PATH: Use environment variable if set, otherwise fallback to ./logs for local dev -->
+    <property name="LOG_PATH" value="${LOG_PATH:-./logs}"/>
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="unbox-app"/>
 
-    <!-- Console Appender: Human Readable -->
+    <!-- Console Appender: Human Readable (for local dev) -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Console Appender: JSON format (for Docker/K8s - Fluent-bit collection) -->
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"app_name":"${APP_NAME}"}</customFields>
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>spanId</includeMdcKeyName>
         </encoder>
     </appender>
 
@@ -35,10 +45,10 @@
         <logger name="com.example" level="DEBUG"/>
     </springProfile>
 
-    <!-- Dev/Prod: INFO only (Safe Default) -->
+    <!-- Dev/Prod: JSON console for Docker/Fluent-bit log collection -->
     <springProfile name="dev,prod">
         <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="CONSOLE_JSON"/>
             <appender-ref ref="FILE_JSON"/>
         </root>
     </springProfile>

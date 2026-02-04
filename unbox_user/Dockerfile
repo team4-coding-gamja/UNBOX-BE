@@ -29,8 +29,8 @@ FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-# 비root 사용자 생성
-RUN addgroup -S spring && adduser -S spring -G spring
+# 비root 사용자 생성 (Debian/Ubuntu 호환)
+RUN groupadd --system spring && useradd --system --gid spring --no-create-home spring
 
 # Create logs directory and set ownership
 RUN mkdir -p logs && chown -R spring:spring logs && chown -R spring:spring /app

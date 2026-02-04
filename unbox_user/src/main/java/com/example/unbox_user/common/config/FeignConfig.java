@@ -1,4 +1,4 @@
-package com.example.unbox_order.common.config;
+package com.example.unbox_user.common.config;
 
 import com.example.unbox_common.config.GlobalFeignErrorDecoder;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,21 +16,22 @@ public class FeignConfig {
     @Bean
     public RequestInterceptor requestInterceptor() {
         return requestTemplate -> {
-            // 1. 현재 들어온 HTTP 요청을 가져옴
+            // 현재 들어온 HTTP 요청을 가져옴
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
 
             if (attributes != null) {
                 HttpServletRequest request = attributes.getRequest();
-                // 2. 헤더에서 Authorization (Bearer 토큰)을 꺼냄
+                // 헤더에서 Authorization (Bearer 토큰)을 꺼냄
                 String token = request.getHeader("Authorization");
 
-                // 3. Feign 요청 헤더에 그대로 집어넣음
+                // Feign 요청 헤더에 그대로 집어넣음
                 if (token != null && !token.isBlank()) {
                     requestTemplate.header("Authorization", token);
                 }
             }
         };
     }
+
     @Bean
     public ErrorDecoder errorDecoder(ObjectMapper objectMapper) {
         return new GlobalFeignErrorDecoder(objectMapper);

@@ -25,7 +25,7 @@ public class FeignConfig {
                 String token = request.getHeader("Authorization");
 
                 // Feign 요청 헤더에 그대로 집어넣음
-                if (token != null) {
+                if (token != null && !token.isBlank()) {
                     requestTemplate.header("Authorization", token);
                 }
             }

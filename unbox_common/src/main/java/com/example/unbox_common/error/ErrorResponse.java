@@ -1,21 +1,24 @@
 package com.example.unbox_common.error;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor  // Jackson 역직렬화용 기본 생성자
 public class ErrorResponse {
 
-    private int status;
-    private String message;
-    private Object data;
+    private final int status;
+    private final String message;
+    private final Object data;
 
     public ErrorResponse(int status, String message) {
         this(status, message, null);
     }
 
-    public ErrorResponse(int status, String message, Object data) {
+    @JsonCreator
+    public ErrorResponse(@JsonProperty("status") int status, 
+                         @JsonProperty("message") String message, 
+                         @JsonProperty("data") Object data) {
         this.status = status;
         this.message = message;
         this.data = data;

@@ -105,4 +105,6 @@ public interface OrderService {
     void passedInspection(UUID orderId);
 
     void failedInspection(UUID orderId);
+
+    void processShipmentOverdue(UUID orderId);
 }

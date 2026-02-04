@@ -97,7 +97,7 @@ public class TradeClientFallbackFactory implements FallbackFactory<TradeClient> 
         
         // 3. 기타 예외 (네트워크 오류, 타임아웃 등)
         String causeMsg = (cause != null) ? cause.getMessage() : "unknown cause";
-        log.error("[Trade Client Error] {}({}) 호출 실패: {}", methodName, param, causeMsg);
+        log.error("[Trade Client Error] {}({}) 호출 실패: {}", methodName, param, causeMsg, cause);
         throw new CustomException(ErrorCode.SERVICE_UNAVAILABLE);
     }
 }

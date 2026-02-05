@@ -1253,7 +1253,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "resilience4j_circuitbreaker_state{job=~\"unbox-.*\"}",
+          "expr": "sum by (name) (resilience4j_circuitbreaker_state{job=~\"unbox-.*\", state=\"open\"}) + sum by (name) (resilience4j_circuitbreaker_state{job=~\"unbox-.*\", state=\"half_open\"}) * 2",
           "legendFormat": "{{name}}",
           "range": true,
           "refId": "A"
@@ -1605,7 +1605,7 @@
       },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=~\"unbox-.*\"}[1m])",
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=~\"unbox-.*\"}[1m]) / rate(jvm_gc_pause_seconds_count{job=~\"unbox-.*\"}[1m])",
           "legendFormat": "{{job}}",
           "refId": "A"
         }
@@ -1649,7 +1649,7 @@
       },
       "targets": [
         {
-          "expr": "{job=\"docker\"} |~ \"(?i)(error|exception|fail|warn)\" | logfmt | level =~ \"error|warn\"",
+          "expr": "{job=\"docker\"} | json | level =~ \"(?i)(error|warn)\"",
           "legendFormat": "",
           "refId": "A"
         }
@@ -1681,7 +1681,7 @@
       },
       "targets": [
         {
-          "expr": "{job=\"docker\"} |~ \"(?i)(kafka|event)\" !~ \"(?i)(error|exception)\"",
+          "expr": "{job=\"docker\"} | json | message =~ \"(?i).*(kafka|event).*\" | level !~ \"(?i)(error|warn)\"",
           "legendFormat": "",
           "refId": "A"
         }

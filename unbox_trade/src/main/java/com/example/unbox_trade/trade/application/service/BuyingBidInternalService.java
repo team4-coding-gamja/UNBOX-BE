@@ -250,6 +250,7 @@ public class BuyingBidInternalService {
             log.info("BuyingBid {} reset to LIVE (seller={} removed)", buyingBidId, buyingBid.getSellerId());
 
             // 캐시 무효화
+            publishPriceEvent(buyingBid.getProductId(), buyingBid.getProductOptionId());
             evictBuyingBidCache(buyingBidId);
             evictHighestPriceCache(buyingBid.getProductOptionId());
         } else {

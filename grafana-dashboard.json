@@ -271,7 +271,7 @@
       "pluginVersion": "10.2.3",
       "targets": [
         {
-          "expr": "(1 - sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"[45]..\"}[5m])) / sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[5m]))) * 100",
+          "expr": "(1 - sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"[45]..\"}[5m])) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[5m])), 0.001)) * 100",
           "legendFormat": "Success Rate",
           "refId": "A"
         }
@@ -360,12 +360,12 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"4..\"}[1m])) by (job) / sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[1m])) by (job) * 100",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"4..\"}[1m])) by (job) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[1m])) by (job), 0.001) * 100",
           "legendFormat": "{{job}} 4xx",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"5..\"}[1m])) by (job) / sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[1m])) by (job) * 100",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"5..\"}[1m])) by (job) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[1m])) by (job), 0.001) * 100",
           "legendFormat": "{{job}} 5xx",
           "refId": "B"
         }
@@ -1649,12 +1649,44 @@
       },
       "targets": [
         {
-          "expr": "{job=\"docker\"} |~ \"(?i)(error|exception|kafka|event)\"",
+          "expr": "{job=\"docker\"} |~ \"(?i)(error|exception|fail|warn)\" | logfmt | level =~ \"error|warn\"",
           "legendFormat": "",
           "refId": "A"
         }
       ],
-      "title": "📋 Error & Event Logs",
+      "title": "🚨 Error Logs",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 70
+      },
+      "id": 51,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "{job=\"docker\"} |~ \"(?i)(kafka|event)\" !~ \"(?i)(error|exception)\"",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "ℹ️ Event Logs",
       "type": "logs"
     }
   ],

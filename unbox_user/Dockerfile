@@ -30,7 +30,7 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # 비root 사용자 생성
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN groupadd -r spring && useradd -r -g spring spring
 
 # Create logs directory and set ownership
 RUN mkdir -p logs && chown -R spring:spring logs && chown -R spring:spring /app

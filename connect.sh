@@ -13,10 +13,10 @@ kubectl port-forward svc/user-service -n unbox-app 8081:80 > /dev/null 2>&1 &
 # 2. Product Service (8082)
 kubectl port-forward svc/product-service -n unbox-app 8082:80 > /dev/null 2>&1 &
 
-# 3. Order Service (8083)
+# 3. Order Service (8084)
 kubectl port-forward svc/order-service -n unbox-app 8084:80 > /dev/null 2>&1 &
 
-# 4. Trade Service (8084)
+# 4. Trade Service (8083)
 kubectl port-forward svc/trade-service -n unbox-app 8083:80 > /dev/null 2>&1 &
 
 # 5. Payment Service (8085)

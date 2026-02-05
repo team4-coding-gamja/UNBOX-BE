@@ -5,8 +5,7 @@ architecture: standalone
 
 # 2. 인증 정보
 auth:
-  enabled: true
-  password: "1234"
+  enabled: false
 
 # 3. 리소스 제한
 master:

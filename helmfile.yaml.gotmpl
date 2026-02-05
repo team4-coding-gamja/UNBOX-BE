@@ -22,13 +22,17 @@ releases:
     createNamespace: true
 
   - name: linkerd-control-plane
+    chart: linkerd/linkerd-control-plane
     namespace: linkerd
     createNamespace: true
-    chart: linkerd/linkerd-control-plane
     values:
-      - ./k8s/infra/linkerd/values.yaml
-    needs:
-      - linkerd/linkerd-crds
+      - identityTrustAnchorsPEM: {{ readFile "ca.crt" | quote }}
+        identity:
+          issuer:
+            tls:
+              crtPEM: {{ readFile "issuer.crt" | quote }}
+              keyPEM: {{ readFile "issuer.key" | quote }}
+            crtExpiry: "2027-02-05T00:00:00Z"
 
   # Zipkin
   - name: zipkin

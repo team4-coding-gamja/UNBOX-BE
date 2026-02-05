@@ -23,15 +23,22 @@ services:
       - PRODUCT_SERVICE_URL=http://unbox-product:8080
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
-      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
       - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
       - MAIL_PORT=${MAIL_PORT:-587}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - MAIL_FROM=${MAIL_FROM:-noreply@unbox.com}
+      - TEMPO_OTLP_ENDPOINT=http://tempo:4318/v1/traces
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: unbox-user
+        fluentd-async: "true"
     depends_on:
       - db
       - redis
+      - fluent-bit
 
   # 2. Product Service
   unbox-product:
@@ -60,10 +67,17 @@ services:
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
-      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - TEMPO_OTLP_ENDPOINT=http://tempo:4318/v1/traces
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: unbox-product
+        fluentd-async: "true"
     depends_on:
       - db
       - redis
+      - fluent-bit
 
   # 3. Trade Service
   unbox-trade:
@@ -89,10 +103,17 @@ services:
       - PAYMENT_SERVICE_URL=http://unbox-payment:8080
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
-      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - TEMPO_OTLP_ENDPOINT=http://tempo:4318/v1/traces
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: unbox-trade
+        fluentd-async: "true"
     depends_on:
       - db
       - redis
+      - fluent-bit
 
   # 4. Payment Service
   unbox-payment:
@@ -120,10 +141,17 @@ services:
       - TOSS_SECURITY_KEY=${TOSS_SECURITY_KEY}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
-      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - TEMPO_OTLP_ENDPOINT=http://tempo:4318/v1/traces
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: unbox-payment
+        fluentd-async: "true"
     depends_on:
       - db
       - redis
+      - fluent-bit
 
   # 5. Order Service
   unbox-order:
@@ -149,10 +177,17 @@ services:
       - PRODUCT_SERVICE_URL=http://unbox-product:8080
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
-      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - TEMPO_OTLP_ENDPOINT=http://tempo:4318/v1/traces
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: unbox-order
+        fluentd-async: "true"
     depends_on:
       - db
       - redis
+      - fluent-bit
 
   # 6. PostgreSQL
   db:
@@ -216,10 +251,88 @@ services:
     depends_on:
       - kafka
 
-  # 10. Zipkin (For Distributed Tracing)
-  zipkin:
-    image: openzipkin/zipkin
-    container_name: unbox-zipkin
+  # 10. Tempo (For Distributed Tracing - LGTM Stack)
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: unbox-tempo
+    platform: linux/amd64
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo-config.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo query frontend
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+
+  # 11. Prometheus (Metrics Collection)
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: unbox-prometheus
     platform: linux/amd64
     ports:
-      - "9411:9411"
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - unbox-user
+      - unbox-product
+      - unbox-order
+      - unbox-trade
+      - unbox-payment
+
+  # 12. Loki (Log Aggregation)
+  loki:
+    image: grafana/loki:2.9.3
+    container_name: unbox-loki
+    platform: linux/amd64
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yaml
+
+  # 13. Fluent-bit (Log Collector)
+  fluent-bit:
+    image: fluent/fluent-bit:2.2
+    container_name: unbox-fluent-bit
+    platform: linux/amd64
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    volumes:
+      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+    depends_on:
+      - loki
+
+  # 14. Grafana (Visualization Dashboard)
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: unbox-grafana
+    platform: linux/amd64
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+    depends_on:
+      - tempo
+      - prometheus
+      - loki
+
+volumes:
+  tempo_data:
+  grafana_data:
+  prometheus_data:
+  loki_data:

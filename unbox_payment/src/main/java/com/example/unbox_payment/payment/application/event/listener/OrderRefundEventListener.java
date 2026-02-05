@@ -22,7 +22,7 @@ public class OrderRefundEventListener {
     private final PaymentService paymentService;
 
     @KafkaListener(topics = "order-events", groupId = "payment-group")
-    public void handleOrderRefundRequested(ConsumerRecord<String, Object> record, Acknowledgment ack) {
+    public void handleOrderEvent(ConsumerRecord<String, Object> record, Acknowledgment ack) {
         Object event = record.value();
 
         if (event == null) {
@@ -34,22 +34,27 @@ public class OrderRefundEventListener {
         if (event instanceof OrderRefundRequestedEvent refundEvent) {
             log.info("Received OrderRefundRequestedEvent - orderId: {}, paymentId: {}, amount: {}",
                     refundEvent.orderId(), refundEvent.paymentId(), refundEvent.refundAmount());
-
-            try {
-                // 환불 처리 (토스 API 호출 + DB 상태 변경)
-                paymentService.processRefund(refundEvent.paymentId(), refundEvent.reason());
-                log.info("Successfully processed refund for orderId: {}, paymentId: {}",
-                        refundEvent.orderId(), refundEvent.paymentId());
-            } catch (Exception e) {
-                log.error("Failed to process refund for orderId: {}, paymentId: {}, error: {}",
-                        refundEvent.orderId(), refundEvent.paymentId(), e.getMessage(), e);
-                // 예외를 던져서 Retry 매커니즘이 동작하도록 함
-                throw e;
-            }
+            processRefund(refundEvent.paymentId(), refundEvent.reason(), refundEvent.orderId());
+        } else if (event instanceof com.example.unbox_common.event.order.OrderShipmentExpiredEvent expiredEvent) {
+            log.info("Received OrderShipmentExpiredEvent - orderId: {}, paymentId: {}",
+                    expiredEvent.orderId(), expiredEvent.paymentId());
+            // 배송 기한 만료 -> 환불 처리
+            processRefund(expiredEvent.paymentId(), "Shipment Timeout", expiredEvent.orderId());
         } else {
             log.debug("Ignored event type in OrderRefundEventListener: {}", event.getClass().getName());
         }
 
         ack.acknowledge();
+    }
+
+    private void processRefund(java.util.UUID paymentId, String reason, java.util.UUID orderId) {
+        try {
+            paymentService.processRefund(paymentId, reason);
+            log.info("Successfully processed refund for orderId: {}, paymentId: {}", orderId, paymentId);
+        } catch (Exception e) {
+            log.error("Failed to process refund for orderId: {}, paymentId: {}, error: {}",
+                    orderId, paymentId, e.getMessage(), e);
+            throw e;
+        }
     }
 }

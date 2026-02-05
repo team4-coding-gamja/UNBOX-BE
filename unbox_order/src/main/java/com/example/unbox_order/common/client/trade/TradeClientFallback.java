@@ -2,6 +2,7 @@ package com.example.unbox_order.common.client.trade;
 
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
+import com.example.unbox_common.response.CustomApiResponse;
 import com.example.unbox_order.common.client.trade.dto.BuyingBidForOrderResponse;
 import com.example.unbox_order.common.client.trade.dto.SellingBidForOrderResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +64,12 @@ public class TradeClientFallback implements TradeClient {
     @Override
     public void liveBuyingBid(UUID buyingBidId, String updatedBy) {
         log.warn("[CircuitBreaker OPEN] Trade 서비스 호출 실패 - liveBuyingBid({})", buyingBidId);
+        throw new CustomException(ErrorCode.SERVICE_UNAVAILABLE);
+    }
+
+    @Override
+    public void resetMatchedBid(UUID buyingBidId) {
+        log.warn("[CircuitBreaker OPEN] Trade 서비스 호출 실패 - resetMatchedBid({})", buyingBidId);
         throw new CustomException(ErrorCode.SERVICE_UNAVAILABLE);
     }
 }

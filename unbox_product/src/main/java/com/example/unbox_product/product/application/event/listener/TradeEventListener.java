@@ -39,7 +39,7 @@ public class TradeEventListener {
 
                 redisTemplate.opsForHash().put(
                         key,
-                        tradePriceChangedEvent.optionId().toString(), // Field (옵션 ID)
+                        tradePriceChangedEvent.productOptionId().toString(), // Field (옵션 ID)
                         tradePriceChangedEvent.price().toString()  // Value (가격)
                 );
 

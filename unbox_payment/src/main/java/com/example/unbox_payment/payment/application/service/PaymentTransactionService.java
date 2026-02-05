@@ -184,7 +184,7 @@ public class PaymentTransactionService {
         payment.changeStatus(PaymentStatus.REFUND_IN_PROGRESS);
         paymentRepository.saveAndFlush(payment);
 
-        log.info("[RefundTransaction] 환불 준비 완료 (REFUND_IN_PROGRESS) - paymentId: {}, paymentKey: {}", 
+        log.info("[RefundTransaction] 환불 준비 완료 (REFUND_IN_PROGRESS) - paymentId: {}, paymentKey: {}",
                 paymentId, payment.getPaymentKey());
         return payment;
     }
@@ -208,7 +208,7 @@ public class PaymentTransactionService {
 
         // REFUND_IN_PROGRESS 상태만 환불 완료 가능 (prepareForRefund 거친 요청만)
         if (payment.getStatus() != PaymentStatus.REFUND_IN_PROGRESS) {
-            log.error("[RefundTransaction] 환불 완료 허용되지 않는 상태 - paymentId: {}, status: {}", 
+            log.error("[RefundTransaction] 환불 완료 허용되지 않는 상태 - paymentId: {}, status: {}",
                     paymentId, payment.getStatus());
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }

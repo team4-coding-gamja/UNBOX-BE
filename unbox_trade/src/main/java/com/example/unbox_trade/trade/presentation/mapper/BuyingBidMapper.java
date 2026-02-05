@@ -31,7 +31,7 @@ public class BuyingBidMapper {
 
     public BuyingBidCreateResponseDto toCreateResponseDto(BuyingBid buyingBid) {
         return BuyingBidCreateResponseDto.builder()
-                .buyingId(buyingBid.getId())
+                .buyingBidId(buyingBid.getId())
                 .price(buyingBid.getPrice())
                 .createdAt(buyingBid.getCreatedAt())
                 .deadline(buyingBid.getDeadline())

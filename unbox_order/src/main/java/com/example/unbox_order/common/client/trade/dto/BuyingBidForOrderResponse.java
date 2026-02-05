@@ -12,10 +12,11 @@ import java.util.UUID;
 public class BuyingBidForOrderResponse {
     private UUID buyingBidId;
     private Long buyerId;
+    private Long sellerId;
+    private String buyingStatus;
     private UUID productId;
     private UUID productOptionId;
     private BigDecimal price;
-    private String status;
 
     // 상품 스냅샷
     private String productName;
@@ -25,15 +26,16 @@ public class BuyingBidForOrderResponse {
     private String brandName;
 
     @Builder
-    public BuyingBidForOrderResponse(UUID buyingBidId, Long buyerId, UUID productId, UUID productOptionId,
-            BigDecimal price, String status, String productName, String modelNumber, String productOptionName,
+    public BuyingBidForOrderResponse(UUID buyingBidId, Long buyerId, Long sellerId, String buyingStatus, UUID productId, UUID productOptionId,
+            BigDecimal price, String productName, String modelNumber, String productOptionName,
             String productImageUrl, String brandName) {
         this.buyingBidId = buyingBidId;
         this.buyerId = buyerId;
+        this.sellerId = sellerId;
+        this.buyingStatus = buyingStatus;
         this.productId = productId;
         this.productOptionId = productOptionId;
         this.price = price;
-        this.status = status;
         this.productName = productName;
         this.modelNumber = modelNumber;
         this.productOptionName = productOptionName;

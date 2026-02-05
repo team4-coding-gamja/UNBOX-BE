@@ -1,4 +1,4 @@
-package com.example.unbox_order.common.client.payment.dto;
+package com.example.unbox_order.order.presentation.dto.internal;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,7 +1,7 @@
 package com.example.unbox_order.order.application.service;
 
-import com.example.unbox_order.common.client.order.dto.OrderForPaymentInfoResponse;
-import com.example.unbox_order.common.client.order.dto.OrderForReviewInfoResponse;
+import com.example.unbox_order.order.presentation.dto.internal.OrderForPaymentInfoResponse;
+import com.example.unbox_order.order.presentation.dto.internal.OrderForReviewInfoResponse;
 import com.example.unbox_order.order.presentation.dto.request.OrderCreateRequestDto;
 import com.example.unbox_order.order.presentation.dto.response.OrderDetailResponseDto;
 import com.example.unbox_order.order.presentation.dto.response.OrderResponseDto;

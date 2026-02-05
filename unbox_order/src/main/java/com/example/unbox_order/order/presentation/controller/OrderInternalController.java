@@ -1,8 +1,8 @@
 package com.example.unbox_order.order.presentation.controller;
 
-import com.example.unbox_order.common.client.order.dto.OrderForPaymentInfoResponse;
-import com.example.unbox_order.common.client.order.dto.OrderForReviewInfoResponse;
 import com.example.unbox_order.order.application.service.OrderService;
+import com.example.unbox_order.order.presentation.dto.internal.OrderForPaymentInfoResponse;
+import com.example.unbox_order.order.presentation.dto.internal.OrderForReviewInfoResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

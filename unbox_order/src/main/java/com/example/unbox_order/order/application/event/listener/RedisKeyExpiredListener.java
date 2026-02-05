@@ -1,10 +1,13 @@
 package com.example.unbox_order.order.application.event.listener;
 
 import com.example.unbox_common.event.order.OrderExpiredEvent;
+import com.example.unbox_order.common.client.trade.TradeClient;
 import com.example.unbox_order.order.application.event.producer.OrderEventProducer;
 import com.example.unbox_order.order.application.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.connection.Message;
+import org.springframework.data.redis.core.RedisKeyExpiredEvent;
 import org.springframework.data.redis.listener.KeyExpirationEventMessageListener;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.stereotype.Component;
@@ -17,14 +20,19 @@ import java.util.UUID;
 public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
 
     private final OrderEventProducer orderEventProducer;
+    private final TradeClient tradeClient;
     private final OrderService orderService;
 
     private static final String REDIS_ORDER_KEY_PREFIX = "order:expiration:";
     private static final String REDIS_SHIPMENT_KEY_PREFIX = "order:shipment-deadline:";
 
-    public RedisKeyExpiredListener(RedisMessageListenerContainer listenerContainer, OrderEventProducer orderEventProducer, OrderService orderService) {
+    public RedisKeyExpiredListener(RedisMessageListenerContainer listenerContainer,
+            OrderEventProducer orderEventProducer,
+            TradeClient tradeClient,
+            OrderService orderService) {
         super(listenerContainer);
         this.orderEventProducer = orderEventProducer;
+        this.tradeClient = tradeClient;
         this.orderService = orderService;
         // AWS ElastiCache에서는 CONFIG 명령어가 비활성화되어 있으므로 건너뜀
         // ElastiCache 파라미터 그룹에서 notify-keyspace-events = "Ex" 로 직접 설정 필요
@@ -79,6 +87,29 @@ public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
             log.warn("Invalid UUID in expired key: {}", expiredKey, e);
         } catch (Exception e) {
             log.error("Failed to handle expired key: {}", expiredKey, e);
+        }
+    }
+
+    @EventListener
+    public void handleRedisKeyExpiredEvent(RedisKeyExpiredEvent event) {
+        String expiredKey = new String(event.getSource());
+
+        // 기존 주문 타임아웃 처리 로직...
+
+        // ✅ 추가: 구매 입찰 매칭 타임아웃 처리
+        if (expiredKey.startsWith("buying-bid:match-timeout:")) {
+            String buyingBidId = expiredKey.replace("buying-bid:match-timeout:", "");
+
+            log.warn("BuyingBid match timeout expired: {}", buyingBidId);
+
+            try {
+                // MATCHED → LIVE 복구
+                tradeClient.resetMatchedBid(UUID.fromString(buyingBidId));
+
+                log.info("BuyingBid {} reset to LIVE due to buyer timeout", buyingBidId);
+            } catch (Exception e) {
+                log.error("Failed to reset BuyingBid {}", buyingBidId, e);
+            }
         }
     }
 

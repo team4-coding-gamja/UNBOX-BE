@@ -185,12 +185,11 @@ public class OrderEventListener {
         try {
             if ("PENDING_SHIPMENT".equals(previousStatus)) {
                 // 배송 전 취소: LIVE로 복구 (판매자가 다시 올릴 필요 없음)
-                sellingBid.updateStatus(SellingStatus.LIVE);
+                sellingBidService.liveSellingBid(sellingBidId, "REFUND_EVENT");
                 log.info("SellingBid {} reverted to LIVE (pre-shipment refund).", sellingBidId);
             } else {
                 // 배송 후 취소 (DELIVERED 등): CANCELLED로 변경
-                sellingBid.updateStatus(SellingStatus.CANCELLED);
-                sellingBid.softDelete("REFUND_EVENT");
+                sellingBidService.expireSellingBid(sellingBidId);
                 log.info("SellingBid {} cancelled (post-delivery refund).", sellingBidId);
             }
         } catch (Exception e) {

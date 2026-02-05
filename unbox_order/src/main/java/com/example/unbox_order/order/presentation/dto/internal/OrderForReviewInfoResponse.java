@@ -1,4 +1,4 @@
-package com.example.unbox_order.common.client.order.dto;
+package com.example.unbox_order.order.presentation.dto.internal;
 
 import lombok.Builder;
 import lombok.Getter;

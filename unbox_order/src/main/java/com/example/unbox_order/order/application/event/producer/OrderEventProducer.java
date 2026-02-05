@@ -18,14 +18,20 @@ public class OrderEventProducer {
 
     public void publishOrderCancelled(OrderCancelledEvent event) {
         log.info("Publishing OrderCancelledEvent: orderId={}, sellingBidId={}", event.orderId(), event.sellingBidId());
-        // 키(Key)를 지정하여 해당 입찰(sellingBid) 관련 이벤트가 항상 동일 파티션으로 가도록 보장
-        kafkaTemplate.send(TOPIC_ORDER, event.sellingBidId().toString(), event);
+
+        String key = event.sellingBidId() != null ? event.sellingBidId().toString()
+                : event.buyingBidId() != null ? event.buyingBidId().toString() : event.orderId().toString();
+
+        kafkaTemplate.send(TOPIC_ORDER, key, event);
     }
 
     public void publishOrderExpired(OrderExpiredEvent event) {
         log.info("Publishing OrderExpiredEvent: orderId={}, sellingBidId={}", event.orderId(), event.sellingBidId());
-        // 동일 토픽(order-events) 사용 -> 입찰 상태 변경 순서 보장을 위해
-        kafkaTemplate.send(TOPIC_ORDER, event.sellingBidId().toString(), event)
+
+        String key = event.sellingBidId() != null ? event.sellingBidId().toString()
+                : event.buyingBidId() != null ? event.buyingBidId().toString() : event.orderId().toString();
+
+        kafkaTemplate.send(TOPIC_ORDER, key, event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         // Kafka 전송 실패: 브로커 장애 등이 원인이므로 DLT 전송도 불가능함.
@@ -36,7 +42,7 @@ public class OrderEventProducer {
                     }
                 });
     }
-    
+
     public void publishOrderConfirmed(OrderConfirmedEvent event) {
         log.info("Publishing OrderConfirmedEvent: orderId={}, userId={}", event.orderId(), event.userId());
         // 구매 확정은 주문(Order) 라이프사이클의 종료이므로 OrderId를 키로 사용
@@ -49,11 +55,14 @@ public class OrderEventProducer {
     }
 
     public void publishRefundRequested(OrderRefundRequestedEvent event) {
-        log.info("Publishing OrderRefundRequestedEvent: orderId={}, sellingBidId={}, paymentId={}", 
+        log.info("Publishing OrderRefundRequestedEvent: orderId={}, sellingBidId={}, paymentId={}",
                 event.orderId(), event.sellingBidId(), event.paymentId());
-        // 환불 요청은 Payment/Trade 서비스가 수신하여 처리
-        // sellingBidId를 키로 사용하여 입찰 관련 이벤트 순서 보장
-        kafkaTemplate.send(TOPIC_ORDER, event.sellingBidId().toString(), event)
+
+        // 키(Key) 생성: sellingBidId 우선 -> buyingBidId -> orderId
+        String key = event.sellingBidId() != null ? event.sellingBidId().toString()
+                : event.buyingBidId() != null ? event.buyingBidId().toString() : event.orderId().toString();
+
+        kafkaTemplate.send(TOPIC_ORDER, key, event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Failed to publish OrderRefundRequestedEvent for orderId: {}", event.orderId(), ex);

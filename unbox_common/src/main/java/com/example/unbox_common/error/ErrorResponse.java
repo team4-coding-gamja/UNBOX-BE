@@ -11,7 +11,10 @@ public class ErrorResponse {
     private final String message;
     private final Object data;
 
-    public ErrorResponse(int status, String message) {
+    @JsonCreator
+    public ErrorResponse(
+            @JsonProperty("status") int status,
+            @JsonProperty("message") String message) {
         this(status, message, null);
     }
 

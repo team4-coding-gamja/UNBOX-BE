@@ -25,78 +25,61 @@ import org.springdoc.core.annotations.ParameterObject;
 @Tag(name = "[사용자] 주문 관리", description = "주문 관리 API")
 public interface OrderApi {
 
-    @Operation(summary = "주문 생성", description = "구매자가 상품을 주문합니다.")
-    CustomApiResponse<UUID> createOrder(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = OrderCreateRequestDto.class),
-                            examples = {
-                                    @io.swagger.v3.oas.annotations.media.ExampleObject(
-                                            name = "주문 생성 예시",
-                                            value = """
-                                            {
-                                              "sellingBidId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                                              "receiverName": "홍길동",
-                                              "receiverPhone": "010-1234-5678",
-                                              "receiverAddress": "서울시 강남구 테헤란로 123",
-                                              "receiverZipCode": "12345"
-                                            }
-                                            """
-                                    )
-                            }
-                    )
-            )
-            @Valid @RequestBody OrderCreateRequestDto requestDto,
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
-    );
+        @Operation(summary = "주문 생성", description = "구매자가 상품을 주문합니다. 판매 입찰 기반 또는 구매 입찰 기반 주문 생성이 가능합니다.")
+        CustomApiResponse<UUID> createOrder(
+                        @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(schema = @Schema(implementation = OrderCreateRequestDto.class), examples = {
+                                        @io.swagger.v3.oas.annotations.media.ExampleObject(name = "구매자 주문 (판매 입찰 기반)", description = "구매자가 판매 입찰을 선택하여 즉시 구매하는 경우", value = """
+                                                        {
+                                                          "sellingBidId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                                          "buyingBidId": null,
+                                                          "receiverName": "홍길동",
+                                                          "receiverPhone": "010-1234-5678",
+                                                          "receiverAddress": "서울시 강남구 테헤란로 123",
+                                                          "receiverZipCode": "06234"
+                                                        }
+                                                        """),
+                                        @io.swagger.v3.oas.annotations.media.ExampleObject(name = "구매자 주문 (구매 입찰 기반)", description = "판매자가 구매 입찰을 수락한 후, 구매자가 배송지를 입력하여 주문을 확정하는 경우", value = """
+                                                        {
+                                                          "sellingBidId": null,
+                                                          "buyingBidId": "7b8c9d10-1234-5678-90ab-cdef12345678",
+                                                          "receiverName": "김철수",
+                                                          "receiverPhone": "010-9876-5432",
+                                                          "receiverAddress": "서울시 송파구 올림픽로 300",
+                                                          "receiverZipCode": "05551"
+                                                        }
+                                                        """)
+                        })) @Valid @RequestBody OrderCreateRequestDto requestDto,
+                        @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails);
 
+        @Operation(summary = "내 주문 목록 조회", description = "구매자가 자신의 주문 내역을 페이징 조회합니다.")
+        CustomApiResponse<Page<OrderResponseDto>> getMyOrders(
+                        @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
+                        @ParameterObject @PageableDefault(size = 10) Pageable pageable);
 
+        @Operation(summary = "주문 상세 조회", description = "주문의 상세 정보(배송지, 옵션 등)를 조회합니다.")
+        CustomApiResponse<OrderDetailResponseDto> getOrderDetail(
+                        @PathVariable UUID orderId,
+                        @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails);
 
-    @Operation(summary = "내 주문 목록 조회", description = "구매자가 자신의 주문 내역을 페이징 조회합니다.")
-    CustomApiResponse<Page<OrderResponseDto>> getMyOrders(
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
-            @ParameterObject @PageableDefault(size = 10) Pageable pageable
-    );
+        @Operation(summary = "주문 취소", description = "주문을 취소합니다.")
+        CustomApiResponse<OrderDetailResponseDto> cancelOrder(
+                        @PathVariable UUID orderId,
+                        @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails);
 
-    @Operation(summary = "주문 상세 조회", description = "주문의 상세 정보(배송지, 옵션 등)를 조회합니다.")
-    CustomApiResponse<OrderDetailResponseDto> getOrderDetail(
-            @PathVariable UUID orderId,
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
-    );
+        @Operation(summary = "운송장 등록 (판매자용)", description = "판매자가 운송장 번호를 등록하고 배송을 시작합니다.")
+        CustomApiResponse<OrderDetailResponseDto> registerTracking(
+                        @PathVariable UUID orderId,
+                        @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, content = @Content(schema = @Schema(implementation = OrderTrackingRequestDto.class), examples = {
+                                        @io.swagger.v3.oas.annotations.media.ExampleObject(name = "판매자 운송장 등록", value = """
+                                                        {
+                                                          "trackingNumber": "S-TRACK-123456"
+                                                        }
+                                                        """)
+                        })) @Valid @RequestBody OrderTrackingRequestDto requestDto,
+                        @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails);
 
-    @Operation(summary = "주문 취소", description = "주문을 취소합니다.")
-    CustomApiResponse<OrderDetailResponseDto> cancelOrder(
-            @PathVariable UUID orderId,
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
-    );
-
-    @Operation(summary = "운송장 등록 (판매자용)", description = "판매자가 운송장 번호를 등록하고 배송을 시작합니다.")
-    CustomApiResponse<OrderDetailResponseDto> registerTracking(
-            @PathVariable UUID orderId,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = OrderTrackingRequestDto.class),
-                            examples = {
-                                    @io.swagger.v3.oas.annotations.media.ExampleObject(
-                                            name = "판매자 운송장 등록",
-                                            value = """
-                                            {
-                                              "trackingNumber": "S-TRACK-123456"
-                                            }
-                                            """
-                                    )
-                            }
-                    )
-            )
-            @Valid @RequestBody OrderTrackingRequestDto requestDto,
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
-    );
-
-    @Operation(summary = "구매 확정 (구매자용)", description = "배송 완료된 주문을 구매 확정합니다.")
-    CustomApiResponse<OrderDetailResponseDto> confirmOrder(
-            @PathVariable UUID orderId,
-            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails
-    );
+        @Operation(summary = "구매 확정 (구매자용)", description = "배송 완료된 주문을 구매 확정합니다.")
+        CustomApiResponse<OrderDetailResponseDto> confirmOrder(
+                        @PathVariable UUID orderId,
+                        @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails);
 }

@@ -71,6 +71,11 @@ public class TradeClientFallbackFactory implements FallbackFactory<TradeClient> 
             public void liveBuyingBid(UUID buyingBidId, String updatedBy) {
                 handleFallback("liveBuyingBid", buyingBidId, cause);
             }
+
+            @Override
+            public void resetMatchedBid(UUID buyingBidId) {
+                handleFallback("resetMatchedBid", buyingBidId, cause);
+            }
         };
     }
 

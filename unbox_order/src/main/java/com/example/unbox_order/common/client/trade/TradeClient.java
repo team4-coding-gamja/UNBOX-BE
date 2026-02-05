@@ -38,4 +38,7 @@ public interface TradeClient {
 
         @PostMapping("/internal/bids/buying/{buyingBidId}/live")
         void liveBuyingBid(@PathVariable("buyingBidId") UUID buyingBidId, @RequestParam("updatedBy") String updatedBy);
+
+        @PostMapping("/internal/bids/buying/{buyingBidId}/reset-match")
+        void resetMatchedBid(@PathVariable UUID buyingBidId);
 }

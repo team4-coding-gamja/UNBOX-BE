@@ -1,5 +1,6 @@
 package com.example.unbox_trade.trade.application.event.producer;
 
+import com.example.unbox_common.event.trade.BuyingBidMatchedEvent;
 import com.example.unbox_common.event.trade.TradePriceChangedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,8 +16,11 @@ public class TradeEventProducer {
     private static final String TOPIC_TRADE = "trade-events";
 
     public void publishTradePriceChanged(TradePriceChangedEvent event) {
-        log.info("Publishing TradePriceChangedEvent: productId={}, productOptionId={}, price={}",
-                event.productId(), event.optionId(), event.price());
-        kafkaTemplate.send(TOPIC_TRADE, event.optionId().toString(), event);
+        log.info("Publishing TradePriceChangedEvent: productId={}, productOptionId={}, price={}", event.productId(), event.productOptionId(), event.price());
+        kafkaTemplate.send(TOPIC_TRADE, event.productOptionId().toString(), event);
+    }
+
+    public void publishBuyingBidMatched(BuyingBidMatchedEvent event) {
+        kafkaTemplate.send(TOPIC_TRADE, event.buyingBidId().toString(), event);
     }
 }

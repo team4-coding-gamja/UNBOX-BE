@@ -1,0 +1,107 @@
+# Order Service 최적화된 Rolling Update 설정
+# 목표: "Rolling Update + 적절한 헬스체크 + Graceful Shutdown = 안전한 배포"
+
+service:
+  name: unbox-order
+  port: 8083
+  targetPort: 8083
+
+image:
+  repository: k3d-unbox-registry:5000/unbox-order
+  tag: b5bff58
+  pullPolicy: Always
+
+env:
+  - name: SPRING_PROFILES_ACTIVE
+    value: "local"
+  - name: SPRING_APPLICATION_NAME
+    value: "unbox-order"
+  - name: SERVER_PORT
+    value: "8083"
+  - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+    value: "http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans"
+  - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+    value: "health,info,metrics,prometheus"
+  - name: MANAGEMENT_TRACING_SAMPLING_PROBABILITY
+    value: "1.0"
+  # JWT Secret 변경 (Rolling Update 테스트용)
+  - name: SPRING_JWT_SECRET
+    value: "OPTIMIZED_ROLLING_UPDATE_JWT_SECRET_V2_FOR_ORDER_SERVICE_SAFE_DEPLOYMENT_2024"
+  - name: SPRING_DATASOURCE_URL
+    value: "jdbc:postgresql://postgresql.default.svc.cluster.local:5432/unbox"
+  - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+    value: "org.postgresql.Driver"
+  - name: SPRING_DATASOURCE_USERNAME
+    value: "postgres"
+  - name: SPRING_DATASOURCE_PASSWORD
+    value: "password"
+  - name: SPRING_JPA_DATABASE_PLATFORM
+    value: "org.hibernate.dialect.PostgreSQLDialect"
+  - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+    value: "update"
+  - name: SPRING_H2_CONSOLE_ENABLED
+    value: "false"
+  # Kafka 설정
+  - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+    value: "kafka.default.svc.cluster.local:9092"
+  - name: SPRING_KAFKA_CONSUMER_GROUP_ID
+    value: "order-group-v2"  # Consumer Group 변경
+  - name: SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET
+    value: "earliest"
+  # Graceful Shutdown 설정
+  - name: SERVER_SHUTDOWN
+    value: "graceful"
+  - name: SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE
+    value: "30s"  # 30초 Graceful Shutdown
+  # 커넥션 풀 최적화
+  - name: SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT
+    value: "20000"    # 20초
+  - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
+    value: "10"       # 적절한 풀 크기
+  - name: SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE
+    value: "5"        # 최소 유지 연결
+  - name: SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT
+    value: "300000"   # 5분 유휴 타임아웃
+
+# 최적화된 헬스체크 설정
+healthCheck:
+  enabled: true
+  path: /order/actuator/health
+  initialDelaySeconds: 120  # 2분 대기
+  periodSeconds: 10         # 10초마다 체크
+  timeoutSeconds: 5         # 5초 타임아웃
+  failureThreshold: 3       # 3번 실패 시 재시작
+  # Readiness 별도 설정
+  readinessInitialDelaySeconds: 60   # 1분 대기
+  readinessPeriodSeconds: 5          # 5초마다 체크
+  readinessFailureThreshold: 3       # 3번 실패까지 허용
+
+# Rolling Update 전략 최적화
+rollingUpdate:
+  maxUnavailable: 0         # 항상 최소 1개 Pod 유지
+  maxSurge: 1              # 최대 1개 추가 Pod
+
+# Pod 종료 설정
+terminationGracePeriodSeconds: 60  # 60초 Graceful Shutdown
+
+# 관측성 설정
+observability:
+  metrics:
+    enabled: true
+    port: 8083
+    path: /order/actuator/prometheus
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  hosts:
+    - host: localhost
+      paths:
+        - path: /api/v1/order(/|$)(.*)
+          pathType: Prefix
+
+# Blue-Green 배포 비활성화 (Rolling Update 사용)
+rollouts:
+  enabled: false

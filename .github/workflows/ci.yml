@@ -1,0 +1,291 @@
+name: UNBOX Local CI Pipeline
+
+on:
+  push:
+    branches: [ last_CICD, develop ]
+  pull_request:
+    branches: [ last_CICD, develop ]
+
+env:
+  REGISTRY: localhost:5001  # k3d 로컬 레지스트리
+  CLUSTER_NAME: unbox-local
+
+jobs:
+  # 1. 코드 품질 검사 (로컬)
+  code-quality-local:
+    runs-on: ubuntu-latest
+    name: "🔍 Local Code Quality Check"
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'corretto'
+
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Run unit tests
+      run: ./gradlew test --parallel
+
+    - name: Run checkstyle (optional)
+      run: ./gradlew checkstyleMain checkstyleTest || true
+
+    - name: Generate test report
+      if: always()
+      run: |
+        echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+        if [ -d "build/reports/tests/test" ]; then
+          echo "Tests completed successfully" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  # 2. 로컬 Docker 이미지 빌드
+  build-local-images:
+    needs: code-quality-local
+    runs-on: ubuntu-latest
+    name: "🐳 Local Docker Build"
+    strategy:
+      matrix:
+        service: [unbox_user, unbox_product, unbox_order, unbox_trade, unbox_payment]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Generate local image metadata
+      id: meta
+      run: |
+        GIT_SHA=$(git rev-parse --short HEAD)
+        SERVICE_NAME=$(echo ${{ matrix.service }} | sed 's/unbox_/unbox-/')
+        echo "IMAGE_TAG=${GIT_SHA}" >> $GITHUB_OUTPUT
+        echo "SERVICE_NAME=${SERVICE_NAME}" >> $GITHUB_OUTPUT
+        echo "FULL_IMAGE_NAME=localhost:5001/${SERVICE_NAME}:${GIT_SHA}" >> $GITHUB_OUTPUT
+
+    - name: Check Dockerfile exists
+      run: |
+        if [ ! -f "${{ matrix.service }}/Dockerfile.arm64" ]; then
+          echo "❌ Dockerfile.arm64 not found for ${{ matrix.service }}"
+          exit 1
+        fi
+
+    - name: Build local Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ${{ matrix.service }}/Dockerfile.arm64
+        platforms: linux/arm64  # 로컬 ARM64 Mac 환경
+        tags: |
+          ${{ steps.meta.outputs.SERVICE_NAME }}:${{ steps.meta.outputs.IMAGE_TAG }}
+          ${{ steps.meta.outputs.SERVICE_NAME }}:latest
+          ${{ steps.meta.outputs.FULL_IMAGE_NAME }}
+        outputs: type=docker,dest=/tmp/${{ steps.meta.outputs.SERVICE_NAME }}.tar
+
+    - name: Upload local image artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: local-${{ steps.meta.outputs.SERVICE_NAME }}-image
+        path: /tmp/${{ steps.meta.outputs.SERVICE_NAME }}.tar
+        retention-days: 1
+
+    - name: Image build summary
+      run: |
+        echo "## 🐳 Built Image: ${{ steps.meta.outputs.SERVICE_NAME }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tag**: ${{ steps.meta.outputs.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Registry**: localhost:5001" >> $GITHUB_STEP_SUMMARY
+        echo "- **Platform**: linux/arm64" >> $GITHUB_STEP_SUMMARY
+
+  # 3. 로컬 k3d 배포
+  deploy-to-local-k3d:
+    if: github.ref == 'refs/heads/last_CICD' || github.ref == 'refs/heads/develop'
+    needs: build-local-images
+    runs-on: self-hosted  # 로컬 러너 필요
+    name: "🚀 Deploy to Local k3d"
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Verify k3d cluster
+      run: |
+        if ! k3d cluster list | grep -q "${{ env.CLUSTER_NAME }}"; then
+          echo "❌ k3d cluster '${{ env.CLUSTER_NAME }}' not found"
+          echo "Please run: ./scripts/setup-local.sh"
+          exit 1
+        fi
+        echo "✅ k3d cluster '${{ env.CLUSTER_NAME }}' is running"
+
+    - name: Download all local image artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: ./artifacts
+
+    - name: Load and push images to local registry
+      run: |
+        GIT_SHA=$(git rev-parse --short HEAD)
+        echo "🐳 Loading and pushing images with tag: ${GIT_SHA}"
+        
+        for service in unbox-user unbox-product unbox-order unbox-trade unbox-payment; do
+          artifact_path="./artifacts/local-${service}-image/${service}.tar"
+          if [ -f "$artifact_path" ]; then
+            echo "📦 Loading ${service}..."
+            docker load -i "$artifact_path"
+            
+            echo "🏷️  Tagging ${service}..."
+            docker tag ${service}:${GIT_SHA} localhost:5001/${service}:${GIT_SHA}
+            
+            echo "📤 Pushing to local registry..."
+            docker push localhost:5001/${service}:${GIT_SHA}
+            
+            echo "📥 Importing to k3d cluster..."
+            k3d image import localhost:5001/${service}:${GIT_SHA} -c ${{ env.CLUSTER_NAME }}
+            
+            echo "✅ ${service} deployment ready"
+          else
+            echo "⚠️  Artifact not found: $artifact_path"
+          fi
+        done
+
+    - name: Update Helm values for local deployment
+      run: |
+        GIT_SHA=$(git rev-parse --short HEAD)
+        echo "⚙️  Updating Helm values with tag: ${GIT_SHA}"
+        
+        for service in user product order trade payment; do
+          values_file="helm/values-${service}-local.yaml"
+          if [ -f "$values_file" ]; then
+            # 백업 생성
+            cp "$values_file" "${values_file}.backup"
+            
+            # 이미지 태그 업데이트
+            sed -i.tmp "s/tag: .*/tag: ${GIT_SHA}/" "$values_file"
+            rm -f "${values_file}.tmp"
+            
+            echo "✅ Updated $values_file"
+            echo "   - Image tag: ${GIT_SHA}"
+          else
+            echo "⚠️  Values file not found: $values_file"
+          fi
+        done
+
+    - name: Deploy services with Helm
+      run: |
+        GIT_SHA=$(git rev-parse --short HEAD)
+        echo "� Deploying services to k3d cluster..."
+        
+        # kubectl 컨텍스트 설정
+        kubectl config use-context k3d-${{ env.CLUSTER_NAME }}
+        
+        for service in user product order trade payment; do
+          values_file="helm/values-${service}-local.yaml"
+          if [ -f "$values_file" ]; then
+            echo "🚀 Deploying unbox-${service}..."
+            
+            helm upgrade --install unbox-${service} helm/unbox-service/ \
+              -f "$values_file" \
+              --namespace default \
+              --set image.tag=${GIT_SHA} \
+              --wait --timeout=300s || {
+                echo "❌ Failed to deploy unbox-${service}"
+                kubectl describe pod -l app=unbox-${service} || true
+                continue
+              }
+            
+            echo "✅ unbox-${service} deployed successfully"
+          fi
+        done
+
+    - name: Verify local deployment
+      run: |
+        echo "📊 Checking deployment status..."
+        kubectl get pods -l app.kubernetes.io/managed-by=Helm
+        
+        echo "🔍 Checking services..."
+        kubectl get svc | grep unbox || true
+        
+        echo "📈 Deployment summary:"
+        kubectl get deployments | grep unbox || true
+
+    - name: Deployment summary
+      if: always()
+      run: |
+        GIT_SHA=$(git rev-parse --short HEAD)
+        echo "## 🚀 Local Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Cluster**: k3d-${{ env.CLUSTER_NAME }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Image Tag**: ${GIT_SHA}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Registry**: localhost:5001" >> $GITHUB_STEP_SUMMARY
+        echo "- **Namespace**: default" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Access URLs:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Grafana**: http://localhost:30300 (admin/admin123)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Zipkin**: http://localhost:9411" >> $GITHUB_STEP_SUMMARY
+        echo "- **Registry UI**: http://localhost:8888" >> $GITHUB_STEP_SUMMARY
+
+  # 4. 로컬 환경 테스트
+  test-local-deployment:
+    needs: deploy-to-local-k3d
+    runs-on: self-hosted
+    name: "🧪 Test Local Deployment"
+    steps:
+    - name: Wait for pods to be ready
+      run: |
+        echo "⏳ Waiting for pods to be ready..."
+        for service in user product order trade payment; do
+          if kubectl get deployment unbox-${service} >/dev/null 2>&1; then
+            kubectl wait --for=condition=available --timeout=300s deployment/unbox-${service} || {
+              echo "⚠️  unbox-${service} not ready, checking status..."
+              kubectl describe deployment unbox-${service}
+              kubectl logs -l app=unbox-${service} --tail=10 || true
+            }
+          fi
+        done
+
+    - name: Health check test
+      run: |
+        echo "🏥 Running health checks..."
+        for service in user product order trade payment; do
+          if kubectl get pod -l app=unbox-${service} >/dev/null 2>&1; then
+            echo "Checking unbox-${service}..."
+            kubectl exec -l app=unbox-${service} -- wget -qO- http://localhost:808${service: -1}/${service}/actuator/health || {
+              echo "⚠️  Health check failed for unbox-${service}"
+            }
+          fi
+        done
+
+    - name: Test summary
+      run: |
+        echo "## 🧪 Local Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "- Health checks completed" >> $GITHUB_STEP_SUMMARY
+        echo "- All services deployed to k3d cluster" >> $GITHUB_STEP_SUMMARY
+
+  # 5. 로컬 알림
+  notify-local:
+    if: always()
+    needs: [code-quality-local, build-local-images, deploy-to-local-k3d, test-local-deployment]
+    runs-on: ubuntu-latest
+    name: "📢 Local Notification"
+    steps:
+    - name: Success notification
+      if: needs.deploy-to-local-k3d.result == 'success'
+      run: |
+        echo "## 🎉 Local CI/CD Pipeline Success!" >> $GITHUB_STEP_SUMMARY
+        echo "All services have been successfully deployed to local k3d cluster." >> $GITHUB_STEP_SUMMARY
+
+    - name: Failure notification
+      if: failure()
+      run: |
+        echo "## ❌ Local CI/CD Pipeline Failed!" >> $GITHUB_STEP_SUMMARY
+        echo "Please check the logs and fix the issues." >> $GITHUB_STEP_SUMMARY

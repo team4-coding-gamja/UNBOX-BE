@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: unbox-user
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: unbox-user
+    app.kubernetes.io/part-of: unbox-platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  
+  # Git 소스 설정
+  source:
+    repoURL: https://github.com/your-org/UNBOX-BE.git  # 실제 Git 저장소 URL로 변경 필요
+    targetRevision: HEAD
+    path: helm/unbox-service
+    helm:
+      valueFiles:
+        - ../values-user-local.yaml
+      parameters:
+        - name: image.tag
+          value: "latest"  # CI에서 동적으로 업데이트됨
+  
+  # 배포 대상 클러스터
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  
+  # 동기화 정책
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  # 헬스체크 설정
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+  
+  # 알림 설정
+  revisionHistoryLimit: 10

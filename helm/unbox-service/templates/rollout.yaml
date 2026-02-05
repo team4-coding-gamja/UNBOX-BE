@@ -1,0 +1,109 @@
+{{- if .Values.rollouts.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+    app: {{ .Values.service.name }}
+    version: {{ .Values.image.tag }}
+    {{- if .Values.serviceMesh.enabled }}
+    linkerd.io/inject: {{ .Values.serviceMesh.inject | quote }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  
+  {{- if eq .Values.rollouts.strategy "blueGreen" }}
+  strategy:
+    blueGreen:
+      activeService: {{ .Values.rollouts.blueGreen.activeService }}
+      previewService: {{ .Values.rollouts.blueGreen.previewService }}
+      autoPromotionEnabled: {{ .Values.rollouts.blueGreen.autoPromotionEnabled }}
+      scaleDownDelaySeconds: {{ .Values.rollouts.blueGreen.scaleDownDelaySeconds }}
+      {{- if .Values.rollouts.blueGreen.prePromotionAnalysis }}
+      prePromotionAnalysis:
+        {{- toYaml .Values.rollouts.blueGreen.prePromotionAnalysis | nindent 8 }}
+      {{- end }}
+      {{- if .Values.rollouts.blueGreen.postPromotionAnalysis }}
+      postPromotionAnalysis:
+        {{- toYaml .Values.rollouts.blueGreen.postPromotionAnalysis | nindent 8 }}
+      {{- end }}
+  {{- else if eq .Values.rollouts.strategy "canary" }}
+  strategy:
+    canary:
+      maxSurge: {{ .Values.rollouts.canary.maxSurge }}
+      maxUnavailable: {{ .Values.rollouts.canary.maxUnavailable }}
+      steps:
+      {{- range .Values.rollouts.canary.steps }}
+      - setWeight: {{ .setWeight | default "" }}
+        {{- if .pause }}
+        pause: 
+          {{- if .pause.duration }}
+          duration: {{ .pause.duration }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.rollouts.canary.analysis }}
+      analysis:
+        {{- toYaml .Values.rollouts.canary.analysis | nindent 8 }}
+      {{- end }}
+  {{- end }}
+  
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service.name }}
+        version: {{ .Values.image.tag }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.port }}"
+        prometheus.io/path: "{{ .Values.observability.metrics.path }}"
+    spec:
+      containers:
+      - name: {{ .Values.service.name }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.targetPort }}
+          name: http
+        {{- if .Values.env }}
+        env:
+        {{- range .Values.env }}
+        - name: {{ .name }}
+          value: {{ .value | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.healthCheck.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.healthCheck.path }}
+            port: {{ .Values.service.targetPort }}
+          initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+          periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+          timeoutSeconds: {{ .Values.healthCheck.timeoutSeconds }}
+          failureThreshold: {{ .Values.healthCheck.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.healthCheck.path }}
+            port: {{ .Values.service.targetPort }}
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: {{ .Values.healthCheck.timeoutSeconds }}
+          failureThreshold: 3
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- if .Values.observability.logging.enabled }}
+        volumeMounts:
+        - name: log-volume
+          mountPath: {{ .Values.observability.logging.logPath }}
+        {{- end }}
+      {{- if .Values.observability.logging.enabled }}
+      volumes:
+      - name: log-volume
+        emptyDir: {}
+      {{- end }}
+{{- end }}

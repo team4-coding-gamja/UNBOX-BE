@@ -1,0 +1,18 @@
+{{- if .Values.observability.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Values.service.name }}-metrics
+  labels:
+    app: {{ .Values.service.name }}
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  endpoints:
+  - port: http
+    path: {{ .Values.observability.metrics.path }}
+    interval: 30s
+    scrapeTimeout: 10s
+{{- end }}

@@ -1,0 +1,121 @@
+# Universal Helm Chart for UNBOX Services
+# 각 서비스별로 values-{service}.yaml로 오버라이드
+
+# 서비스 기본 정보
+service:
+  name: unbox-service
+  port: 8080
+  targetPort: 8080
+  type: ClusterIP
+
+# 이미지 설정
+image:
+  repository: unbox-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# 복제본 수
+replicaCount: 1
+
+# 리소스 제한
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
+
+# 환경 변수
+env:
+  - name: SPRING_PROFILES_ACTIVE
+    value: "local"
+  - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+    value: "http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans"
+  - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+    value: "health,info,metrics,prometheus"
+
+# 헬스체크 설정
+healthCheck:
+  enabled: true
+  path: /actuator/health
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# 관측성 설정
+observability:
+  metrics:
+    enabled: true
+    port: 8080
+    path: /actuator/prometheus
+  tracing:
+    enabled: true
+    zipkinUrl: "http://zipkin.monitoring.svc.cluster.local:9411"
+  logging:
+    enabled: true
+    logPath: "/var/log"
+
+# Ingress 설정
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: localhost
+      paths:
+        - path: /
+          pathType: Prefix
+
+# 배포 전략
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1
+
+# 오토스케일링
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+# 서비스 메시 (향후 Linkerd 사용)
+serviceMesh:
+  enabled: false
+  inject: false
+
+# ArgoCD Rollouts 설정
+rollouts:
+  enabled: false
+  strategy: rollingUpdate  # rollingUpdate, blueGreen, canary
+  
+  # Blue-Green 배포 설정
+  blueGreen:
+    activeService: ""
+    previewService: ""
+    autoPromotionEnabled: true
+    scaleDownDelaySeconds: 30
+    prePromotionAnalysis:
+      templates: []
+      args: []
+    postPromotionAnalysis:
+      templates: []
+      args: []
+  
+  # Canary 배포 설정
+  canary:
+    maxSurge: "25%"
+    maxUnavailable: 0
+    steps: []
+    analysis:
+      templates: []
+      args: []
+      startingStep: 2
+      interval: 20s
+      count: 3
+      successCondition: result[0] >= 0.95
+      failureCondition: result[0] < 0.95

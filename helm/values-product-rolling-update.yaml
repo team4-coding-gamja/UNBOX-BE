@@ -1,0 +1,115 @@
+# unbox-product 로컬 배포용 설정
+
+service:
+  name: unbox-product
+  port: 8082
+  targetPort: 8082
+
+image:
+  repository: k3d-unbox-registry:5000/unbox-product
+  tag: b5bff58
+  pullPolicy: Always
+
+env:
+  - name: SPRING_PROFILES_ACTIVE
+    value: "local"
+  - name: SPRING_APPLICATION_NAME
+    value: "unbox-product"
+  - name: SERVER_PORT
+    value: "8082"
+  - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+    value: "http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans"
+  - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+    value: "health,info,metrics,prometheus"
+  - name: MANAGEMENT_TRACING_SAMPLING_PROBABILITY
+    value: "1.0"
+  - name: SPRING_JWT_SECRET
+    value: "/zLs4Tf5vCe9VA/yX6omomrza7Y+4KHDgkkUFwWqIDz7uK7shp1eDwpbTvm+pfynlnc/eUZo3AySkNIqQSWSrw=="
+  - name: SPRING_DATASOURCE_URL
+    value: "jdbc:postgresql://postgresql.default.svc.cluster.local:5432/unbox"
+  - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+    value: "org.postgresql.Driver"
+  - name: SPRING_DATASOURCE_USERNAME
+    value: "postgres"
+  - name: SPRING_DATASOURCE_PASSWORD
+    value: "password"
+  - name: SPRING_JPA_DATABASE_PLATFORM
+    value: "org.hibernate.dialect.PostgreSQLDialect"
+  - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+    value: "update"
+  - name: SPRING_H2_CONSOLE_ENABLED
+    value: "false"
+  - name: SPRING_DATA_REDIS_HOST
+    value: "redis-master.default.svc.cluster.local"
+  - name: SPRING_DATA_REDIS_PORT
+    value: "6379"
+  # 캐시 무효화를 위한 캐시 키 prefix 변경
+  - name: SPRING_CACHE_REDIS_KEY_PREFIX
+    value: "product:v2:"
+  - name: SPRING_CACHE_REDIS_TIME_TO_LIVE
+    value: "3600"
+  # Kafka 설정 추가
+  - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+    value: "kafka.default.svc.cluster.local:9092"
+  - name: SPRING_KAFKA_CONSUMER_GROUP_ID
+    value: "product-group"
+  - name: SPRING_KAFKA_CONSUMER_AUTO_OFFSET_RESET
+    value: "earliest"
+  # Micrometer 메트릭 설정 (Histogram 활성화)
+  - name: MANAGEMENT_METRICS_DISTRIBUTION_PERCENTILES_HISTOGRAM_HTTP_SERVER_REQUESTS
+    value: "true"
+  - name: MANAGEMENT_METRICS_DISTRIBUTION_SLA_HTTP_SERVER_REQUESTS
+    value: "50ms,100ms,200ms,300ms,500ms,1s,2s"
+
+# 헬스체크 설정 (Product 서비스는 시작이 오래 걸림)
+healthCheck:
+  enabled: true
+  path: /product/actuator/health
+  initialDelaySeconds: 300  # Liveness: 5분으로 증가
+  periodSeconds: 30         # 30초로 증가
+  timeoutSeconds: 15        # 15초로 증가
+  failureThreshold: 5       # 5번으로 감소
+  # Readiness 별도 설정
+  readinessInitialDelaySeconds: 300  # Readiness도 5분으로 설정
+  readinessPeriodSeconds: 10         # 10초마다 체크
+  readinessFailureThreshold: 5       # 5번 실패까지 허용
+
+# 관측성 설정 (Prometheus 메트릭 수집용)
+observability:
+  metrics:
+    enabled: true
+    port: 8082
+    path: /product/actuator/prometheus
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  hosts:
+    - host: localhost
+      paths:
+        - path: /api/v1/product(/|$)(.*)
+          pathType: Prefix
+
+# Blue-Green 배포 전략 (ArgoCD Rollouts)
+rollouts:
+  enabled: false  # 일단 기본 Deployment 사용
+  strategy: blueGreen
+  blueGreen:
+    activeService: unbox-product
+    previewService: unbox-product-preview
+    autoPromotionEnabled: false
+    scaleDownDelaySeconds: 30
+    prePromotionAnalysis:
+      templates:
+      - templateName: success-rate
+      args:
+      - name: service-name
+        value: unbox-product
+    postPromotionAnalysis:
+      templates:
+      - templateName: success-rate
+      args:
+      - name: service-name
+        value: unbox-product

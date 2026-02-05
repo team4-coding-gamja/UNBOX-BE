@@ -1,0 +1,67 @@
+# unbox-user 로컬 배포용 설정
+
+service:
+  name: unbox-user
+  port: 8081
+  targetPort: 8081
+
+image:
+  repository: k3d-unbox-registry:5000/unbox-user
+  tag: springboot-arm64
+  pullPolicy: Always
+
+env:
+  - name: SPRING_PROFILES_ACTIVE
+    value: "local"
+  - name: SPRING_APPLICATION_NAME
+    value: "unbox-user"
+  - name: SERVER_PORT
+    value: "8081"
+  - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+    value: "health,info,metrics,prometheus"
+  - name: MANAGEMENT_TRACING_SAMPLING_PROBABILITY
+    value: "0.0"
+  - name: SPRING_JWT_SECRET
+    value: "/zLs4Tf5vCe9VA/yX6omomrza7Y+4KHDgkkUFwWqIDz7uK7shp1eDwpbTvm+pfynlnc/eUZo3AySkNIqQSWSrw=="
+  - name: SPRING_DATASOURCE_URL
+    value: "jdbc:postgresql://postgresql.default.svc.cluster.local:5432/unbox"
+  - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+    value: "org.postgresql.Driver"
+  - name: SPRING_DATASOURCE_USERNAME
+    value: "postgres"
+  - name: SPRING_DATASOURCE_PASSWORD
+    value: "password"
+  - name: SPRING_JPA_DATABASE_PLATFORM
+    value: "org.hibernate.dialect.PostgreSQLDialect"
+  - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+    value: "update"
+  - name: SPRING_H2_CONSOLE_ENABLED
+    value: "false"
+  - name: SPRING_DATA_REDIS_HOST
+    value: "redis-master.default.svc.cluster.local"
+  - name: SPRING_DATA_REDIS_PORT
+    value: "6379"
+  - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+    value: "kafka.default.svc.cluster.local:9092"
+
+# 헬스체크 설정 (테스트용으로 비활성화)
+healthCheck:
+  enabled: false
+
+# 관측성 설정 (Prometheus 메트릭 수집용)
+observability:
+  metrics:
+    enabled: true
+    port: 8081
+    path: /user/actuator/prometheus
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  hosts:
+    - host: localhost
+      paths:
+        - path: /api/v1/user(/|$)(.*)
+          pathType: Prefix

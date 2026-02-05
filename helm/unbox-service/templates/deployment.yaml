@@ -1,0 +1,78 @@
+{{- if not .Values.rollouts.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+  labels:
+    app: {{ .Values.service.name }}
+    version: {{ .Values.image.tag }}
+    {{- if .Values.serviceMesh.enabled }}
+    linkerd.io/inject: {{ .Values.serviceMesh.inject | quote }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: {{ .Values.strategy.type }}
+    {{- if eq .Values.strategy.type "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
+    {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service.name }}
+        version: {{ .Values.image.tag }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.port }}"
+        prometheus.io/path: "{{ .Values.observability.metrics.path }}"
+    spec:
+      containers:
+      - name: {{ .Values.service.name }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.targetPort }}
+          name: http
+        {{- if .Values.env }}
+        env:
+        {{- range .Values.env }}
+        - name: {{ .name }}
+          value: {{ .value | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if .Values.healthCheck.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.healthCheck.path }}
+            port: {{ .Values.service.targetPort }}
+          initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+          periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+          timeoutSeconds: {{ .Values.healthCheck.timeoutSeconds }}
+          failureThreshold: {{ .Values.healthCheck.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.healthCheck.path }}
+            port: {{ .Values.service.targetPort }}
+          initialDelaySeconds: {{ .Values.healthCheck.readinessInitialDelaySeconds | default 10 }}
+          periodSeconds: {{ .Values.healthCheck.readinessPeriodSeconds | default 5 }}
+          timeoutSeconds: {{ .Values.healthCheck.timeoutSeconds }}
+          failureThreshold: {{ .Values.healthCheck.readinessFailureThreshold | default 3 }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- if .Values.observability.logging.enabled }}
+        volumeMounts:
+        - name: log-volume
+          mountPath: {{ .Values.observability.logging.logPath }}
+        {{- end }}
+      {{- if .Values.observability.logging.enabled }}
+      volumes:
+      - name: log-volume
+        emptyDir: {}
+      {{- end }}
+{{- end }}

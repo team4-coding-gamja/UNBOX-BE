@@ -1,0 +1,40 @@
+# 로컬 k3d 환경용 설정
+
+# 리소스 제한 (로컬 환경에 맞게 축소)
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "250m"
+
+# 복제본 수 (로컬에서는 1개)
+replicaCount: 1
+
+# 오토스케일링 비활성화 (로컬 환경)
+autoscaling:
+  enabled: false
+
+# 환경 변수 (로컬 환경용)
+env:
+  - name: SPRING_PROFILES_ACTIVE
+    value: "local"
+  - name: MANAGEMENT_ZIPKIN_TRACING_ENDPOINT
+    value: "http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans"
+  - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+    value: "health,info,metrics,prometheus"
+  - name: MANAGEMENT_TRACING_SAMPLING_PROBABILITY
+    value: "1.0"
+
+# Ingress 설정 (로컬 환경)
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  hosts:
+    - host: localhost
+      paths:
+        - path: /api/v1/users(/|$)(.*)
+          pathType: Prefix

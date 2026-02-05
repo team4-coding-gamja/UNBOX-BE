@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+  namespace: default
+spec:
+  args:
+  - name: service-name
+    value: unbox-service
+  - name: prometheus-url
+    value: http://prometheus-server.monitoring.svc.cluster.local:80
+  
+  metrics:
+  - name: success-rate
+    interval: 30s
+    count: 5
+    successCondition: result[0] >= 0.95
+    failureCondition: result[0] < 0.90
+    provider:
+      prometheus:
+        address: "{{args.prometheus-url}}"
+        query: |
+          sum(rate(http_requests_total{job="{{args.service-name}}", status!~"5.."}[2m])) /
+          sum(rate(http_requests_total{job="{{args.service-name}}"}[2m]))
+  
+  - name: avg-response-time
+    interval: 30s
+    count: 5
+    successCondition: result[0] <= 0.5
+    failureCondition: result[0] > 1.0
+    provider:
+      prometheus:
+        address: "{{args.prometheus-url}}"
+        query: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="{{args.service-name}}"}[2m])) by (le)
+          )
+  
+  - name: error-rate
+    interval: 30s
+    count: 5
+    successCondition: result[0] <= 0.05
+    failureCondition: result[0] > 0.10
+    provider:
+      prometheus:
+        address: "{{args.prometheus-url}}"
+        query: |
+          sum(rate(http_requests_total{job="{{args.service-name}}", status=~"5.."}[2m])) /
+          sum(rate(http_requests_total{job="{{args.service-name}}"}[2m]))

@@ -1,0 +1,99 @@
+# Order Service 최소 설정 (리소스 증가)
+
+service:
+  name: unbox-order
+  port: 8083
+  targetPort: 8083
+
+image:
+  repository: k3d-unbox-registry:5000/unbox-order
+  tag: b5bff58
+  pullPolicy: Always
+
+# 리소스 증가
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "500m"
+  limits:
+    memory: "2Gi"
+    cpu: "1000m"
+
+env:
+  - name: SPRING_PROFILES_ACTIVE
+    value: "local"
+  - name: SPRING_APPLICATION_NAME
+    value: "unbox-order"
+  - name: SERVER_PORT
+    value: "8083"
+  - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+    value: "health,info,metrics,prometheus"
+  - name: MANAGEMENT_TRACING_SAMPLING_PROBABILITY
+    value: "0.0"
+  - name: SPRING_JWT_SECRET
+    value: "/zLs4Tf5vCe9VA/yX6omomrza7Y+4KHDgkkUFwWqIDz7uK7shp1eDwpbTvm+pfynlnc/eUZo3AySkNIqQSWSrw=="
+  # DB 환경변수 (application.yml에서 사용)
+  - name: DB_URL
+    value: "jdbc:postgresql://postgresql.default.svc.cluster.local:5432/unbox"
+  - name: DB_DRIVER_CLASS_NAME
+    value: "org.postgresql.Driver"
+  - name: DB_USERNAME
+    value: "postgres"
+  - name: DB_PASSWORD
+    value: "password"
+  - name: SPRING_JPA_DATABASE_PLATFORM
+    value: "org.hibernate.dialect.PostgreSQLDialect"
+  - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+    value: "update"
+  - name: SPRING_H2_CONSOLE_ENABLED
+    value: "false"
+  # Kafka 환경변수 (application.yml에서 사용)
+  - name: KAFKA_BOOTSTRAP_SERVERS
+    value: "kafka.default.svc.cluster.local:9092"
+  # Redis 설정 (패스워드 없음)
+  - name: SPRING_DATA_REDIS_HOST
+    value: "redis-master.default.svc.cluster.local"
+  - name: SPRING_DATA_REDIS_PORT
+    value: "6379"
+  - name: SPRING_DATA_REDIS_REPOSITORIES_ENABLED
+    value: "false"
+  - name: SPRING_CACHE_TYPE
+    value: "redis"
+  # JVM 메모리 설정
+  - name: JAVA_OPTS
+    value: "-Xms512m -Xmx1536m -XX:+UseG1GC"
+
+# 헬스체크 설정 (Order Service 시작 시간 고려)
+healthCheck:
+  enabled: true
+  path: /order/actuator/health
+  initialDelaySeconds: 240  # 4분 대기 (Order Service 시작 시간 고려)
+  periodSeconds: 15         # 15초마다 체크
+  timeoutSeconds: 10        # 10초 타임아웃
+  failureThreshold: 10      # 10번 실패까지 허용
+  # Readiness 별도 설정
+  readinessInitialDelaySeconds: 180   # 3분 대기
+  readinessPeriodSeconds: 10          # 10초마다 체크
+  readinessFailureThreshold: 10       # 10번 실패까지 허용
+
+# 관측성 설정 (Prometheus 메트릭 수집용)
+observability:
+  metrics:
+    enabled: true
+    port: 8083
+    path: /order/actuator/prometheus
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  hosts:
+    - host: localhost
+      paths:
+        - path: /api/v1/order(/|$)(.*)
+          pathType: Prefix
+
+# Blue-Green 배포 전략 (ArgoCD Rollouts)
+rollouts:
+  enabled: false  # 일단 기본 Deployment 사용

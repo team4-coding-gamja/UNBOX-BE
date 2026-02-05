@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: unbox-order
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: unbox-order
+    app.kubernetes.io/part-of: unbox-platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  
+  # Git 소스 설정
+  source:
+    repoURL: https://github.com/your-org/UNBOX-BE.git  # 실제 Git 저장소 URL로 변경 필요
+    targetRevision: HEAD
+    path: helm/unbox-service
+    helm:
+      valueFiles:
+        - ../values-order-local.yaml
+      parameters:
+        - name: image.tag
+          value: "latest"  # CI에서 동적으로 업데이트됨
+        - name: rollouts.enabled
+          value: "true"
+        - name: rollouts.strategy
+          value: "blueGreen"
+  
+  # 배포 대상 클러스터
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  
+  # 동기화 정책 (Blue-Green 전략)
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false  # Blue-Green에서는 수동 승인 필요
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+  
+  # Blue-Green 배포 설정
+  ignoreDifferences:
+    - group: argoproj.io
+      kind: Rollout
+      jsonPointers:
+        - /spec/replicas
+        - /status
+  
+  revisionHistoryLimit: 5

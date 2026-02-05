@@ -241,14 +241,13 @@ public class BuyingBidInternalService {
     // [Asynchronous] Redis 키 만료 시 호출
     @Transactional
     public void resetMatchedBid(UUID buyingBidId) {
-        BuyingBid buyingBid = buyingBidRepository.findById(buyingBidId)
+        BuyingBid buyingBid = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
         if (buyingBid.getStatus() == BuyingStatus.MATCHED) {
             buyingBid.resetMatch(); // 엔티티의 resetMatch() 메서드 호출
 
-            log.info("BuyingBid {} reset to LIVE (seller={} removed)",
-                    buyingBidId, buyingBid.getSellerId());
+            log.info("BuyingBid {} reset to LIVE (seller={} removed)", buyingBidId, buyingBid.getSellerId());
 
             // 캐시 무효화
             evictBuyingBidCache(buyingBidId);

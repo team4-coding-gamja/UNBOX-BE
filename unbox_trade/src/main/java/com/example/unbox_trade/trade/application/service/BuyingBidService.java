@@ -208,10 +208,10 @@ public class BuyingBidService {
             Boolean result = redisTemplate.opsForValue().setIfAbsent(
                     timeoutKey,
                     "MATCHED",
-                    Duration.ofMinutes(1440));
+                    Duration.ofHours(24));
 
             if (!Boolean.TRUE.equals(result)) {
-                log.warn("Failed to set match timeout for BuyingBid: {}", buyingBidId);
+                log.warn("Match timeout key already exists for BuyingBid: {} - possible duplicate match attempt", buyingBidId);
             }
 
             log.info("Match timeout set for BuyingBid {}: 24 hours (1440 minutes)", buyingBidId);

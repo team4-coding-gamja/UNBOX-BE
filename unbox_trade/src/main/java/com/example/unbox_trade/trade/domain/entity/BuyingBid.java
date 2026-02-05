@@ -96,6 +96,9 @@ public class BuyingBid extends BaseEntity {
         if (this.status != BuyingStatus.LIVE) {
             throw new CustomException(ErrorCode.INVALID_BID_STATUS);
         }
+        if (sellerId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
         this.sellerId = sellerId;
         this.status = BuyingStatus.MATCHED;
         this.matchedAt = LocalDateTime.now();

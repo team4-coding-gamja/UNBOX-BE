@@ -1,6 +1,5 @@
 package com.example.unbox_trade.trade.presentation.controller;
 
-import com.example.unbox_common.response.CustomApiResponse;
 import com.example.unbox_trade.trade.application.service.BuyingBidInternalService;
 import com.example.unbox_trade.trade.presentation.dto.internal.BuyingBidForOrderInfoResponse;
 import com.example.unbox_trade.trade.presentation.dto.internal.HighestPriceResponseDto;
@@ -23,63 +22,58 @@ public class BuyingBidInternalController {
     // ✅ 구매 글 조회 (주문용)
     @Operation(summary = "구매 글 조회 (주문용)", description = "주문 처리를 위해 구매 입찰 정보를 조회합니다.")
     @GetMapping("/{buyingBidId}/order-info")
-    public CustomApiResponse<BuyingBidForOrderInfoResponse> getBuyingBidForOrder(@PathVariable UUID buyingBidId) {
-        return CustomApiResponse.success(buyingBidInternalService.getBuyingBidForOrder(buyingBidId));
+    public BuyingBidForOrderInfoResponse getBuyingBidForOrder(@PathVariable UUID buyingBidId) {
+        return buyingBidInternalService.getBuyingBidForOrder(buyingBidId);
     }
 
     // ✅ 구매 입찰 선점 (주문용: LIVE → RESERVED)
     @Operation(summary = "구매 입찰 선점", description = "주문 시작 시 구매 입찰의 상태를 LIVE에서 RESERVED로 변경합니다.")
     @PostMapping("/{buyingBidId}/reserve")
-    public CustomApiResponse<Void> reserveBuyingBid(@PathVariable UUID buyingBidId,
+    public void reserveBuyingBid(@PathVariable UUID buyingBidId,
             @RequestParam(value = "updatedBy", defaultValue = "SYSTEM") String updatedBy) {
         buyingBidInternalService.reserveBuyingBid(buyingBidId, updatedBy);
-        return CustomApiResponse.successWithNoData();
     }
 
     // ✅ 구매 입찰 완료 처리 (결제 완료용: RESERVED → SOLD)
     @Operation(summary = "구매 입찰 완료 처리", description = "결제 완료 후 구매 입찰의 상태를 RESERVED에서 SOLD로 변경합니다.")
     @PostMapping("/{buyingBidId}/sold")
-    public CustomApiResponse<Void> soldBuyingBid(@PathVariable UUID buyingBidId,
+    public void soldBuyingBid(@PathVariable UUID buyingBidId,
             @RequestParam(value = "updatedBy", defaultValue = "SYSTEM") String updatedBy) {
         buyingBidInternalService.soldBuyingBid(buyingBidId, updatedBy);
-        return CustomApiResponse.successWithNoData();
     }
 
     // ✅ 구매 입찰 만료 처리 (주문 취소 시: RESERVED → CANCELLED)
     @Operation(summary = "구매 입찰 만료 처리", description = "주문 취소 시 구매 입찰의 상태를 RESERVED에서 CANCELLED로 변경합니다.")
     @PostMapping("/{buyingBidId}/expire")
-    public CustomApiResponse<Void> expireBuyingBid(@PathVariable UUID buyingBidId) {
+    public void expireBuyingBid(@PathVariable UUID buyingBidId) {
         buyingBidInternalService.expireBuyingBid(buyingBidId);
-        return CustomApiResponse.successWithNoData();
     }
 
     // ✅ 구매 입찰 복구 (결제 실패/취소용: RESERVED → LIVE)
     @Operation(summary = "구매 입찰 복구", description = "결제 실패 또는 취소 시 구매 입찰의 상태를 RESERVED에서 LIVE로 복구합니다.")
     @PostMapping("/{buyingBidId}/live")
-    public CustomApiResponse<Void> liveBuyingBid(@PathVariable UUID buyingBidId,
+    public void liveBuyingBid(@PathVariable UUID buyingBidId,
             @RequestParam(value = "updatedBy", defaultValue = "SYSTEM") String updatedBy) {
         buyingBidInternalService.liveBuyingBid(buyingBidId, updatedBy);
-        return CustomApiResponse.successWithNoData();
     }
 
     // ✅ 상품 옵션별 최고가 조회 (Internal)
     @Operation(summary = "상품 옵션별 최고가 조회", description = "특정 상품 옵션의 최고가 구매 입찰 가격을 조회합니다.")
     @GetMapping("/product-option/{productOptionId}/highest-price")
-    public CustomApiResponse<HighestPriceResponseDto> getHighestPrice(@PathVariable UUID productOptionId) {
-        return CustomApiResponse.success(buyingBidInternalService.getHighestPrice(productOptionId));
+    public HighestPriceResponseDto getHighestPrice(@PathVariable UUID productOptionId) {
+        return buyingBidInternalService.getHighestPrice(productOptionId);
     }
 
     // ✅ 상품 옵션별 최고가 조회 (Internal)
     @Operation(summary = "상품 옵션별 최고가 조회 (배치)", description = "여러 상품 옵션의 최고가 구매 입찰 가격을 한꺼번에 조회합니다.")
     @PostMapping("/product-options/highest-price")
-    public CustomApiResponse<List<HighestPriceResponseDto>> getHighestPrices(@RequestBody List<UUID> productOptionIds) {
-        return CustomApiResponse.success(buyingBidInternalService.getHighestPrices(productOptionIds));
+    public List<HighestPriceResponseDto> getHighestPrices(@RequestBody List<UUID> productOptionIds) {
+        return buyingBidInternalService.getHighestPrices(productOptionIds);
     }
 
     // ✅ match -> live
     @PostMapping("/{buyingBidId}/reset-match")
-    public CustomApiResponse<Void> resetMatchedBid(@PathVariable UUID buyingBidId) {
+    public void resetMatchedBid(@PathVariable UUID buyingBidId) {
         buyingBidInternalService.resetMatchedBid(buyingBidId);
-        return CustomApiResponse.successWithNoData();
     }
 }

@@ -6,6 +6,9 @@ public enum BuyingStatus {
     // 구매 입찰 활성 상태
     // 판매 입찰과 매칭 가능
 
+    MATCHED,
+    // 판매자 매칭됨 (구매자 결제 대기)
+
     RESERVED,
     // 판매 입찰과 매칭되어 예약된 상태 (기존 MATCHED)
     // 주문 생성 또는 결제 대기 단계

@@ -26,8 +26,11 @@ public class BuyingBid extends BaseEntity {
     private UUID id;
 
     // ======================= ID 참조 =======================
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "buyer_id", nullable = false)
     private Long buyerId;
+
+    @Column(name = "seller_id")
+    private Long sellerId;
 
     @Column(name = "product_option_id", nullable = false)
     private UUID productOptionId;
@@ -45,6 +48,9 @@ public class BuyingBid extends BaseEntity {
     private BuyingStatus status = BuyingStatus.LIVE;
 
     private LocalDateTime deadline;
+
+    @Column(name = "matched_at")  // 매칭 시각 (타임아웃 계산용)
+    private LocalDateTime matchedAt;
 
     // ======================= 상품 스냅샷 =======================
     @Column(name = "product_name", nullable = false)
@@ -83,5 +89,24 @@ public class BuyingBid extends BaseEntity {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
         this.status = status;
+    }
+
+    // ✅ 비즈니스 로직: 판매자 매칭
+    public void matchWithSeller(Long sellerId) {
+        if (this.status != BuyingStatus.LIVE) {
+            throw new CustomException(ErrorCode.INVALID_BID_STATUS);
+        }
+        this.sellerId = sellerId;
+        this.status = BuyingStatus.MATCHED;
+        this.matchedAt = LocalDateTime.now();
+    }
+
+    public void resetMatch() {
+        if (this.status != BuyingStatus.MATCHED) {
+            throw new CustomException(ErrorCode.INVALID_BID_STATUS);
+        }
+        this.sellerId = null;
+        this.matchedAt = null;
+        this.status = BuyingStatus.LIVE;
     }
 }

@@ -40,32 +40,32 @@ public class BuyingBidController implements BuyingBidApi {
     }
 
     // ✅ 구매 입찰 취소
-    @DeleteMapping("/{buyingId}")
+    @DeleteMapping("/{buyingBidId}")
     public CustomApiResponse<Void> cancelBuyingBid(
-            @PathVariable UUID buyingId,
+            @PathVariable UUID buyingBidId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         String deleteBy = userDetails.getUsername();
-        buyingBidService.cancelBuyingBid(buyingId, userDetails.getUserId(), deleteBy);
+        buyingBidService.cancelBuyingBid(buyingBidId, userDetails.getUserId(), deleteBy);
         return CustomApiResponse.successWithNoData();
     }
 
     // ✅ 구매 입찰 가격 수정
-    @PatchMapping("/{buyingId}/price")
+    @PatchMapping("/{buyingBidId}/price")
     public CustomApiResponse<BuyingBidsPriceUpdateResponseDto> updatePrice(
-            @PathVariable UUID buyingId,
+            @PathVariable UUID buyingBidId,
             @Valid @RequestBody BuyingBidsPriceUpdateRequestDto requestDto,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        BuyingBidsPriceUpdateResponseDto response = buyingBidService.updateBuyingBidPrice(buyingId, requestDto,
+        BuyingBidsPriceUpdateResponseDto response = buyingBidService.updateBuyingBidPrice(buyingBidId, requestDto,
                 userDetails.getUserId());
         return CustomApiResponse.success(response);
     }
 
     // ✅ 구매 입찰 단건 조회
-    @GetMapping("/{buyingId}")
+    @GetMapping("/{buyingBidId}")
     public CustomApiResponse<BuyingBidDetailResponseDto> getBuyingBidDetail(
-            @PathVariable UUID buyingId,
+            @PathVariable UUID buyingBidId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        BuyingBidDetailResponseDto response = buyingBidService.getBuyingBidDetail(buyingId, userDetails.getUserId());
+        BuyingBidDetailResponseDto response = buyingBidService.getBuyingBidDetail(buyingBidId, userDetails.getUserId());
         return CustomApiResponse.success(response);
     }
 
@@ -77,5 +77,15 @@ public class BuyingBidController implements BuyingBidApi {
         Pageable limited = PageSizeLimiter.limit(pageable);
         Slice<BuyingBidListResponseDto> response = buyingBidService.getMyBuyingBids(userDetails.getUserId(), limited);
         return CustomApiResponse.success(response);
+    }
+
+    // ✅ 판매자 매칭
+    @PostMapping("/{buyingBidId}/match")
+    public CustomApiResponse<Void> matchBuyingBid(
+            @PathVariable UUID buyingBidId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long sellerId = userDetails.getUserId();
+        buyingBidService.matchBuyingBid(buyingBidId, sellerId);
+        return CustomApiResponse.successWithNoData();
     }
 }

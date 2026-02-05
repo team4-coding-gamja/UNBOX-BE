@@ -1,5 +1,6 @@
 package com.example.unbox_trade.trade.application.service;
 
+import com.example.unbox_common.event.trade.BuyingBidMatchedEvent;
 import com.example.unbox_trade.common.client.product.ProductClient;
 import com.example.unbox_trade.common.client.product.dto.ProductOptionForSellingBidInfoResponse;
 import com.example.unbox_trade.trade.application.event.producer.TradeEventProducer;
@@ -19,12 +20,14 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -40,6 +43,7 @@ public class BuyingBidService {
     private final ProductClient productClient;
     private final TradeEventProducer tradeEventProducer;
     private final CacheManager cacheManager;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     // ✅ 구매 입찰 생성
     @Transactional
@@ -68,10 +72,10 @@ public class BuyingBidService {
 
     // ✅ 구매 입찰 취소
     @Transactional
-    public void cancelBuyingBid(UUID buyingId, Long userId, String deleteBy) {
-        log.info("Cancelling buying bid: buyingBidId={}, userId={}", buyingId, userId);
+    public void cancelBuyingBid(UUID buyingBidId, Long userId, String deleteBy) {
+        log.info("Cancelling buying bid: buyingBidId={}, userId={}", buyingBidId, userId);
 
-        BuyingBid buyingBid = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingId)
+        BuyingBid buyingBid = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
         if (!Objects.equals(buyingBid.getBuyerId(), userId)) {
@@ -87,22 +91,22 @@ public class BuyingBidService {
             buyingBid.updateModifiedBy(deleteBy);
         }
 
-        log.info("Successfully cancelled buying bid: buyingBidId={}, userId={}", buyingId, userId);
+        log.info("Successfully cancelled buying bid: buyingBidId={}, userId={}", buyingBidId, userId);
 
         // 🔔 가격 갱신 이벤트 & 캐시 무효화
         publishPriceEvent(buyingBid.getProductId(), buyingBid.getProductOptionId());
         evictHighestPriceCache(buyingBid.getProductOptionId());
-        evictBuyingBidCache(buyingId);
+        evictBuyingBidCache(buyingBidId);
     }
 
     // ✅ 구매 입찰 수정
     @Transactional
-    public BuyingBidsPriceUpdateResponseDto updateBuyingBidPrice(UUID buyingId,
+    public BuyingBidsPriceUpdateResponseDto updateBuyingBidPrice(UUID buyingBidId,
             BuyingBidsPriceUpdateRequestDto requestDto, Long userId) {
         log.info("Updating buying bid price: buyingBidId={}, userId={}, newPrice={}",
-                buyingId, userId, requestDto.getNewPrice());
+                buyingBidId, userId, requestDto.getNewPrice());
 
-        BuyingBid buyingBid = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingId)
+        BuyingBid buyingBid = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
         if (!Objects.equals(buyingBid.getBuyerId(), userId)) {
@@ -117,20 +121,20 @@ public class BuyingBidService {
         buyingBid.updatePrice(requestDto.getNewPrice(), userId, "SYSTEM");
 
         log.info("Successfully updated buying bid price: buyingBidId={}, oldPrice={}, newPrice={}",
-                buyingId, oldPrice, requestDto.getNewPrice());
+                buyingBidId, oldPrice, requestDto.getNewPrice());
 
         // 🔔 가격 갱신 이벤트 & 캐시 무효화
         publishPriceEvent(buyingBid.getProductId(), buyingBid.getProductOptionId());
         evictHighestPriceCache(buyingBid.getProductOptionId());
-        evictBuyingBidCache(buyingId);
+        evictBuyingBidCache(buyingBidId);
 
-        return buyingBidMapper.toPriceUpdateResponseDto(buyingId, requestDto.getNewPrice());
+        return buyingBidMapper.toPriceUpdateResponseDto(buyingBidId, requestDto.getNewPrice());
     }
 
     // ✅ 구매 입찰 상세 조회
     @Transactional(readOnly = true)
-    public BuyingBidDetailResponseDto getBuyingBidDetail(UUID buyingId, Long userId) {
-        BuyingBid buyingBid = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingId)
+    public BuyingBidDetailResponseDto getBuyingBidDetail(UUID buyingBidId, Long userId) {
+        BuyingBid buyingBid = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
         if (!Objects.equals(buyingBid.getBuyerId(), userId)) {
@@ -145,6 +149,75 @@ public class BuyingBidService {
     public Slice<BuyingBidListResponseDto> getMyBuyingBids(Long userId, Pageable pageable) {
         Slice<BuyingBid> bids = buyingBidRepository.findByBuyerIdOrderByCreatedAtDesc(userId, pageable);
         return bids.map(buyingBidMapper::toListResponseDto);
+    }
+
+    // ✅ 판매자 매칭
+    @Transactional
+    public void matchBuyingBid(UUID buyingBidId, Long sellerId) {
+
+        // 1. 구매 입찰 조회 (비관적 락)
+        BuyingBid buyingBid = buyingBidRepository.findByIdWithLock(buyingBidId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+
+        // 2. 자기 자신의 입찰 수락 방지
+        if (Objects.equals(buyingBid.getBuyerId(), sellerId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        // 3. 상태 검증 (LIVE만 매칭 가능)
+        if (buyingBid.getStatus() != BuyingStatus.LIVE) {
+            throw new CustomException(ErrorCode.BID_ALREADY_MATCHED);
+        }
+
+        // 4. 판매자 매칭 처리
+        buyingBid.matchWithSeller(sellerId);
+
+        // 🔔 캐시 무효화 (상태 변경 반영)
+        evictBuyingBidCache(buyingBidId);
+
+        log.info("BuyingBid {} matched with Seller {}", buyingBidId, sellerId);
+
+        // 5. 구매자에게 알림 발송 (Kafka 이벤트)
+        BuyingBidMatchedEvent event = new BuyingBidMatchedEvent(
+                buyingBid.getId(),
+                buyingBid.getBuyerId(),
+                buyingBid.getSellerId(),
+                buyingBid.getProductName(),
+                buyingBid.getProductOptionName(),
+                buyingBid.getPrice(),
+                buyingBid.getMatchedAt());
+
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    tradeEventProducer.publishBuyingBidMatched(event);
+                    log.info("Published BuyingBidMatchedEvent: buyingBidId={}", buyingBid.getId());
+                }
+            });
+        } else {
+            tradeEventProducer.publishBuyingBidMatched(event);
+            log.info("Published BuyingBidMatchedEvent: buyingBidId={}", buyingBid.getId());
+        }
+
+        // 6. 타임아웃 타이머 설정 (Redis)
+        String timeoutKey = "buying-bid:match-timeout:" + buyingBidId;
+
+        try {
+            // 24시간 TTL 설정
+            Boolean result = redisTemplate.opsForValue().setIfAbsent(
+                    timeoutKey,
+                    "MATCHED",
+                    Duration.ofMinutes(1440));
+
+            if (!Boolean.TRUE.equals(result)) {
+                log.warn("Failed to set match timeout for BuyingBid: {}", buyingBidId);
+            }
+
+            log.info("Match timeout set for BuyingBid {}: 24 hours (1440 minutes)", buyingBidId);
+        } catch (Exception e) {
+            log.error("Failed to set match timeout for BuyingBid: {}", buyingBidId, e);
+        }
     }
 
     // ========================================

@@ -16,9 +16,10 @@ import java.util.UUID;
 public class BuyingBidForOrderInfoResponse implements Serializable {
     private UUID buyingBidId;
     private Long buyerId;
+    private Long sellerId;
     private UUID productOptionId;
     private BigDecimal price;
-    private String status;
+    private String buyingStatus;
 
     private UUID productId;
     private String productName;

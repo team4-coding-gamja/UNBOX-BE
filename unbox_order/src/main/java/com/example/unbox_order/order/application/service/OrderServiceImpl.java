@@ -1,12 +1,12 @@
 package com.example.unbox_order.order.application.service;
 
-import com.example.unbox_order.common.client.order.dto.OrderForPaymentInfoResponse;
-import com.example.unbox_order.common.client.order.dto.OrderForReviewInfoResponse;
 import com.example.unbox_order.common.client.trade.dto.BuyingBidForOrderResponse;
 import com.example.unbox_order.common.client.trade.dto.SellingBidForOrderResponse;
 import com.example.unbox_order.common.client.trade.TradeClient;
 import com.example.unbox_order.common.client.user.UserClient;
 import com.example.unbox_order.common.client.user.dto.UserInfoForOrderResponse;
+import com.example.unbox_order.order.presentation.dto.internal.OrderForPaymentInfoResponse;
+import com.example.unbox_order.order.presentation.dto.internal.OrderForReviewInfoResponse;
 import com.example.unbox_order.order.presentation.mapper.OrderClientMapper;
 import com.example.unbox_order.order.presentation.dto.request.OrderCreateRequestDto;
 import com.example.unbox_order.order.presentation.dto.response.OrderDetailResponseDto;
@@ -56,6 +56,7 @@ public class OrderServiceImpl implements OrderService {
     private long paymentTimeoutMinutes;
 
     // ✅ 주문 생성 (판매 입찰 구매 OR 구매 입찰 판매)
+    // userId: 현재 로그인한 사용자 (항상 구매자 역할)
     @Override
     @Transactional
     public UUID createOrder(OrderCreateRequestDto requestDto, Long buyerId) {
@@ -106,30 +107,37 @@ public class OrderServiceImpl implements OrderService {
                     .receiverZipCode(requestDto.getReceiverZipCode())
                     .build();
         }
-        // CASE 2: 구매 입찰 기반 주문 (User = Seller, Target = BuyingBid)
+        // CASE 2: 구매 입찰 기반 주문 (구매자가 입찰 → 판매자 매칭 → 구매자가 주문 생성)
         else if (requestDto.getBuyingBidId() != null) {
             isBuyingBidTrade = true;
             bidIdForRollback = requestDto.getBuyingBidId();
 
             // 1) 구매 입찰 정보 조회
-            BuyingBidForOrderResponse buyingBidInfo = tradeClient.getBuyingBidForOrder(requestDto.getBuyingBidId());
+            BuyingBidForOrderResponse buyingBidInfo = tradeClient.getBuyingBidForOrder(requestDto.getBuyingBidId())
+                    .getData();
+
+            // ✅ MATCHED 상태 검증 (판매자가 이미 매칭 수락한 상태여야 함)
+            if (!"MATCHED".equals(buyingBidInfo.getBuyingStatus())) {
+                throw new CustomException(ErrorCode.BID_NOT_MATCHED);
+            }
+
+            // ✅ 본인 확인 (구매 입찰을 등록한 구매자만 주문 생성 가능)
+            // 판매자는 매칭만 수락하고, 주문 생성은 구매자가 알림을 받은 후 진행
+            if (!Objects.equals(buyingBidInfo.getBuyerId(), buyerId)) {
+                throw new CustomException(ErrorCode.ACCESS_DENIED);
+            }
 
             // 2) 실제 구매자(Bidder) 조회 (Snapshot용)
             UserInfoForOrderResponse buyer = userClient.getUserInfoForOrder(buyingBidInfo.getBuyerId());
 
-            // 3) 자전 거래 방지 (Caller = Seller)
-            if (Objects.equals(buyingBidInfo.getBuyerId(), buyerId)) {
-                throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
-            }
-
-            // 4) 구매 입찰 선점 (LIVE → RESERVED)
+            // 3) 구매 입찰 선점 (MATCHED → RESERVED)
             tradeClient.reserveBuyingBid(buyingBidInfo.getBuyingBidId(), "ORDER_SERVICE");
 
-            // 5) 주문 객체 생성
+            // 4) 주문 객체 생성
             order = Order.builder()
                     .buyingBidId(buyingBidInfo.getBuyingBidId())
                     .buyerId(buyingBidInfo.getBuyerId()) // Bidder is Buyer
-                    .sellerId(buyerId) // Caller is Seller
+                    .sellerId(buyingBidInfo.getSellerId())
                     .buyerName(buyer.getNickname())
                     .productOptionId(buyingBidInfo.getProductOptionId())
                     .productId(buyingBidInfo.getProductId())
@@ -149,6 +157,21 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order = orderRepository.save(order);
+
+        // ✅ 구매 입찰 매칭 타임아웃 키 삭제
+        if (isBuyingBidTrade) {
+            String matchTimeoutKey = "buying-bid:match-timeout:" + bidIdForRollback;
+            try {
+                Boolean deleted = redisTemplate.delete(matchTimeoutKey);
+                if (Boolean.TRUE.equals(deleted)) {
+                    log.info("✅ Deleted match timeout key for BuyingBid: {}", bidIdForRollback);
+                } else {
+                    log.warn("⚠️ Match timeout key not found for BuyingBid: {}", bidIdForRollback);
+                }
+            } catch (Exception e) {
+                log.error("❌ Failed to delete match timeout key for BuyingBid: {}", bidIdForRollback, e);
+            }
+        }
 
         // 7) 결제 만료 타이머 설정 (Redis)
         String type = isBuyingBidTrade ? "BUYING" : "SELLING";
@@ -177,7 +200,6 @@ public class OrderServiceImpl implements OrderService {
             }
             throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
-
         log.info("Order created successfully. Expiration timer set for {} minutes. Key: {}", paymentTimeoutMinutes,
                 expirationKey);
 

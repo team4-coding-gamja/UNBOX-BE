@@ -1,5 +1,6 @@
 package com.example.unbox_trade.trade.application.service;
 
+import com.example.unbox_trade.common.client.product.ProductClient;
 import com.example.unbox_trade.trade.application.event.producer.TradeEventProducer;
 import com.example.unbox_trade.trade.domain.entity.BuyingBid;
 import com.example.unbox_trade.trade.domain.entity.BuyingStatus;
@@ -33,7 +34,7 @@ public class BuyingBidInternalService {
     private final TradeEventProducer tradeEventProducer;
     private final CacheManager cacheManager;
     private final TradeClientMapper tradeClientMapper;
-    private final com.example.unbox_trade.common.client.product.ProductClient productClient;
+    private final ProductClient productClient;
 
     public static final String UNKNOWN_OPTION_NAME = "Unknown Option";
 
@@ -56,21 +57,25 @@ public class BuyingBidInternalService {
         BuyingBid buyingBid = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
-        // 동시성 제어: LIVE 상태인 경우에만 RESERVED로 변경
-        int updated = buyingBidRepository.updateStatusIfReserved(
-                buyingBidId,
-                BuyingStatus.LIVE,
-                BuyingStatus.RESERVED);
-
-        if (updated == 0) {
+        BuyingStatus currentStatus = buyingBid.getStatus();
+        if (currentStatus == BuyingStatus.LIVE) {
+            int updated = buyingBidRepository.updateStatusIfReserved(
+                    buyingBidId,
+                    BuyingStatus.LIVE,
+                    BuyingStatus.RESERVED);
+            if (updated == 0) {
+                throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+            }
+        } else if (currentStatus == BuyingStatus.MATCHED) {
+            int updated = buyingBidRepository.updateStatusIfReserved(
+                    buyingBidId,
+                    BuyingStatus.MATCHED,
+                    BuyingStatus.RESERVED);
+            if (updated == 0) {
+                throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+            }
+        } else {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
-        }
-
-        // updatedBy 기록
-        if (updatedBy != null) {
-            BuyingBid refreshed = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingBidId)
-                    .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
-            refreshed.updateModifiedBy(updatedBy);
         }
 
         // 🔔 가격 갱신 이벤트 & 캐시 무효화
@@ -138,14 +143,14 @@ public class BuyingBidInternalService {
         evictBuyingBidCache(buyingBidId);
     }
 
-    // ✅ 구매 입찰 복구 (결제 실패/취소용: RESERVED → LIVE)
-    // [Synchronous] 결제 실패나 취소로 인해 다시 매물로 등록될 때 호출
+    // ✅ 구매 입찰 복구 (결제 실패/취소/환불용: RESERVED/SOLD → LIVE)
     @Transactional
     public void liveBuyingBid(UUID buyingBidId, String updatedBy) {
         BuyingBid buyingBid = buyingBidRepository.findByIdAndDeletedAtIsNull(buyingBidId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
 
-        if (buyingBid.getStatus() != BuyingStatus.RESERVED) {
+        // RESERVED(결제 대기) 또는 SOLD(결제 완료 후 환불) 상태에서만 LIVE로 복구 가능
+        if (buyingBid.getStatus() != BuyingStatus.RESERVED && buyingBid.getStatus() != BuyingStatus.SOLD) {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
@@ -230,6 +235,28 @@ public class BuyingBidInternalService {
         }
 
         return results;
+    }
+
+    // ✅ 매칭 초기화 (타임아웃 시: MATCHED → LIVE)
+    // [Asynchronous] Redis 키 만료 시 호출
+    @Transactional
+    public void resetMatchedBid(UUID buyingBidId) {
+        BuyingBid buyingBid = buyingBidRepository.findById(buyingBidId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BID_NOT_FOUND));
+
+        if (buyingBid.getStatus() == BuyingStatus.MATCHED) {
+            buyingBid.resetMatch(); // 엔티티의 resetMatch() 메서드 호출
+
+            log.info("BuyingBid {} reset to LIVE (seller={} removed)",
+                    buyingBidId, buyingBid.getSellerId());
+
+            // 캐시 무효화
+            evictBuyingBidCache(buyingBidId);
+            evictHighestPriceCache(buyingBid.getProductOptionId());
+        } else {
+            log.warn("BuyingBid {} is not in MATCHED status, current status: {}",
+                    buyingBidId, buyingBid.getStatus());
+        }
     }
 
     // ========================================

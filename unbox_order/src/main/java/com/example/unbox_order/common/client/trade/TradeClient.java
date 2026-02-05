@@ -2,12 +2,13 @@ package com.example.unbox_order.common.client.trade;
 
 import com.example.unbox_order.common.client.trade.dto.BuyingBidForOrderResponse;
 import com.example.unbox_order.common.client.trade.dto.SellingBidForOrderResponse;
+import com.example.unbox_common.response.CustomApiResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@FeignClient(name = "unbox-trade", url = "${trade-service.url}", fallback = TradeClientFallback.class, path = "/trade")
+@FeignClient(name = "unbox-trade", url = "${trade-service.url}", path = "/trade", fallback = TradeClientFallback.class)
 public interface TradeClient {
 
         @GetMapping("/internal/bids/selling/{sellingBidId}/for-order")
@@ -27,7 +28,8 @@ public interface TradeClient {
 
         // ✅ Buying Bid Methods
         @GetMapping("/internal/bids/buying/{buyingBidId}/order-info")
-        BuyingBidForOrderResponse getBuyingBidForOrder(@PathVariable("buyingBidId") UUID buyingBidId);
+        CustomApiResponse<BuyingBidForOrderResponse> getBuyingBidForOrder(
+                        @PathVariable("buyingBidId") UUID buyingBidId);
 
         @PostMapping("/internal/bids/buying/{buyingBidId}/reserve")
         void reserveBuyingBid(@PathVariable("buyingBidId") UUID buyingBidId,
@@ -38,4 +40,7 @@ public interface TradeClient {
 
         @PostMapping("/internal/bids/buying/{buyingBidId}/live")
         void liveBuyingBid(@PathVariable("buyingBidId") UUID buyingBidId, @RequestParam("updatedBy") String updatedBy);
+
+        @PostMapping("/internal/bids/buying/{buyingBidId}/reset-match")
+        void resetMatchedBid(@PathVariable UUID buyingBidId);
 }

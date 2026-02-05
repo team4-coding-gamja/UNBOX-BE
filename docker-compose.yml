@@ -24,6 +24,11 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL=PLAINTEXT
       - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM=${MAIL_FROM:-noreply@unbox.com}
     depends_on:
       - db
       - redis

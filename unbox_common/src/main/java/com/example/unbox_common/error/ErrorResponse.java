@@ -1,5 +1,7 @@
 package com.example.unbox_common.error;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
@@ -9,7 +11,10 @@ public class ErrorResponse {
     private final String message;
     private final Object data;
 
-    public ErrorResponse(int status, String message) {
+    @JsonCreator
+    public ErrorResponse(
+            @JsonProperty("status") int status,
+            @JsonProperty("message") String message) {
         this(status, message, null);
     }
 

@@ -171,6 +171,10 @@ public class BuyingBidService {
 
         // 4. 판매자 매칭 처리
         buyingBid.matchWithSeller(sellerId);
+        
+        // 🔥 CRITICAL: flush로 DB 즉시 반영 (캐시 무효화 전에 실행)
+        // 이렇게 하지 않으면 Order 서비스가 조회 시 커밋 전 상태(LIVE)를 캐싱할 수 있음
+        buyingBidRepository.flush();
 
         // 🔔 캐시 무효화 (상태 변경 반영)
         evictBuyingBidCache(buyingBidId);

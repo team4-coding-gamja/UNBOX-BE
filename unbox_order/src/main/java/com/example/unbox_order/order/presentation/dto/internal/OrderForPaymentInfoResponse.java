@@ -1,4 +1,4 @@
-package com.example.unbox_order.common.client.payment.dto;
+package com.example.unbox_order.order.presentation.dto.internal;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +12,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaymentForOrderInfoResponse {
+public class OrderForPaymentInfoResponse {
     private UUID orderId;
     private String status;
     private BigDecimal price;

@@ -2,7 +2,6 @@ package com.example.unbox_order.common.client.trade;
 
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
-import com.example.unbox_common.response.CustomApiResponse;
 import com.example.unbox_order.common.client.trade.dto.BuyingBidForOrderResponse;
 import com.example.unbox_order.common.client.trade.dto.SellingBidForOrderResponse;
 import lombok.extern.slf4j.Slf4j;

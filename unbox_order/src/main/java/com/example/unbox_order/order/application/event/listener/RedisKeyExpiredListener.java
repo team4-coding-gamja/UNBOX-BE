@@ -91,8 +91,8 @@ public class RedisKeyExpiredListener extends KeyExpirationEventMessageListener {
     }
 
     @EventListener
-    public void handleRedisKeyExpiredEvent(RedisKeyExpiredEvent event) {
-        String expiredKey = new String(event.getSource());
+    public void handleRedisKeyExpiredEvent(RedisKeyExpiredEvent<byte[]> event) {
+        String expiredKey = new String((byte[]) event.getSource());
 
         // 기존 주문 타임아웃 처리 로직...
 

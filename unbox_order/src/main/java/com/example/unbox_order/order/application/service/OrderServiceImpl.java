@@ -1,12 +1,13 @@
 package com.example.unbox_order.order.application.service;
 
-import com.example.unbox_order.common.client.order.dto.OrderForPaymentInfoResponse;
-import com.example.unbox_order.common.client.order.dto.OrderForReviewInfoResponse;
+import com.example.unbox_common.event.order.OrderShipmentExpiredEvent;
 import com.example.unbox_order.common.client.trade.dto.BuyingBidForOrderResponse;
 import com.example.unbox_order.common.client.trade.dto.SellingBidForOrderResponse;
 import com.example.unbox_order.common.client.trade.TradeClient;
 import com.example.unbox_order.common.client.user.UserClient;
 import com.example.unbox_order.common.client.user.dto.UserInfoForOrderResponse;
+import com.example.unbox_order.order.presentation.dto.internal.OrderForPaymentInfoResponse;
+import com.example.unbox_order.order.presentation.dto.internal.OrderForReviewInfoResponse;
 import com.example.unbox_order.order.presentation.mapper.OrderClientMapper;
 import com.example.unbox_order.order.presentation.dto.request.OrderCreateRequestDto;
 import com.example.unbox_order.order.presentation.dto.response.OrderDetailResponseDto;
@@ -119,8 +120,7 @@ public class OrderServiceImpl implements OrderService {
             bidIdForRollback = requestDto.getBuyingBidId();
 
             // 1) 구매 입찰 정보 조회
-            BuyingBidForOrderResponse buyingBidInfo = tradeClient.getBuyingBidForOrder(requestDto.getBuyingBidId())
-                    .getData();
+            BuyingBidForOrderResponse buyingBidInfo = tradeClient.getBuyingBidForOrder(requestDto.getBuyingBidId());
 
             // ✅ MATCHED 상태 검증 (판매자가 이미 매칭 수락한 상태여야 함)
             if (!"MATCHED".equals(buyingBidInfo.getBuyingStatus())) {

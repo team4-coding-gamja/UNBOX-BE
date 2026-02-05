@@ -44,7 +44,7 @@ public class TradeClientFallback implements TradeClient {
     }
 
     @Override
-    public CustomApiResponse<BuyingBidForOrderResponse> getBuyingBidForOrder(UUID buyingBidId) {
+    public BuyingBidForOrderResponse getBuyingBidForOrder(UUID buyingBidId) {
         log.warn("[CircuitBreaker OPEN] Trade 서비스 호출 실패 - getBuyingBidForOrder({})", buyingBidId);
         throw new CustomException(ErrorCode.SERVICE_UNAVAILABLE);
     }

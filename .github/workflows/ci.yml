@@ -6,6 +6,7 @@ on:
     branches:
       - develop        # Dev 환경 트리거
       - main           # Prod 환경 트리거
+      - feat/ArgoCD-dev  # Dev 환경 테스트용
     paths:
       - 'unbox_order/**'
       - 'unbox_payment/**'
@@ -49,7 +50,7 @@ jobs:
       - name: Set Environment Name
         id: set-env
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+          if [[ "${{ github.ref }}" == "refs/heads/develop" ]] || [[ "${{ github.ref }}" == "refs/heads/feat/ArgoCD-dev" ]]; then
             echo "env_name=dev" >> $GITHUB_OUTPUT
             echo "infra_branch=feat/ArgoCD-dev" >> $GITHUB_OUTPUT
           elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then

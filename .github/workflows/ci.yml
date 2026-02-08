@@ -6,7 +6,6 @@ on:
     branches:
       - develop        # Dev 환경 트리거
       - main           # Prod 환경 트리거
-      - feat/ArgoCD    # 테스트용
     paths:
       - 'unbox_order/**'
       - 'unbox_payment/**'
@@ -46,19 +45,19 @@ jobs:
         with:
           fetch-depth: 2
 
-      # 브랜치 기반 환경 이름 결정 (local 테스트용)
+      # 브랜치 기반 환경 이름 결정
       - name: Set Environment Name
         id: set-env
         run: |
           if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-            echo "env_name=local" >> $GITHUB_OUTPUT
-            echo "infra_branch=feat/argocd" >> $GITHUB_OUTPUT
+            echo "env_name=dev" >> $GITHUB_OUTPUT
+            echo "infra_branch=feat/ArgoCD-dev" >> $GITHUB_OUTPUT
           elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "env_name=prod" >> $GITHUB_OUTPUT
             echo "infra_branch=main" >> $GITHUB_OUTPUT
           else
             echo "env_name=dev" >> $GITHUB_OUTPUT
-            echo "infra_branch=main" >> $GITHUB_OUTPUT
+            echo "infra_branch=feat/ArgoCD-dev" >> $GITHUB_OUTPUT
           fi
 
       - name: Detect changed services
@@ -266,8 +265,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔗 유용한 링크" >> $GITHUB_STEP_SUMMARY
           echo "- [AWS ECR 콘솔](https://ap-northeast-2.console.aws.amazon.com/ecr/repositories)" >> $GITHUB_STEP_SUMMARY
-          echo "- [ArgoCD 대시보드](https://argocd.your-domain.com)" >> $GITHUB_STEP_SUMMARY
-
+          
       # Discord 알림 - 전체 공정 완료
       - name: Notify Discord - Pipeline Complete
         run: |

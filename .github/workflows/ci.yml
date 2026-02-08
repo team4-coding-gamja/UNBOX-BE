@@ -214,88 +214,88 @@ jobs:
               }]
             }'
 
-# ============================================
-# Job 4: 빌드 결과 요약
-# 목적: 전체 빌드 및 배포 트리거 결과를 요약하여 팀에게 공유
-# ============================================
-summary:
-  name: Build Summary
-  runs-on: ubuntu-latest
-  needs: [detect-changes, build, deploy-update]
-  # 서비스가 감지되었을 때만 실행하며, 이전 작업의 성공/실패 여부와 상관없이 항상 실행
-  if: always() && needs.detect-changes.outputs.services != ''
-  
-  steps:
-    - name: Generate build summary
-      run: |
-        ENV_NAME="${{ needs.detect-changes.outputs.env_name }}"
-        IMAGE_TAG="${ENV_NAME}-${{ github.sha }}"
-        
-        echo "## 🚀 통합 CI/CD 빌드 및 배포 결과" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📊 배포 정보" >> $GITHUB_STEP_SUMMARY
-        echo "- **대상 환경:** ${ENV_NAME^^}" >> $GITHUB_STEP_SUMMARY
-        echo "- **이미지 태그:** \`${IMAGE_TAG}\`" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        echo "### 🛠️ 서비스별 상태" >> $GITHUB_STEP_SUMMARY
-        echo "| 서비스 | 빌드 상태 | 배포 트리거 |" >> $GITHUB_STEP_SUMMARY
-        echo "|--------|----------|------------|" >> $GITHUB_STEP_SUMMARY
-        
-        SERVICES="${{ needs.detect-changes.outputs.services }}"
-        IFS=',' read -ra SERVICE_ARRAY <<< "$SERVICES"
-        
-        for SERVICE in "${SERVICE_ARRAY[@]}"; do
-          # 빌드 성공 여부 확인
-          if [ "${{ needs.build.result }}" = "success" ]; then
-            B_STATUS="✅ 성공"
-          else
-            B_STATUS="❌ 실패"
-          fi
+  # ============================================
+  # Job 4: 빌드 결과 요약
+  # 목적: 전체 빌드 및 배포 트리거 결과를 요약하여 팀에게 공유
+  # ============================================
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build, deploy-update]
+    # 서비스가 감지되었을 때만 실행하며, 이전 작업의 성공/실패 여부와 상관없이 항상 실행
+    if: always() && needs.detect-changes.outputs.services != ''
+    
+    steps:
+      - name: Generate build summary
+        run: |
+          ENV_NAME="${{ needs.detect-changes.outputs.env_name }}"
+          IMAGE_TAG="${ENV_NAME}-${{ github.sha }}"
           
-          # 인프라 레포 업데이트 성공 여부 확인
-          if [ "${{ needs.deploy-update.result }}" = "success" ]; then
-            D_STATUS="🚀 완료"
-          else
-            D_STATUS="⚠️ 중단/실패"
-          fi
+          echo "## 🚀 통합 CI/CD 빌드 및 배포 결과" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 배포 정보" >> $GITHUB_STEP_SUMMARY
+          echo "- **대상 환경:** ${ENV_NAME^^}" >> $GITHUB_STEP_SUMMARY
+          echo "- **이미지 태그:** \`${IMAGE_TAG}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           
-          echo "| $SERVICE | $B_STATUS | $D_STATUS |" >> $GITHUB_STEP_SUMMARY
-        done
-        
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔗 유용한 링크" >> $GITHUB_STEP_SUMMARY
-        echo "- [AWS ECR 콘솔](https://ap-northeast-2.console.aws.amazon.com/ecr/repositories)" >> $GITHUB_STEP_SUMMARY
-        echo "- [ArgoCD 대시보드](https://argocd.your-domain.com)" >> $GITHUB_STEP_SUMMARY
+          echo "### 🛠️ 서비스별 상태" >> $GITHUB_STEP_SUMMARY
+          echo "| 서비스 | 빌드 상태 | 배포 트리거 |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|----------|------------|" >> $GITHUB_STEP_SUMMARY
+          
+          SERVICES="${{ needs.detect-changes.outputs.services }}"
+          IFS=',' read -ra SERVICE_ARRAY <<< "$SERVICES"
+          
+          for SERVICE in "${SERVICE_ARRAY[@]}"; do
+            # 빌드 성공 여부 확인
+            if [ "${{ needs.build.result }}" = "success" ]; then
+              B_STATUS="✅ 성공"
+            else
+              B_STATUS="❌ 실패"
+            fi
+            
+            # 인프라 레포 업데이트 성공 여부 확인
+            if [ "${{ needs.deploy-update.result }}" = "success" ]; then
+              D_STATUS="🚀 완료"
+            else
+              D_STATUS="⚠️ 중단/실패"
+            fi
+            
+            echo "| $SERVICE | $B_STATUS | $D_STATUS |" >> $GITHUB_STEP_SUMMARY
+          done
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 유용한 링크" >> $GITHUB_STEP_SUMMARY
+          echo "- [AWS ECR 콘솔](https://ap-northeast-2.console.aws.amazon.com/ecr/repositories)" >> $GITHUB_STEP_SUMMARY
+          echo "- [ArgoCD 대시보드](https://argocd.your-domain.com)" >> $GITHUB_STEP_SUMMARY
 
-    # Discord 알림 - 전체 공정 완료
-    - name: Notify Discord - Pipeline Complete
-      run: |
-        ENV_NAME="${{ needs.detect-changes.outputs.env_name }}"
-        SERVICES="${{ needs.detect-changes.outputs.services }}"
-        SERVICE_COUNT=$(echo "$SERVICES" | tr ',' '\n' | wc -l)
-        
-        # 전체 성공 여부에 따른 색상 및 타이틀 결정
-        if [ "${{ needs.build.result }}" = "success" ] && [ "${{ needs.deploy-update.result }}" = "success" ]; then
-          TITLE="✅ 통합 CI/CD 완료 - ${SERVICE_COUNT}개 서비스"
-          COLOR=3066993
-          STATUS="모든 서비스 빌드 및 배포 트리거 성공"
-        else
-          TITLE="⚠️ 통합 CI/CD 완료 - 일부 실패/중단"
-          COLOR=16776960
-          STATUS="일부 서비스 확인 필요"
-        fi
-        
-        curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
-          -H "Content-Type: application/json" \
-          -d '{
-            "embeds": [{
-              "title": "'"$TITLE"'",
-              "description": "**환경:** '"${ENV_NAME^^}"'\n**브랜치:** `${{ github.ref_name }}`\n**커밋:** `${{ github.sha }}`\n**대상:** '"$SERVICES"'\n**결과:** '"$STATUS"'",
-              "color": '"$COLOR"',
-              "footer": {
-                "text": "ArgoCD에서 최종 배포 상태를 확인하세요."
-              },
-              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
-            }]
-          }'
+      # Discord 알림 - 전체 공정 완료
+      - name: Notify Discord - Pipeline Complete
+        run: |
+          ENV_NAME="${{ needs.detect-changes.outputs.env_name }}"
+          SERVICES="${{ needs.detect-changes.outputs.services }}"
+          SERVICE_COUNT=$(echo "$SERVICES" | tr ',' '\n' | wc -l)
+          
+          # 전체 성공 여부에 따른 색상 및 타이틀 결정
+          if [ "${{ needs.build.result }}" = "success" ] && [ "${{ needs.deploy-update.result }}" = "success" ]; then
+            TITLE="✅ 통합 CI/CD 완료 - ${SERVICE_COUNT}개 서비스"
+            COLOR=3066993
+            STATUS="모든 서비스 빌드 및 배포 트리거 성공"
+          else
+            TITLE="⚠️ 통합 CI/CD 완료 - 일부 실패/중단"
+            COLOR=16776960
+            STATUS="일부 서비스 확인 필요"
+          fi
+          
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "'"$TITLE"'",
+                "description": "**환경:** '"${ENV_NAME^^}"'\n**브랜치:** `${{ github.ref_name }}`\n**커밋:** `${{ github.sha }}`\n**대상:** '"$SERVICES"'\n**결과:** '"$STATUS"'",
+                "color": '"$COLOR"',
+                "footer": {
+                  "text": "ArgoCD에서 최종 배포 상태를 확인하세요."
+                },
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+              }]
+            }'

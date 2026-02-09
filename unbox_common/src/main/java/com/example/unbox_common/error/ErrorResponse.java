@@ -11,7 +11,7 @@ public class ErrorResponse {
     private final String message;
     private final Object data;
 
-    @JsonCreator
+    // @JsonCreator
     public ErrorResponse(
             @JsonProperty("status") int status,
             @JsonProperty("message") String message) {

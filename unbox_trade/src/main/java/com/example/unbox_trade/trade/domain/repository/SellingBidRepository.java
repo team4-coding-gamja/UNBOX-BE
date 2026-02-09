@@ -90,4 +90,8 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
 
   @Query("SELECT MIN(sb.price) FROM SellingBid sb WHERE sb.productOptionId = :optionId AND sb.status = 'LIVE' AND sb.deletedAt IS NULL")
   Optional<java.math.BigDecimal> findLowestPriceByOptionId(@Param("optionId") UUID optionId);
+
+  Optional<SellingBid> findFirstByProductOptionIdAndStatusAndDeletedAtIsNullOrderByPriceAsc(UUID optionId, SellingStatus status);
+
+  boolean existsByProductOptionIdAndStatusAndDeletedAtIsNull(UUID optionId, SellingStatus status);
 }

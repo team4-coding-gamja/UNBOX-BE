@@ -7,7 +7,6 @@ import com.example.unbox_trade.trade.application.service.SellingBidService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +23,7 @@ public class PaymentEventListener {
      * - PaymentCompletedEvent: 결제 성공 -> 입찰 SOLD 처리
      * - PaymentFailedEvent: 결제 실패 -> 입찰 LIVE 복구 처리
      */
-    @KafkaListener(topics = "payment-events", groupId = "trade-group")
+    // @KafkaListener(topics = "payment-events", groupId = "trade-group")
     public void handlePaymentEvent(ConsumerRecord<String, Object> record, Acknowledgment ack) {
         Object event = record.value();
 

@@ -94,7 +94,7 @@ public interface OrderService {
     /**
      * 주문 상태 변경 (결제 완료용: PAYMENT_PENDING → PENDING_SHIPMENT)
      */
-    void pendingShipmentOrder(UUID orderId, UUID paymentId, String updatedBy);
+    void pendingShipmentOrder(UUID orderId, UUID paymentId, String updatedBy, String testMode);
 
     // ========================================
     // ✅ 검수 시스템 연동 (Inspection System Integration)

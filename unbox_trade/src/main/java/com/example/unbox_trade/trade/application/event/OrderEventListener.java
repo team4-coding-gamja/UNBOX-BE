@@ -10,7 +10,6 @@ import com.example.unbox_trade.trade.domain.entity.SellingStatus;
 import com.example.unbox_trade.trade.domain.repository.SellingBidRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +27,7 @@ public class OrderEventListener {
     private final com.example.unbox_trade.trade.domain.repository.BuyingBidRepository buyingBidRepository;
     private final com.example.unbox_trade.trade.application.service.BuyingBidInternalService buyingBidInternalService;
 
-    @KafkaListener(topics = "order-events", groupId = "trade-group")
+    // @KafkaListener(topics = "order-events", groupId = "trade-group")
     @Transactional
     public void handleOrderEvent(org.apache.kafka.clients.consumer.ConsumerRecord<String, Object> record,
             Acknowledgment ack) {

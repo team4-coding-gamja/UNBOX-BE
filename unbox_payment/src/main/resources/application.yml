@@ -28,14 +28,14 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
-      maximum-pool-size: 5  # 기본 10 → 5로 줄임
-      minimum-idle: 2       # 최소 유지 연결
+      maximum-pool-size: 50 # 상향 조정 (부하시 커넥션 대기 방지)
+      minimum-idle: 5
       connection-timeout: 20000
       idle-timeout: 300000
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     defer-datasource-initialization: true
     show-sql: true
     properties:
@@ -52,13 +52,21 @@ spring:
   jwt:
     secret: ${SPRING_JWT_SECRET}
 
+  sql:
+    init:
+      mode: always
+
   cloud:
     openfeign:
+      circuitbreaker:
+        enabled: false # 부하 테스트를 위해 서킷 브레이커 비활성화
       client:
         config:
           default:
             loggerLevel: BASIC
             connectTimeout: 1000
+            readTimeout: 3000
+          orderClient:
             readTimeout: 3000
 
 logging:

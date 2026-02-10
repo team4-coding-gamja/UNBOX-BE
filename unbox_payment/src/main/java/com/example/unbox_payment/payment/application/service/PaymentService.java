@@ -20,7 +20,8 @@ public interface PaymentService {
     PaymentReadyResponseDto createPayment(Long userId, UUID orderId, PaymentMethod method);
 
     // ✅ 결제 승인 처리
-    TossConfirmResponse confirmPayment(Long userId, UUID paymentId, String paymentKey, BigDecimal amount);
+    TossConfirmResponse confirmPayment(Long userId, UUID paymentId, String paymentKey, BigDecimal amount,
+            String testMode, String faultTarget, Long faultDelay);
 
     // ========================================
     // ✅ 내부 시스템용 API (Internal API)
@@ -39,8 +40,8 @@ public interface PaymentService {
     /**
      * 환불 처리 (결제 취소)
      * 
-     * @param paymentId   결제 ID
-     * @param reason      취소 사유
+     * @param paymentId 결제 ID
+     * @param reason    취소 사유
      */
     void processRefund(UUID paymentId, String reason);
 }

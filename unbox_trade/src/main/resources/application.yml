@@ -30,14 +30,14 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
-      maximum-pool-size: 5  # 기본 10 → 5로 줄임
-      minimum-idle: 2       # 최소 유지 연결
+      maximum-pool-size: 30 # 상향 조정 (30 스레드 대응)
+      minimum-idle: 5       # 최소 유지 연결
       connection-timeout: 20000
       idle-timeout: 300000
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     defer-datasource-initialization: true
     show-sql: true
     properties:
@@ -57,6 +57,8 @@ spring:
 
   cloud:
     openfeign:
+      circuitbreaker:
+        enabled: false # 부하 테스트를 위해 서킷 브레이커 비활성화
       client:
         config:
           default:

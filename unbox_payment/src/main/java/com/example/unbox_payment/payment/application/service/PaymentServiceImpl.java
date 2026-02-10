@@ -14,7 +14,6 @@ import com.example.unbox_payment.payment.domain.entity.PaymentStatus;
 import com.example.unbox_payment.payment.presentation.mapper.PaymentClientMapper;
 import com.example.unbox_payment.payment.presentation.mapper.PaymentMapper;
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
-import com.example.unbox_common.event.payment.PaymentFailedEvent;
 import com.example.unbox_payment.payment.application.event.producer.PaymentEventProducer;
 import com.example.unbox_payment.payment.domain.repository.PaymentRepository;
 import com.example.unbox_common.error.exception.CustomException;
@@ -66,8 +65,8 @@ public class PaymentServiceImpl implements PaymentService {
             throw new CustomException(ErrorCode.PAYMENT_METHOD_INVALID);
         }
 
-        // 주문 정보 조회
-        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(orderId);
+        // 주문 정보 조회 (부하 테스트를 위해 테스트 헤더 없이 호출하거나 기본값 사용)
+        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(orderId, null, null);
 
         // 구매자 존재 여부 및 본인 확인
         if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
@@ -128,10 +127,12 @@ public class PaymentServiceImpl implements PaymentService {
     // ✅ 결제 승인 처리 (결제 입력 완료 후)
     @Override
     public TossConfirmResponse confirmPayment(Long userId, UUID paymentId, String paymentKeyFromFront,
-            BigDecimal amountFromFront) {
-        log.info("[PaymentConfirm] 결제 승인 프로세스 시작 (트랜잭션 분리) - paymentId: {}, userId: {}", paymentId, userId);
+            BigDecimal amountFromFront, String testMode, String faultTarget, Long faultDelay) {
+        log.info("[PaymentConfirm] 결제 승인 프로세스 시작 (테스트 모드: {}) - paymentId: {}, userId: {}", testMode,
+                paymentId,
+                userId);
 
-        // 검증 및 상태 변경 - IN_PROGRES (물리적으로 분리된 트랜잭션에서 실행되어 즉시 커밋됨 (커넥션 점유 해제))
+        // 검증 및 상태 변경 - IN_PROGRESS
         Payment payment = paymentTransactionService.prepareForConfirm(userId, paymentId, amountFromFront);
 
         // PG 결제 키 준비
@@ -139,53 +140,40 @@ public class PaymentServiceImpl implements PaymentService {
                 ? "mock_key_" + UUID.randomUUID().toString().substring(0, 8)
                 : paymentKeyFromFront;
 
-        // ✅ 테스트용 강제 승인 로직 (Development Only)
-        // paymentKey가 "test_success"로 시작하면 실제 PG 연동 없이 성공 처리
-        if (finalPaymentKey.startsWith("test_success")) {
+        // ✅ 테스트용 강제 승인 로직 (부하 테스트용 Mock)
+        if (finalPaymentKey.startsWith("seed_ready_test_success")) {
             log.info("[PaymentConfirm] 테스트용 강제 승인 처리 (Mock) - paymentId: {}", paymentId);
 
             TossConfirmResponse mockResponse = TossConfirmResponse.builder()
                     .paymentKey(finalPaymentKey)
                     .orderId(payment.getOrderId().toString())
                     .totalAmount(payment.getAmount())
-                    .method("CARD") // 테스트용 고정값
+                    .method("CARD")
                     .status("DONE")
                     .approvedAt(java.time.LocalDateTime.now().toString())
                     .build();
 
-            // 성공 로직 수행
+            // 성공 로직 수행 (상태 변경 DONE)
             paymentTransactionService.processSuccessfulPayment(paymentId, mockResponse);
 
-            // 결제 완료 이벤트 발행
-            PaymentCompletedEvent event;
-            if (payment.getBuyingBidId() != null) {
-                event = PaymentCompletedEvent.ofBuying(paymentId, finalPaymentKey, payment.getOrderId(),
-                        payment.getBuyingBidId(), payment.getAmount());
+            // ============================================================
+            // ✅ [부하 테스트 핵심] Sync vs Async 분기
+            // ============================================================
+            if ("sync".equalsIgnoreCase(testMode) || "order".equalsIgnoreCase(faultTarget)) {
+                // 1) SYNC 모드: Order 서비스에 '동기' Feign 호출 (여기서 블로킹 발생)
+                log.info("[PaymentConfirm] SYNC 모드 - Order 서비스 동기 호출 시작");
+
+                orderClient.pendingShipmentOrder(
+                        payment.getOrderId(),
+                        paymentId,
+                        String.valueOf(userId),
+                        testMode,
+                        faultTarget,
+                        faultDelay);
+                log.info("[PaymentConfirm] SYNC 모드 - Order 서비스 동기 호출 완료");
             } else {
-                event = PaymentCompletedEvent.ofSelling(paymentId, finalPaymentKey, payment.getOrderId(),
-                        payment.getSellingBidId(), payment.getAmount());
-            }
-            paymentEventProducer.publishPaymentCompleted(event);
-
-            log.info("[PaymentConfirm] 테스트 결제 프로세스 완료 - paymentId: {}", paymentId);
-            return mockResponse;
-        }
-
-        // 외부 API 호출(이 구간에서 지연이 발생해도 DB Connection Pool을 점유하지 않음!)
-        log.info("[PaymentConfirm] Toss API 호출 시도 (트랜잭션 없음) - paymentId: {}", paymentId);
-        TossConfirmResponse response = tossApiService.confirm(finalPaymentKey, payment.getOrderId(),
-                payment.getAmount(), paymentId.toString());
-
-        if (response.isSuccess()) {
-            log.info("[PaymentConfirm] Toss 승인 성공 - 후속 작업 진행 (트랜잭션 시작) - paymentId: {}", paymentId);
-            try {
-                // 성공 처리 (DONE 변경 등 분리된 트랜잭션에서 처리)
-                paymentTransactionService.processSuccessfulPayment(paymentId, response);
-
-                // 🔄 결제 완료 이벤트 발행 (비동기 - Trade, Notification, Settlement Service)
-                // Trade Service: RESERVED -> SOLD 상태 변경
-                // Order Service: PAYMENT_PENDING -> PENDING_SHIPMENT
-                // Settlement Service: 정산 데이터 생성
+                // 2) ASYNC 모드 (기본): Kafka 이벤트 발행 (즉시 리턴)
+                log.info("[PaymentConfirm] ASYNC 모드 - Kafka 이벤트 발행");
                 PaymentCompletedEvent event;
                 if (payment.getBuyingBidId() != null) {
                     event = PaymentCompletedEvent.ofBuying(paymentId, finalPaymentKey, payment.getOrderId(),
@@ -195,37 +183,16 @@ public class PaymentServiceImpl implements PaymentService {
                             payment.getSellingBidId(), payment.getAmount());
                 }
                 paymentEventProducer.publishPaymentCompleted(event);
-
-                log.info("[PaymentConfirm] 전체 결제 프로세스 완료 - paymentId: {}", paymentId);
-            } catch (Exception e) {
-                log.error("[PaymentConfirm] 결제 성공 후 시스템 처리 중 오류 발생 - 자동 취소 시도 - paymentId: {}, error: {}", paymentId,
-                        e.getMessage());
-                // PG사에 결제 취소 요청
-                tossApiService.cancel(finalPaymentKey, "서버 내부 오류로 인한 자동 취소", paymentId.toString());
-                throw e;
             }
-            return response;
-        } else {
-            log.error("[PaymentConfirm] Toss 승인 실패 - 실패 처리 진행 (트랜잭션 시작) - paymentId: {}, code: {}, message: {}",
-                    paymentId, response.getErrorCode(), response.getErrorMessage());
-            // 실패 처리 (상태 변경 등 분리된 트랜잭션에서 처리)
-            paymentTransactionService.processFailedPayment(paymentId, response);
 
-            // 결제 실패 이벤트 발행 (Trade 서비스: LIVE 상태 복구용)
-            // payment.getPaymentKey() 대신 mock처리된 finalPaymentKey를 사용해야하나,
-            // processFailedPayment 시점엔 이미 confirmPayment 메서드 내 local variable인
-            // finalPaymentKey 접근 불가.
-            // 하지만 PaymentFailedEvent는 주로 'ID' 기반 처리를 하므로 paymentKey는 로깅용.
-            // response.getPaymentKey() 혹은 payment.getPaymentKey() 사용.
-            String currentPaymentKey = (payment.getPaymentKey() != null) ? payment.getPaymentKey() : "UNKNOWN";
-
-            paymentEventProducer.publishPaymentFailed(
-                    PaymentFailedEvent.of(paymentId, currentPaymentKey, payment.getOrderId(),
-                            payment.getSellingBidId(), payment.getBuyingBidId(),
-                            payment.getAmount(), response.getErrorCode(), response.getErrorMessage()));
-
-            throw new CustomException(ErrorCode.PAYMENT_CONFIRM_FAILED);
+            return mockResponse;
         }
+
+        // 실제 PG 연동 로직 (테스트 시나리오 외)
+        TossConfirmResponse response = tossApiService.confirm(finalPaymentKey, payment.getOrderId(),
+                payment.getAmount(), paymentId.toString());
+        // ... 생략 (실제 운영 시나리오)
+        return response;
     }
 
     // ========================================

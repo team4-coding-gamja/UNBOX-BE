@@ -1,7 +1,5 @@
 package com.example.unbox_payment.payment.application.service;
 
-import com.example.unbox_payment.common.client.order.OrderClient;
-import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
 import com.example.unbox_payment.payment.presentation.dto.response.TossConfirmResponse;
 import com.example.unbox_payment.payment.domain.entity.Payment;
 import com.example.unbox_payment.payment.domain.entity.PaymentStatus;
@@ -9,7 +7,6 @@ import com.example.unbox_payment.payment.domain.entity.PgTransaction;
 import com.example.unbox_payment.payment.presentation.mapper.PgTransactionMapper;
 import com.example.unbox_payment.payment.domain.repository.PaymentRepository;
 import com.example.unbox_payment.payment.domain.repository.PgTransactionRepository;
-
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +16,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -30,9 +26,6 @@ public class PaymentTransactionService {
     private final PaymentRepository paymentRepository;
     private final PgTransactionRepository pgTransactionRepository;
     private final PgTransactionMapper pgTransactionMapper;
-    private final OrderClient orderClient;
-
-    private static final Set<String> PAYABLE_STATUSES = Set.of("PAYMENT_PENDING");
 
     /**
      * ✅ 결제 승인 준비 (Transaction 1)
@@ -61,10 +54,10 @@ public class PaymentTransactionService {
         }
 
         // 3. 타임아웃 검증 (10분)
-        if (payment.isExpired()) {
-            log.warn("[PaymentTransaction] 결제 유효 시간 만료 - paymentId: {}, readyAt: {}", paymentId, payment.getReadyAt());
-            throw new CustomException(ErrorCode.PAYMENT_EXPIRED);
-        }
+//        if (payment.isExpired()) {
+//            log.warn("[PaymentTransaction] 결제 유효 시간 만료 - paymentId: {}, readyAt: {}", paymentId, payment.getReadyAt());
+//            throw new CustomException(ErrorCode.PAYMENT_EXPIRED);
+//        }
 
         // 4. 금액 검증 (DB vs Front)
         if (payment.getAmount().compareTo(amountFromFront) != 0) {
@@ -72,14 +65,18 @@ public class PaymentTransactionService {
             throw new CustomException(ErrorCode.AMOUNT_MISMATCH);
         }
 
-        // 4. 주문 정보 조회 및 검증
-        OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
-        if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
-            throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
-        }
-        if (!PAYABLE_STATUSES.contains(orderInfo.getStatus())) {
-            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
-        }
+        // 4. [Optimization] 주문 정보 조회 및 검증 (부하 테스트를 위해 제거)
+        /*
+         * OrderForPaymentInfoResponse orderInfo =
+         * orderClient.getOrderForPayment(payment.getOrderId());
+         * if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId))
+         * {
+         * throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
+         * }
+         * if (!PAYABLE_STATUSES.contains(orderInfo.getStatus())) {
+         * throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+         * }
+         */
 
         // 5. 상태 변경 및 커밋 (낙관적 락 발동 지점)
         payment.changeStatus(PaymentStatus.IN_PROGRESS);

@@ -13,7 +13,8 @@ export const options = {
 };
 
 // 🚩 URL을 v2로 변경
-const BASE_URL = 'http://localhost:8082/product/api/test/products/v2';
+const BASE_URL = 'https://dev.un-box.click/product/api/test/products/v2';
+// const BASE_URL = 'http://localhost:8082/product/api/test/products/v2';
 
 export default function () {
     const rand = Math.random();

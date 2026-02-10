@@ -64,22 +64,14 @@ public class CachedDistributedPurchaseService implements PurchaseService {
         
         try {
             log.info("[Stage 4] Attempting lock for option: {}", optionId);
-            // 락 대기 시간을 3초로 설정
-            boolean available = optionLock.tryLock(3, 10, TimeUnit.SECONDS);
+            // 락 대기 시간을 0초로 설정
+            boolean available = optionLock.tryLock(0, 5, TimeUnit.SECONDS);
             if (!available) {
-                log.warn("[Stage 4] Lock timeout for option: {}", optionId);
-                // 락 획득 실패 시에도 그사이 품절되었는지 체크하여 캐시 갱신
-                if (!sellingBidRepository.existsByProductOptionIdAndStatusAndDeletedAtIsNull(optionId, SellingStatus.LIVE)) {
-                    log.info("[Stage 4] Non-lock holder setting sold-out cache for option: {}", optionId);
-                    redisTemplate.opsForValue().set(soldOutKey, "TRUE", 10, TimeUnit.MINUTES);
+                if (Boolean.TRUE.equals(redisTemplate.hasKey(soldOutKey))) {
+                    log.info("[Stage 4] Double-check Cache HIT for option: {}", optionId);
+                    throw new CustomException("이미 품절된 옵션입니다.", ErrorCode.BID_ALREADY_MATCHED);
                 }
-                throw new IllegalStateException("접속자가 많아 처리가 지연되고 있습니다.");
-            }
-
-            // 4. 락 획득 후 Double Check
-            if (Boolean.TRUE.equals(redisTemplate.hasKey(soldOutKey))) {
-                log.info("[Stage 4] Double-check Cache HIT for option: {}", optionId);
-                throw new CustomException("이미 품절된 옵션입니다.", ErrorCode.BID_ALREADY_MATCHED);
+                throw new CustomException("접속자가 많아 처리가 지연되고 있습니다.", ErrorCode.SERVICE_UNAVAILABLE);
             }
 
             // 5. DB에서 현재 가장 저렴한 LIVE 매물 조회 (Next Best)

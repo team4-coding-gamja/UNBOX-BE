@@ -52,6 +52,7 @@ public class SecurityConfig {
             .requestMatchers("/internal/**").permitAll()
             // 관리자 API 권한 설정 (Authority 명시)
             .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_MASTER", "ROLE_MANAGER")
+                .requestMatchers("/api/test/products/**").permitAll()
             // 그 외 모든 요청 인증 필요
             .anyRequest().authenticated()
         );

@@ -34,6 +34,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.CacheManager;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -55,6 +56,7 @@ public class SellingBidServiceImpl implements SellingBidService {
     private final TradeClientMapper tradeClientMapper;
     private final TradeEventProducer tradeEventProducer;
     private final CacheManager cacheManager;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     // ========================================
     // ✅ Public Service Methods (User API)
@@ -86,6 +88,9 @@ public class SellingBidServiceImpl implements SellingBidService {
         // 🔔 최저가 갱신 이벤트 발행 & 캐시 무효화
         publishPriceEvent(savedBid.getProductId(), savedBid.getProductOptionId());
         evictLowestPriceCache(savedBid.getProductOptionId());
+
+        // Redis 큐에 즉시 등록
+        addBidToRedisQueue(savedBid.getProductOptionId());
 
         return sellingBidMapper.toCreateResponseDto(savedBid);
     }
@@ -386,6 +391,9 @@ public class SellingBidServiceImpl implements SellingBidService {
         publishPriceEvent(sellingBid.getProductId(), sellingBid.getProductOptionId());
         evictLowestPriceCache(sellingBid.getProductOptionId());
         evictSellingBidCache(sellingBidId);
+
+        // 살아난 매물을 Redis 큐에 등록
+        addBidToRedisQueue(sellingBid.getProductOptionId());
     }
 
     // ========================================
@@ -429,6 +437,34 @@ public class SellingBidServiceImpl implements SellingBidService {
         } else {
             // 트랜잭션이 없는 경우 즉시 발행
             tradeEventProducer.publishTradePriceChanged(event);
+        }
+    }
+
+    // 판매 입찰 등록/복구 시 Redis 대기열(Queue)에 즉시 추가 (Write-Through)
+    private void addBidToRedisQueue(UUID optionId) {
+        String queueKey = "bids:option:" + optionId;
+
+        // 트랜잭션이 활성화된 상태라면, 커밋 성공 후에만 Redis에 넣음 (정합성 보장)
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    // 1. 기존 큐 삭제
+                    redisTemplate.delete(queueKey);
+
+                    // 2. DB에서 정렬된 상태로 다시 조회(최저가 순서)
+                    List<SellingBid> sortedBids = sellingBidRepository.findAllByProductOptionIdAndStatusAndDeletedAtIsNullOrderByPriceAsc(
+                            optionId, SellingStatus.LIVE);
+
+                    // 3. Redis 큐에 순서대로 다시 넣기
+                    if (!sortedBids.isEmpty()) {
+                        List<String> bidIds = sortedBids.stream()
+                                .map(bid -> bid.getId().toString())
+                                .toList();
+                        redisTemplate.opsForList().rightPushAll(queueKey, bidIds.toArray());
+                    }
+                }
+            });
         }
     }
 }

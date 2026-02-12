@@ -101,4 +101,25 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             @Param("category") Category category,
             @Param("keyword") String keyword,
             Pageable pageable);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Product p SET p.popularityScore = p.popularityScore + 1 WHERE p.id = :productId")
+    void incrementPopularityScore(@Param("productId") UUID productId);
+
+    @EntityGraph(attributePaths = {"brand"})
+    @Query("""
+    SELECT p FROM Product p
+    WHERE p.deletedAt IS NULL
+      AND (:brandId IS NULL OR p.brand.id = :brandId)
+      AND (
+          :lastScore IS NULL OR 
+          (p.popularityScore, p.id) < (:lastScore, :lastId)
+      )
+    ORDER BY p.popularityScore DESC, p.id DESC
+    """)
+    Slice<Product> findByPopularityNoOffset(
+            @Param("lastScore") Long lastScore,
+            @Param("lastId") UUID lastId,
+            @Param("brandId") UUID brandId,
+            Pageable pageable);
 }

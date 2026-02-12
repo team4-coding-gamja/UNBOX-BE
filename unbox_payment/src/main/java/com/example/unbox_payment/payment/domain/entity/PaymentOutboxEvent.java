@@ -90,7 +90,7 @@ public class PaymentOutboxEvent extends BaseEntity {
     // 발행 실패 처리 (최종 실패)
     public void markAsFailed(String errorMessage) {
         this.status = PaymentOutboxEventStatus.FAILED;
-        this.errorMessage = errorMessage;
+        this.errorMessage = truncateErrorMessage(errorMessage); // ✅ truncate 적용
     }
 
     // 발행 실패 처리 (최종 실패) - 에러 메시지 없는 버전

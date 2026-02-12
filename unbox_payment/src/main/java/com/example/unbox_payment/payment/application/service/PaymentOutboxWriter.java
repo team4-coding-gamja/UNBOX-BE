@@ -51,20 +51,26 @@ public class PaymentOutboxWriter {
         // Key ID 결정 (Trade 서비스의 입찰 상태 변경 순서 보장)
         UUID keyId = determineKeyId(event.sellingBidId(), event.buyingBidId(), event.orderId());
 
-        // EventEnvelope로 감싸서 JSON 생성
-        String payload = toJsonWithEnvelope(event, UUID.randomUUID(), "PaymentCompleted", keyId);
-
-        // 아웃박스 이벤트 생성 및 저장
+        // ✅ 1단계: 아웃박스 이벤트를 먼저 생성 (ID 자동 생성)
         PaymentOutboxEvent paymentOutboxEvent = PaymentOutboxEvent.builder()
                 .aggregateType(AGGREGATE_TYPE)
                 .aggregateId(keyId)
                 .eventType("PaymentCompleted")
-                .payload(payload)
+                .payload("") // 임시 빈 문자열
                 .status(PaymentOutboxEventStatus.PENDING)
                 .retryCount(0)
                 .build();
 
+        // ✅ 2단계: 저장하여 ID 생성
+        paymentOutboxEvent = paymentOutboxEventRepository.save(paymentOutboxEvent);
+
+        // ✅ 3단계: 생성된 ID로 EventEnvelope 생성
+        String payload = toJsonWithEnvelope(event, paymentOutboxEvent.getId(), "PaymentCompleted", keyId);
+
+        // ✅ 4단계: payload 업데이트
+        paymentOutboxEvent.setPayload(payload);
         paymentOutboxEventRepository.save(paymentOutboxEvent);
+
         log.info("[OutboxWriter] 아웃박스에 저장 완료: eventId={}, eventType=PaymentCompleted", paymentOutboxEvent.getId());
     }
 
@@ -79,20 +85,26 @@ public class PaymentOutboxWriter {
         // Key ID 결정
         UUID keyId = determineKeyId(event.sellingBidId(), event.buyingBidId(), event.orderId());
 
-        // EventEnvelope로 감싸서 JSON 생성
-        String payload = toJsonWithEnvelope(event, UUID.randomUUID(), "PaymentFailed", keyId);
-
-        // 아웃박스 이벤트 생성 및 저장
+        // ✅ 1단계: 아웃박스 이벤트를 먼저 생성 (ID 자동 생성)
         PaymentOutboxEvent paymentOutboxEvent = PaymentOutboxEvent.builder()
                 .aggregateType(AGGREGATE_TYPE)
                 .aggregateId(keyId)
                 .eventType("PaymentFailed")
-                .payload(payload)
+                .payload("") // 임시 빈 문자열
                 .status(PaymentOutboxEventStatus.PENDING)
                 .retryCount(0)
                 .build();
 
+        // ✅ 2단계: 저장하여 ID 생성
+        paymentOutboxEvent = paymentOutboxEventRepository.save(paymentOutboxEvent);
+
+        // ✅ 3단계: 생성된 ID로 EventEnvelope 생성
+        String payload = toJsonWithEnvelope(event, paymentOutboxEvent.getId(), "PaymentFailed", keyId);
+
+        // ✅ 4단계: payload 업데이트
+        paymentOutboxEvent.setPayload(payload);
         paymentOutboxEventRepository.save(paymentOutboxEvent);
+
         log.info("[OutboxWriter] 아웃박스에 저장 완료: eventId={}, eventType=PaymentFailed", paymentOutboxEvent.getId());
     }
 

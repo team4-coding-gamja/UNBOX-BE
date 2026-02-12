@@ -35,7 +35,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update  # create → update (데이터 유실 방지)
     defer-datasource-initialization: true
     show-sql: true
     properties:

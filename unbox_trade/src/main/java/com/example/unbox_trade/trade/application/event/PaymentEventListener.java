@@ -48,13 +48,21 @@ public class PaymentEventListener {
             return;
         }
 
+        EventEnvelope envelope = null;
         try {
             // 2. EventEnvelope 파싱
-            EventEnvelope envelope = objectMapper.readValue(eventJson, EventEnvelope.class);
+            envelope = objectMapper.readValue(eventJson, EventEnvelope.class);
 
             log.debug("[PaymentEventListener] Received event - eventId: {}, eventType: {}, aggregateId: {}",
                     envelope.getEventId(), envelope.getEventType(), envelope.getAggregateId());
 
+        } catch (Exception e) {
+            // 파싱 실패 (JSON 형식 오류 등)
+            log.error("[PaymentEventListener] Failed to parse EventEnvelope JSON: {}", eventJson, e);
+            throw new RuntimeException("Event parsing failed", e);
+        }
+
+        try {
             // 3. eventType에 따라 분기
             if ("PaymentCompleted".equals(envelope.getEventType())) {
                 // data 필드에서 실제 이벤트 추출
@@ -75,8 +83,10 @@ public class PaymentEventListener {
                 log.debug("[PaymentEventListener] Ignored event type: {}", envelope.getEventType());
             }
         } catch (Exception e) {
-            log.error("[PaymentEventListener] Failed to parse payment event JSON: {}", eventJson, e);
-            throw new RuntimeException("Event parsing failed", e);
+            // 비즈니스 로직 실패 (입찰 상태 변경 실패 등)
+            log.error("[PaymentEventListener] Failed to process event - eventId: {}, eventType: {}",
+                    envelope.getEventId(), envelope.getEventType(), e);
+            throw e; // 재시도를 위해 예외 전파
         }
 
         // 4. 메시지 처리 완료 (Commit)

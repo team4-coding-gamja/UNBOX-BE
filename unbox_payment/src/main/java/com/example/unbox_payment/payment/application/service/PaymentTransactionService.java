@@ -35,15 +35,14 @@ public class PaymentTransactionService {
     private static final Set<String> PAYABLE_STATUSES = Set.of("PAYMENT_PENDING");
 
     /**
-     * ✅ 결제 승인 준비 (Transaction 1)
-     * - 전파 레벨 REQUIRES_NEW를 사용하여 물리적으로 독립된 트랜잭션에서 실행
-     * - 즉시 커밋되어 다른 스레드에서 IN_PROGRESS 상태를 볼 수 있게 함
+     * ✅ 결제 승인 준비 (외부 API 호출 포함 - 트랜잭션 밖)
+     * - Feign Client 호출을 트랜잭션 밖에서 실행
+     * - 외부 API 실패 시에도 아웃박스 이벤트 발행 가능하도록
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Payment prepareForConfirm(Long userId, UUID paymentId, BigDecimal amountFromFront) {
         log.info("[PaymentTransaction] 결제 승인 준비 시작 - paymentId: {}", paymentId);
 
-        // 1. 결제 정보 조회
+        // 1. 결제 정보 조회 (트랜잭션 밖)
         Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
@@ -72,7 +71,7 @@ public class PaymentTransactionService {
             throw new CustomException(ErrorCode.AMOUNT_MISMATCH);
         }
 
-        // 4. 주문 정보 조회 및 검증
+        // 5. 주문 정보 조회 및 검증 (Feign Client - 트랜잭션 밖!)
         OrderForPaymentInfoResponse orderInfo = orderClient.getOrderForPayment(payment.getOrderId());
         if (orderInfo.getBuyerId() == null || !orderInfo.getBuyerId().equals(userId)) {
             throw new CustomException(ErrorCode.NOT_SELF_ORDER_PAYMENT);
@@ -81,7 +80,20 @@ public class PaymentTransactionService {
             throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
         }
 
-        // 5. 상태 변경 및 커밋 (낙관적 락 발동 지점)
+        // 6. 상태 변경 (별도 트랜잭션에서 실행)
+        return markAsInProgress(paymentId);
+    }
+
+    /**
+     * ✅ 결제 상태를 IN_PROGRESS로 변경 (독립 트랜잭션)
+     * - prepareForConfirm에서 분리하여 Feign 호출과 트랜잭션 분리
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected Payment markAsInProgress(UUID paymentId) {
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // 상태 변경 및 커밋 (낙관적 락 발동 지점)
         payment.changeStatus(PaymentStatus.IN_PROGRESS);
         paymentRepository.saveAndFlush(payment);
 

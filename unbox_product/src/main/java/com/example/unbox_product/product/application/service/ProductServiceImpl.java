@@ -85,6 +85,9 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public ProductDetailResponseDto getProductDetail(UUID productId) {
 
+        productRepository.incrementPopularityScore(productId);
+        redisTemplate.opsForZSet().incrementScore("products:popular:all", productId.toString(), 1);
+
         // 🔴 [TEST MODE] 캐시가 꺼져있으면 DB/Feign 직접 조회 로직으로 이동
         if (!isCacheEnabled) {
             return getProductDetailNoCache(productId);

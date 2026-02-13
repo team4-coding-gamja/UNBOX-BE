@@ -45,6 +45,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final OrderClient orderClient;
 
     private final PaymentOutboxWriter paymentOutboxWriter;
+    private final com.example.unbox_payment.payment.application.event.producer.PaymentDirectAsyncEventProducer directAsyncEventProducer; // 테스트
+                                                                                                                                         // 전용
 
     // ✅ 결제 이력 조회
     @Override
@@ -127,8 +129,9 @@ public class PaymentServiceImpl implements PaymentService {
     // ✅ 결제 승인 처리 (결제 입력 완료 후)
     @Override
     public TossConfirmResponse confirmPayment(Long userId, UUID paymentId, String paymentKeyFromFront,
-            BigDecimal amountFromFront) {
-        log.info("[PaymentConfirm] 결제 승인 프로세스 시작 (트랜잭션 분리) - paymentId: {}, userId: {}", paymentId, userId);
+            BigDecimal amountFromFront, String testMode) {
+        log.info("[PaymentConfirm] 결제 승인 프로세스 시작 (트랜잭션 분리) - paymentId: {}, userId: {}, testMode: {}",
+                paymentId, userId, testMode);
 
         // 검증 및 상태 변경 - IN_PROGRES (물리적으로 분리된 트랜잭션에서 실행되어 즉시 커밋됨 (커넥션 점유 해제))
         Payment payment = paymentTransactionService.prepareForConfirm(userId, paymentId, amountFromFront);
@@ -156,6 +159,7 @@ public class PaymentServiceImpl implements PaymentService {
             paymentTransactionService.processSuccessfulPayment(paymentId, mockResponse);
 
             // 결제 완료 이벤트 발행
+            // 결제 완료 이벤트 발행
             PaymentCompletedEvent event;
             if (payment.getBuyingBidId() != null) {
                 event = PaymentCompletedEvent.ofBuying(paymentId, finalPaymentKey, payment.getOrderId(),
@@ -164,7 +168,15 @@ public class PaymentServiceImpl implements PaymentService {
                 event = PaymentCompletedEvent.ofSelling(paymentId, finalPaymentKey, payment.getOrderId(),
                         payment.getSellingBidId(), payment.getAmount());
             }
-            paymentOutboxWriter.write(event);
+
+            // ✅ 테스트 모드 확인 (async vs outbox)
+            if ("async".equalsIgnoreCase(testMode)) {
+                log.info("[PaymentConfirm] 테스트 모드: Async (Direct Kafka Publish) - paymentId: {}", paymentId);
+                directAsyncEventProducer.publishPaymentCompleted(event);
+            } else {
+                log.info("[PaymentConfirm] 기본 모드: Outbox Pattern - paymentId: {}", paymentId);
+                paymentOutboxWriter.write(event);
+            }
 
             log.info("[PaymentConfirm] 테스트 결제 프로세스 완료 - paymentId: {}", paymentId);
             return mockResponse;
@@ -181,7 +193,7 @@ public class PaymentServiceImpl implements PaymentService {
                 // 성공 처리 (DONE 변경 등 분리된 트랜잭션에서 처리)
                 paymentTransactionService.processSuccessfulPayment(paymentId, response);
 
-                // 🔄 결제 완료 이벤트 발행 (비동기 - Trade, Notification, Settlement Service)
+                // 🔄 결제 완료 이벤트 발행
                 // Trade Service: RESERVED -> SOLD 상태 변경
                 // Order Service: PAYMENT_PENDING -> PENDING_SHIPMENT
                 // Settlement Service: 정산 데이터 생성
@@ -193,7 +205,15 @@ public class PaymentServiceImpl implements PaymentService {
                     event = PaymentCompletedEvent.ofSelling(paymentId, finalPaymentKey, payment.getOrderId(),
                             payment.getSellingBidId(), payment.getAmount());
                 }
-                paymentOutboxWriter.write(event);
+
+                // ✅ 테스트 모드 확인 (async vs outbox)
+                if ("async".equalsIgnoreCase(testMode)) {
+                    log.info("[PaymentConfirm] 테스트 모드: Async (Direct Kafka Publish) - paymentId: {}", paymentId);
+                    directAsyncEventProducer.publishPaymentCompleted(event);
+                } else {
+                    log.info("[PaymentConfirm] 기본 모드: Outbox Pattern - paymentId: {}", paymentId);
+                    paymentOutboxWriter.write(event);
+                }
 
                 log.info("[PaymentConfirm] 전체 결제 프로세스 완료 - paymentId: {}", paymentId);
             } catch (Exception e) {

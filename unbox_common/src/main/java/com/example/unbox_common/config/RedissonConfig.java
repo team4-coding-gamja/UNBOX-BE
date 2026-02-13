@@ -16,18 +16,31 @@ public class RedissonConfig {
     @Value("${spring.data.redis.port:6379}")
     private int redisPort;
 
+    @Value("${spring.data.redis.password:}")
+    private String redisPassword;
+
+    @Value("${spring.data.redis.ssl:false}")
+    private boolean redisSsl;
+
     @Bean
     public RedissonClient redissonClient() {
         Config config = new Config();
+        
+        String protocol = redisSsl ? "rediss://" : "redis://";
+        String address = protocol + redisHost + ":" + redisPort;
+        
         config.useSingleServer()
-              .setAddress("redis://" + redisHost + ":" + redisPort)
-              // Increase timeout to 10 seconds (default is 3s)
-              .setTimeout(10000)
-              .setConnectTimeout(10000)
+              .setAddress(address)
+              .setPassword(redisPassword.isEmpty() ? null : redisPassword)
+              .setSslEnableEndpointIdentification(false)  // AWS ElastiCache용
+              // Increase timeout to 30 seconds for cold start
+              .setTimeout(30000)
+              .setConnectTimeout(30000)
               // Keep connection alive
               .setPingConnectionInterval(30000)
               // Retry settings
-              .setRetryAttempts(3);
+              .setRetryAttempts(5)
+              .setRetryInterval(3000);
         
         return Redisson.create(config);
     }

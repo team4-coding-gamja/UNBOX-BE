@@ -4,6 +4,7 @@ import com.example.unbox_product.product.application.service.ProductService;
 import com.example.unbox_product.product.application.service.TestProductService;
 import com.example.unbox_product.product.presentation.dto.response.ProductListResponseDto;
 import com.example.unbox_common.response.CustomApiResponse;
+import com.example.unbox_product.product.presentation.dto.response.ProductListResponseDtoV2;
 import com.example.unbox_product.product.presentation.dto.response.SliceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,12 +33,11 @@ public class TestProductController {
     }
 
     @GetMapping("/v2")
-    public CustomApiResponse<SliceResponse<ProductListResponseDto>> getProductsV2(
-            @RequestParam(required = false) UUID lastProductId,
+    public CustomApiResponse<SliceResponse<ProductListResponseDtoV2>> getProductsV2(
+            @RequestParam(required = false) Long lastScore, // 점수 추가
+            @RequestParam(required = false) UUID lastId,    // ID 추가
             @RequestParam(required = false) UUID brandId,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "20") int size) {
-        return CustomApiResponse.success(testProductService.getProductsV2(lastProductId, brandId, category, keyword, size));
+        return CustomApiResponse.success(testProductService.getProductsV2(lastScore, lastId, brandId, size));
     }
 }

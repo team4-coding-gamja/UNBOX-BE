@@ -3,6 +3,7 @@ package com.example.unbox_product.product.presentation.mapper;
 import com.example.unbox_product.product.presentation.dto.redis.ProductRedisDto;
 import com.example.unbox_product.product.presentation.dto.response.ProductDetailResponseDto;
 import com.example.unbox_product.product.presentation.dto.response.ProductListResponseDto;
+import com.example.unbox_product.product.presentation.dto.response.ProductListResponseDtoV2;
 import com.example.unbox_product.product.presentation.dto.response.ProductOptionListResponseDto;
 import com.example.unbox_product.product.domain.entity.Product;
 import com.example.unbox_product.product.domain.entity.ProductOption;
@@ -56,6 +57,19 @@ public interface ProductMapper {
                 .productImageUrl(product.getImageUrl())
                 .brandId(product.getBrand().getId())
                 .brandName(product.getBrand().getName())
+                .build();
+    }
+
+    default ProductListResponseDtoV2 toProductListResponseDtoV2(Product product) {
+        return ProductListResponseDtoV2.builder()
+                .productId(product.getId())
+                .productName(product.getName())
+                .modelNumber(product.getModelNumber())
+                .category(product.getCategory())
+                .productImageUrl(product.getImageUrl())
+                .brandId(product.getBrand().getId())
+                .brandName(product.getBrand().getName())
+                .popularityScore(product.getPopularityScore())
                 .build();
     }
 

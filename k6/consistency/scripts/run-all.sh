@@ -43,6 +43,7 @@ async_loss_rate="$(jq -r '.consistency.lossRate // 0' "${ASYNC_REPORT_JSON}")"
 async_avg_rps="$(jq -r '.performance.avgRps // 0' "${ASYNC_REPORT_JSON}")"
 async_p95_ms="$(jq -r '.performance.p95Ms // 0' "${ASYNC_REPORT_JSON}")"
 async_api_success_rate="$(jq -r '.performance.apiSuccessRate // 0' "${ASYNC_REPORT_JSON}")"
+async_consumer_drain_status="$(jq -r '.timing.consumerDrainStatus // "N/A"' "${ASYNC_REPORT_JSON}")"
 
 outbox_confirm_success="$(jq -r '.load.confirmSuccess // 0' "${OUTBOX_REPORT_JSON}")"
 outbox_confirm_non2xx="$(jq -r '.load.confirmNon2xx // 0' "${OUTBOX_REPORT_JSON}")"
@@ -57,6 +58,29 @@ outbox_drain_time="$(jq -r '.timing.drainTimeSeconds // "N/A"' "${OUTBOX_REPORT_
 outbox_pending_final="$(jq -r '.outbox.pendingFinal // "N/A"' "${OUTBOX_REPORT_JSON}")"
 outbox_published_count="$(jq -r '.outbox.publishedCount // "N/A"' "${OUTBOX_REPORT_JSON}")"
 outbox_consumer_drain_status="$(jq -r '.timing.consumerDrainStatus // "N/A"' "${OUTBOX_REPORT_JSON}")"
+
+judge_async_loss="$(awk -v v="${async_loss_rate}" 'BEGIN { if ((v + 0) > 0) print "PASS"; else print "FAIL"; }')"
+judge_outbox_loss="$(awk -v v="${outbox_loss_rate}" 'BEGIN { if ((v + 0) == 0) print "PASS"; else print "FAIL"; }')"
+
+judge_outbox_pending="FAIL"
+if [[ "${outbox_pending_final}" == "0" ]]; then
+  judge_outbox_pending="PASS"
+fi
+
+judge_outbox_drain="FAIL"
+if [[ "${outbox_consumer_drain_status}" == "DONE" ]]; then
+  judge_outbox_drain="PASS"
+fi
+
+judge_api_success="FAIL"
+if [[ "${async_confirm_non2xx}" == "0" && "${outbox_confirm_non2xx}" == "0" ]]; then
+  judge_api_success="PASS"
+fi
+
+overall_verdict="FAIL"
+if [[ "${judge_async_loss}" == "PASS" && "${judge_outbox_loss}" == "PASS" && "${judge_outbox_pending}" == "PASS" && "${judge_outbox_drain}" == "PASS" && "${judge_api_success}" == "PASS" ]]; then
+  overall_verdict="PASS"
+fi
 
 cat > "${COMPARE_README}" <<EOF
 # Async vs Outbox 비교 리포트
@@ -79,15 +103,29 @@ cat > "${COMPARE_README}" <<EOF
 | 복구 시간(s) | N/A | ${outbox_drain_time} |
 | Outbox Published 수 | N/A | ${outbox_published_count} |
 | Outbox Pending 최종 | N/A | ${outbox_pending_final} |
-| 컨슈머 드레인 상태 | N/A | ${outbox_consumer_drain_status} |
+| 컨슈머 드레인 상태 | ${async_consumer_drain_status} | ${outbox_consumer_drain_status} |
+
+## 자동 판정
+| 판정 항목 | 기준 | 결과 |
+| --- | --- | --- |
+| Async 유실 발생 | Async loss_rate > 0 | ${judge_async_loss} |
+| Outbox 무유실 | Outbox loss_rate = 0 | ${judge_outbox_loss} |
+| Outbox 잔여 없음 | Outbox pending_final = 0 | ${judge_outbox_pending} |
+| Outbox 소비 드레인 완료 | Outbox consumerDrainStatus = DONE | ${judge_outbox_drain} |
+| API 안정성 | async/outbox non-2xx = 0 | ${judge_api_success} |
+
+**최종 판정: ${overall_verdict}**
 
 ## 판정 가이드
 - 설계 목표:
   - Async: 유실률 > 0
   - Outbox: 유실률 = 0, Outbox Pending 최종 = 0
 - 현재 결과가 목표와 다르면 아래 파일의 원인 지표를 먼저 확인하세요.
+  - ${ASYNC_REPORT_JSON}
   - ${OUTBOX_REPORT_JSON}
+  - ${ASYNC_DIR}/k6.log
   - ${OUTBOX_DIR}/k6.log
+  - ${ASYNC_DIR}/payment-events.log
   - ${OUTBOX_DIR}/payment-events.log
 
 ## 상세 리포트

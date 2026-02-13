@@ -1,4 +1,4 @@
-# Async vs Outbox 비교 리포트
+아니 ㅈ# Async vs Outbox 비교 리포트
 
 - 비교 실행 ID: 20260213151141
 - Async run_id: 2026021315114101

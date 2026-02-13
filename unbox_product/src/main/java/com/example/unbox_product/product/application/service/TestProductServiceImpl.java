@@ -62,7 +62,8 @@ public class TestProductServiceImpl implements TestProductService {
         // 3. 캐시 미스 시 DB 조회
         log.info("Cache Miss - Fetching from DB: lastScore={}, brandId={}", lastScore, brandId);
         PageRequest pageRequest = PageRequest.of(0, size);
-        Slice<Product> productSlice = productRepository.findByPopularityNoOffset(lastScore, lastId, brandId, pageRequest);
+        Slice<Product> productSlice = productRepository.findByPopularityNoOffset(lastScore, lastId, brandId,
+                pageRequest);
 
         List<ProductListResponseDtoV2> dtoList = productSlice.getContent().stream()
                 .map(productMapper::toProductListResponseDtoV2)
@@ -75,12 +76,15 @@ public class TestProductServiceImpl implements TestProductService {
     }
 
     private void cacheProducts(List<ProductListResponseDtoV2> dtoList, String zsetKey) {
-        for (ProductListResponseDtoV2 dto : dtoList) {
-            String detailKey = PRODUCT_DETAIL_KEY_PREFIX + dto.getProductId();
-            // 개별 상세 정보 캐싱 (TTL 1시간)
-            redisTemplate.opsForValue().set(detailKey, dto, Duration.ofHours(1));
-            // ZSET 순위 정보 갱신
-            redisTemplate.opsForZSet().add(zsetKey, dto.getProductId().toString(), dto.getPopularityScore());
-        }
+        redisTemplate.executePipelined((org.springframework.data.redis.core.RedisCallback<Object>) connection -> {
+            for (ProductListResponseDtoV2 dto : dtoList) {
+                String detailKey = PRODUCT_DETAIL_KEY_PREFIX + dto.getProductId();
+                // 개별 상세 정보 캐싱 (TTL 1시간)
+                redisTemplate.opsForValue().set(detailKey, dto, Duration.ofHours(1));
+                // ZSET 순위 정보 갱신
+                redisTemplate.opsForZSet().add(zsetKey, dto.getProductId().toString(), dto.getPopularityScore());
+            }
+            return null;
+        });
     }
 }

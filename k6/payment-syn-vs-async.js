@@ -67,9 +67,9 @@ export const options = {
     },
 };
 
-// ==============================
+// ===============================
 // VU/iteration 기반 데이터 분배 (ramping 환경 대응)
-// ==============================
+// ===============================
 function pick(arr) {
     const vu = exec.vu.idInTest || 1;
     const it = exec.vu.iterationInScenario || 0;

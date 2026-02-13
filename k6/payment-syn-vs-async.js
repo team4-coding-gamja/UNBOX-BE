@@ -22,8 +22,9 @@ const DATA_PATH = __ENV.DATA_PATH || "./data.json";
 // 클라이언트(사용자) 최대 대기 시간(고정)
 const CONFIRM_TIMEOUT = __ENV.CONFIRM_TIMEOUT || "15s";
 
-// Fault Injection: Order 지연(기본 3s)
+// Fault Injection: Order 지연(기본 1s)
 const ORDER_DELAY_MS = Number(__ENV.ORDER_DELAY_MS || 1000);
+const FAULT_TARGET = (__ENV.FAULT_TARGET || (MODE === "sync" ? "order" : "")).toLowerCase();
 
 // think time
 const SLEEP_MS = Number(__ENV.SLEEP_MS || 50);
@@ -82,6 +83,23 @@ function pick(arr) {
 // ==============================
 export default function () {
     const d = pick(data);
+    const headers = {
+        "Content-Type": "application/json",
+        "X-Test-Mode": MODE, // sync / async 분기
+        "X-Test-User-ID": String(d.buyerId ?? 1),
+    };
+
+    const tags = {
+        api: "payment_confirm",
+        mode: MODE,
+    };
+
+    if (FAULT_TARGET) {
+        headers["X-Fault-Target"] = FAULT_TARGET;
+        headers["X-Fault-Delay-MS"] = String(ORDER_DELAY_MS);
+        tags.fault_target = FAULT_TARGET;
+        tags.order_delay_ms = String(ORDER_DELAY_MS);
+    }
 
     const res = http.post(
         CONFIRM_URL,
@@ -92,20 +110,8 @@ export default function () {
         }),
         {
             timeout: CONFIRM_TIMEOUT,
-            headers: {
-                "Content-Type": "application/json",
-                "X-Test-Mode": MODE, // sync / async 분기
-                "X-Test-User-ID": String(d.buyerId ?? 1),
-
-                // Fault Injection: order만 느리게
-                "X-Fault-Target": "order",
-                "X-Fault-Delay-MS": String(ORDER_DELAY_MS),
-            },
-            tags: {
-                api: "payment_confirm",
-                mode: MODE,
-                order_delay_ms: String(ORDER_DELAY_MS),
-            },
+            headers,
+            tags,
         }
     );
 

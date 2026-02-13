@@ -159,7 +159,7 @@ public class PaymentServiceImpl implements PaymentService {
             // ============================================================
             // ✅ [부하 테스트 핵심] Sync vs Async 분기
             // ============================================================
-            if ("sync".equalsIgnoreCase(testMode) || "order".equalsIgnoreCase(faultTarget)) {
+            if ("sync".equalsIgnoreCase(testMode)) {
                 // 1) SYNC 모드: Order 서비스에 '동기' Feign 호출 (여기서 블로킹 발생)
                 log.info("[PaymentConfirm] SYNC 모드 - Order 서비스 동기 호출 시작");
 

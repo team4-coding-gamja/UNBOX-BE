@@ -1,6 +1,6 @@
 package com.example.unbox_product.product.application.service;
 
-import com.example.unbox_product.product.domain.entity.Category;
+// import com.example.unbox_product.product.domain.entity.Category;
 import com.example.unbox_product.product.domain.entity.Product;
 import com.example.unbox_product.product.domain.repository.ProductRepository;
 import com.example.unbox_product.product.presentation.dto.response.ProductListResponseDtoV2;

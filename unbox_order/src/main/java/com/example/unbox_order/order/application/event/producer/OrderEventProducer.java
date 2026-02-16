@@ -1,10 +1,14 @@
 package com.example.unbox_order.order.application.event.producer;
 
+import com.example.unbox_common.event.EventEnvelope;
 import com.example.unbox_common.event.order.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -22,7 +26,7 @@ public class OrderEventProducer {
         String key = event.sellingBidId() != null ? event.sellingBidId().toString()
                 : event.buyingBidId() != null ? event.buyingBidId().toString() : event.orderId().toString();
 
-        kafkaTemplate.send(TOPIC_ORDER, key, event);
+        kafkaTemplate.send(TOPIC_ORDER, key, wrap("OrderCancelled", event, event.orderId()));
     }
 
     public void publishOrderExpired(OrderExpiredEvent event) {
@@ -31,7 +35,7 @@ public class OrderEventProducer {
         String key = event.sellingBidId() != null ? event.sellingBidId().toString()
                 : event.buyingBidId() != null ? event.buyingBidId().toString() : event.orderId().toString();
 
-        kafkaTemplate.send(TOPIC_ORDER, key, event)
+        kafkaTemplate.send(TOPIC_ORDER, key, wrap("OrderExpired", event, event.orderId()))
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         // Kafka 전송 실패: 브로커 장애 등이 원인이므로 DLT 전송도 불가능함.
@@ -46,7 +50,7 @@ public class OrderEventProducer {
     public void publishOrderConfirmed(OrderConfirmedEvent event) {
         log.info("Publishing OrderConfirmedEvent: orderId={}, userId={}", event.orderId(), event.userId());
         // 구매 확정은 주문(Order) 라이프사이클의 종료이므로 OrderId를 키로 사용
-        kafkaTemplate.send(TOPIC_ORDER, event.orderId().toString(), event)
+        kafkaTemplate.send(TOPIC_ORDER, event.orderId().toString(), wrap("OrderConfirmed", event, event.orderId()))
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Failed to publish OrderConfirmedEvent for orderId: {}", event.orderId(), ex);
@@ -62,7 +66,7 @@ public class OrderEventProducer {
         String key = event.sellingBidId() != null ? event.sellingBidId().toString()
                 : event.buyingBidId() != null ? event.buyingBidId().toString() : event.orderId().toString();
 
-        kafkaTemplate.send(TOPIC_ORDER, key, event)
+        kafkaTemplate.send(TOPIC_ORDER, key, wrap("OrderRefundRequested", event, event.orderId()))
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Failed to publish OrderRefundRequestedEvent for orderId: {}", event.orderId(), ex);
@@ -80,7 +84,7 @@ public class OrderEventProducer {
         // Key가 null일 경우(방어 코드) orderId 사용
         String key = (event.sellingBidId() != null) ? event.sellingBidId().toString() : event.orderId().toString();
 
-        kafkaTemplate.send(TOPIC_ORDER, key, event)
+        kafkaTemplate.send(TOPIC_ORDER, key, wrap("OrderShipmentExpired", event, event.orderId()))
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Failed to publish OrderShipmentExpiredEvent for orderId: {}", event.orderId(), ex);
@@ -88,5 +92,15 @@ public class OrderEventProducer {
                         log.info("Successfully published OrderShipmentExpiredEvent. Offset: {}", result.getRecordMetadata().offset());
                     }
                 });
+    }
+
+    private EventEnvelope wrap(String eventType, Object data, UUID aggregateId) {
+        return EventEnvelope.builder()
+                .eventId(UUID.randomUUID())
+                .eventType(eventType)
+                .occurredAt(LocalDateTime.now())
+                .aggregateId(aggregateId)
+                .data(data)
+                .build();
     }
 }

@@ -1,0 +1,44 @@
+{
+  "mode": "outbox",
+  "runId": "2026021315114102",
+  "paymentBaseUrl": "http://localhost:8085/payment",
+  "timing": {
+    "brokerDownEpoch": 1770963299,
+    "brokerUpEpoch": 1770963371,
+    "drainTimeSeconds": "22",
+    "consumerDrainStatus": "DONE"
+  },
+  "load": {
+    "fixtureCount": 1200,
+    "requestTimeout": "30s",
+    "confirmRequests": 550,
+    "confirmSuccess": 550,
+    "confirmNon2xx": 0,
+    "datasetReuseTotal": 0
+  },
+  "consistency": {
+    "consumedSource": "order_consumer_received_log",
+    "paymentDoneCount": 550,
+    "eventsConsumedCount": 550,
+    "topicObservedCount": 550,
+    "lossCount": 0,
+    "lossRate": 0.00,
+    "duplicatePaymentIdCount": 0
+  },
+  "outbox": {
+    "publishedCount": "550",
+    "pendingFinal": "0"
+  },
+  "performance": {
+    "avgRps": 9.159670967964884,
+    "p95Ms": 1786.429349999999,
+    "p99Ms": 0,
+    "apiSuccessRate": 100.00
+  },
+  "artifacts": {
+    "dataFile": "/Users/jang/Desktop/UNBOX/UNBOX-BE/k6/consistency/artifacts/2026021315114102-outbox/data.json",
+    "eventLog": "/Users/jang/Desktop/UNBOX/UNBOX-BE/k6/consistency/artifacts/2026021315114102-outbox/payment-events.log",
+    "k6Log": "/Users/jang/Desktop/UNBOX/UNBOX-BE/k6/consistency/artifacts/2026021315114102-outbox/k6.log",
+    "summaryJson": "/Users/jang/Desktop/UNBOX/UNBOX-BE/k6/consistency/artifacts/2026021315114102-outbox/k6-summary.json"
+  }
+}

@@ -2,6 +2,7 @@ package com.example.unbox_order.order.application.event.listener;
 
 import com.example.unbox_common.event.EventEnvelope;
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
+import com.example.unbox_order.order.application.service.ConsumerReceivedLogService;
 import com.example.unbox_order.order.application.service.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class OrderEventListener {
 
+    private static final String TOPIC_PAYMENT_EVENTS = "payment-events";
+    private static final String CONSUMER_GROUP = "order-group";
+
     private final OrderService orderService;
+    private final ConsumerReceivedLogService consumerReceivedLogService;
     private final ObjectMapper objectMapper;
 
     /**
@@ -68,6 +73,15 @@ public class OrderEventListener {
                 try {
                     // 4. 비즈니스 로직 실행
                     orderService.pendingShipmentOrder(event.orderId(), event.paymentId(), "EVENT_LISTENER");
+
+                    // 계측 전용: 테스트 트래픽(test_success_*)에 한해 완료 로그 적재 (중복 안전)
+                    if (event.paymentKey() != null && event.paymentKey().startsWith("test_success_")) {
+                        consumerReceivedLogService.recordPaymentCompleted(
+                                envelope,
+                                event,
+                                TOPIC_PAYMENT_EVENTS,
+                                CONSUMER_GROUP);
+                    }
 
                     log.info("[OrderEventListener] ✅ Successfully updated Order {} to PENDING_SHIPMENT",
                             event.orderId());

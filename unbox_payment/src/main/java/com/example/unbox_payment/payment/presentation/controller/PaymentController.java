@@ -52,15 +52,17 @@ public class PaymentController implements PaymentApi {
     @PostMapping("/confirm")
     public CustomApiResponse<TossConfirmResponse> confirmPayment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @RequestBody PaymentConfirmRequestDto request) {
+            @Valid @RequestBody PaymentConfirmRequestDto request,
+            @RequestHeader(value = "X-Test-Mode", required = false) String testMode) {
         // 사용자 ID 추출
         Long userId = userDetails.getUserId();
-        // 결제 승인 서비스 호출
+        // 결제 승인 서비스 호출 (테스트 모드 전달)
         TossConfirmResponse response = paymentService.confirmPayment(
                 userId,
                 request.paymentId(),
                 request.paymentKey(),
-                request.amount());
+                request.amount(),
+                testMode);
         // 성공 응답 반환
         return CustomApiResponse.success(response);
     }

@@ -20,6 +20,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Tag(name = "[사용자] 결제 관리", description = "결제 관리 API")
@@ -69,6 +70,6 @@ public interface PaymentApi {
         @PostMapping("/confirm")
         CustomApiResponse<TossConfirmResponse> confirmPayment(
                         @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
-
-                        @RequestBody @Valid PaymentConfirmRequestDto request);
+                        @RequestBody @Valid PaymentConfirmRequestDto request,
+                        @Parameter(hidden = true) @RequestHeader(value = "X-Test-Mode", required = false) String testMode);
 }

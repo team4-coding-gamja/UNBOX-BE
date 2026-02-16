@@ -109,3 +109,7 @@ connect_via_bastion.md
 DEV_ENVIRONMENT_INFO.md
 PROD_ENVIRONMENT_INFO.md
 *_CREDENTIALS.md
+
+### Virtual Environment ###
+.venv
+__pycache__

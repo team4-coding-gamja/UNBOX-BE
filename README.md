@@ -19,6 +19,17 @@
 - 적용된 디자인 패턴과 트레이드오프
 - 핵심 시퀀스 다이어그램, ERD(핵심 도메인)
 
+## 1.5 서비스별 심화 문서
+
+서비스별 백엔드 Deep Dive 문서는 아래 경로에서 확인할 수 있습니다.
+
+- 인덱스: `docs/services/README.md`
+- User: `docs/services/user-service.md`
+- Product: `docs/services/product-service.md`
+- Trade: `docs/services/trade-service.md`
+- Order: `docs/services/order-service.md`
+- Payment: `docs/services/payment-service.md`
+
 ---
 
 ## 2. 빠른 시작 (Local)
@@ -881,3 +892,4 @@ unbox_workspace/
 - Payment Outbox, Trade 동시성 전략, Order CircuitBreaker로 운영 안정성 강화
 
 이 README만 읽어도, 로컬 실행부터 서비스 간 흐름/운영 포인트까지 빠르게 온보딩할 수 있도록 구성했습니다.
+

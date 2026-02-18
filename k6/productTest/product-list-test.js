@@ -12,8 +12,8 @@ export const options = {
     },
 };
 
-const BASE_URL = 'https://dev.un-box.click/product/api/test/products/v1';
-// const BASE_URL = 'http://localhost:8082/product/api/test/products/v1';
+// const BASE_URL = 'https://dev.un-box.click/product/api/test/products/v1';
+const BASE_URL = 'http://localhost:8082/product/api/test/products/v1';
 
 export default function () {
     const rand = Math.random();

@@ -5,46 +5,46 @@ global:
 
 scrape_configs:
   # User Service
-  - job_name: 'unbox-user'
-    metrics_path: '/user/actuator/prometheus'
+  - job_name: "unbox-user"
+    metrics_path: "/user/actuator/prometheus"
     static_configs:
-      - targets: ['unbox-user:8080']
+      - targets: ["unbox-user:8080"]
         labels:
-          service: 'user'
+          service: "user"
 
   # Product Service
-  - job_name: 'unbox-product'
-    metrics_path: '/product/actuator/prometheus'
+  - job_name: "unbox-product"
+    metrics_path: "/product/actuator/prometheus"
     static_configs:
-      - targets: ['unbox-product:8080']
+      - targets: ["unbox-product:8080"]
         labels:
-          service: 'product'
+          service: "product"
 
   # Order Service
-  - job_name: 'unbox-order'
-    metrics_path: '/order/actuator/prometheus'
+  - job_name: "unbox-order"
+    metrics_path: "/order/actuator/prometheus"
     static_configs:
-      - targets: ['unbox-order:8080']
+      - targets: ["unbox-order:8080"]
         labels:
-          service: 'order'
+          service: "order"
 
   # Trade Service
-  - job_name: 'unbox-trade'
-    metrics_path: '/trade/actuator/prometheus'
+  - job_name: "unbox-trade"
+    metrics_path: "/trade/actuator/prometheus"
     static_configs:
-      - targets: ['unbox-trade:8080']
+      - targets: ["unbox-trade:8080"]
         labels:
-          service: 'trade'
+          service: "trade"
 
   # Payment Service
-  - job_name: 'unbox-payment'
-    metrics_path: '/payment/actuator/prometheus'
+  - job_name: "unbox-payment"
+    metrics_path: "/payment/actuator/prometheus"
     static_configs:
-      - targets: ['unbox-payment:8080']
+      - targets: ["unbox-payment:8080"]
         labels:
-          service: 'payment'
+          service: "payment"
 
   # Prometheus self-monitoring
-  - job_name: 'prometheus'
+  - job_name: "prometheus"
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]

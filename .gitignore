@@ -76,7 +76,6 @@ logs/
 *.log
 
 .spec
-docs/
 
 ### VS Code ###
 .vscode/

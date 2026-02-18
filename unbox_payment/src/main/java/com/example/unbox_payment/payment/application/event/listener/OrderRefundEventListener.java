@@ -1,7 +1,10 @@
 package com.example.unbox_payment.payment.application.event.listener;
 
+import com.example.unbox_common.event.EventEnvelope;
 import com.example.unbox_common.event.order.OrderRefundRequestedEvent;
+import com.example.unbox_common.event.order.OrderShipmentExpiredEvent;
 import com.example.unbox_payment.payment.application.service.PaymentService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -20,28 +23,47 @@ import org.springframework.stereotype.Component;
 public class OrderRefundEventListener {
 
     private final PaymentService paymentService;
+    private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "order-events", groupId = "payment-group")
-    public void handleOrderEvent(ConsumerRecord<String, Object> record, Acknowledgment ack) {
-        Object event = record.value();
+    public void handleOrderEvent(ConsumerRecord<String, String> record, Acknowledgment ack) {
+        String eventJson = record.value();
 
-        if (event == null) {
-            log.warn("Received null event in OrderRefundEventListener. Key: {}", record.key());
+        if (eventJson == null || eventJson.isEmpty()) {
+            log.warn("Received null or empty event in OrderRefundEventListener. Key: {}", record.key());
             ack.acknowledge();
             return;
         }
 
-        if (event instanceof OrderRefundRequestedEvent refundEvent) {
-            log.info("Received OrderRefundRequestedEvent - orderId: {}, paymentId: {}, amount: {}",
-                    refundEvent.orderId(), refundEvent.paymentId(), refundEvent.refundAmount());
-            processRefund(refundEvent.paymentId(), refundEvent.reason(), refundEvent.orderId());
-        } else if (event instanceof com.example.unbox_common.event.order.OrderShipmentExpiredEvent expiredEvent) {
-            log.info("Received OrderShipmentExpiredEvent - orderId: {}, paymentId: {}",
-                    expiredEvent.orderId(), expiredEvent.paymentId());
-            // 배송 기한 만료 -> 환불 처리
-            processRefund(expiredEvent.paymentId(), "Shipment Timeout", expiredEvent.orderId());
-        } else {
-            log.debug("Ignored event type in OrderRefundEventListener: {}", event.getClass().getName());
+        EventEnvelope envelope;
+        try {
+            envelope = objectMapper.readValue(eventJson, EventEnvelope.class);
+        } catch (Exception e) {
+            log.error("Failed to parse order event envelope: {}", eventJson, e);
+            throw new RuntimeException("Order event envelope parsing failed", e);
+        }
+
+        try {
+            if ("OrderRefundRequested".equals(envelope.getEventType())) {
+                OrderRefundRequestedEvent refundEvent = objectMapper.convertValue(
+                        envelope.getData(),
+                        OrderRefundRequestedEvent.class);
+                log.info("Received OrderRefundRequestedEvent - orderId: {}, paymentId: {}, amount: {}",
+                        refundEvent.orderId(), refundEvent.paymentId(), refundEvent.refundAmount());
+                processRefund(refundEvent.paymentId(), refundEvent.reason(), refundEvent.orderId());
+            } else if ("OrderShipmentExpired".equals(envelope.getEventType())) {
+                OrderShipmentExpiredEvent expiredEvent = objectMapper.convertValue(
+                        envelope.getData(),
+                        OrderShipmentExpiredEvent.class);
+                log.info("Received OrderShipmentExpiredEvent - orderId: {}, paymentId: {}",
+                        expiredEvent.orderId(), expiredEvent.paymentId());
+                processRefund(expiredEvent.paymentId(), "Shipment Timeout", expiredEvent.orderId());
+            } else {
+                log.debug("Ignored event type in OrderRefundEventListener: {}", envelope.getEventType());
+            }
+        } catch (Exception e) {
+            log.error("Failed to process order event - eventType: {}", envelope.getEventType(), e);
+            throw e;
         }
 
         ack.acknowledge();

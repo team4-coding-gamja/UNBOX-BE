@@ -28,18 +28,18 @@ public class RedissonConfig {
         Config config = new Config();
         String protocol = redisSsl ? "rediss://" : "redis://";
 
-        var serverConfig = config.useSingleServer()
-              .setAddress(protocol + redisHost + ":" + redisPort)
-              // Increase timeout to 10 seconds (default is 3s)
-              .setTimeout(10000)
-              .setConnectTimeout(10000)
-              // Keep connection alive
-              .setPingConnectionInterval(30000)
-              // Retry settings
-              .setRetryAttempts(3);
+        config.useSingleServer()
+                .setAddress(protocol + redisHost + ":" + redisPort)
+                // Increase timeout to 10 seconds (default is 3s)
+                .setTimeout(10000)
+                .setConnectTimeout(10000)
+                // Keep connection alive
+                .setPingConnectionInterval(30000)
+                // Retry settings
+                .setRetryAttempts(3);
 
         if (StringUtils.hasText(redisPassword)) {
-            serverConfig.setPassword(redisPassword);
+            config.setPassword(redisPassword);
         }
 
         return Redisson.create(config);

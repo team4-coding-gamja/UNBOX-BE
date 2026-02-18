@@ -34,8 +34,6 @@ public class ProductController implements ProductApi {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String keyword,
             @ParameterObject Pageable pageable) {
-        // 배포 테스트 v1.0.1 - 정상 배포 시나리오
-        System.out.println("=== [DEPLOY TEST v1.0.1] Product list request received ===");
         return CustomApiResponse.success(productService.getProducts(brandId, category, keyword, pageable));
     }
 

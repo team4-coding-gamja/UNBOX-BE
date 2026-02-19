@@ -98,6 +98,12 @@ payment:
     secret-key: ${TOSS_SECRET_KEY}
     security-key: ${TOSS_SECURITY_KEY}
     confirm-url: https://api.tosspayments.com/v1/payments/confirm
+  test:
+    async-producer:
+      retries: ${PAYMENT_TEST_ASYNC_PRODUCER_RETRIES:0}
+      delivery-timeout-ms: ${PAYMENT_TEST_ASYNC_PRODUCER_DELIVERY_TIMEOUT_MS:10000}
+      max-block-ms: ${PAYMENT_TEST_ASYNC_PRODUCER_MAX_BLOCK_MS:10000}
+      request-timeout-ms: ${PAYMENT_TEST_ASYNC_PRODUCER_REQUEST_TIMEOUT_MS:5000}
     
 management:
   endpoints:

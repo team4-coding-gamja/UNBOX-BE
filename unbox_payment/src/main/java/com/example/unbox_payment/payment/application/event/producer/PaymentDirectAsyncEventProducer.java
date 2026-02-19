@@ -5,12 +5,18 @@ import com.example.unbox_common.event.payment.PaymentCompletedEvent;
 import com.example.unbox_common.event.payment.PaymentFailedEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -33,12 +39,52 @@ import java.util.UUID;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class PaymentDirectAsyncEventProducer {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+    private final KafkaTemplate<String, String> directAsyncKafkaTemplate;
+    private final DefaultKafkaProducerFactory<String, String> directAsyncProducerFactory;
     private static final String TOPIC = "payment-events";
+
+    public PaymentDirectAsyncEventProducer(
+            ProducerFactory<String, String> producerFactory,
+            ObjectMapper objectMapper,
+            @Value("${payment.test.async-producer.retries:0}") int retries,
+            @Value("${payment.test.async-producer.delivery-timeout-ms:5000}") int deliveryTimeoutMs,
+            @Value("${payment.test.async-producer.max-block-ms:5000}") int maxBlockMs,
+            @Value("${payment.test.async-producer.request-timeout-ms:5000}") int requestTimeoutMs) {
+        this.objectMapper = objectMapper;
+
+        Map<String, Object> props = new HashMap<>(producerFactory.getConfigurationProperties());
+        int lingerMs = resolveIntConfig(props.get(ProducerConfig.LINGER_MS_CONFIG), 0);
+        int effectiveDeliveryTimeoutMs = Math.max(deliveryTimeoutMs, requestTimeoutMs + lingerMs + 1000);
+
+        props.put(ProducerConfig.RETRIES_CONFIG, retries);
+        props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, requestTimeoutMs);
+        props.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, effectiveDeliveryTimeoutMs);
+        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, maxBlockMs);
+
+        this.directAsyncProducerFactory = new DefaultKafkaProducerFactory<>(props);
+        this.directAsyncKafkaTemplate = new KafkaTemplate<>(this.directAsyncProducerFactory);
+
+        log.info(
+                "[DirectAsync] test producer config loaded - retries: {}, request.timeout.ms: {}, delivery.timeout.ms: {}, max.block.ms: {}, linger.ms: {}",
+                retries, requestTimeoutMs, effectiveDeliveryTimeoutMs, maxBlockMs, lingerMs);
+    }
+
+    private int resolveIntConfig(Object value, int defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        try {
+            return Integer.parseInt(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
 
     /**
      * PaymentCompletedEvent를 즉시 Kafka로 발행 (Fire-and-Forget)
@@ -58,7 +104,7 @@ public class PaymentDirectAsyncEventProducer {
                     event.paymentId(), key);
 
             // Fire-and-Forget: 결과를 기다리지 않음 (실패 시 재시도 없음)
-            kafkaTemplate.send(TOPIC, key, payload)
+            directAsyncKafkaTemplate.send(TOPIC, key, payload)
                     .whenComplete((result, ex) -> {
                         if (ex != null) {
                             log.error("[DirectAsync] ⚠️ PaymentCompleted 이벤트 발행 실패 - paymentId: {}, error: {}",
@@ -92,7 +138,7 @@ public class PaymentDirectAsyncEventProducer {
             log.info("[DirectAsync] PaymentFailed 이벤트 발행 시도 - paymentId: {}, key: {}",
                     event.paymentId(), key);
 
-            kafkaTemplate.send(TOPIC, key, payload)
+            directAsyncKafkaTemplate.send(TOPIC, key, payload)
                     .whenComplete((result, ex) -> {
                         if (ex != null) {
                             log.error("[DirectAsync] ⚠️ PaymentFailed 이벤트 발행 실패 - paymentId: {}, error: {}",
@@ -148,5 +194,14 @@ public class PaymentDirectAsyncEventProducer {
             return event.buyingBidId();
         }
         return event.orderId();
+    }
+
+    @PreDestroy
+    public void closeProducerFactory() {
+        try {
+            directAsyncProducerFactory.destroy();
+        } catch (Exception e) {
+            log.warn("[DirectAsync] failed to destroy producer factory: {}", e.getMessage());
+        }
     }
 }

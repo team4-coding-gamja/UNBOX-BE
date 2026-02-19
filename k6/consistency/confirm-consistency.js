@@ -64,8 +64,12 @@ function pickData() {
   const iteration = exec.scenario.iterationInTest;
   if (iteration >= testData.length) {
     datasetReuseTotal.add(1);
+    exec.test.abort(
+      `Dataset exhausted: iteration=${iteration}, dataSize=${testData.length}. ` +
+      `Increase --fixture-count or decrease --rate to avoid duplicate confirms.`
+    );
   }
-  return testData[iteration % testData.length];
+  return testData[iteration];
 }
 
 export default function () {

@@ -37,9 +37,9 @@ mkdir -p "${COMPARE_DIR}"
 async_confirm_success="$(jq -r '.load.confirmSuccess // 0' "${ASYNC_REPORT_JSON}")"
 async_confirm_non2xx="$(jq -r '.load.confirmNon2xx // 0' "${ASYNC_REPORT_JSON}")"
 async_payment_done="$(jq -r '.consistency.paymentDoneCount // 0' "${ASYNC_REPORT_JSON}")"
-async_events_consumed="$(jq -r '.consistency.eventsConsumedCount // 0' "${ASYNC_REPORT_JSON}")"
-async_loss_count="$(jq -r '.consistency.lossCount // 0' "${ASYNC_REPORT_JSON}")"
-async_loss_rate="$(jq -r '.consistency.lossRate // 0' "${ASYNC_REPORT_JSON}")"
+async_topic_observed="$(jq -r '.consistency.topicObservedCount // 0' "${ASYNC_REPORT_JSON}")"
+async_loss_count="$(jq -r '.consistency.topicLossCount // .consistency.lossCount // 0' "${ASYNC_REPORT_JSON}")"
+async_loss_rate="$(jq -r '.consistency.topicLossRate // .consistency.lossRate // 0' "${ASYNC_REPORT_JSON}")"
 async_avg_rps="$(jq -r '.performance.avgRps // 0' "${ASYNC_REPORT_JSON}")"
 async_p95_ms="$(jq -r '.performance.p95Ms // 0' "${ASYNC_REPORT_JSON}")"
 async_api_success_rate="$(jq -r '.performance.apiSuccessRate // 0' "${ASYNC_REPORT_JSON}")"
@@ -48,9 +48,9 @@ async_consumer_drain_status="$(jq -r '.timing.consumerDrainStatus // "N/A"' "${A
 outbox_confirm_success="$(jq -r '.load.confirmSuccess // 0' "${OUTBOX_REPORT_JSON}")"
 outbox_confirm_non2xx="$(jq -r '.load.confirmNon2xx // 0' "${OUTBOX_REPORT_JSON}")"
 outbox_payment_done="$(jq -r '.consistency.paymentDoneCount // 0' "${OUTBOX_REPORT_JSON}")"
-outbox_events_consumed="$(jq -r '.consistency.eventsConsumedCount // 0' "${OUTBOX_REPORT_JSON}")"
-outbox_loss_count="$(jq -r '.consistency.lossCount // 0' "${OUTBOX_REPORT_JSON}")"
-outbox_loss_rate="$(jq -r '.consistency.lossRate // 0' "${OUTBOX_REPORT_JSON}")"
+outbox_topic_observed="$(jq -r '.consistency.topicObservedCount // 0' "${OUTBOX_REPORT_JSON}")"
+outbox_loss_count="$(jq -r '.consistency.topicLossCount // .consistency.lossCount // 0' "${OUTBOX_REPORT_JSON}")"
+outbox_loss_rate="$(jq -r '.consistency.topicLossRate // .consistency.lossRate // 0' "${OUTBOX_REPORT_JSON}")"
 outbox_avg_rps="$(jq -r '.performance.avgRps // 0' "${OUTBOX_REPORT_JSON}")"
 outbox_p95_ms="$(jq -r '.performance.p95Ms // 0' "${OUTBOX_REPORT_JSON}")"
 outbox_api_success_rate="$(jq -r '.performance.apiSuccessRate // 0' "${OUTBOX_REPORT_JSON}")"
@@ -95,9 +95,9 @@ cat > "${COMPARE_README}" <<EOF
 | Confirm 실패 수(non-2xx) | ${async_confirm_non2xx} | ${outbox_confirm_non2xx} |
 | API 성공률(%) | ${async_api_success_rate} | ${outbox_api_success_rate} |
 | Payment DONE 수 | ${async_payment_done} | ${outbox_payment_done} |
-| 이벤트 소비 완료 수 | ${async_events_consumed} | ${outbox_events_consumed} |
-| 유실 건수 | ${async_loss_count} | ${outbox_loss_count} |
-| 유실률(%) | ${async_loss_rate} | ${outbox_loss_rate} |
+| 토픽 관측 이벤트 수 | ${async_topic_observed} | ${outbox_topic_observed} |
+| 토픽 기준 유실 건수 | ${async_loss_count} | ${outbox_loss_count} |
+| 토픽 기준 유실률(%) | ${async_loss_rate} | ${outbox_loss_rate} |
 | 평균 RPS | ${async_avg_rps} | ${outbox_avg_rps} |
 | p95 지연(ms) | ${async_p95_ms} | ${outbox_p95_ms} |
 | 복구 시간(s) | N/A | ${outbox_drain_time} |
@@ -108,8 +108,8 @@ cat > "${COMPARE_README}" <<EOF
 ## 자동 판정
 | 판정 항목 | 기준 | 결과 |
 | --- | --- | --- |
-| Async 유실 발생 | Async loss_rate > 0 | ${judge_async_loss} |
-| Outbox 무유실 | Outbox loss_rate = 0 | ${judge_outbox_loss} |
+| Async 유실 발생 | Async topic_loss_rate > 0 | ${judge_async_loss} |
+| Outbox 무유실 | Outbox topic_loss_rate = 0 | ${judge_outbox_loss} |
 | Outbox 잔여 없음 | Outbox pending_final = 0 | ${judge_outbox_pending} |
 | Outbox 소비 드레인 완료 | Outbox consumerDrainStatus = DONE | ${judge_outbox_drain} |
 | API 안정성 | async/outbox non-2xx = 0 | ${judge_api_success} |
@@ -118,8 +118,8 @@ cat > "${COMPARE_README}" <<EOF
 
 ## 판정 가이드
 - 설계 목표:
-  - Async: 유실률 > 0
-  - Outbox: 유실률 = 0, Outbox Pending 최종 = 0
+  - Async: 토픽 기준 유실률 > 0
+  - Outbox: 토픽 기준 유실률 = 0, Outbox Pending 최종 = 0
 - 현재 결과가 목표와 다르면 아래 파일의 원인 지표를 먼저 확인하세요.
   - ${ASYNC_REPORT_JSON}
   - ${OUTBOX_REPORT_JSON}

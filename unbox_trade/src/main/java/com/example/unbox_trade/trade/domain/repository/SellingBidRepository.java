@@ -90,4 +90,15 @@ public interface SellingBidRepository extends JpaRepository<SellingBid, UUID> {
 
   @Query("SELECT MIN(sb.price) FROM SellingBid sb WHERE sb.productOptionId = :optionId AND sb.status = 'LIVE' AND sb.deletedAt IS NULL")
   Optional<java.math.BigDecimal> findLowestPriceByOptionId(@Param("optionId") UUID optionId);
+
+  Optional<SellingBid> findFirstByProductOptionIdAndStatusAndDeletedAtIsNullOrderByPriceAsc(UUID optionId, SellingStatus status);
+
+  boolean existsByProductOptionIdAndStatusAndDeletedAtIsNull(UUID optionId, SellingStatus status);
+
+  // 특정 옵션의 'LIVE' 상태 입찰들을 가격 낮은 순(오름차순)으로 모두 조회
+  List<SellingBid> findAllByProductOptionIdAndStatusAndDeletedAtIsNullOrderByPriceAsc(UUID optionId, SellingStatus status);
+
+  // LIVE 상태인 입찰이 하나라도 있는 상품 옵션 ID 목록 조회 (중복 제거)
+  @Query("SELECT DISTINCT sb.productOptionId FROM SellingBid sb WHERE sb.status = 'LIVE' AND sb.deletedAt IS NULL")
+  List<UUID> findAllProductOptionIdsWithLiveBids();
 }

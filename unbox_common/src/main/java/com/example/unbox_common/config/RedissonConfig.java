@@ -25,10 +25,10 @@ public class RedissonConfig {
     @Bean
     public RedissonClient redissonClient() {
         Config config = new Config();
-        
+
         String protocol = redisSsl ? "rediss://" : "redis://";
         String address = protocol + redisHost + ":" + redisPort;
-        
+
         config.useSingleServer()
               .setAddress(address)
               .setPassword(redisPassword.isEmpty() ? null : redisPassword)

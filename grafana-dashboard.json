@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 4,
+  "id": 32,
   "links": [],
   "liveNow": true,
   "panels": [
@@ -131,6 +131,71 @@
       "fieldConfig": {
         "defaults": {
           "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 95
+              },
+              {
+                "color": "green",
+                "value": 99
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "minVizHeight": 200,
+        "minVizWidth": 200,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        {
+          "expr": "(1 - sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"[45]..\"}[5m])) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[5m])), 0.001)) * 100",
+          "legendFormat": "Success Rate",
+          "refId": "A"
+        }
+      ],
+      "title": "✅ Overall Success Rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
             "mode": "palette-classic"
           },
           "custom": {
@@ -181,13 +246,36 @@
           },
           "unit": "ms"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": ["unbox-trade-service P95"],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
         "w": 8,
-        "x": 8,
-        "y": 1
+        "x": 0,
+        "y": 7
       },
       "id": 2,
       "options": {
@@ -210,167 +298,6 @@
         }
       ],
       "title": "⚡ Response Time (P95)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 95
-              },
-              {
-                "color": "green",
-                "value": 99
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 8,
-        "x": 16,
-        "y": 1
-      },
-      "id": 3,
-      "options": {
-        "minVizHeight": 200,
-        "minVizWidth": 200,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "10.2.3",
-      "targets": [
-        {
-          "expr": "(1 - sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"[45]..\"}[5m])) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[5m])), 0.001)) * 100",
-          "legendFormat": "Success Rate",
-          "refId": "A"
-        }
-      ],
-      "title": "✅ Overall Success Rate",
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 7
-      },
-      "id": 4,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"4..\"}[1m])) by (job) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[1m])) by (job), 0.001) * 100",
-          "legendFormat": "{{job}} 4xx",
-          "refId": "A"
-        },
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"5..\"}[1m])) by (job) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[1m])) by (job), 0.001) * 100",
-          "legendFormat": "{{job}} 5xx",
-          "refId": "B"
-        }
-      ],
-      "title": "🚨 Error Rate by Service",
       "type": "timeseries"
     },
     {
@@ -463,12 +390,106 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"4..\"}[1m])) by (job) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[1m])) by (job), 0.001) * 100",
+          "legendFormat": "{{job}} 4xx",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"5..\"}[1m])) by (job) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[1m])) by (job), 0.001) * 100",
+          "legendFormat": "{{job}} 5xx",
+          "refId": "B"
+        }
+      ],
+      "title": "🚨 Error Rate by Service",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 19
       },
       "id": 101,
       "title": "🗄️ Infrastructure",
@@ -538,7 +559,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 20
       },
       "id": 6,
       "options": {
@@ -627,7 +648,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 20
       },
       "id": 7,
       "options": {
@@ -658,7 +679,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 26
       },
       "id": 102,
       "title": "📨 Kafka Monitoring",
@@ -728,7 +749,7 @@
         "h": 6,
         "w": 8,
         "x": 0,
-        "y": 21
+        "y": 27
       },
       "id": 10,
       "options": {
@@ -789,7 +810,7 @@
         "h": 6,
         "w": 8,
         "x": 8,
-        "y": 21
+        "y": 27
       },
       "id": 11,
       "options": {
@@ -797,17 +818,17 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "11.1.0",
       "targets": [
         {
           "expr": "sum(kafka_consumer_fetch_manager_records_lag{job=~\"unbox-.*\"}) by (job, topic)",
@@ -882,7 +903,7 @@
         "h": 6,
         "w": 8,
         "x": 16,
-        "y": 21
+        "y": 27
       },
       "id": 12,
       "options": {
@@ -913,172 +934,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 33
       },
       "id": 103,
       "title": "📉 Caching Performance (DB 부하 감소)",
       "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "green",
-                "value": 90
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 8,
-        "x": 0,
-        "y": 28
-      },
-      "id": 20,
-      "options": {
-        "minVizHeight": 200,
-        "minVizWidth": 200,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "10.2.3",
-      "targets": [
-        {
-          "expr": "spring_cache_gets{result=\"hit\",job=~\"unbox-.*\"} / clamp_min(spring_cache_gets{result=\"hit\",job=~\"unbox-.*\"} + spring_cache_gets{result=\"miss\",job=~\"unbox-.*\"}, 1) * 100",
-          "legendFormat": "{{cache}}",
-          "refId": "A"
-        }
-      ],
-      "title": "🎯 Cache Hit Rate",
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 8,
-        "x": 8,
-        "y": 28
-      },
-      "id": 21,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "expr": "rate(spring_cache_gets{result=\"hit\",job=~\"unbox-.*\"}[1m])",
-          "legendFormat": "{{cache}} hits",
-          "refId": "A"
-        },
-        {
-          "expr": "rate(spring_cache_gets{result=\"miss\",job=~\"unbox-.*\"}[1m])",
-          "legendFormat": "{{cache}} misses",
-          "refId": "B"
-        }
-      ],
-      "title": "📊 Cache Hits vs Misses",
-      "type": "timeseries"
     },
     {
       "datasource": {
@@ -1143,8 +1003,8 @@
       "gridPos": {
         "h": 6,
         "w": 8,
-        "x": 16,
-        "y": 28
+        "x": 0,
+        "y": 34
       },
       "id": 22,
       "options": {
@@ -1175,7 +1035,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 40
       },
       "id": 104,
       "title": "🛡️ Circuit Breaker (장애 전파 방지)",
@@ -1227,7 +1087,7 @@
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 41
       },
       "id": 30,
       "options": {
@@ -1235,17 +1095,17 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "11.1.0",
       "targets": [
         {
           "datasource": {
@@ -1326,7 +1186,7 @@
         "h": 6,
         "w": 16,
         "x": 0,
-        "y": 40
+        "y": 46
       },
       "id": 31,
       "options": {
@@ -1343,13 +1203,25 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(resilience4j_circuitbreaker_calls_total{kind=\"successful\",job=~\"unbox-.*\"}[1m])) by (name)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (name) (\r\n  rate(resilience4j_circuitbreaker_calls_seconds_count{job=~\"unbox-.*\", kind=\"successful\"}[1m])\r\n)",
           "legendFormat": "{{name}} success",
+          "range": true,
           "refId": "A"
         },
         {
-          "expr": "sum(rate(resilience4j_circuitbreaker_calls_total{kind=\"failed\",job=~\"unbox-.*\"}[1m])) by (name)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (name) (\r\n  rate(resilience4j_circuitbreaker_calls_seconds_count{job=~\"unbox-.*\", kind=\"failed\"}[1m])\r\n)",
           "legendFormat": "{{name}} failed",
+          "range": true,
           "refId": "B"
         }
       ],
@@ -1394,7 +1266,7 @@
         "h": 6,
         "w": 8,
         "x": 16,
-        "y": 40
+        "y": 46
       },
       "id": 32,
       "options": {
@@ -1402,9 +1274,7 @@
         "minVizWidth": 200,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -1412,11 +1282,17 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "11.1.0",
       "targets": [
         {
-          "expr": "resilience4j_circuitbreaker_calls_total{kind=\"successful\",job=~\"unbox-.*\"} / clamp_min(resilience4j_circuitbreaker_calls_total{kind=\"successful\",job=~\"unbox-.*\"} + resilience4j_circuitbreaker_calls_total{kind=\"failed\",job=~\"unbox-.*\"}, 1) * 100",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "100 *\r\nsum(rate(resilience4j_circuitbreaker_calls_seconds_count{job=~\"unbox-.*\", kind=\"successful\"}[5m]))\r\n/\r\nclamp_min(\r\n  sum(rate(resilience4j_circuitbreaker_calls_seconds_count{job=~\"unbox-.*\", kind=~\"successful|failed\"}[5m])),\r\n  0.001\r\n)",
           "legendFormat": "{{name}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -1429,7 +1305,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 46
+        "y": 52
       },
       "id": 105,
       "title": "🖥️ JVM Resources (메모리 최적화)",
@@ -1493,13 +1369,36 @@
           },
           "unit": "percent"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": ["unbox-trade-service"],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 47
+        "y": 53
       },
       "id": 40,
       "options": {
@@ -1588,7 +1487,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 47
+        "y": 53
       },
       "id": 41,
       "options": {
@@ -1619,7 +1518,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 53
+        "y": 59
       },
       "id": 106,
       "title": "📋 Live Logs (Loki)",
@@ -1634,7 +1533,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 54
+        "y": 60
       },
       "id": 50,
       "options": {
@@ -1649,8 +1548,14 @@
       },
       "targets": [
         {
-          "expr": "{job=\"docker\"} | json | line_format \"{{.log}}\" | json | level =~ \"ERROR|WARN\" | line_format \"{{.level}} | {{.app_name}} | {{.message}}\"",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "{namespace=\"unbox-app\", job=~\"unbox-.*\", job!=\"unbox-unknown\"}\r\n| json\r\n| line_format \"{{.log}}\"\r\n|~ \"(?i)(\\\\berror\\\\b|\\\\bwarn\\\\b|exception|failed|timeout)\"",
           "legendFormat": "",
+          "queryType": "range",
           "refId": "A"
         }
       ],
@@ -1666,7 +1571,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 62
+        "y": 68
       },
       "id": 51,
       "options": {
@@ -1681,8 +1586,14 @@
       },
       "targets": [
         {
-          "expr": "{job=\"docker\"} | json | line_format \"{{.log}}\" | json | message =~ \"(?i).*(kafka|event).*\" | level !~ \"ERROR|WARN\" | line_format \"[{{.level}}] {{.app_name}} | {{.message}} | trace={{.traceId}}\"",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "editorMode": "code",
+          "expr": "{namespace=\"unbox-app\", job=~\"unbox-.*\", job!=\"unbox-unknown\"}\r\n| json\r\n| line_format \"{{.log}}\"\r\n|~ \"(?i)(kafka|event|publish|produced|consume|consumed|listener)\"\r\n!~ \"(?i)(\\\\berror\\\\b|\\\\bwarn\\\\b|exception|failed)\"",
           "legendFormat": "",
+          "queryType": "range",
           "refId": "A"
         }
       ],
@@ -1692,23 +1603,18 @@
   ],
   "refresh": "5s",
   "schemaVersion": 39,
-  "tags": [
-    "unbox",
-    "developer",
-    "kafka",
-    "LGTM"
-  ],
+  "tags": ["unbox", "developer", "kafka", "LGTM"],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "🔥 Unbox Complete Dashboard",
   "uid": "unbox-complete-dashboard",
-  "version": 2,
+  "version": 11,
   "weekStart": ""
 }

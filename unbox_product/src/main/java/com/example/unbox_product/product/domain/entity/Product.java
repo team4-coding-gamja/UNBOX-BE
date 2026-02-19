@@ -10,7 +10,9 @@ import org.hibernate.annotations.SQLRestriction;
 import java.util.UUID;
 
 @Entity
-@Table(name = "p_products")
+@Table(name = "p_products", indexes = {
+        @Index(name = "idx_product_popularity_id", columnList = "popularity_score DESC, product_id DESC")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("deleted_at IS NULL")
@@ -38,6 +40,9 @@ public class Product extends BaseEntity {
 
     @Column(columnDefinition = "integer default 0", nullable = false)
     private int totalScore = 0;
+
+    @Column(name = "popularity_score", columnDefinition = "bigint default 0", nullable = false)
+    private long popularityScore = 0; // 인기 점수 추가
 
     // ======================= 연관 관계 =======================
     @ManyToOne(fetch = FetchType.LAZY)
@@ -145,5 +150,9 @@ public class Product extends BaseEntity {
         this.totalScore += newRating;
         if (this.totalScore < 0)
             this.totalScore = 0;
+    }
+
+    public void incrementPopularity() {
+        this.popularityScore++;
     }
 }

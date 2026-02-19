@@ -4,6 +4,7 @@ import com.example.unbox_common.event.EventEnvelope;
 import com.example.unbox_common.event.order.OrderRefundRequestedEvent;
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
 import com.example.unbox_order.settlement.application.service.SettlementService;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +47,7 @@ public class SettlementEventListener {
 
         try {
             // 1. EventEnvelope 파싱
-            EventEnvelope envelope = objectMapper.readValue(eventJson, EventEnvelope.class);
+            EventEnvelope envelope = parseEnvelope(eventJson);
 
             log.debug("[SettlementEventListener] Received payment event - eventId: {}, eventType: {}",
                     envelope.getEventId(), envelope.getEventType());
@@ -101,7 +102,7 @@ public class SettlementEventListener {
 
         try {
             // 1. EventEnvelope 파싱
-            EventEnvelope envelope = objectMapper.readValue(eventJson, EventEnvelope.class);
+            EventEnvelope envelope = parseEnvelope(eventJson);
 
             log.debug("[SettlementEventListener] Received order event - eventId: {}, eventType: {}",
                     envelope.getEventId(), envelope.getEventType());
@@ -134,6 +135,17 @@ public class SettlementEventListener {
         }
 
         ack.acknowledge();
+    }
+
+    /**
+     * JSON 문자열이 한 번 더 인코딩된 payload("\"{...}\"")도 처리합니다.
+     */
+    private EventEnvelope parseEnvelope(String rawJson) throws Exception {
+        JsonNode root = objectMapper.readTree(rawJson);
+        if (root.isTextual()) {
+            return objectMapper.readValue(root.asText(), EventEnvelope.class);
+        }
+        return objectMapper.treeToValue(root, EventEnvelope.class);
     }
 
     /**

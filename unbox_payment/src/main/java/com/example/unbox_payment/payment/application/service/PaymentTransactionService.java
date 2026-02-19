@@ -108,13 +108,7 @@ public class PaymentTransactionService {
         // 결제 완료 처리 (paymentKey만 전달)
         payment.completePayment(response.getPaymentKey());
 
-        // 판매 입찰 상태 변경 (RESERVED → SOLD)
-        // 비동기 이벤트(PaymentCompletedEvent)로 Trade 서비스에서 처리하므로 주석 처리
-        // tradeClient.soldSellingBid(orderInfo.getSellingBidId(), "payment-service");
-
-        // 주문 상태 변경 (PAYMENT_PENDING → PENDING_SHIPMENT)
-        // 비동기 이벤트(PaymentCompletedEvent)로 Order 서비스에서 처리하므로 주석 처리
-        // orderClient.pendingShipmentOrder(orderInfo.getOrderId(), "payment-service");
+        // 주문/입찰 후속 처리는 테스트 모드 분기에서 sync(order) 또는 async(event)로 수행됨
 
         // PG 트랜잭션 로그 저장 (성공)
         PgTransaction transaction = pgTransactionMapper.toSuccessEntity(payment, response);

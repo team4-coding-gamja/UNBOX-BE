@@ -25,6 +25,12 @@ public class UserController implements UserApi {
         return CustomApiResponse.success("User Service v2.0 - Blue/Green Deployment Test");
     }
 
+    // ✅ Health Test 엔드포인트 (시나리오 1: 정상 배포)
+    @GetMapping("/health-test")
+    public CustomApiResponse<String> healthTest() {
+        return CustomApiResponse.success("User Service v2.0 - Blue/Green Test - Healthy");
+    }
+
     // ✅ 내 정보 조회
     @GetMapping("/me")
     public CustomApiResponse<UserMeResponseDto> getUserMe(

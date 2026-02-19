@@ -9,16 +9,14 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
     consumer:
       group-id: payment-group
       auto-offset-reset: earliest
       enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "com.example.unbox_common.event.*"
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     # properties(인증 설정)는 프로파일별 파일에서 관리
     # 로컬: 인증 없음(PLAINTEXT), dev/prod: application-dev.yml/application-prod.yml에서 SASL_SSL/IAM 설정
 
@@ -84,9 +82,6 @@ user-service:
 
 product-service:
   url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
-
-trade-service:
-  url: ${TRADE_SERVICE_URL:http://localhost:8083}
 
 order-service:
   url: ${ORDER_SERVICE_URL:http://localhost:8084}

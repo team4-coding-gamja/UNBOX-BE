@@ -6,7 +6,10 @@ import exec from "k6/execution";
 // ==============================
 // 실행 모드 (sync / async)
 // ==============================
-const MODE = (__ENV.MODE || "async").toLowerCase(); // 서버에서 분기용
+const MODE = (__ENV.MODE || "").trim().toLowerCase(); // 서버에서 분기용
+if (MODE !== "sync" && MODE !== "async") {
+    throw new Error(`Invalid MODE='${__ENV.MODE}'. Use -e MODE=sync or -e MODE=async`);
+}
 
 
 // ==============================
@@ -22,9 +25,9 @@ const DATA_PATH = __ENV.DATA_PATH || "./data.json";
 // 클라이언트(사용자) 최대 대기 시간(고정)
 const CONFIRM_TIMEOUT = __ENV.CONFIRM_TIMEOUT || "15s";
 
-// Fault Injection: Order 지연(기본 1s)
-const ORDER_DELAY_MS = Number(__ENV.ORDER_DELAY_MS || 5000);
-const FAULT_TARGET = (__ENV.FAULT_TARGET || (MODE === "sync" ? "order" : "")).toLowerCase();
+// Fault Injection: Order 지연(기본 3s)
+const ORDER_DELAY_MS = Number(__ENV.ORDER_DELAY_MS || 2500);
+const FAULT_TARGET = ((__ENV.FAULT_TARGET !== undefined ? __ENV.FAULT_TARGET : "order") || "").toLowerCase();
 
 // think time
 const SLEEP_MS = Number(__ENV.SLEEP_MS || 50);
@@ -52,9 +55,12 @@ export const options = {
         payment_flow: {
             executor: "ramping-vus",
             stages: [
-                { duration: "10s", target: 10 }, // 웜업
-                { duration: "20s", target: 20 }, // 메인 부하 (커넥션 풀 범위 내)
-                { duration: "10s", target: 0 }, // 종료
+                { duration: "10s", target: 10 },   // warm-up
+                { duration: "10s", target: 50 },    // ramp
+                { duration: "20s", target: 50 },   // sustain
+                { duration: "10s", target: 100 },    // ramp
+                { duration: "20s", target: 100 },   // sustain
+                { duration: "10s", target: 0 },    // ramp-down
             ],
             gracefulRampDown: "10s",
         },
@@ -71,9 +77,7 @@ export const options = {
 // VU/iteration 기반 데이터 분배 (ramping 환경 대응)
 // ===============================
 function pick(arr) {
-    const vu = exec.vu.idInTest || 1;
-    const it = exec.vu.iterationInScenario || 0;
-    // 각 VU가 겹치지 않게 데이터를 사용하도록 오프셋 부여 (최대 100 it 가정)
+    // 전체 테스트 기준 iteration index를 사용해 데이터 중복을 최소화
     const idx = exec.scenario.iterationInTest % arr.length;
     return arr[idx];
 }

@@ -23,7 +23,7 @@ const DATA_PATH = __ENV.DATA_PATH || "./data.json";
 const CONFIRM_TIMEOUT = __ENV.CONFIRM_TIMEOUT || "15s";
 
 // Fault Injection: Order 지연(기본 1s)
-const ORDER_DELAY_MS = Number(__ENV.ORDER_DELAY_MS || 1000);
+const ORDER_DELAY_MS = Number(__ENV.ORDER_DELAY_MS || 5000);
 const FAULT_TARGET = (__ENV.FAULT_TARGET || (MODE === "sync" ? "order" : "")).toLowerCase();
 
 // think time
@@ -74,7 +74,7 @@ function pick(arr) {
     const vu = exec.vu.idInTest || 1;
     const it = exec.vu.iterationInScenario || 0;
     // 각 VU가 겹치지 않게 데이터를 사용하도록 오프셋 부여 (최대 100 it 가정)
-    const idx = ((vu - 1) * 100 + it) % arr.length;
+    const idx = exec.scenario.iterationInTest % arr.length;
     return arr[idx];
 }
 

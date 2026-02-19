@@ -14,7 +14,7 @@ import com.example.unbox_payment.payment.domain.entity.PaymentStatus;
 import com.example.unbox_payment.payment.presentation.mapper.PaymentClientMapper;
 import com.example.unbox_payment.payment.presentation.mapper.PaymentMapper;
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
-import com.example.unbox_payment.payment.application.event.producer.PaymentEventProducer;
+import com.example.unbox_payment.payment.application.event.producer.PaymentDirectAsyncEventProducer;
 import com.example.unbox_payment.payment.domain.repository.PaymentRepository;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
@@ -44,7 +44,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentClientMapper paymentClientMapper;
     private final OrderClient orderClient;
 
-    private final PaymentEventProducer paymentEventProducer;
+    private final PaymentDirectAsyncEventProducer directAsyncEventProducer;
 
     // ✅ 결제 이력 조회
     @Override
@@ -182,7 +182,7 @@ public class PaymentServiceImpl implements PaymentService {
                     event = PaymentCompletedEvent.ofSelling(paymentId, finalPaymentKey, payment.getOrderId(),
                             payment.getSellingBidId(), payment.getAmount());
                 }
-                paymentEventProducer.publishPaymentCompleted(event);
+                directAsyncEventProducer.publishPaymentCompleted(event);
             }
 
             return mockResponse;

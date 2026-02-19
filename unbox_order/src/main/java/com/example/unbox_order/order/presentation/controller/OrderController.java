@@ -30,7 +30,7 @@ public class OrderController implements OrderApi {
     // Canary 배포 테스트용 엔드포인트
     @GetMapping("/health-test")
     public CustomApiResponse<String> healthTest() {
-        return CustomApiResponse.success("Order Service Canary Test v2 - Healthy!");
+        return CustomApiResponse.success("Order Service Canary Test v3 - All Systems Go!");
     }
 
     @PostMapping

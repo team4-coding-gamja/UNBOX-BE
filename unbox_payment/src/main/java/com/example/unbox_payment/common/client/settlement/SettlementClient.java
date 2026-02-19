@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.UUID;
 
-@FeignClient(name = "unbox-order", contextId = "settlementClient", url = "${order-service.url}", path = "/order")
+@FeignClient(name = "unbox-order", contextId = "settlementClient", url = "${order-service.url}")
 public interface SettlementClient {
 
     // ✅ 정산 조회 (결제용)
-    @GetMapping("/internal/settlement/{id}/for-payment")
-    SettlementForPaymentResponse getSettlementForPayment (@PathVariable("id") UUID id);
+    @GetMapping("/order/internal/settlement/{id}/for-payment")
+    SettlementForPaymentResponse getSettlementForPayment(@PathVariable("id") UUID id);
 
     // ✅ 정산 생성 (결제용)
-    @PostMapping("/internal/settlement/create")
+    @PostMapping("/order/internal/settlement/create")
     SettlementCreateResponse createSettlementForPayment(@RequestParam("paymentId") UUID paymentId);
 }

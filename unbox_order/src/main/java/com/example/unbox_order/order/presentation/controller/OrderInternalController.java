@@ -26,7 +26,20 @@ public class OrderInternalController {
 
     @Operation(summary = "주문 조회 (결제용)", description = "결제 처리를 위한 주문 정보를 조회합니다.")
     @GetMapping("/{id}/for-payment")
-    public OrderForPaymentInfoResponse getOrderForPayment(@PathVariable UUID id) {
+    public OrderForPaymentInfoResponse getOrderForPayment(
+            @PathVariable UUID id,
+            @RequestHeader(value = "X-Fault-Target", required = false) String faultTarget,
+            @RequestHeader(value = "X-Fault-Delay-MS", required = false) Long faultDelay) {
+
+        // [장애 주입] 지연 발생 (target=order)
+        if ("order".equalsIgnoreCase(faultTarget)) {
+            try {
+                long delay = (faultDelay != null) ? faultDelay : 3000;
+                Thread.sleep(delay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
         return orderService.getOrderForPayment(id);
     }
 
@@ -35,7 +48,20 @@ public class OrderInternalController {
     public void pendingShipmentOrder(
             @PathVariable UUID id,
             @RequestParam UUID paymentId,
-            @RequestParam String updatedBy) {
-        orderService.pendingShipmentOrder(id, paymentId, updatedBy);
+            @RequestParam String updatedBy,
+            @RequestHeader(value = "X-Test-Mode", required = false) String testMode,
+            @RequestHeader(value = "X-Fault-Target", required = false) String faultTarget,
+            @RequestHeader(value = "X-Fault-Delay-MS", required = false) Long faultDelay) {
+
+        // [장애 주입] 지연 발생 (target=order)
+        if ("order".equalsIgnoreCase(faultTarget)) {
+            try {
+                long delay = (faultDelay != null) ? faultDelay : 3000;
+                Thread.sleep(delay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        orderService.pendingShipmentOrder(id, paymentId, updatedBy, testMode);
     }
 }

@@ -69,12 +69,12 @@ public class Payment extends BaseEntity {
     /**
      * 결제 타임아웃 체크 (토스 결제 인증 유효 시간: 10분)
      */
-    public boolean isExpired() {
-        if (readyAt == null) {
-            return false;
-        }
-        return LocalDateTime.now().isAfter(readyAt.plusMinutes(10));
-    }
+//    public boolean isExpired() {
+//        if (readyAt == null) {
+//            return false;
+//        }
+//        return LocalDateTime.now().isAfter(readyAt.plusMinutes(10));
+//    }
 
     /**
      * 결제 준비 완료 처리

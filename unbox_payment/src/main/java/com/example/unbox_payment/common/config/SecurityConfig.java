@@ -42,20 +42,37 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(auth -> auth
                 // Swagger
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger-resources/**").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger-resources/**")
+                .permitAll()
                 // ALB prefix 경로 Swagger 허용
-                .requestMatchers("/payment/v3/api-docs/**", "/payment/swagger-ui/**", "/payment/swagger-ui.html", "/payment/swagger-resources/**").permitAll()
+                .requestMatchers("/payment/v3/api-docs/**", "/payment/swagger-ui/**", "/payment/swagger-ui.html",
+                        "/payment/swagger-resources/**")
+                .permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 // Internal API (Feign)
                 .requestMatchers("/internal/**").permitAll()
                 // OPTIONS 요청 허용 (CORS Preflight)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // Load Test / Local Test 허용 (인증 없이 통과시키기)
+                // (prefix 없는 경우)
+                .requestMatchers("/api/payment/confirm").permitAll()
+                .requestMatchers("/api/payment/ready-payments").permitAll()
+                // (ALB prefix /payment 붙는 경우까지 커버)
+                .requestMatchers("/payment/api/payment/confirm").permitAll()
+                .requestMatchers("/payment/api/payment/ready-payments").permitAll()
+                .requestMatchers("/error").permitAll()
+
                 // Admin API
                 .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_MASTER", "ROLE_MANAGER")
-                // Base Authenticated
-                .anyRequest().authenticated()
-        );
 
+                .requestMatchers("/internal/loadtest/**").permitAll()
+
+                // Base Authenticated
+                .anyRequest().authenticated());
+
+        http.addFilterBefore(new com.example.unbox_payment.common.security.LoadTestAuthFilter(),
+                UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(new JwtFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

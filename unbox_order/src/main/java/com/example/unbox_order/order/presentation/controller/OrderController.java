@@ -27,6 +27,12 @@ public class OrderController implements OrderApi {
 
     private final OrderService orderService;
 
+    // Canary 배포 테스트용 엔드포인트
+    @GetMapping("/health-test")
+    public CustomApiResponse<String> healthTest() {
+        return CustomApiResponse.success("Order Service Canary Test v2 - Healthy!");
+    }
+
     @PostMapping
     public CustomApiResponse<UUID> createOrder(
             @RequestBody OrderCreateRequestDto requestDto,

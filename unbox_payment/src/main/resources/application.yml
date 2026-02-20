@@ -5,6 +5,12 @@ spring:
   config:
     import: "optional:file:.env[.properties]"
 
+  profiles:
+    group:
+      # 로컬/개발에서 dev 프로필만 활성화해도 loadtest 전용 빈(TestPaymentController 등)을 함께 활성화
+      dev:
+        - loadtest
+
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
@@ -26,7 +32,7 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
-      maximum-pool-size: 5  # 기본 10 → 5로 줄임
+      maximum-pool-size: 5
       minimum-idle: 2       # 최소 유지 연결
       connection-timeout: 20000
       idle-timeout: 300000
@@ -129,3 +135,30 @@ management:
   otlp:
     tracing:
       endpoint: ${TEMPO_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "loadtest"
+
+  task:
+    scheduling:
+      enabled: false
+
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: false
+      client:
+        config:
+          test-order-service:
+            connectTimeout: 1000
+            readTimeout: 3000
+
+  kafka:
+    listener:
+      auto-startup: false
+
+test-order-service:
+  url: http://localhost:${server.port:8080}/payment/mock

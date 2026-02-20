@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 /**
- * Order Controller - CI/CD Test
+ * Order Controller - CI/CD Test v3
  * 주문 관리 API 컨트롤러
- * Test: develop 브랜치 CI/CD 플로우 검증
+ * Test: Rollout 배포 플로우 재검증
  */
 @RestController
 @RequestMapping("/api/orders")

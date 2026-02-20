@@ -20,6 +20,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+/**
+ * Order Controller - CI/CD Test
+ * 주문 관리 API 컨트롤러
+ */
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor

@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
@@ -12,21 +13,21 @@ class Settings(BaseSettings):
     # =========================================
     # 1. Docker / Cloud 환경 변수 (우선순위 높음)
     # =========================================
-    POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER")
+    POSTGRES_SERVER: Optional[str] = os.getenv("POSTGRES_SERVER")
     POSTGRES_PORT: str = os.getenv("POSTGRES_PORT", "5432")
     POSTGRES_DB: str = os.getenv("POSTGRES_DB", "unbox_ai")
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD")
+    POSTGRES_USER: Optional[str] = os.getenv("POSTGRES_USER")
+    POSTGRES_PASSWORD: Optional[str] = os.getenv("POSTGRES_PASSWORD")
 
     # =========================================
     # 2. 로컬 / Java 공유 환경 변수 (Fallback)
     # =========================================
-    DB_URL: str = os.getenv("DB_URL")
+    DB_URL: Optional[str] = os.getenv("DB_URL")
     # 로컬에서만 쓰는 변수들도 안전하게 가져오기 위해 getenv 사용
     LOCAL_DB_USER: str = os.getenv("DB_USERNAME", "postgres") 
     LOCAL_DB_PW: str = os.getenv("DB_PASSWORD", "password")
 
-    SPRING_JWT_SECRET: str = os.getenv("SPRING_JWT_SECRET")
+    SPRING_JWT_SECRET: Optional[str] = os.getenv("SPRING_JWT_SECRET")
 
     @property
     def DATABASE_URL(self) -> str:
@@ -52,7 +53,7 @@ class Settings(BaseSettings):
         return self.DB_URL or "postgresql://postgres:password@localhost:5432/unbox_ai"
 
     # 보안 설정
-    JWT_SECRET_KEY: str = SPRING_JWT_SECRET
+    JWT_SECRET_KEY: str = SPRING_JWT_SECRET or "dev-secret"
     ALGORITHM: str = "HS256"
 
 settings = Settings()

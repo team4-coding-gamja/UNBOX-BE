@@ -3,8 +3,6 @@ uvicorn[standard]
 sqlalchemy
 psycopg2-binary
 pydantic-settings
-apscheduler
-playwright
-pandas
 python-dotenv
-requests
+numpy
+faker

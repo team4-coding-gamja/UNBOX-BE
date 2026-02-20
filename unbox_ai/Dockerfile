@@ -9,15 +9,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # 라이브러리 설치
-COPY requirements.txt .
+COPY unbox_ai/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Playwright 브라우저 설치 (Chromium)
-RUN playwright install chromium
-RUN playwright install-deps
-
 # 소스 복사
-COPY . .
+COPY unbox_ai/ /app/
 
 # 실행 (FastAPI)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

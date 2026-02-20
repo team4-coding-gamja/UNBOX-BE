@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 32,
+  "id": null,
   "links": [],
   "liveNow": true,
   "panels": [
@@ -112,7 +112,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[1m])) by (job)",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m])) by (job)",
           "legendFormat": "{{job}}",
           "refId": "A"
         }
@@ -163,9 +163,7 @@
         "minVizWidth": 200,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -176,7 +174,7 @@
       "pluginVersion": "11.1.0",
       "targets": [
         {
-          "expr": "(1 - sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"[45]..\"}[5m])) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[5m])), 0.001)) * 100",
+          "expr": "(1 - (sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"[45]..\"}[5m])) or on() vector(0)) / clamp_min(sum(rate(http_server_requests_seconds_count{job=\"$job\"}[5m])), 0.001)) * 100",
           "legendFormat": "Success Rate",
           "refId": "A"
         }
@@ -239,32 +237,7 @@
           },
           "unit": "ms"
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "unbox-trade-service P95"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 6,
@@ -287,7 +260,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=~\"unbox-.*\"}[1m])) by (job, le)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])) by (job, le)) * 1000",
           "legendFormat": "{{job}} P95",
           "refId": "A"
         }
@@ -373,7 +346,7 @@
       },
       "targets": [
         {
-          "expr": "sum(jvm_memory_used_bytes{job=~\"unbox-.*\",area=\"heap\"}) by (job)",
+          "expr": "sum(jvm_memory_used_bytes{job=\"$job\",area=\"heap\"}) by (job)",
           "legendFormat": "{{job}} Heap",
           "refId": "A"
         }
@@ -459,13 +432,13 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"4..\"}[1m])) by (job) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[1m])) by (job), 0.001) * 100",
-          "legendFormat": "{{job}} 4xx",
+          "expr": "100 * (sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"4..\"}[1m])) or on() vector(0)) / clamp_min(sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m])), 0.001)",
+          "legendFormat": "4xx",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\",status=~\"5..\"}[1m])) by (job) / clamp_min(sum(rate(http_server_requests_seconds_count{job=~\"unbox-.*\"}[1m])) by (job), 0.001) * 100",
-          "legendFormat": "{{job}} 5xx",
+          "expr": "100 * (sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[1m])) or on() vector(0)) / clamp_min(sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m])), 0.001)",
+          "legendFormat": "5xx",
           "refId": "B"
         }
       ],
@@ -562,7 +535,7 @@
       },
       "targets": [
         {
-          "expr": "sum(hikaricp_connections_active{job=~\"unbox-.*\"}) by (job)",
+          "expr": "sum(hikaricp_connections_active{job=\"$job\"}) by (job)",
           "legendFormat": "{{job}} Active",
           "refId": "A"
         }
@@ -648,7 +621,7 @@
       },
       "targets": [
         {
-          "expr": "jvm_threads_live_threads{job=~\"unbox-.*\"}",
+          "expr": "sum by (job) (jvm_threads_live_threads{job=\"$job\"})",
           "legendFormat": "{{job}}",
           "refId": "A"
         }
@@ -746,7 +719,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(spring_kafka_listener_seconds_count{job=~\"unbox-.*\"}[1m])) by (job)",
+          "expr": "sum(rate(spring_kafka_listener_seconds_count{job=\"$job\"}[1m])) by (job)",
           "legendFormat": "{{job}}",
           "refId": "A"
         }
@@ -797,9 +770,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -810,7 +781,7 @@
       "pluginVersion": "11.1.0",
       "targets": [
         {
-          "expr": "sum(kafka_consumer_fetch_manager_records_lag{job=~\"unbox-.*\"}) by (job, topic)",
+          "expr": "sum(kafka_consumer_fetch_manager_records_lag{job=\"$job\"}) by (job, topic)",
           "legendFormat": "{{job}}-{{topic}}",
           "refId": "A"
         }
@@ -896,7 +867,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(kafka_producer_record_send_total{job=~\"unbox-.*\"}[1m])) by (job)",
+          "expr": "sum(rate(kafka_producer_record_send_total{job=\"$job\"}[1m])) by (job)",
           "legendFormat": "{{job}}",
           "refId": "A"
         }
@@ -994,7 +965,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(spring_data_repository_invocations_seconds_bucket{job=~\"unbox-.*\"}[1m])) by (job, le)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(spring_data_repository_invocations_seconds_bucket{job=\"$job\"}[1m])) by (job, le)) * 1000",
           "legendFormat": "{{job}}",
           "refId": "A"
         }
@@ -1067,9 +1038,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -1082,7 +1051,7 @@
         {
           "datasource": "Prometheus",
           "editorMode": "code",
-          "expr": "sum by (name) (resilience4j_circuitbreaker_state{job=~\"unbox-.*\", state=\"open\"}) + sum by (name) (resilience4j_circuitbreaker_state{job=~\"unbox-.*\", state=\"half_open\"}) * 2",
+          "expr": "sum by (name) (resilience4j_circuitbreaker_state{job=\"$job\", state=\"open\"}) + sum by (name) (resilience4j_circuitbreaker_state{job=\"$job\", state=\"half_open\"}) * 2",
           "legendFormat": "{{name}}",
           "range": true,
           "refId": "A"
@@ -1171,7 +1140,7 @@
         {
           "datasource": "Prometheus",
           "editorMode": "code",
-          "expr": "sum by (name) (\r\n  rate(resilience4j_circuitbreaker_calls_seconds_count{job=~\"unbox-.*\", kind=\"successful\"}[1m])\r\n)",
+          "expr": "sum by (name) (\r\n  rate(resilience4j_circuitbreaker_calls_seconds_count{job=\"$job\", kind=\"successful\"}[1m])\r\n)",
           "legendFormat": "{{name}} success",
           "range": true,
           "refId": "A"
@@ -1179,7 +1148,7 @@
         {
           "datasource": "Prometheus",
           "editorMode": "code",
-          "expr": "sum by (name) (\r\n  rate(resilience4j_circuitbreaker_calls_seconds_count{job=~\"unbox-.*\", kind=\"failed\"}[1m])\r\n)",
+          "expr": "sum by (name) (\r\n  rate(resilience4j_circuitbreaker_calls_seconds_count{job=\"$job\", kind=\"failed\"}[1m])\r\n)",
           "legendFormat": "{{name}} failed",
           "range": true,
           "refId": "B"
@@ -1231,9 +1200,7 @@
         "minVizWidth": 200,
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -1246,7 +1213,7 @@
         {
           "datasource": "Prometheus",
           "editorMode": "code",
-          "expr": "100 *\r\nsum(rate(resilience4j_circuitbreaker_calls_seconds_count{job=~\"unbox-.*\", kind=\"successful\"}[5m]))\r\n/\r\nclamp_min(\r\n  sum(rate(resilience4j_circuitbreaker_calls_seconds_count{job=~\"unbox-.*\", kind=~\"successful|failed\"}[5m])),\r\n  0.001\r\n)",
+          "expr": "100 *\r\nsum(rate(resilience4j_circuitbreaker_calls_seconds_count{job=\"$job\", kind=\"successful\"}[5m]))\r\n/\r\nclamp_min(\r\n  sum(rate(resilience4j_circuitbreaker_calls_seconds_count{job=\"$job\", kind=~\"successful|failed\"}[5m])),\r\n  0.001\r\n)",
           "legendFormat": "{{name}}",
           "range": true,
           "refId": "A"
@@ -1322,32 +1289,7 @@
           },
           "unit": "percent"
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "unbox-trade-service"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 6,
@@ -1370,7 +1312,7 @@
       },
       "targets": [
         {
-          "expr": "process_cpu_usage{job=~\"unbox-.*\"} * 100",
+          "expr": "avg by (job) (process_cpu_usage{job=\"$job\"}) * 100",
           "legendFormat": "{{job}}",
           "refId": "A"
         }
@@ -1456,7 +1398,7 @@
       },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=~\"unbox-.*\"}[1m]) / rate(jvm_gc_pause_seconds_count{job=~\"unbox-.*\"}[1m])",
+          "expr": "sum by (job) (rate(jvm_gc_pause_seconds_sum{job=\"$job\"}[1m])) / sum by (job) (rate(jvm_gc_pause_seconds_count{job=\"$job\"}[1m]))",
           "legendFormat": "{{job}}",
           "refId": "A"
         }
@@ -1499,7 +1441,7 @@
         {
           "datasource": "loki",
           "editorMode": "code",
-          "expr": "{namespace=\"unbox-app\", job=~\"unbox-.*\", job!=\"unbox-unknown\"}\r\n| json\r\n| line_format \"{{.log}}\"\r\n|~ \"(?i)(\\\\berror\\\\b|\\\\bwarn\\\\b|exception|failed|timeout)\"",
+          "expr": "{app=\"$app\"} |~ \"(?i)(\\\\berror\\\\b|\\\\bwarn\\\\b|exception|failed|timeout)\"",
           "legendFormat": "",
           "queryType": "range",
           "refId": "A"
@@ -1531,7 +1473,7 @@
         {
           "datasource": "loki",
           "editorMode": "code",
-          "expr": "{namespace=\"unbox-app\", job=~\"unbox-.*\", job!=\"unbox-unknown\"}\r\n| json\r\n| line_format \"{{.log}}\"\r\n|~ \"(?i)(kafka|event|publish|produced|consume|consumed|listener)\"\r\n!~ \"(?i)(\\\\berror\\\\b|\\\\bwarn\\\\b|exception|failed)\"",
+          "expr": "{app=\"$app\"} |~ \"(?i)(kafka|event|publish|produced|consume|consumed|listener)\" !~ \"(?i)(\\\\berror\\\\b|\\\\bwarn\\\\b|exception|failed)\"",
           "legendFormat": "",
           "queryType": "range",
           "refId": "A"
@@ -1539,18 +1481,108 @@
       ],
       "title": "ℹ️ Event Logs",
       "type": "logs"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 76
+      },
+      "id": 107,
+      "title": "🧭 Tracing (Tempo)",
+      "type": "row"
+    },
+    {
+      "datasource": "tempo",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        {
+          "datasource": "tempo",
+          "limit": 20,
+          "query": "{resource.service.name=\"$service_name\"}",
+          "queryType": "traceql",
+          "refId": "A",
+          "tableType": "traces"
+        }
+      ],
+      "title": "🧭 Traces (Tempo)",
+      "type": "table",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 77
+      },
+      "id": 108
     }
   ],
   "refresh": "5s",
   "schemaVersion": 39,
-  "tags": [
-    "unbox",
-    "developer",
-    "kafka",
-    "LGTM"
-  ],
+  "tags": ["unbox", "developer", "kafka", "LGTM", "user"],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "job",
+        "type": "constant",
+        "query": "unbox-user-service",
+        "hide": 2
+      },
+      {
+        "name": "service_name",
+        "type": "constant",
+        "query": "unbox-user",
+        "hide": 2
+      },
+      {
+        "name": "namespace",
+        "type": "constant",
+        "query": "unbox-app",
+        "hide": 2
+      },
+      {
+        "name": "app",
+        "type": "constant",
+        "query": "user-service",
+        "hide": 2
+      }
+    ]
   },
   "time": {
     "from": "now-5m",
@@ -1558,8 +1590,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "🔥 Unbox Complete Dashboard",
-  "uid": "unbox-complete-dashboard",
+  "title": "🔥 Unbox User Dashboard",
+  "uid": "unbox-user-dashboard",
   "version": 11,
   "weekStart": ""
 }

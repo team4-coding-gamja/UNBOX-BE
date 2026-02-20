@@ -16,9 +16,7 @@ spring:
       auto-offset-reset: earliest
       enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "com.example.unbox_common.event.*"
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     # properties(인증 설정)는 프로파일별 파일에서 관리
     # 로컬: 인증 없음(PLAINTEXT), dev/prod: application-dev.yml/application-prod.yml에서 SASL_SSL/IAM 설정
 
@@ -100,6 +98,12 @@ payment:
     secret-key: ${TOSS_SECRET_KEY}
     security-key: ${TOSS_SECURITY_KEY}
     confirm-url: https://api.tosspayments.com/v1/payments/confirm
+  test:
+    async-producer:
+      retries: ${PAYMENT_TEST_ASYNC_PRODUCER_RETRIES:0}
+      delivery-timeout-ms: ${PAYMENT_TEST_ASYNC_PRODUCER_DELIVERY_TIMEOUT_MS:10000}
+      max-block-ms: ${PAYMENT_TEST_ASYNC_PRODUCER_MAX_BLOCK_MS:10000}
+      request-timeout-ms: ${PAYMENT_TEST_ASYNC_PRODUCER_REQUEST_TIMEOUT_MS:5000}
     
 management:
   endpoints:

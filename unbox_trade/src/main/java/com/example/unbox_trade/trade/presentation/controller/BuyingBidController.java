@@ -35,25 +35,6 @@ public class BuyingBidController implements BuyingBidApi {
     public CustomApiResponse<BuyingBidCreateResponseDto> createBuyingBid(
             @Valid @RequestBody BuyingBidCreateRequestDto requestDto,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        
-        // Canary 배포 테스트 - 시나리오 2: 에러 시뮬레이션
-        String testVersion = System.getenv("TEST_CANARY_DEPLOYMENT");
-        if ("v2.1".equals(testVersion)) {
-            // 10% 확률로 입찰 실패 시뮬레이션
-            if (Math.random() < 0.1) {
-                throw new IllegalArgumentException("입찰가 검증 실패 - 최소 금액 미달 (Canary Test v2.1)");
-            }
-            
-            // 30% 확률로 응답 지연 (1.5초)
-            if (Math.random() < 0.3) {
-                try {
-                    Thread.sleep(1500);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }
-        
         BuyingBidCreateResponseDto response = buyingBidService.createBuyingBid(userDetails.getUserId(), requestDto);
         return CustomApiResponse.success(response);
     }

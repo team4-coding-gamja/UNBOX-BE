@@ -47,6 +47,9 @@ public class SecurityConfig {
             .requestMatchers("/actuator/**").permitAll()
             // Internal API (Feign)
             .requestMatchers("/internal/**").permitAll()
+            // Test API (Concurrency Testing)
+            .requestMatchers("/api/trade/purchase/**", "/trade/api/trade/purchase/**").permitAll()
+            .requestMatchers("/error").permitAll()
             // Admin API
             .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_MASTER", "ROLE_MANAGER")
             // Base Authenticated

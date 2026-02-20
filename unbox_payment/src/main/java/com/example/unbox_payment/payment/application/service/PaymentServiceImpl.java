@@ -15,7 +15,6 @@ import com.example.unbox_payment.payment.presentation.mapper.PaymentClientMapper
 import com.example.unbox_payment.payment.presentation.mapper.PaymentMapper;
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
 import com.example.unbox_common.event.payment.PaymentFailedEvent;
-import com.example.unbox_payment.payment.application.event.producer.PaymentEventProducer;
 import com.example.unbox_payment.payment.domain.repository.PaymentRepository;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
@@ -45,7 +44,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentClientMapper paymentClientMapper;
     private final OrderClient orderClient;
 
-    private final PaymentEventProducer paymentEventProducer;
+    private final PaymentOutboxWriter paymentOutboxWriter;
 
     // ✅ 결제 이력 조회
     @Override
@@ -165,7 +164,7 @@ public class PaymentServiceImpl implements PaymentService {
                 event = PaymentCompletedEvent.ofSelling(paymentId, finalPaymentKey, payment.getOrderId(),
                         payment.getSellingBidId(), payment.getAmount());
             }
-            paymentEventProducer.publishPaymentCompleted(event);
+            paymentOutboxWriter.write(event);
 
             log.info("[PaymentConfirm] 테스트 결제 프로세스 완료 - paymentId: {}", paymentId);
             return mockResponse;
@@ -194,7 +193,7 @@ public class PaymentServiceImpl implements PaymentService {
                     event = PaymentCompletedEvent.ofSelling(paymentId, finalPaymentKey, payment.getOrderId(),
                             payment.getSellingBidId(), payment.getAmount());
                 }
-                paymentEventProducer.publishPaymentCompleted(event);
+                paymentOutboxWriter.write(event);
 
                 log.info("[PaymentConfirm] 전체 결제 프로세스 완료 - paymentId: {}", paymentId);
             } catch (Exception e) {
@@ -219,7 +218,7 @@ public class PaymentServiceImpl implements PaymentService {
             // response.getPaymentKey() 혹은 payment.getPaymentKey() 사용.
             String currentPaymentKey = (payment.getPaymentKey() != null) ? payment.getPaymentKey() : "UNKNOWN";
 
-            paymentEventProducer.publishPaymentFailed(
+            paymentOutboxWriter.write(
                     PaymentFailedEvent.of(paymentId, currentPaymentKey, payment.getOrderId(),
                             payment.getSellingBidId(), payment.getBuyingBidId(),
                             payment.getAmount(), response.getErrorCode(), response.getErrorMessage()));

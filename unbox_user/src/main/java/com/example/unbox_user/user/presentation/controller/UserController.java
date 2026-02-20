@@ -22,15 +22,7 @@ public class UserController implements UserApi {
     // ✅ 버전 정보 (Blue/Green 배포 테스트용)
     @GetMapping("/version")
     public CustomApiResponse<String> getVersion() {
-        return CustomApiResponse.success("User Service v4.0 - Blue/Green Manual Rollback Test");
-    }
-
-    // ✅ Health Test 엔드포인트 (시나리오 2: 느린 응답 - 수동 롤백 테스트)
-    @GetMapping("/health-test")
-    public CustomApiResponse<String> healthTest() throws InterruptedException {
-        // 의도적으로 2초 지연 (문제 있는 Green 버전)
-        Thread.sleep(2000);
-        return CustomApiResponse.success("User Service v4.0 - Slow Response (2s delay) - Manual Test");
+        return CustomApiResponse.success("User Service v2.0 - Blue/Green Deployment Test");
     }
 
     // ✅ 내 정보 조회

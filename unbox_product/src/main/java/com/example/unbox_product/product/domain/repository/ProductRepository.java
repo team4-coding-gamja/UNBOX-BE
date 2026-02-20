@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Slice;
 
 import java.util.List;
 import java.util.Optional;
@@ -81,4 +82,23 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Product p SET p.deletedAt = CURRENT_TIMESTAMP, p.deletedBy = :deletedBy WHERE p.id = :productId AND p.deletedAt IS NULL")
     void softDeleteById(@Param("productId") UUID productId, @Param("deletedBy") String deletedBy);
+
+    @EntityGraph(attributePaths = {"brand"})
+    @Query("""
+    SELECT p FROM Product p
+    WHERE p.deletedAt IS NULL
+      AND (:lastProductId IS NULL OR p.id < :lastProductId)
+      AND (:brandId IS NULL OR p.brand.id = :brandId)
+      AND (:category IS NULL OR p.category = :category)
+      AND (:keyword IS NULL OR :keyword = '' 
+           OR lower(p.name) LIKE lower(concat('%', :keyword, '%'))
+           OR lower(p.modelNumber) LIKE lower(concat('%', :keyword, '%')))
+    ORDER BY p.id DESC
+    """)
+    Slice<Product> findByNoOffset(
+            @Param("lastProductId") UUID lastProductId,
+            @Param("brandId") UUID brandId,
+            @Param("category") Category category,
+            @Param("keyword") String keyword,
+            Pageable pageable);
 }

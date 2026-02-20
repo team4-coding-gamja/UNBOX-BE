@@ -202,17 +202,28 @@ jobs:
           fi
 
       - name: Notify Discord - Deploy Triggered
+        if: success()
         run: |
+          ENV_NAME="${{ needs.detect-changes.outputs.env_name }}"
+          SERVICES="${{ needs.detect-changes.outputs.services }}"
+          IMAGE_TAG="${ENV_NAME}-${{ github.sha }}"
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "🚀 CI 성공 & 배포 트리거 완료 - ${ENV_NAME}",
+              "description": "**업데이트 서비스:** \`${SERVICES}\`\\n**이미지 태그:** \`${IMAGE_TAG}\`",
+              "color": 3447003,
+              "timestamp": "${TIMESTAMP}"
+            }]
+          }
+          EOF
+          )
+          
           curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
-            -d '{
-              "embeds": [{
-                "title": "🚀 CI 성고 & 배포 트리거 완료 - ${{ needs.detect-changes.outputs.env_name }}",
-                "description": "**업데이트 서비스:** `${{ needs.detect-changes.outputs.services }}`\n**이미지 태그:** `${{ needs.detect-changes.outputs.env_name }}-${{ github.sha }}`",
-                "color": 3447003,
-                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
-              }]
-            }'
+            -d "${PAYLOAD}"
 
   # ============================================
   # Job 4: 빌드 결과 요약
@@ -269,6 +280,7 @@ jobs:
           
       # Discord 알림 - 전체 공정 완료
       - name: Notify Discord - Pipeline Complete
+        if: always()
         run: |
           ENV_NAME="${{ needs.detect-changes.outputs.env_name }}"
           SERVICES="${{ needs.detect-changes.outputs.services }}"
@@ -285,16 +297,24 @@ jobs:
             STATUS="일부 서비스 확인 필요"
           fi
           
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          
+          # JSON 페이로드 생성 (변수 이스케이프 처리)
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "${TITLE}",
+              "description": "**환경:** ${ENV_NAME^^}\\n**브랜치:** \`${{ github.ref_name }}\`\\n**커밋:** \`${{ github.sha }}\`\\n**대상:** ${SERVICES}\\n**결과:** ${STATUS}",
+              "color": ${COLOR},
+              "footer": {
+                "text": "ArgoCD에서 최종 배포 상태를 확인하세요."
+              },
+              "timestamp": "${TIMESTAMP}"
+            }]
+          }
+          EOF
+          )
+          
           curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
-            -d '{
-              "embeds": [{
-                "title": "'"$TITLE"'",
-                "description": "**환경:** '"${ENV_NAME^^}"'\n**브랜치:** `${{ github.ref_name }}`\n**커밋:** `${{ github.sha }}`\n**대상:** '"$SERVICES"'\n**결과:** '"$STATUS"'",
-                "color": '"$COLOR"',
-                "footer": {
-                  "text": "ArgoCD에서 최종 배포 상태를 확인하세요."
-                },
-                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
-              }]
-            }'
+            -d "${PAYLOAD}"

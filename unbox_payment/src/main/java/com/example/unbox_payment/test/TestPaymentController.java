@@ -6,14 +6,12 @@ import com.example.unbox_payment.payment.presentation.dto.request.PaymentConfirm
 import com.example.unbox_payment.payment.presentation.dto.response.TossConfirmResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/test/api/payment")
 @RequiredArgsConstructor
-@Profile("loadtest")
 public class TestPaymentController {
 
     private final TestPaymentService testPaymentService;

@@ -7,7 +7,6 @@ import com.example.unbox_payment.payment.domain.entity.PaymentStatus;
 import com.example.unbox_payment.payment.domain.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +16,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Profile("loadtest")
 public class TestPaymentStatusTransitionService {
 
     private final PaymentRepository paymentRepository;

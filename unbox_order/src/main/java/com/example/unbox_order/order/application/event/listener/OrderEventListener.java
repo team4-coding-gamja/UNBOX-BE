@@ -1,10 +1,7 @@
 package com.example.unbox_order.order.application.event.listener;
 
-import com.example.unbox_common.event.EventEnvelope;
 import com.example.unbox_common.event.payment.PaymentCompletedEvent;
-import com.example.unbox_order.order.application.service.ConsumerReceivedLogService;
 import com.example.unbox_order.order.application.service.OrderService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -12,30 +9,12 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
-/**
- * 결제 이벤트 리스너 (주문 서비스)
- * 
- * EventEnvelope 표준 규격 사용:
- * - StringDeserializer로 안전하게 수신
- * - eventType 필드로 이벤트 분류
- * - data 필드에서 실제 비즈니스 데이터 추출
- * 
- * 장점:
- * 1. 프로듀서의 클래스 타입에 의존하지 않음 (결합도 감소)
- * 2. 알 수 없는 이벤트 타입은 안전하게 무시
- * 3. 디버깅 용이 (JSON 문자열을 로그에서 직접 확인 가능)
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class OrderEventListener {
 
-    private static final String TOPIC_PAYMENT_EVENTS = "payment-events";
-    private static final String CONSUMER_GROUP = "order-group";
-
     private final OrderService orderService;
-    private final ConsumerReceivedLogService consumerReceivedLogService;
-    private final ObjectMapper objectMapper;
 
     /**
      * ✅ 결제 완료 이벤트 리스너
@@ -43,60 +22,33 @@ public class OrderEventListener {
      * 주문 상태를 PENDING_SHIPMENT로 변경합니다.
      */
     @KafkaListener(topics = "payment-events", groupId = "order-group")
-    public void handlePaymentCompletedEvent(ConsumerRecord<String, String> record, Acknowledgment ack) {
-        String eventJson = record.value();
+    public void handlePaymentCompletedEvent(ConsumerRecord<String, Object> record, Acknowledgment ack) {
+        Object event = record.value();
 
-        if (eventJson == null || eventJson.isEmpty()) {
-            log.warn("[OrderEventListener] Received null or empty event. Key: {}", record.key());
-            ack.acknowledge();
+        if (event == null) {
+            log.warn("Received null event in OrderEventListener. Key: {}", record.key());
+            ack.acknowledge(); // Null 이벤트는 처리한 것으로 간주
             return;
         }
 
-        try {
-            // 1. EventEnvelope 파싱
-            EventEnvelope envelope = objectMapper.readValue(eventJson, EventEnvelope.class);
+        if (event instanceof PaymentCompletedEvent paymentCompletedEvent) {
+            log.info("Received PaymentCompletedEvent for Order ID: {}, SellingBid ID: {}",
+                    paymentCompletedEvent.orderId(), paymentCompletedEvent.sellingBidId());
 
-            log.debug("[OrderEventListener] Received event - eventId: {}, eventType: {}, aggregateId: {}",
-                    envelope.getEventId(), envelope.getEventType(), envelope.getAggregateId());
-
-            // 2. eventType에 따라 분기
-            if ("PaymentCompleted".equals(envelope.getEventType())) {
-                // 3. data 필드에서 실제 이벤트 추출
-                PaymentCompletedEvent event = objectMapper.convertValue(
-                        envelope.getData(),
-                        PaymentCompletedEvent.class);
-
-                log.info(
-                        "[OrderEventListener] Processing PaymentCompletedEvent - orderId: {}, paymentId: {}, sellingBidId: {}",
-                        event.orderId(), event.paymentId(), event.sellingBidId());
-
-                try {
-                    // 4. 비즈니스 로직 실행
-                    orderService.pendingShipmentOrder(event.orderId(), event.paymentId(), "EVENT_LISTENER");
-
-                    // 계측 전용: 테스트 트래픽(test_success_*)에 한해 완료 로그 적재 (중복 안전)
-                    if (event.paymentKey() != null && event.paymentKey().startsWith("test_success_")) {
-                        consumerReceivedLogService.recordPaymentCompleted(
-                                envelope,
-                                event,
-                                TOPIC_PAYMENT_EVENTS,
-                                CONSUMER_GROUP);
-                    }
-
-                    log.info("[OrderEventListener] ✅ Successfully updated Order {} to PENDING_SHIPMENT",
-                            event.orderId());
-                } catch (Exception e) {
-                    log.error("[OrderEventListener] ❌ Failed to update Order {} status", event.orderId(), e);
-                    // 예외를 던져서 Retry 매커니즘(DefaultErrorHandler)이 동작하도록 함
-                    throw e;
-                }
-            } else {
-                // 알 수 없는 이벤트 타입은 로그만 남기고 안전하게 무시
-                log.debug("[OrderEventListener] Ignored event type: {}", envelope.getEventType());
+            try {
+                // 주문 상태 변경 (PAYMENT_PENDING -> PENDING_SHIPMENT)
+                orderService.pendingShipmentOrder(paymentCompletedEvent.orderId(), paymentCompletedEvent.paymentId(),
+                        "SYSTEM_EVENT", "async");
+                log.info("Successfully updated Order {} status to PENDING_SHIPMENT with paymentId {}.",
+                        paymentCompletedEvent.orderId(), paymentCompletedEvent.paymentId());
+            } catch (Exception e) {
+                log.error("Failed to update Order {} status for PaymentCompletedEvent.",
+                        paymentCompletedEvent.orderId(), e);
+                // 예외를 던져서 Retry 매커니즘(DefaultErrorHandler)이 동작하도록 함
+                throw e;
             }
-        } catch (Exception e) {
-            log.error("[OrderEventListener] Failed to parse event JSON: {}", eventJson, e);
-            throw new RuntimeException("Event parsing failed", e);
+        } else {
+            log.debug("Ignored event type: {}", event.getClass().getName());
         }
 
         ack.acknowledge();

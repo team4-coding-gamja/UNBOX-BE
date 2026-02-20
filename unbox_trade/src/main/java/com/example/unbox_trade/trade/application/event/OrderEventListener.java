@@ -1,6 +1,5 @@
 package com.example.unbox_trade.trade.application.event;
 
-import com.example.unbox_common.event.EventEnvelope;
 import com.example.unbox_common.event.order.OrderCancelledEvent;
 import com.example.unbox_common.event.order.OrderExpiredEvent;
 import com.example.unbox_common.event.order.OrderRefundRequestedEvent;
@@ -9,12 +8,10 @@ import com.example.unbox_trade.trade.application.service.SellingBidService;
 import com.example.unbox_trade.trade.domain.entity.SellingBid;
 import com.example.unbox_trade.trade.domain.entity.SellingStatus;
 import com.example.unbox_trade.trade.domain.repository.SellingBidRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -29,87 +26,57 @@ public class OrderEventListener {
     private final SellingBidService sellingBidService;
     private final com.example.unbox_trade.trade.domain.repository.BuyingBidRepository buyingBidRepository;
     private final com.example.unbox_trade.trade.application.service.BuyingBidInternalService buyingBidInternalService;
-    private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "order-events", groupId = "trade-group")
+    // @KafkaListener(topics = "order-events", groupId = "trade-group")
     @Transactional
-    public void handleOrderEvent(org.apache.kafka.clients.consumer.ConsumerRecord<String, String> record,
+    public void handleOrderEvent(org.apache.kafka.clients.consumer.ConsumerRecord<String, Object> record,
             Acknowledgment ack) {
-        String eventJson = record.value();
+        Object event = record.value();
 
-        if (eventJson == null || eventJson.isEmpty()) {
-            log.warn("Received null or empty event in OrderEventListener. Key: {}", record.key());
+        if (event == null) {
+            log.warn("Received null event in OrderEventListener. Key: {}", record.key());
             ack.acknowledge();
             return;
         }
 
-        EventEnvelope envelope;
-        try {
-            envelope = objectMapper.readValue(eventJson, EventEnvelope.class);
-        } catch (Exception e) {
-            log.error("Failed to parse order event envelope: {}", eventJson, e);
-            throw new RuntimeException("Order event envelope parsing failed", e);
-        }
-
-        try {
-            if ("OrderCancelled".equals(envelope.getEventType())) {
-                OrderCancelledEvent cancelledEvent = objectMapper.convertValue(envelope.getData(), OrderCancelledEvent.class);
-                log.info("Received OrderCancelledEvent for Order ID: {}", cancelledEvent.orderId());
-                if (cancelledEvent.sellingBidId() != null) {
-                    revertSellingBid(cancelledEvent.sellingBidId(), ack);
-                } else if (cancelledEvent.buyingBidId() != null) {
-                    revertBuyingBid(cancelledEvent.buyingBidId(), ack);
-                } else {
-                    ack.acknowledge();
-                }
-                return;
+        if (event instanceof OrderCancelledEvent cancelledEvent) {
+            log.info("Received OrderCancelledEvent for Order ID: {}", cancelledEvent.orderId());
+            if (cancelledEvent.sellingBidId() != null) {
+                revertSellingBid(cancelledEvent.sellingBidId(), ack);
+            } else if (cancelledEvent.buyingBidId() != null) {
+                revertBuyingBid(cancelledEvent.buyingBidId(), ack);
+            } else {
+                ack.acknowledge();
             }
-
-            if ("OrderExpired".equals(envelope.getEventType())) {
-                OrderExpiredEvent expiredEvent = objectMapper.convertValue(envelope.getData(), OrderExpiredEvent.class);
-                log.info("Received OrderExpiredEvent for Order ID: {}", expiredEvent.orderId());
-                if (expiredEvent.sellingBidId() != null) {
-                    revertSellingBid(expiredEvent.sellingBidId(), ack);
-                } else if (expiredEvent.buyingBidId() != null) {
-                    revertBuyingBid(expiredEvent.buyingBidId(), ack);
-                } else {
-                    ack.acknowledge();
-                }
-                return;
+        } else if (event instanceof OrderExpiredEvent expiredEvent) {
+            log.info("Received OrderExpiredEvent for Order ID: {}", expiredEvent.orderId());
+            if (expiredEvent.sellingBidId() != null) {
+                revertSellingBid(expiredEvent.sellingBidId(), ack);
+            } else if (expiredEvent.buyingBidId() != null) {
+                revertBuyingBid(expiredEvent.buyingBidId(), ack);
+            } else {
+                ack.acknowledge();
             }
-
-            if ("OrderRefundRequested".equals(envelope.getEventType())) {
-                OrderRefundRequestedEvent refundEvent = objectMapper.convertValue(envelope.getData(),
-                        OrderRefundRequestedEvent.class);
-                log.info("Received OrderRefundRequestedEvent for Order ID: {}, PreviousStatus: {}",
-                        refundEvent.orderId(), refundEvent.previousStatus());
-                if (refundEvent.sellingBidId() != null) {
-                    handleSellingRefund(refundEvent.sellingBidId(), refundEvent.previousStatus(), ack);
-                } else if (refundEvent.buyingBidId() != null) {
-                    handleBuyingRefund(refundEvent.buyingBidId(), refundEvent.previousStatus(), ack);
-                } else {
-                    ack.acknowledge();
-                }
-                return;
+        } else if (event instanceof OrderRefundRequestedEvent refundEvent) {
+            log.info("Received OrderRefundRequestedEvent for Order ID: {}, PreviousStatus: {}",
+                    refundEvent.orderId(), refundEvent.previousStatus());
+            if (refundEvent.sellingBidId() != null) {
+                handleSellingRefund(refundEvent.sellingBidId(), refundEvent.previousStatus(), ack);
+            } else if (refundEvent.buyingBidId() != null) {
+                handleBuyingRefund(refundEvent.buyingBidId(), refundEvent.previousStatus(), ack);
+            } else {
+                ack.acknowledge();
             }
-
-            if ("OrderShipmentExpired".equals(envelope.getEventType())) {
-                OrderShipmentExpiredEvent expiredEvent = objectMapper.convertValue(envelope.getData(),
-                        OrderShipmentExpiredEvent.class);
-                log.info("Received OrderShipmentExpiredEvent for Order ID: {}", expiredEvent.orderId());
-                if (expiredEvent.sellingBidId() != null) {
-                    handleShipmentExpired(expiredEvent.sellingBidId(), ack);
-                } else {
-                    ack.acknowledge();
-                }
-                return;
+        } else if (event instanceof OrderShipmentExpiredEvent expiredEvent) {
+            log.info("Received OrderShipmentExpiredEvent for Order ID: {}", expiredEvent.orderId());
+            if (expiredEvent.sellingBidId() != null) {
+                handleShipmentExpired(expiredEvent.sellingBidId(), ack);
+            } else {
+                ack.acknowledge();
             }
-
-            log.debug("Ignored event type in OrderEventListener: {}", envelope.getEventType());
+        } else {
+            log.warn("Unknown event type: {} (Value: {})", event.getClass().getName(), event);
             ack.acknowledge();
-        } catch (Exception e) {
-            log.error("Failed to process order event - eventType: {}", envelope.getEventType(), e);
-            throw e;
         }
     }
 

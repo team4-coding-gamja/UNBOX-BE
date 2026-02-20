@@ -8,7 +8,6 @@ import com.example.unbox_payment.payment.domain.entity.Payment;
 import com.example.unbox_payment.payment.presentation.dto.response.TossConfirmResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,7 +17,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Profile("loadtest")
 public class TestPaymentService {
 
     private static final String UPDATED_BY = "payment-service-test";

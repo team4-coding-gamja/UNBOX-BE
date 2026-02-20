@@ -3,7 +3,6 @@ package com.example.unbox_payment.mock;
 import com.example.unbox_payment.common.client.order.dto.OrderForPaymentInfoResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -11,7 +10,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/mock/order/internal/orders")
-@Profile("loadtest")
 public class MockOrderController {
 
     private static final Logger log = LoggerFactory.getLogger(MockOrderController.class);

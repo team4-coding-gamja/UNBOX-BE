@@ -62,9 +62,6 @@ user-service:
 product-service:
   url: ${PRODUCT_SERVICE_URL:http://localhost:8082}
 
-trade-service:
-  url: ${TRADE_SERVICE_URL:http://localhost:8083}
-
 order-service:
   url: ${ORDER_SERVICE_URL:http://localhost:8084}
 

@@ -398,30 +398,45 @@ public class OrderServiceImpl implements OrderService {
     // ✅ 주문 상태 변경 (결제 완료용: PAYMENT_PENDING → PENDING_SHIPMENT)
     @Override
     @Transactional
-    public void pendingShipmentOrder(UUID orderId, UUID paymentId, String updatedBy) {
+    public void pendingShipmentOrder(UUID orderId, UUID paymentId, String updatedBy, String testMode) {
         Order order = orderRepository.findByIdAndDeletedAtIsNull(orderId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
 
         // 상태 변경 (내부에서 PAYMENT_PENDING 검증) + paymentId 저장
         order.updateStatusAfterPayment(paymentId);
 
-        // 🔄 Trade 서비스 상태 동기화 (RESERVED -> SOLD)
-        // 비동기 이벤트(PaymentCompletedEvent)로 Trade 서비스에서 처리하므로 동기 호출 제거
-        // tradeClient.soldSellingBid(order.getSellingBidId(), "ORDER_SERVICE");
+        // ============================================================
+        // ✅ [부하 테스트 핵심] Sync 모드 시 강제 오케스트레이션
+        // ============================================================
+        if ("sync".equalsIgnoreCase(testMode)) {
+            log.info("[OrderService] SYNC 모드 - Trade/Settlement 동기 처리 시작");
 
-        // 3. [추가] 배송 기한 타이머 설정 (Redis Shadow Key)
-        // Key 예시: "order:shipment-deadline:{orderId}"
+            try {
+                // 1. Trade 서비스 상태 동기화 (RESERVED -> SOLD)
+                tradeClient.soldSellingBid(order.getSellingBidId(), "ORDER_SERVICE_SYNC");
+            } catch (Exception e) {
+                log.warn("[OrderService] Trade 서비스 호출 실패 (테스트 중 무시 가능): {}", e.getMessage());
+            }
+
+            try {
+                // 2. Settlement 서비스 정산 생성 (Local Call)
+                settlementService.createSettlementForPayment(paymentId);
+            } catch (Exception e) {
+                log.warn("[OrderService] Settlement 서비스 호출 실패 (테스트 중 무시 가능): {}", e.getMessage());
+            }
+
+            log.info("[OrderService] SYNC 모드 - Trade/Settlement 동기 처리 완료");
+        }
+
+        // 3. 배송 기한 타이머 설정 (Redis Shadow Key)
         String shipmentDeadlineKey = REDIS_SHIPMENT_KEY_PREFIX + orderId;
         try {
             redisTemplate.opsForValue().set(
                     shipmentDeadlineKey,
                     "PENDING",
-                    Duration.ofDays(shipmentTimeoutDays) // 예: 2일 뒤 만료
-            );
-            log.info("Set shipment deadline for Order {}: {} days", orderId, shipmentTimeoutDays);
+                    Duration.ofDays(shipmentTimeoutDays));
         } catch (Exception e) {
             log.error("Failed to set shipment timer for order: {}", orderId, e);
-            // 중요: 여기서 에러가 나도 트랜잭션을 롤백할지, 알람만 보낼지 결정 필요 (보통 알람 후 수동 처리 권장)
         }
     }
     // ========================================
@@ -476,11 +491,10 @@ public class OrderServiceImpl implements OrderService {
                 order.getId(),
                 order.getSellingBidId(), // Trade: 판매 입찰 취소/페널티용
                 order.getBuyingBidId(),
-                order.getPaymentId(),    // Payment: 환불용
+                order.getPaymentId(), // Payment: 환불용
                 order.getBuyerId(),
-                order.getSellerId(),     // Settlement: 페널티 부과 대상
-                order.getPrice()
-        );
+                order.getSellerId(), // Settlement: 페널티 부과 대상
+                order.getPrice());
 
         // 3. [핵심] 이벤트 발행
         // 각 서비스(Trade, Payment, Settlement)가 이 토픽을 구독합니다.

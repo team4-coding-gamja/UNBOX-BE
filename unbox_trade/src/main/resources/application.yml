@@ -16,8 +16,9 @@ spring:
       auto-offset-reset: earliest
       enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
+        spring.json.trusted.packages: "com.example.unbox_common.event.*"
         max.poll.records: 50              # 한 번에 가져오는 레코드 수 제한 (기본값 500 → 50)
         max.poll.interval.ms: 300000      # poll() 간격 제한 5분 (이 안에 처리 못하면 리밸런싱)
     # properties(인증 설정)는 프로파일별 파일에서 관리
@@ -29,13 +30,14 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
-      maximum-pool-size: 5
-      connection-timeout: 30000
+      maximum-pool-size: 30 # 상향 조정 (30 스레드 대응)
+      minimum-idle: 5       # 최소 유지 연결
+      connection-timeout: 20000
       idle-timeout: 300000
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     defer-datasource-initialization: true
     show-sql: true
     properties:
@@ -55,6 +57,8 @@ spring:
 
   cloud:
     openfeign:
+      circuitbreaker:
+        enabled: false # 부하 테스트를 위해 서킷 브레이커 비활성화
       client:
         config:
           default:
@@ -74,11 +78,6 @@ server:
   port: ${SERVER_PORT:8080}
   servlet:
     context-path: /trade  # ALB routing path prefix
-  
-  tomcat:
-    threads:
-      max: 100
-      min-spare: 10
 
 # Custom Feign Client URLs
 product-service:

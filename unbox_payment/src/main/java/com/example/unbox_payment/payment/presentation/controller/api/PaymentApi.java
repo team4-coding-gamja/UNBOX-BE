@@ -70,6 +70,8 @@ public interface PaymentApi {
         @PostMapping("/confirm")
         CustomApiResponse<TossConfirmResponse> confirmPayment(
                         @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
-                        @RequestBody @Valid PaymentConfirmRequestDto request,
-                        @Parameter(hidden = true) @RequestHeader(value = "X-Test-Mode", required = false) String testMode);
+                        @RequestHeader(value = "X-Test-Mode", required = false) String testMode,
+                        @RequestHeader(value = "X-Fault-Target", required = false) String faultTarget,
+                        @RequestHeader(value = "X-Fault-Delay-MS", required = false) Long faultDelay,
+                        @RequestBody @Valid PaymentConfirmRequestDto request);
 }

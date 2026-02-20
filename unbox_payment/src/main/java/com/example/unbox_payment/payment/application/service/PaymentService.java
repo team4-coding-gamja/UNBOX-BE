@@ -21,7 +21,7 @@ public interface PaymentService {
 
     // ✅ 결제 승인 처리
     TossConfirmResponse confirmPayment(Long userId, UUID paymentId, String paymentKey, BigDecimal amount,
-            String testMode);
+            String testMode, String faultTarget, Long faultDelay);
 
     // ========================================
     // ✅ 내부 시스템용 API (Internal API)

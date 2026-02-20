@@ -1,15 +1,16 @@
 package com.example.unbox_trade.trade.presentation.controller;
 
 import com.example.unbox_trade.trade.application.service.purchase.*;
-import com.example.unbox_trade.trade.domain.entity.SellingBid;
-import com.example.unbox_trade.trade.domain.entity.SellingStatus;
-import com.example.unbox_trade.trade.domain.repository.SellingBidRepository; // Import 추가
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.response.CustomApiResponse;
+import com.example.unbox_trade.trade.domain.entity.SellingBid;
+import com.example.unbox_trade.trade.domain.entity.SellingStatus;
+import com.example.unbox_trade.trade.domain.repository.SellingBidRepository;
+import com.example.unbox_trade.trade.presentation.dto.response.PurchaseQueueStatusResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate; // Import 추가
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +29,7 @@ public class TestPurchaseController {
     private final DistributedNextBestPurchaseService distributedNextBestPurchaseService;
     private final CachedDistributedPurchaseService cachedDistributedPurchaseService;
     private final LuaDistributedPurchaseService luaDistributedPurchaseService;
+    private final QueuedPurchaseService queuedPurchaseService;
 
     // --- [추가해야 할 필드] ---
     // 이 두 줄이 없어서 에러가 났던 것입니다.
@@ -37,10 +39,15 @@ public class TestPurchaseController {
 
     @Operation(summary = "판매 입찰 구매 (동시성 테스트)", description = "특정 판매 입찰(SellingBid)을 구매하여 상태를 MATCHED로 변경합니다. stage 파라미터로 전략을 선택합니다.")
     @PostMapping
-    public CustomApiResponse<Void> purchase(
+    public CustomApiResponse<?> purchase(
             @RequestParam UUID sellingBidId,
             @RequestParam Long buyerId,
             @RequestParam(defaultValue = "stage1") String stage) {
+
+        if ("stage6".equals(stage)) {
+            PurchaseQueueStatusResponseDto queueStatus = queuedPurchaseService.enqueue(sellingBidId, buyerId);
+            return CustomApiResponse.success(queueStatus);
+        }
         
         PurchaseService service = switch (stage) {
             case "stage1" -> pessimisticPurchaseService;
@@ -52,7 +59,7 @@ public class TestPurchaseController {
         };
         
         service.purchase(sellingBidId, buyerId);
-        return CustomApiResponse.success(null);
+        return CustomApiResponse.successWithNoData();
     }
 
     @ExceptionHandler(CustomException.class)

@@ -24,4 +24,8 @@ public class TestPaymentPreparationService {
     public Payment prepareForConfirmWithoutOrderLookup(Long userId, UUID paymentId, BigDecimal amountFromFront) {
         return statusUpdater.markAsInProgressInNewTx(userId, paymentId, amountFromFront);
     }
+
+    public Payment completeForConfirmWithoutPgLog(UUID paymentId, String paymentKey) {
+        return statusUpdater.completeWithoutPgLogInNewTx(paymentId, paymentKey);
+    }
 }

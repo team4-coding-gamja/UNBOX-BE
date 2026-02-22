@@ -11,7 +11,7 @@ import java.util.UUID;
 @FeignClient(
         name = "test-order-service",
         contextId = "testOrderClient",
-        url = "${test-order-service.url:${order-service.url:http://localhost:8084}}",
+        url = "${test-order-service.url:http://localhost:${server.port:8080}/payment/mock}",
         path = "/order")
 public interface TestOrderClient {
 

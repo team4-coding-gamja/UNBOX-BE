@@ -67,7 +67,6 @@ public class TestPaymentStatusUpdater {
                 .status(PaymentStatus.READY)
                 .paymentKey("test_success_" + paymentId)
                 .readyAt(LocalDateTime.now())
-                .version(0L)
                 .build();
 
         return paymentRepository.saveAndFlush(payment);

@@ -43,7 +43,7 @@ public class TestPaymentStatusUpdater {
             throw new CustomException(ErrorCode.AMOUNT_MISMATCH);
         }
 
-        if (payment.getStatus() != PaymentStatus.READY || payment.isExpired()) {
+        if (payment.getStatus() != PaymentStatus.READY) {
             payment.markAsReady();
         }
         payment.changeStatus(PaymentStatus.IN_PROGRESS);

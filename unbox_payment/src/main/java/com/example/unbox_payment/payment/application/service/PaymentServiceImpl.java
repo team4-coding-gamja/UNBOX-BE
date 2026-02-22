@@ -45,6 +45,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final OrderClient orderClient;
 
     private final PaymentDirectAsyncEventProducer directAsyncEventProducer;
+    private final PaymentOutboxWriter paymentOutboxWriter;
 
     // ✅ 결제 이력 조회
     @Override
@@ -141,7 +142,8 @@ public class PaymentServiceImpl implements PaymentService {
                 : paymentKeyFromFront;
 
         // ✅ 테스트용 강제 승인 로직 (부하 테스트용 Mock)
-        if (finalPaymentKey.startsWith("seed_ready_test_success")) {
+        if (finalPaymentKey.startsWith("test_success_")
+                || finalPaymentKey.startsWith("seed_ready_test_success")) {
             log.info("[PaymentConfirm] 테스트용 강제 승인 처리 (Mock) - paymentId: {}", paymentId);
 
             TossConfirmResponse mockResponse = TossConfirmResponse.builder()
@@ -171,8 +173,20 @@ public class PaymentServiceImpl implements PaymentService {
                         faultTarget,
                         faultDelay);
                 log.info("[PaymentConfirm] SYNC 모드 - Order 서비스 동기 호출 완료");
+            } else if ("outbox".equalsIgnoreCase(testMode)) {
+                // 2) OUTBOX 모드: 아웃박스에 이벤트를 적재하고 릴레이가 Kafka 발행
+                log.info("[PaymentConfirm] OUTBOX 모드 - 아웃박스 적재");
+                PaymentCompletedEvent event;
+                if (payment.getBuyingBidId() != null) {
+                    event = PaymentCompletedEvent.ofBuying(paymentId, finalPaymentKey, payment.getOrderId(),
+                            payment.getBuyingBidId(), payment.getAmount());
+                } else {
+                    event = PaymentCompletedEvent.ofSelling(paymentId, finalPaymentKey, payment.getOrderId(),
+                            payment.getSellingBidId(), payment.getAmount());
+                }
+                paymentOutboxWriter.write(event);
             } else {
-                // 2) ASYNC 모드 (기본): Kafka 이벤트 발행 (즉시 리턴)
+                // 3) ASYNC 모드 (기본): Kafka 이벤트 직접 발행 (즉시 리턴)
                 log.info("[PaymentConfirm] ASYNC 모드 - Kafka 이벤트 발행");
                 PaymentCompletedEvent event;
                 if (payment.getBuyingBidId() != null) {

@@ -8,7 +8,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.UUID;
 
-@FeignClient(name = "test-order-service", contextId = "testOrderClient", url = "${test-order-service.url}", path = "/order")
+@FeignClient(
+        name = "test-order-service",
+        contextId = "testOrderClient",
+        url = "${test-order-service.url:${order-service.url:http://localhost:8084}}",
+        path = "/order")
 public interface TestOrderClient {
 
     @PostMapping("/internal/orders/{id}/pending-shipment")

@@ -64,7 +64,10 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
 
                 // Admin API
-                .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_MASTER", "ROLE_MANAGER")
+                .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_MASTER", "ROLE_MANAGER", "ROLE_ADMIN")
+                // Loadtest test endpoints (admin users only)
+                .requestMatchers("/test/api/payment/**").hasAnyAuthority("ROLE_MASTER", "ROLE_MANAGER", "ROLE_ADMIN")
+                .requestMatchers("/payment/test/api/payment/**").hasAnyAuthority("ROLE_MASTER", "ROLE_MANAGER", "ROLE_ADMIN")
 
                 .requestMatchers("/internal/loadtest/**").permitAll()
 

@@ -144,7 +144,7 @@ spring:
 
   task:
     scheduling:
-      enabled: false
+      enabled: ${PAYMENT_LOADTEST_SCHEDULING_ENABLED:true}
 
   cloud:
     openfeign:

@@ -53,6 +53,26 @@ public class TestPaymentStatusUpdater {
         return payment;
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Payment completeWithoutPgLogInNewTx(UUID paymentId, String paymentKey) {
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // 테스트 재실행 중 상태가 꼬여도 DONE 전이를 강제로 맞춰준다.
+        if (payment.getStatus() != PaymentStatus.IN_PROGRESS) {
+            if (payment.getStatus() != PaymentStatus.READY) {
+                payment.markAsReady();
+            }
+            payment.changeStatus(PaymentStatus.IN_PROGRESS);
+        }
+
+        payment.completePayment(paymentKey);
+        paymentRepository.saveAndFlush(payment);
+
+        log.debug("[TestPaymentStatusUpdater] DONE committed without PG log - paymentId: {}", paymentId);
+        return payment;
+    }
+
     private Payment createLoadtestPayment(Long userId, UUID paymentId, BigDecimal amountFromFront) {
         long resolvedUserId = userId != null ? userId : 1L;
 

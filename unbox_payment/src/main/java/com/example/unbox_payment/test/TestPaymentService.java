@@ -3,7 +3,6 @@ package com.example.unbox_payment.test;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
 import com.example.unbox_payment.test.client.TestOrderClient;
-import com.example.unbox_payment.payment.application.service.PaymentTransactionService;
 import com.example.unbox_payment.payment.domain.entity.Payment;
 import com.example.unbox_payment.payment.presentation.dto.response.TossConfirmResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,6 @@ public class TestPaymentService {
     private static final String FAULT_TARGET_ORDER = "order";
 
     private final TestPaymentPreparationService testPaymentPreparationService;
-    private final PaymentTransactionService paymentTransactionService;
     private final TestOrderClient testOrderClient;
 
     // 동기 구조: 결제 완료 후 주문 상태 변경을 동기 호출로 수행
@@ -45,7 +43,7 @@ public class TestPaymentService {
         String finalPaymentKey = normalizePaymentKey(paymentKeyFromFront, paymentId);
         TossConfirmResponse mockResponse = buildMockResponse(payment, finalPaymentKey);
 
-        paymentTransactionService.processSuccessfulPayment(paymentId, mockResponse);
+        testPaymentPreparationService.completeForConfirmWithoutPgLog(paymentId, finalPaymentKey);
 
         long normalizedDelay = Math.max(faultDelayMs, 0L);
         String normalizedFaultTarget = isOrderFaultTarget(faultTarget) ? FAULT_TARGET_ORDER : "";
@@ -81,7 +79,7 @@ public class TestPaymentService {
         String finalPaymentKey = normalizePaymentKey(paymentKeyFromFront, paymentId);
         TossConfirmResponse mockResponse = buildMockResponse(payment, finalPaymentKey);
 
-        paymentTransactionService.processSuccessfulPayment(paymentId, mockResponse);
+        testPaymentPreparationService.completeForConfirmWithoutPgLog(paymentId, finalPaymentKey);
 
         log.info(
                 "[TestPaymentConfirm][ASYNC] done without downstream call - paymentId: {}",

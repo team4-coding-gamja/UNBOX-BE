@@ -46,6 +46,8 @@ public class SecurityConfig {
                 // ALB prefix 경로 Swagger 허용
                 .requestMatchers("/payment/v3/api-docs/**", "/payment/swagger-ui/**", "/payment/swagger-ui.html", "/payment/swagger-resources/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
+                // Test API (Blue-Green 테스트용)
+                .requestMatchers("/test/**").permitAll()
                 // Internal API (Feign)
                 .requestMatchers("/internal/**").permitAll()
                 // OPTIONS 요청 허용 (CORS Preflight)

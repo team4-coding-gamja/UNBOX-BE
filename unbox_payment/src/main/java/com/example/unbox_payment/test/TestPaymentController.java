@@ -13,13 +13,14 @@ public class TestPaymentController {
     @Value("${TEST_CANARY_DEPLOYMENT:v1}")
     private String deploymentVersion;
 
-    // 버전 확인 엔드포인트 (Blue-Green 테스트용)
+    // 버전 확인 엔드포인트 (Blue-Green 정상 배포 시나리오 1)
     @GetMapping("/version")
     public CustomApiResponse<Map<String, String>> getVersion() {
         return CustomApiResponse.success(Map.of(
             "version", deploymentVersion,
             "service", "payment-service",
-            "strategy", "blue-green"
+            "strategy", "blue-green",
+            "scenario", "scenario-1-normal-deployment"
         ));
     }
 }

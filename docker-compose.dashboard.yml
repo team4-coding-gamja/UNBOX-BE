@@ -1,0 +1,61 @@
+services:
+  mock-metrics:
+    build:
+      context: ./mock-metrics
+    container_name: unbox-mock-metrics
+    ports:
+      - "18080:8080"
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: unbox-prometheus-dashboard
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.dashboard.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    depends_on:
+      - mock-metrics
+
+  loki:
+    image: grafana/loki:2.9.3
+    container_name: unbox-loki-dashboard
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
+    command: -config.file=/etc/loki/loki-config.yaml
+
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: unbox-tempo-dashboard
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo-config.yaml:/etc/tempo.yaml:ro
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+      - "4318:4318"
+
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: unbox-grafana-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - ./grafana-dashboard.json:/var/lib/grafana/dashboards/grafana-dashboard.json:ro
+      - ./grafana-fault-injection-dashboard.json:/var/lib/grafana/dashboards/grafana-fault-injection-dashboard.json:ro
+    depends_on:
+      - prometheus
+      - loki
+      - tempo

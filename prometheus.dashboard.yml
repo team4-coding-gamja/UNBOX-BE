@@ -1,0 +1,44 @@
+# Prometheus configuration for local dashboard-only demo
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: "unbox-user-service"
+    metrics_path: "/metrics"
+    params:
+      service: ["user"]
+    static_configs:
+      - targets: ["mock-metrics:8080"]
+
+  - job_name: "unbox-product-service"
+    metrics_path: "/metrics"
+    params:
+      service: ["product"]
+    static_configs:
+      - targets: ["mock-metrics:8080"]
+
+  - job_name: "unbox-order-service"
+    metrics_path: "/metrics"
+    params:
+      service: ["order"]
+    static_configs:
+      - targets: ["mock-metrics:8080"]
+
+  - job_name: "unbox-trade-service"
+    metrics_path: "/metrics"
+    params:
+      service: ["trade"]
+    static_configs:
+      - targets: ["mock-metrics:8080"]
+
+  - job_name: "unbox-payment-service"
+    metrics_path: "/metrics"
+    params:
+      service: ["payment"]
+    static_configs:
+      - targets: ["mock-metrics:8080"]
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

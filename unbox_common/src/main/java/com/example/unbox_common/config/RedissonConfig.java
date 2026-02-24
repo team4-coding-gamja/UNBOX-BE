@@ -3,9 +3,13 @@ package com.example.unbox_common.config;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import org.redisson.config.ConstantDelay;
+import org.redisson.config.SslVerificationMode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.time.Duration;
 
 @Configuration
 public class RedissonConfig {
@@ -29,10 +33,16 @@ public class RedissonConfig {
         String protocol = redisSsl ? "rediss://" : "redis://";
         String address = protocol + redisHost + ":" + redisPort;
 
+        if (!redisPassword.isEmpty()) {
+            config.setPassword(redisPassword);
+        }
+        if (redisSsl) {
+            // AWS ElastiCache용: endpoint verification 비활성화
+            config.setSslVerificationMode(SslVerificationMode.NONE);
+        }
+
         config.useSingleServer()
               .setAddress(address)
-              .setPassword(redisPassword.isEmpty() ? null : redisPassword)
-              .setSslEnableEndpointIdentification(false)  // AWS ElastiCache용
               // Increase timeout to 30 seconds for cold start
               .setTimeout(30000)
               .setConnectTimeout(30000)
@@ -40,7 +50,7 @@ public class RedissonConfig {
               .setPingConnectionInterval(30000)
               // Retry settings
               .setRetryAttempts(5)
-              .setRetryInterval(3000);
+              .setRetryDelay(new ConstantDelay(Duration.ofMillis(3000)));
         
         return Redisson.create(config);
     }

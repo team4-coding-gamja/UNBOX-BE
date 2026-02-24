@@ -293,16 +293,25 @@ jobs:
             STATUS="일부 서비스 확인 필요"
           fi
           
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "${TITLE}",
+              "description": "**환경:** ${ENV_NAME^^}\n**브랜치:** \`${{ github.ref_name }}\`\n**커밋:** \`${{ github.sha }}\`\n**대상:** ${SERVICES}\n**결과:** ${STATUS}",
+              "color": ${COLOR},
+              "footer": {
+                "text": "ArgoCD에서 최종 배포 상태를 확인하세요."
+              },
+              "timestamp": "${TIMESTAMP}"
+            }]
+          }
+          EOF
+          )
+          
+          echo "Sending Discord notification..."
           curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
-            -d '{
-              "embeds": [{
-                "title": "'"$TITLE"'",
-                "description": "**환경:** '"${ENV_NAME^^}"'\n**브랜치:** `${{ github.ref_name }}`\n**커밋:** `${{ github.sha }}`\n**대상:** '"$SERVICES"'\n**결과:** '"$STATUS"'",
-                "color": '"$COLOR"',
-                "footer": {
-                  "text": "ArgoCD에서 최종 배포 상태를 확인하세요."
-                },
-                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
-              }]
-            }'# Trigger all services Fri Feb 20 20:23:22 KST 2026
+            -d "${PAYLOAD}"
+

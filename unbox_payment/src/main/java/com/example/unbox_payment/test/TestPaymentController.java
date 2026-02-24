@@ -24,7 +24,7 @@ public class TestPaymentController {
     // 버전 확인 엔드포인트 (Blue-Green 테스트용)
     @GetMapping("/version")
     public CustomApiResponse<Map<String, String>> getVersion() {
-        // 50% 에러율 롤백 테스트
+        // 50% 에러율 롤백 테스트 - 시나리오 2
         if (errorRate > 0 && random.nextInt(100) < errorRate) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
                 "Simulated error for rollback test - version: " + deploymentVersion);

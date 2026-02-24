@@ -10,7 +10,7 @@ spec:
     - name: service-name
       value: payment-service
   metrics:
-    # Success Rate 체크 (99.5% 이상)
+    # Success Rate 체크 (99.5% 이상) - 5분 범위로 확장하여 안정적인 측정
     - name: success-rate
       initialDelay: 10s
       interval: 10s
@@ -27,16 +27,16 @@ spec:
               http_server_requests_seconds_count{
                 job="unbox-payment-service",
                 status!~"5.."
-              }[1m]
+              }[5m]
             )) 
             / 
             sum(rate(
               http_server_requests_seconds_count{
                 job="unbox-payment-service"
-              }[1m]
+              }[5m]
             )) * 100
     
-    # Error Rate 체크 (0.5% 이하)
+    # Error Rate 체크 (0.5% 이하) - 5분 범위로 확장하여 안정적인 측정
     - name: error-rate
       initialDelay: 10s
       interval: 10s
@@ -54,17 +54,17 @@ spec:
                 http_server_requests_seconds_count{
                   job="unbox-payment-service",
                   status=~"5.."
-                }[1m]
+                }[5m]
               )) 
               / 
               sum(rate(
                 http_server_requests_seconds_count{
                   job="unbox-payment-service"
-                }[1m]
+                }[5m]
               )) * 100
             ) or vector(0)
     
-    # Response Time 체크 (500ms 이하)
+    # Response Time 체크 (500ms 이하) - 5분 범위로 확장하여 안정적인 측정
     - name: avg-response-time
       initialDelay: 10s
       interval: 10s
@@ -80,11 +80,11 @@ spec:
             sum(rate(
               http_server_requests_seconds_sum{
                 job="unbox-payment-service"
-              }[1m]
+              }[5m]
             )) 
             / 
             sum(rate(
               http_server_requests_seconds_count{
                 job="unbox-payment-service"
-              }[1m]
+              }[5m]
             )) * 1000

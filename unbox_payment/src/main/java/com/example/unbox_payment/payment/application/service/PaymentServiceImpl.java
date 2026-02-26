@@ -141,7 +141,8 @@ public class PaymentServiceImpl implements PaymentService {
                 : paymentKeyFromFront;
 
         // ✅ 테스트용 강제 승인 로직 (부하 테스트용 Mock)
-        if (finalPaymentKey.startsWith("seed_ready_test_success")) {
+        if (finalPaymentKey.startsWith("test_success_")
+                || finalPaymentKey.startsWith("seed_ready_test_success")) {
             log.info("[PaymentConfirm] 테스트용 강제 승인 처리 (Mock) - paymentId: {}", paymentId);
 
             TossConfirmResponse mockResponse = TossConfirmResponse.builder()
@@ -153,14 +154,13 @@ public class PaymentServiceImpl implements PaymentService {
                     .approvedAt(java.time.LocalDateTime.now().toString())
                     .build();
 
-            // 성공 로직 수행 (상태 변경 DONE)
-            paymentTransactionService.processSuccessfulPayment(paymentId, mockResponse);
-
             // ============================================================
-            // ✅ [부하 테스트 핵심] Sync vs Async 분기
+            // ✅ [부하 테스트 핵심] Sync vs Async vs Outbox 분기
             // ============================================================
             if ("sync".equalsIgnoreCase(testMode)) {
                 // 1) SYNC 모드: Order 서비스에 '동기' Feign 호출 (여기서 블로킹 발생)
+                // 결제 완료 저장 후 동기 downstream 호출
+                paymentTransactionService.processSuccessfulPayment(paymentId, mockResponse);
                 log.info("[PaymentConfirm] SYNC 모드 - Order 서비스 동기 호출 시작");
 
                 orderClient.pendingShipmentOrder(
@@ -171,8 +171,14 @@ public class PaymentServiceImpl implements PaymentService {
                         faultTarget,
                         faultDelay);
                 log.info("[PaymentConfirm] SYNC 모드 - Order 서비스 동기 호출 완료");
+            } else if ("outbox".equalsIgnoreCase(testMode)) {
+                // 2) OUTBOX 모드: 결제 완료 + 아웃박스 적재를 단일 트랜잭션으로 처리
+                log.info("[PaymentConfirm] OUTBOX 모드 - 결제 완료 + 아웃박스 적재");
+                paymentTransactionService.processSuccessfulPaymentWithOutbox(paymentId, mockResponse);
             } else {
-                // 2) ASYNC 모드 (기본): Kafka 이벤트 발행 (즉시 리턴)
+                // 3) ASYNC 모드 (기본): Kafka 이벤트 직접 발행 (즉시 리턴)
+                // 결제 완료 저장 후 direct async 발행
+                paymentTransactionService.processSuccessfulPayment(paymentId, mockResponse);
                 log.info("[PaymentConfirm] ASYNC 모드 - Kafka 이벤트 발행");
                 PaymentCompletedEvent event;
                 if (payment.getBuyingBidId() != null) {

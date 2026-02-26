@@ -9,6 +9,7 @@ import com.example.unbox_payment.payment.domain.repository.PaymentRepository;
 import com.example.unbox_payment.payment.domain.repository.PgTransactionRepository;
 import com.example.unbox_common.error.exception.CustomException;
 import com.example.unbox_common.error.exception.ErrorCode;
+import com.example.unbox_common.event.payment.PaymentCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class PaymentTransactionService {
     private final PaymentRepository paymentRepository;
     private final PgTransactionRepository pgTransactionRepository;
     private final PgTransactionMapper pgTransactionMapper;
+    private final PaymentOutboxWriter paymentOutboxWriter;
 
     /**
      * ✅ 결제 승인 준비 (Transaction 1)
@@ -54,10 +56,11 @@ public class PaymentTransactionService {
         }
 
         // 3. 타임아웃 검증 (10분)
-//        if (payment.isExpired()) {
-//            log.warn("[PaymentTransaction] 결제 유효 시간 만료 - paymentId: {}, readyAt: {}", paymentId, payment.getReadyAt());
-//            throw new CustomException(ErrorCode.PAYMENT_EXPIRED);
-//        }
+        // if (payment.isExpired()) {
+        // log.warn("[PaymentTransaction] 결제 유효 시간 만료 - paymentId: {}, readyAt: {}",
+        // paymentId, payment.getReadyAt());
+        // throw new CustomException(ErrorCode.PAYMENT_EXPIRED);
+        // }
 
         // 4. 금액 검증 (DB vs Front)
         if (payment.getAmount().compareTo(amountFromFront) != 0) {
@@ -113,6 +116,47 @@ public class PaymentTransactionService {
         // PG 트랜잭션 로그 저장 (성공)
         PgTransaction transaction = pgTransactionMapper.toSuccessEntity(payment, response);
         pgTransactionRepository.save(transaction);
+    }
+
+    /**
+     * 결제 완료와 Outbox 저장을 단일 트랜잭션으로 처리한다.
+     */
+    @Transactional
+    public void processSuccessfulPaymentWithOutbox(UUID paymentId, TossConfirmResponse response) {
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        if (payment.getStatus() == PaymentStatus.DONE) {
+            log.warn("중복 결제 승인 시도 차단 - paymentId: {}", paymentId);
+            throw new CustomException(ErrorCode.PG_PROCESSED_ALREADY_EXISTS);
+        }
+
+        if (payment.getAmount().compareTo(response.getTotalAmount()) != 0) {
+            throw new CustomException(ErrorCode.PRICE_MISMATCH);
+        }
+
+        payment.completePayment(response.getPaymentKey());
+
+        PgTransaction pgTransaction = pgTransactionMapper.toSuccessEntity(payment, response);
+        pgTransactionRepository.save(pgTransaction);
+
+        PaymentCompletedEvent event;
+        if (payment.getBuyingBidId() != null) {
+            event = PaymentCompletedEvent.ofBuying(
+                    paymentId,
+                    response.getPaymentKey(),
+                    payment.getOrderId(),
+                    payment.getBuyingBidId(),
+                    payment.getAmount());
+        } else {
+            event = PaymentCompletedEvent.ofSelling(
+                    paymentId,
+                    response.getPaymentKey(),
+                    payment.getOrderId(),
+                    payment.getSellingBidId(),
+                    payment.getAmount());
+        }
+        paymentOutboxWriter.write(event);
     }
 
     // ✅ 결제 승인 실패 처리
